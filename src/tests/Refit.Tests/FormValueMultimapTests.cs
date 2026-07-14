@@ -37,6 +37,18 @@ public class FormValueMultimapTests
     /// <summary>The second element in the sample double collection.</summary>
     private const double SecondSampleDouble = 1.0;
 
+    /// <summary>Sample scalar name value shared by the nested-flattening fixtures.</summary>
+    private const string SampleName = "ada";
+
+    /// <summary>Field key for the shared scalar name value.</summary>
+    private const string NameFieldKey = "Name";
+
+    /// <summary>Nested email value shared by the nested-flattening fixtures.</summary>
+    private const string NestedEmail = "a@b.com";
+
+    /// <summary>Scalar value shared by the cycle-guard fixture.</summary>
+    private const string CycleRootValue = "root";
+
     /// <summary>The default settings used to construct the multimap under test.</summary>
     private readonly RefitSettings _settings = new();
 
@@ -370,6 +382,135 @@ public class FormValueMultimapTests
         await Assert.That(actual).IsCollectionEqualTo(ToNullableKvps(expected));
     }
 
+    /// <summary>Verifies a nested complex property flattens to dotted parent.child keys.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task NestedObjectFlattensToDottedKeys()
+    {
+        const int age = 42;
+        var source = new ObjectWithNestedDetail
+        {
+            Name = SampleName,
+            Detail = new() { Email = NestedEmail, Age = age }
+        };
+        var expected = new KeyValuePair<string?, string?>[]
+        {
+            new(NameFieldKey, SampleName),
+            new("Detail.Email", NestedEmail),
+            new("Detail.Age", "42")
+        };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
+    /// <summary>Verifies a null nested complex property is omitted rather than emitting an empty or type-name value.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task NullNestedObjectIsOmitted()
+    {
+        var source = new ObjectWithNestedDetail { Name = SampleName, Detail = null };
+        var expected = new KeyValuePair<string?, string?>[] { new(NameFieldKey, SampleName) };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
+    /// <summary>Verifies a dictionary-typed property flattens to prefixed field.key entries instead of its type name.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task DictionaryPropertyFlattensToPrefixedKeys()
+    {
+        var source = new ObjectWithDictionary
+        {
+            Name = SampleName,
+            Extra = new() { { "key", "val" } }
+        };
+        var expected = new KeyValuePair<string?, string?>[]
+        {
+            new(NameFieldKey, SampleName),
+            new("Extra.key", "val")
+        };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
+    /// <summary>Verifies a dictionary of complex values recurses so each entry expands under field.key.child.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task DictionaryWithComplexValuesFlattensRecursively()
+    {
+        const int age = 42;
+        var source = new ObjectWithComplexDictionary
+        {
+            Items = new() { { "first", new() { Email = NestedEmail, Age = age } } }
+        };
+        var expected = new KeyValuePair<string?, string?>[]
+        {
+            new("Items.first.Email", NestedEmail),
+            new("Items.first.Age", "42")
+        };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
+    /// <summary>Verifies a plain collection under the default format joins its elements with commas instead of emitting its type name.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task CollectionUnderDefaultFormatJoinsWithCommas()
+    {
+        var source = new ObjectWithDefaultCollection { Numbers = [1, SecondSampleInt, ThirdSampleInt] };
+        var expected = new KeyValuePair<string?, string?>[] { new("Numbers", "1,2,3") };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
+    /// <summary>Verifies a nested property honors its <see cref="QueryAttribute"/> prefix/delimiter and nested <see cref="AliasAsAttribute"/> when composing keys.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task NestedPrefixAndAliasComposeKeys()
+    {
+        var source = new ObjectWithPrefixedNested
+        {
+            Detail = new() { Zip = "1010", City = "Wien" }
+        };
+        var expected = new KeyValuePair<string?, string?>[]
+        {
+            new("addr-Detail-z", "1010"),
+            new("addr-Detail-City", "Wien")
+        };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
+    /// <summary>Verifies a self-referential model flattens to a bounded set of entries rather than overflowing the stack.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SelfReferentialObjectStopsAtCycleWithoutOverflow()
+    {
+        var source = new SelfReferentialForm { Value = CycleRootValue };
+        source.Self = source;
+        var expected = new KeyValuePair<string?, string?>[]
+        {
+            new("Value", CycleRootValue),
+            new("Self.Value", CycleRootValue)
+        };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
     /// <summary>Projects a sequence of non-nullable key/value pairs to nullable key/value pairs.</summary>
     /// <param name="source">The non-nullable key/value pairs to project.</param>
     /// <returns>The equivalent sequence with nullable key and value types.</returns>
@@ -473,5 +614,78 @@ public class FormValueMultimapTests
         [Query("-", "prefix", "0.0")]
         [AliasAs("fr")]
         public int? Frob { get; set; }
+    }
+
+    /// <summary>Test fixture with a nested complex property that flattens to dotted keys.</summary>
+    public class ObjectWithNestedDetail
+    {
+        /// <summary>Gets or sets the scalar name value.</summary>
+        public string? Name { get; set; }
+
+        /// <summary>Gets or sets the nested detail flattened under its property name.</summary>
+        public NestedDetail? Detail { get; set; }
+    }
+
+    /// <summary>Nested detail object flattened by the enclosing fixtures.</summary>
+    public class NestedDetail
+    {
+        /// <summary>Gets or sets the email value.</summary>
+        public string? Email { get; set; }
+
+        /// <summary>Gets or sets the age value.</summary>
+        public int Age { get; set; }
+    }
+
+    /// <summary>Test fixture with a dictionary-typed property that flattens to prefixed entry keys.</summary>
+    public class ObjectWithDictionary
+    {
+        /// <summary>Gets or sets the scalar name value.</summary>
+        public string? Name { get; set; }
+
+        /// <summary>Gets the extra values flattened under their property name.</summary>
+        public Dictionary<string, string>? Extra { get; init; }
+    }
+
+    /// <summary>Test fixture with a dictionary of complex values that recurses into each entry.</summary>
+    public class ObjectWithComplexDictionary
+    {
+        /// <summary>Gets the items keyed by name and flattened per entry.</summary>
+        public Dictionary<string, NestedDetail>? Items { get; init; }
+    }
+
+    /// <summary>Test fixture with a collection property carrying no explicit collection format.</summary>
+    public class ObjectWithDefaultCollection
+    {
+        /// <summary>Gets the numbers joined using the default collection format.</summary>
+        public List<int>? Numbers { get; init; }
+    }
+
+    /// <summary>Test fixture whose nested property carries a <see cref="QueryAttribute"/> prefix and delimiter.</summary>
+    public class ObjectWithPrefixedNested
+    {
+        /// <summary>Gets or sets the nested detail whose keys compose under the query prefix and delimiter.</summary>
+        [Query("-", "addr")]
+        public PrefixedNestedDetail? Detail { get; set; }
+    }
+
+    /// <summary>Nested detail with an aliased property used to verify nested key composition.</summary>
+    public class PrefixedNestedDetail
+    {
+        /// <summary>Gets or sets the postal code renamed via <see cref="AliasAsAttribute"/>.</summary>
+        [AliasAs("z")]
+        public string? Zip { get; set; }
+
+        /// <summary>Gets or sets the city value.</summary>
+        public string? City { get; set; }
+    }
+
+    /// <summary>Test fixture that references itself to exercise the cycle guard.</summary>
+    public class SelfReferentialForm
+    {
+        /// <summary>Gets or sets the scalar value.</summary>
+        public string? Value { get; set; }
+
+        /// <summary>Gets or sets the self reference that must not cause unbounded recursion.</summary>
+        public SelfReferentialForm? Self { get; set; }
     }
 }

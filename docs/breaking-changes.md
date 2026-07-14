@@ -88,6 +88,31 @@ visible in three places.
   `[JsonProperty]` when `Refit.Newtonsoft.Json` is installed. To keep the pre-V14 behavior, set
   `RefitSettings.HonorContentSerializerPropertyNamesInQuery = false`; `[AliasAs]` still takes precedence in either mode.
 
+* **URL-encoded bodies flatten nested objects, dictionaries, and collections instead of emitting the type name.** A
+  `[Body(BodySerializationMethod.UrlEncoded)]` model whose property is a nested object, an `IDictionary`, or a plain
+  collection under the default collection format previously serialized the property's `ToString()` — the type name for
+  a complex object or dictionary. Those properties now flatten exactly like a flattened `[Query]` object: a nested
+  object contributes `parent.child=...` pairs, a dictionary contributes `parent.key=value` pairs, and a collection
+  joins its elements (comma-separated under the default format). Field naming keeps the existing precedence (`[AliasAs]`,
+  then the content serializer's property name, then the key formatter), and a nested property's `[Query(delimiter,
+  prefix)]` composes its keys.
+
+  ```csharp
+  public sealed class SignupForm
+  {
+      public string Name { get; set; }
+      public Address Detail { get; set; }
+      public Dictionary<string, string> Extra { get; set; }
+  }
+
+  Submit(new SignupForm { Name = "ada", Detail = new() { City = "Wien" }, Extra = new() { ["k"] = "v" } })
+  >>> "Name=ada&Detail.City=Wien&Extra.k=v"                       // V14: flattened
+  >>> "Name=ada&Detail=RefitGeneratorTest.Address&Extra=System..." // pre-V14: ToString
+  ```
+
+  This is a behavior change to previously unusable output, so it is extremely unlikely anyone depended on it. Complex
+  elements of a collection are still `ToString()`-ed per element (the same limitation as the query path).
+
 ### New in V14.x
 
 * **Inline query-string generation.** Query parameters — auto-appended parameters, `[AliasAs]`, `[Query(Format = ...)]`,

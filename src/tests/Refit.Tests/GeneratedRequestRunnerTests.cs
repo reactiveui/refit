@@ -352,6 +352,33 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(descriptor).IsEqualTo(reflection);
     }
 
+    /// <summary>Verifies a nested URL-encoded body flattens byte-identically through the generated reflection content
+    /// overload and the reflection request builder's <see cref="FormValueMultimap"/>.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task NestedFormBodyFlattensIdenticallyAcrossPaths()
+    {
+        const int age = 42;
+        var settings = new RefitSettings();
+        var body = new NestedParityForm
+        {
+            Name = "ada",
+            Detail = new() { Email = "a@b.com", Age = age },
+            Extra = new() { { "k", "v" } }
+        };
+
+        // The generated path for a complex body emits the reflection content overload; the reflection request builder
+        // wraps the same FormValueMultimap directly. Both must produce identical wire content.
+        var generated = await GeneratedRequestRunner
+            .CreateUrlEncodedBodyContent<NestedParityForm>(settings, body)
+            .ReadAsStringAsync();
+        var reflection = await new FormUrlEncodedContent(new FormValueMultimap(body, settings))
+            .ReadAsStringAsync();
+
+        await Assert.That(generated).IsEqualTo(reflection);
+        await Assert.That(generated).IsEqualTo("Name=ada&Detail.Email=a%40b.com&Detail.Age=42&Extra.k=v");
+    }
+
     /// <summary>Verifies that unsupported body serialization modes are rejected.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -609,6 +636,29 @@ public partial class GeneratedRequestRunnerTests
         /// <summary>Gets or sets a multi-value collection property.</summary>
         [Query(CollectionFormat.Multi)]
         public List<string>? Roles { get; set; }
+    }
+
+    /// <summary>Nested form model used to compare the generated reflection overload and the reflection request builder.</summary>
+    private sealed class NestedParityForm
+    {
+        /// <summary>Gets or sets the scalar name.</summary>
+        public string? Name { get; set; }
+
+        /// <summary>Gets or sets the nested detail flattened under its property name.</summary>
+        public NestedParityDetail? Detail { get; set; }
+
+        /// <summary>Gets the extra values flattened under their property name.</summary>
+        public Dictionary<string, string>? Extra { get; init; }
+    }
+
+    /// <summary>Nested detail for the cross-path parity fixture.</summary>
+    private sealed class NestedParityDetail
+    {
+        /// <summary>Gets or sets the email value.</summary>
+        public string? Email { get; set; }
+
+        /// <summary>Gets or sets the age value.</summary>
+        public int Age { get; set; }
     }
 
     /// <summary>Simple deserialized response model for generated runtime tests.</summary>
