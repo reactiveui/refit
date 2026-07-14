@@ -53,6 +53,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedInterface));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "Get");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
                 return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
                     this.Client,
                     refitRequest,
@@ -71,6 +72,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedInterface));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetPosts");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/posts");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
                 return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
                     this.Client,
                     refitRequest,

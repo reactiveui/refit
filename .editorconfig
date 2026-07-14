@@ -1716,8 +1716,9 @@ dotnet_diagnostic.PSH1308.severity = error # Return the completed task instead o
 dotnet_diagnostic.PSH1310.severity = error # Dispose asynchronously in async code
 dotnet_diagnostic.PSH1311.severity = error # Remove a pass-through async state machine
 dotnet_diagnostic.PSH1312.severity = error # Return a completed task, never null
-dotnet_diagnostic.PSH1313.severity = error # Call the async overload from an async method instead of blocking
+dotnet_diagnostic.PSH1313.severity = error # A synchronous call where an async overload fits
 dotnet_diagnostic.PSH1314.severity = error # Read and write streams through the memory-based overloads
+dotnet_diagnostic.PSH1315.severity = error # A blocking wait on an awaitable that may not be done
 
 # API selection
 dotnet_diagnostic.PSH1400.severity = error # Use the static HashData method for one-shot hashing
@@ -2025,7 +2026,7 @@ dotnet_diagnostic.S3433.severity = error # Test method signatures should be corr
 dotnet_diagnostic.S3443.severity = error # Type should not be examined on "System.Type" instances
 dotnet_diagnostic.S3875.severity = error # "operator==" should not be overloaded on reference types
 dotnet_diagnostic.S3877.severity = none # Exceptions should not be thrown from unexpected methods — covered by SST1485
-dotnet_diagnostic.S4462.severity = error # Calls to "async" methods should not be blocking
+dotnet_diagnostic.S4462.severity = none # Calls to "async" methods should not be blocking - covered by PSH1315
 dotnet_diagnostic.S6422.severity = error # Calls to "async" methods should not be blocking in Azure Functions
 dotnet_diagnostic.S6424.severity = error # Interfaces for durable entities should satisfy the restrictions
 
@@ -2088,9 +2089,9 @@ dotnet_diagnostic.S4524.severity = error # "default" clauses should be first or 
 dotnet_diagnostic.S4635.severity = none # Start index should be used instead of calling Substring — covered by PSH1218
 dotnet_diagnostic.S5034.severity = error # "ValueTask" should be consumed correctly
 dotnet_diagnostic.S6967.severity = error # ModelState.IsValid should be called in controller actions
-dotnet_diagnostic.S8367.severity = error # Identifiers should not conflict with the C# 14 "field" contextual keyword
-dotnet_diagnostic.S8368.severity = error # Identifiers should not conflict with the C# 14 "extension" contextual keyword
-dotnet_diagnostic.S8380.severity = error # Return types named "partial" should be escaped with "@"
+dotnet_diagnostic.S8367.severity = none # Identifiers should not conflict with the C# 14 "field" contextual keyword - the C# 14 compiler reports this: CS9273 (error) for a local named field in an accessor, CS9258 (warning) for a rebinding read
+dotnet_diagnostic.S8368.severity = none # Identifiers should not conflict with the C# 14 "extension" contextual keyword - the C# 14 compiler reports this as CS9306, and SST1300 already flags the lowercase type name
+dotnet_diagnostic.S8380.severity = none # Return types named "partial" should be escaped with "@" - the compiler reports this as CS8981, and SST1300 already flags the lowercase type name
 dotnet_diagnostic.S8381.severity = error # "scoped" should be escaped when used as an identifier or type name in parenthesized lambda parameter lists
 dotnet_diagnostic.S927.severity = none # Parameter names should match base declaration and other partial definitions - DUPLICATE CA1725
 
@@ -2293,7 +2294,7 @@ dotnet_diagnostic.S3441.severity = none # Redundant property names should be omi
 dotnet_diagnostic.S3444.severity = error # Interfaces should not simply inherit from base interfaces with colliding members
 dotnet_diagnostic.S3450.severity = error # Parameters with "[DefaultParameterValue]" attributes should also be marked "[Optional]"
 dotnet_diagnostic.S3458.severity = none # Empty "case" clauses that fall through to the "default" should be omitted — covered by SST1466
-dotnet_diagnostic.S3459.severity = error # Unassigned members should be removed
+dotnet_diagnostic.S3459.severity = none # Unassigned members should be removed - the compiler reports this as CS0649; the rule only ever fires on private never-assigned fields
 dotnet_diagnostic.S3532.severity = none # Empty "default" clauses should be removed — covered by SST1179
 dotnet_diagnostic.S3604.severity = none # Member initializer values should not be redundant — covered by PSH1403
 dotnet_diagnostic.S3626.severity = none # Jump statements should not be redundant — covered by SST1174

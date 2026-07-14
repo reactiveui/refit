@@ -57,6 +57,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "Get");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users/{user}");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { @user }); }
                 return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
                     this.Client,
                     refitRequest,

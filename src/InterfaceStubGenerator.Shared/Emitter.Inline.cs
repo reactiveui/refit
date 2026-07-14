@@ -28,9 +28,9 @@ internal static partial class Emitter
     /// <summary>The cast prefix for an explicit collection format value.</summary>
     private const string CollectionFormatCast = "(global::Refit.CollectionFormat)";
 
-    /// <summary>The count of request options emitted for every inline method: the configured options, the method name,
-    /// and the raw route template.</summary>
-    private const int AlwaysEmittedRequestOptionCount = 3;
+    /// <summary>The count of request-property statements every inline method emits unconditionally: the configured-options
+    /// call, the method name, the raw route template, and the method-argument capture block.</summary>
+    private const int UnconditionalRequestPropertyCount = 4;
 
     /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
@@ -199,7 +199,7 @@ internal static partial class Emitter
         }
 
         var headerSource = BuildInlineHeaders(request, requestLocal);
-        var requestPropertySource = BuildInlineRequestProperties(methodModel, interfaceModel, requestLocal, settingsLocal);
+        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, methodModel, requestLocal, settingsLocal);
         var methodIndent = Indent(MethodMemberIndentation);
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
         var methodPrefix = $"{plan.ParamInfoBuilder}{formFieldsSource}{httpMethodFieldSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
@@ -520,19 +520,20 @@ internal static partial class Emitter
     }
 
     /// <summary>Builds request-option/property application for an inline generated method.</summary>
-    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="request">The parsed request model.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
+    /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated request option/property statements.</returns>
     private static string BuildInlineRequestProperties(
-        MethodModel methodModel,
+        RequestModel request,
         InterfaceModel interfaceModel,
+        MethodModel methodModel,
         string requestLocal,
         string settingsLocal)
     {
-        var request = methodModel.Request;
-        var parts = new string[AlwaysEmittedRequestOptionCount + interfaceModel.Properties.Count + request.Parameters.Count];
+        var parts = new string[UnconditionalRequestPropertyCount + interfaceModel.Properties.Count + request.Parameters.Count];
         var count = 0;
         var bodyIndent = Indent(MethodBodyIndentation);
         parts[count] =
@@ -549,6 +550,15 @@ internal static partial class Emitter
         parts[count] =
             $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<string>({requestLocal}, "
             + $"global::Refit.HttpRequestMessageOptions.RelativePathTemplate, {ToCSharpStringLiteral(request.Path)});\n";
+        count++;
+
+        // Capture the declared-order argument values only when RefitSettings.CaptureMethodArguments opts in, so the
+        // object[] allocation is paid per call solely when a handler needs the values. The nullable annotation is
+        // gated on the target language version so the C# 7.3 baseline still compiles.
+        var argumentsArrayType = interfaceModel.SupportsNullable ? "object?[]" : "object[]";
+        parts[count] =
+            $"{bodyIndent}if ({settingsLocal}.CaptureMethodArguments) {{ global::Refit.GeneratedRequestRunner.AddRequestProperty<{argumentsArrayType}>"
+            + $"({requestLocal}, global::Refit.HttpRequestMessageOptions.MethodArguments, {BuildMethodArgumentsCaptureLiteral(methodModel, interfaceModel.SupportsNullable)}); }}\n";
         count++;
 
         foreach (var property in interfaceModel.Properties)

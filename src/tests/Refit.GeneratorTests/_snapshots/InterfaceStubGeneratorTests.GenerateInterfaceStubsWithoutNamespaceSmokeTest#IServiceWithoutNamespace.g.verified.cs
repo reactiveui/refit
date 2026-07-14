@@ -53,6 +53,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::IServiceWithoutNamespace));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetRoot");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
                 return global::Refit.GeneratedRequestRunner.SendVoidAsync(
                     this.Client,
                     refitRequest,
@@ -69,6 +70,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::IServiceWithoutNamespace));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "PostRoot");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
                 return global::Refit.GeneratedRequestRunner.SendVoidAsync(
                     this.Client,
                     refitRequest,

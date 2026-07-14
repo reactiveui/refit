@@ -58,6 +58,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUser");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users/{username}");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { @userName }); }
                 return global::Refit.GeneratedRequestRunner.SendAsync<global::Refit.Tests.User, global::Refit.Tests.User>(
                     this.Client,
                     refitRequest,
@@ -83,6 +84,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUserObservable");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users/{username}");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { @userName }); }
                     return refitRequest;
                 }
                 return global::Refit.GeneratedRequestRunner.SendObservable<global::Refit.Tests.User, global::Refit.Tests.User>(
@@ -110,6 +112,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUserCamelCase");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users/{userName}");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { @userName }); }
                     return refitRequest;
                 }
                 return global::Refit.GeneratedRequestRunner.SendObservable<global::Refit.Tests.User, global::Refit.Tests.User>(
@@ -135,6 +138,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetOrgMembers");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/orgs/{orgname}/members");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { @orgName }); }
                 return global::Refit.GeneratedRequestRunner.SendAsync<global::System.Collections.Generic.List<global::Refit.Tests.User>, global::System.Collections.Generic.List<global::Refit.Tests.User>>(
                     this.Client,
                     refitRequest,
@@ -163,6 +167,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "FindUsers");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/search/users");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { @q }); }
                 return global::Refit.GeneratedRequestRunner.SendAsync<global::Refit.Tests.UserSearchResult, global::Refit.Tests.UserSearchResult>(
                     this.Client,
                     refitRequest,
@@ -182,6 +187,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetIndex");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
                 return global::Refit.GeneratedRequestRunner.SendAsync<global::System.Net.Http.HttpResponseMessage, global::System.Net.Http.HttpResponseMessage>(
                     this.Client,
                     refitRequest,
@@ -203,6 +209,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetIndexObservable");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
                     return refitRequest;
                 }
                 return global::Refit.GeneratedRequestRunner.SendObservable<string, string>(
@@ -224,6 +231,7 @@ namespace Refit.Implementation
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "NothingToSeeHere");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/give-me-some-404-action");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
                 return global::Refit.GeneratedRequestRunner.SendVoidAsync(
                     this.Client,
                     refitRequest,
