@@ -76,6 +76,7 @@ lets you stub responses and verify requests with a declarative route table — s
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
 * [Interface inheritance](#interface-inheritance)
+    * [Composing multiple APIs into one client](#composing-multiple-apis-into-one-client)
     * [Headers inheritance](#headers-inheritance)
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
@@ -1758,6 +1759,48 @@ public interface IDerivedServiceB : IBaseService
 In this example, the `IDerivedServiceA` interface will expose both the `GetResource` and `DeleteResource` APIs, while
 `IDerivedServiceB` will expose `GetResource` and `AddResource`.
 
+#### Composing multiple APIs into one client
+
+The generator walks the full interface hierarchy, so you can split a large API by resource area into focused interfaces
+and then aggregate them into a single client that declares nothing of its own:
+
+```csharp
+public interface IUsersApi
+{
+    [Get("/users/{user}")]
+    Task<User> GetUser(string user);
+}
+
+public interface IReposApi
+{
+    [Get("/users/{user}/repos")]
+    Task<List<Repo>> GetRepos(string user);
+}
+
+// The aggregate client has no members of its own; it just composes the two APIs.
+public interface IGitHubApi : IUsersApi, IReposApi;
+```
+
+The composed client exposes every method from both base interfaces:
+
+```csharp
+var api = RestService.For<IGitHubApi>("https://api.github.com");
+
+var user = await api.GetUser("octocat");     // from IUsersApi
+var repos = await api.GetRepos("octocat");   // from IReposApi
+```
+
+It works the same way with `HttpClientFactory` and dependency injection:
+
+```csharp
+builder.Services
+    .AddRefitClient<IGitHubApi>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
+```
+
+Each sub-interface (`IUsersApi`, `IReposApi`) can also be registered independently if some consumers only need one area,
+and the header-attribute precedence rules described just below still apply to the composed client.
+
 #### Headers inheritance
 
 When using inheritance, existing header attributes will be passed along as well, and the inner-most ones will have
@@ -2058,6 +2101,13 @@ else
     _logger.LogError(response.Error, "An error occurred while calling the API.");
 }
 ```
+
+> [!NOTE]
+> Migrating from v8-v11? `response.Error.Content` no longer compiles since v12. `Error` is now typed as
+> `ApiExceptionBase?` (request-side context only), so the response body moved to the derived `ApiException`. Read it via
+> `response.HasResponseError(out var apiException)` (as shown above) and then `apiException.Content`, or cast with
+> `(response.Error as ApiException)?.Content`. See the
+> [V12.x.x breaking changes](docs/breaking-changes.md#v12xx) for the full before/after.
 
 > [!NOTE]
 > The `IsSuccessful` property checks whether the response status code is in the range 200-299 and there wasn't any other
