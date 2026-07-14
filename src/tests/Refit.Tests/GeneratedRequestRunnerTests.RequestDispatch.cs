@@ -60,50 +60,38 @@ public partial class GeneratedRequestRunnerTests
     /// <summary>Verifies that generated header assignment sends a malformed value verbatim when validation is disabled.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task SetHeaderWithoutValidationSendsMalformedValueVerbatim()
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
-
-        GeneratedRequestRunner.SetHeader(request, ValidatedHeaderName, MalformedHeaderValue, validateHeaders: false);
-
-        await Assert.That(request.Headers.GetValues(ValidatedHeaderName)).IsCollectionEqualTo([MalformedHeaderValue]);
-    }
+    public Task SetHeaderWithoutValidationSendsMalformedValueVerbatim() =>
+        HeaderValidationScenarios.SendsMalformedValueVerbatimWithoutValidation(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
 
     /// <summary>Verifies that generated header assignment throws for a malformed value when validation is enabled.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task SetHeaderWithValidationThrowsForMalformedValue()
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
-
-        await Assert.That(() => GeneratedRequestRunner.SetHeader(request, ValidatedHeaderName, MalformedHeaderValue, validateHeaders: true))
-            .Throws<FormatException>();
-    }
+    public Task SetHeaderWithValidationThrowsForMalformedValue() =>
+        HeaderValidationScenarios.ThrowsForMalformedValueWithValidation(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
 
     /// <summary>Verifies that generated header assignment stores a well-formed value when validation is enabled.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task SetHeaderWithValidationAddsWellFormedRequestHeader()
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
-
-        GeneratedRequestRunner.SetHeader(request, ValidatedHeaderName, ValidatedHeaderValue, validateHeaders: true);
-
-        await Assert.That(request.Headers.GetValues(ValidatedHeaderName)).IsCollectionEqualTo([ValidatedHeaderValue]);
-    }
+    public Task SetHeaderWithValidationAddsWellFormedRequestHeader() =>
+        HeaderValidationScenarios.AddsWellFormedRequestHeaderWithValidation(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
 
     /// <summary>Verifies that a validated content header falls back to the content collection when misused on the request headers.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task SetHeaderWithValidationFallsBackToContentHeader()
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath);
+    public Task SetHeaderWithValidationFallsBackToContentHeader() =>
+        HeaderValidationScenarios.FallsBackToContentHeaderWithValidation(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
 
-        GeneratedRequestRunner.SetHeader(request, ContentLanguageHeaderName, ContentLanguageValue, validateHeaders: true);
+    /// <summary>Verifies that a validated content header is dropped when there is no content collection to receive it.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public Task SetHeaderWithValidationDropsContentHeaderWithoutContent() =>
+        HeaderValidationScenarios.DropsContentHeaderWithoutContentWithValidation(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
 
-        await Assert.That(request.Content).IsNotNull();
-        await Assert.That(request.Content!.Headers.ContentLanguage).IsCollectionEqualTo([ContentLanguageValue]);
-    }
+    /// <summary>Verifies that without validation a content header is dropped when there is no content collection to receive it.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public Task SetHeaderWithoutValidationDropsContentHeaderWithoutContent() =>
+        HeaderValidationScenarios.DropsContentHeaderWithoutContentWithoutValidation(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
 
     /// <summary>Verifies that header collections are optional and replace earlier values by key.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
