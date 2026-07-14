@@ -21,10 +21,6 @@ public static partial class GeneratedRequestRunner
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated callers.")]
-    [SuppressMessage(
-        "Usage",
-        "CA2208:Instantiate argument exceptions correctly",
-        Justification = "The exception matches existing Refit body-serialization behavior.")]
     public static HttpContent CreateBodyContent<TBody>(
         RefitSettings settings,
         TBody body,

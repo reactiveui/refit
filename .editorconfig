@@ -1592,6 +1592,7 @@ dotnet_diagnostic.SST2305.severity = error # A mutable collection property decla
 dotnet_diagnostic.SST2306.severity = error # A collection-returning member hands back null
 dotnet_diagnostic.SST2307.severity = error # A generic method has a type parameter that cannot be inferred from its parameters
 dotnet_diagnostic.SST2308.severity = error # An [Obsolete] attribute carries no message
+dotnet_diagnostic.SST2309.severity = error # An externally visible member declares an optional parameter, so callers bake in the default
 
 # Correctness
 dotnet_diagnostic.SST2400.severity = error # Two arguments name each other's parameters and have been transposed
@@ -2040,7 +2041,7 @@ dotnet_diagnostic.S2302.severity = error # "nameof" should be used
 dotnet_diagnostic.S2330.severity = error # Array covariance should not be used
 dotnet_diagnostic.S2339.severity = error # Public constant members should not be used
 dotnet_diagnostic.S2346.severity = none # Flags enumerations zero-value members should be named "None" - DUPLICATE CA1008
-dotnet_diagnostic.S2360.severity = error # Optional parameters should not be used
+dotnet_diagnostic.S2360.severity = none # Optional parameters should not be used — covered by SST2309
 dotnet_diagnostic.S2365.severity = none # Properties should not make collection or array copies — covered by PSH1017
 dotnet_diagnostic.S2479.severity = none # Whitespace and control characters in string literals should be explicit — covered by SST1192
 dotnet_diagnostic.S2692.severity = error # "IndexOf" checks should not be for positive numbers

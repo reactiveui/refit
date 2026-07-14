@@ -32,8 +32,8 @@ public interface IRequestBuilder
     /// <returns>A delegate that takes an HttpClient and an array of argument values, and returns the result of invoking the
     /// specified REST method. The return type matches the method's declared return type.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "The optional parameters are part of Refit's public request-builder contract and are relied on by the Refit source generator and existing callers.")]
     [RequiresUnreferencedCode("Building request delegates from reflected method metadata requires generic method metadata to be available at runtime.")]
     [RequiresDynamicCode("Building request delegates from reflected method metadata requires runtime generic method instantiation.")]

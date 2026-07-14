@@ -77,8 +77,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized or wrapped response.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "CodeQuality",
-        "S1541:Methods and properties should not be too complex",
+        "Maintainability",
+        "SST1442:A function has too many direct branch points",
         Justification = "This is Refit's shared response state machine; keeping it centralized avoids duplicated generated/reflection hot paths.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Design",
@@ -676,10 +676,6 @@ internal static class RequestExecutionHelpers
     /// <param name="content">The content to buffer.</param>
     /// <param name="cancellationToken">A token to cancel buffering.</param>
     /// <returns>A task that completes once buffering has been attempted.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Best-effort buffering matches the existing runtime response path.")]
     private static async Task TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
     {
         try

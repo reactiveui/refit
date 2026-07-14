@@ -150,10 +150,6 @@ public partial class SerializedContentTests
     /// <summary>Marker request type used to verify serialization when the declared type is an interface.</summary>
     [SuppressMessage(
         "Design",
-        "CA1040:Avoid empty interfaces",
-        Justification = "Intentional empty fixture interface used to verify Refit serialization when the declared type is an interface.")]
-    [SuppressMessage(
-        "Design",
         "SST1437:Add members to type or remove it",
         Justification = "Intentional empty fixture interface used to verify Refit serialization when the declared type is an interface.")]
     public interface InterfaceCreateWeaponRequest;

@@ -444,11 +444,9 @@ public class FormValueMultimapTests
     public class ClassWithInaccessibleGetters
     {
         /// <summary>Gets or sets the first value, whose getter is internal and therefore inaccessible to serialization.</summary>
-        [SuppressMessage("Design", "CA1044:Properties should not be write only", Justification = "Intentional inaccessible getter to verify FormValueMultimap excludes it.")]
         public string? A { internal get; set; }
 
         /// <summary>Gets or sets the second value, whose getter is private and therefore inaccessible to serialization.</summary>
-        [SuppressMessage("Design", "CA1044:Properties should not be write only", Justification = "Intentional inaccessible getter to verify FormValueMultimap excludes it.")]
         public string? B { private get; set; }
 
         /// <summary>Gets the concatenation of the two inaccessible values.</summary>

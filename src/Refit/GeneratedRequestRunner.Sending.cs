@@ -135,8 +135,8 @@ public static partial class GeneratedRequestRunner
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated callers.")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "The optional CancellationToken carries the [EnumeratorCancellation] token for the await-foreach WithCancellation pattern.")]
     [ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
     public static async IAsyncEnumerable<T?> StreamAsync<T>(

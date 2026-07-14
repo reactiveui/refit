@@ -12,14 +12,20 @@ public interface ICancellableMethods
     /// <summary>Gets a resource supporting cancellation.</summary>
     /// <param name="token">A token used to cancel the request.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    [SuppressMessage("Major Code Smell", "S2360:Optional parameters should not be used", Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
+    [SuppressMessage(
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
+        Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
     [Get("/foo")]
     Task GetWithCancellation(CancellationToken token = default);
 
     /// <summary>Gets a resource supporting cancellation and returning content.</summary>
     /// <param name="token">A token used to cancel the request.</param>
     /// <returns>A task that resolves to the response content.</returns>
-    [SuppressMessage("Major Code Smell", "S2360:Optional parameters should not be used", Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
+    [SuppressMessage(
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
+        Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
     [Get("/foo")]
     Task<string> GetWithCancellationAndReturn(CancellationToken token = default);
 
@@ -27,7 +33,10 @@ public interface ICancellableMethods
     /// <param name="id">The identifier of the resource to fetch.</param>
     /// <param name="token">An optional token used to cancel the request.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    [SuppressMessage("Major Code Smell", "S2360:Optional parameters should not be used", Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
+    [SuppressMessage(
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
+        Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
     [Get("/foo/{id}")]
     Task GetWithNullableCancellation(int id, CancellationToken? token = default);
 }

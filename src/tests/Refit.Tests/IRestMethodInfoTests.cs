@@ -676,8 +676,8 @@ public interface IRestMethodInfoTests
     /// <param name="filters">The optional multi-value filter query parameter.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "Refit interface stub intentionally uses optional parameters to exercise default-value handling.")]
     [Get("/api/{id}")]
     Task MultipleQueryAttributes(
@@ -693,8 +693,8 @@ public interface IRestMethodInfoTests
     /// <param name="filters">The optional multi-value filter query parameter.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "Refit interface stub intentionally uses optional parameters to exercise default-value handling.")]
     [Get("/api/{id}")]
     Task NullableValues(

@@ -1,7 +1,6 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Diagnostics.CodeAnalysis;
 
 namespace Refit.Generator;
 
@@ -38,11 +37,6 @@ internal static partial class Emitter
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
     /// <returns>The generated method implementation.</returns>
-    [SuppressMessage(
-        "Usage",
-        "CA2208:Instantiate argument exceptions correctly",
-        Justification =
-            "The ArgumentOutOfRangeException intentionally reports the offending model property (ReturnTypeMetadata) rather than a method parameter.")]
     private static string BuildRefitMethod(
         MethodModel methodModel,
         bool isTopLevel,

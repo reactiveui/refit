@@ -241,10 +241,6 @@ public class ApiException : ApiExceptionBase
         "Usage",
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Public API name preserved for backwards compatibility.")]
-    [SuppressMessage(
-        "Major Code Smell",
-        "CA1031:Do not catch general exception types",
-        Justification = "Best-effort content read while already handling an error; any failure must not hide the original error.")]
     public static async Task<ApiException> Create(
         string exceptionMessage,
         HttpRequestMessage message,
@@ -364,10 +360,6 @@ public class ApiException : ApiExceptionBase
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [SuppressMessage(
-        "Major Code Smell",
-        "CA1031:Do not catch general exception types",
-        Justification = "Try-pattern peek into an error body must never throw; any failure simply yields false.")]
     public bool TryGetContentAs<T>(out T? content)
     {
         content = default;

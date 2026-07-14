@@ -14,14 +14,20 @@ public interface ICancellableApi
     /// <summary>Gets with a cancellation token.</summary>
     /// <param name="token">A token used to cancel the request.</param>
     /// <returns>A task that completes when the request finishes.</returns>
-    [SuppressMessage("Major Code Smell", "S2360:Optional parameters should not be used", Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
+    [SuppressMessage(
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
+        Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
     [Get("/foo")]
     Task GetWithCancellation(CancellationToken token = default);
 
     /// <summary>Gets with a cancellation token and a string return value.</summary>
     /// <param name="token">A token used to cancel the request.</param>
     /// <returns>The response body as a string.</returns>
-    [SuppressMessage("Major Code Smell", "S2360:Optional parameters should not be used", Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
+    [SuppressMessage(
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
+        Justification = "The optional CancellationToken is the idiomatic Refit signature this test verifies.")]
     [Get("/foo")]
     Task<string> GetWithCancellationAndReturn(CancellationToken token = default);
 

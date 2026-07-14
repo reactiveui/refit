@@ -161,8 +161,8 @@ public sealed class SystemTextJsonQueryConverterTests
     {
         /// <summary>Gets or sets the collection of tags.</summary>
         [SuppressMessage(
-            "Usage",
-            "CA2227:Collection properties should be read only",
+            "Design",
+            "SST2305:A mutable collection property declares a caller-visible setter",
             Justification = "The converter walks the deserialized shape; a settable collection matches System.Text.Json models.")]
         public List<string?>? Tags { get; set; }
     }

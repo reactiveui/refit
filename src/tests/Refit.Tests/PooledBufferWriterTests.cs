@@ -117,7 +117,6 @@ public class PooledBufferWriterTests
     /// <summary>Verifies detached stream metadata and partial reads.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Performance", "CA1835:Prefer the memory-based overloads", Justification = "This test intentionally covers the byte-array Stream override.")]
     public async Task DetachedStreamReportsLengthPositionAndPartialReads()
     {
         using var writer = CreateWriter(1, MarkerByteTwo, MarkerByteThree);

@@ -119,8 +119,8 @@ internal static partial class Emitter
     /// <param name="builder">The target builder.</param>
     /// <param name="character">The character to append.</param>
     [SuppressMessage(
-        "CodeQuality",
-        "S1541:Methods and properties should not be too complex",
+        "Maintainability",
+        "SST1442:A function has too many direct branch points",
         Justification = "A compact switch avoids a dictionary or repeated helper calls on the generator hot path.")]
     internal static void AppendEscapedCharacter(PooledStringBuilder builder, char character) =>
         _ = character switch

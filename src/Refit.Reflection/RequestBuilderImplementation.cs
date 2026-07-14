@@ -586,10 +586,6 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S2326:Unused type parameters should be removed",
-        Justification = "The second type parameter is required so this factory matches the two-type-argument shape invoked reflectively by BuildResultFuncForMethod.")]
-    [SuppressMessage(
         "StyleSharp",
         "SST1452:Unused type parameters should be removed",
         Justification = "The second type parameter is required so this factory matches the two-type-argument shape invoked reflectively by BuildResultFuncForMethod.")]

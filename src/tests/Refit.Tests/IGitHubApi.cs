@@ -38,8 +38,8 @@ public interface IGitHubApi
     /// <param name="cancellationToken">A token used to cancel the request.</param>
     /// <returns>The organization members.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "The optional CancellationToken is the idiomatic Refit signature and the generated-code snapshot depends on this exact single method shape.")]
     [Get("/orgs/{orgname}/members")]
     Task<List<User>> GetOrgMembers(string orgName, CancellationToken cancellationToken = default);
@@ -79,8 +79,8 @@ public interface IGitHubApi
     /// <param name="cancellationToken">A token used to cancel the request.</param>
     /// <returns>The API response, including status and headers.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "The optional CancellationToken is the idiomatic Refit signature and the generated-code snapshot depends on this exact single method shape.")]
     [Get("/users/{username}")]
     Task<ApiResponse<User>> GetUserWithMetadata(string userName, CancellationToken cancellationToken = default);
