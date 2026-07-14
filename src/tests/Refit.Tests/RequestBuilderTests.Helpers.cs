@@ -26,6 +26,15 @@ public partial class RequestBuilderTests
     /// <summary>A value that fails the <see cref="ValidatedHeaderName"/> parser but is accepted verbatim without validation.</summary>
     private const string MalformedHeaderValue = "not a date";
 
+    /// <summary>A value the <see cref="ValidatedHeaderName"/> parser accepts, used to cover the validated success path.</summary>
+    private const string ValidatedHeaderValue = "Wed, 21 Oct 2015 07:28:00 GMT";
+
+    /// <summary>A content header whose name is misused on the request header collection, forcing the content fallback.</summary>
+    private const string ContentHeaderName = "Content-Language";
+
+    /// <summary>A value the <see cref="ContentHeaderName"/> parser accepts.</summary>
+    private const string ContentHeaderValue = "en-US";
+
     /// <summary>The dictionary key the test formatter renders as blank.</summary>
     private const string BlankDictionaryKey = "blank";
 
@@ -292,6 +301,60 @@ public partial class RequestBuilderTests
 
         await Assert.That(() => RequestBuilderImplementation.SetHeader(request, ValidatedHeaderName, MalformedHeaderValue, validateHeaders: true))
             .Throws<FormatException>();
+    }
+
+    /// <summary>Enabling validation stores a well-formed value on the request header collection.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SetHeaderWithValidationAddsWellFormedRequestHeader()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, ApiBaseUrlWithSlash);
+
+        RequestBuilderImplementation.SetHeader(request, ValidatedHeaderName, ValidatedHeaderValue, validateHeaders: true);
+
+        await Assert.That(request.Headers.GetValues(ValidatedHeaderName)).IsEquivalentTo([ValidatedHeaderValue]);
+    }
+
+    /// <summary>Enabling validation applies a content header to the request's content collection when it is misused on the request headers.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SetHeaderWithValidationFallsBackToContentHeader()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrlWithSlash)
+        {
+            Content = new StringContent("body")
+        };
+
+        RequestBuilderImplementation.SetHeader(request, ContentHeaderName, ContentHeaderValue, validateHeaders: true);
+
+        await Assert.That(request.Content.Headers.ContentLanguage).IsEquivalentTo([ContentHeaderValue]);
+        await Assert.That(request.Headers.Any()).IsFalse();
+    }
+
+    /// <summary>Enabling validation drops a content header when there is no content collection to receive it.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SetHeaderWithValidationDropsContentHeaderWithoutContent()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, ApiBaseUrlWithSlash);
+
+        RequestBuilderImplementation.SetHeader(request, ContentHeaderName, ContentHeaderValue, validateHeaders: true);
+
+        await Assert.That(request.Content).IsNull();
+        await Assert.That(request.Headers.Any()).IsFalse();
+    }
+
+    /// <summary>Without validation a content header is dropped when there is no content collection to receive it.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SetHeaderWithoutValidationDropsContentHeaderWithoutContent()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, ApiBaseUrlWithSlash);
+
+        RequestBuilderImplementation.SetHeader(request, ContentHeaderName, ContentHeaderValue, validateHeaders: false);
+
+        await Assert.That(request.Content).IsNull();
+        await Assert.That(request.Headers.Any()).IsFalse();
     }
 
     /// <summary>A complex query value expanded into nested query-string keys.</summary>

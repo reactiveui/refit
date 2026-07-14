@@ -80,6 +80,31 @@ public partial class GeneratedRequestRunnerTests
             .Throws<FormatException>();
     }
 
+    /// <summary>Verifies that generated header assignment stores a well-formed value when validation is enabled.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SetHeaderWithValidationAddsWellFormedRequestHeader()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+
+        GeneratedRequestRunner.SetHeader(request, ValidatedHeaderName, ValidatedHeaderValue, validateHeaders: true);
+
+        await Assert.That(request.Headers.GetValues(ValidatedHeaderName)).IsCollectionEqualTo([ValidatedHeaderValue]);
+    }
+
+    /// <summary>Verifies that a validated content header falls back to the content collection when misused on the request headers.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SetHeaderWithValidationFallsBackToContentHeader()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath);
+
+        GeneratedRequestRunner.SetHeader(request, ContentLanguageHeaderName, ContentLanguageValue, validateHeaders: true);
+
+        await Assert.That(request.Content).IsNotNull();
+        await Assert.That(request.Content!.Headers.ContentLanguage).IsCollectionEqualTo([ContentLanguageValue]);
+    }
+
     /// <summary>Verifies that header collections are optional and replace earlier values by key.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
