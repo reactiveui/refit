@@ -81,6 +81,60 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(disposalTracker.DisposedCount).IsEqualTo(ConcurrentRequestCount);
     }
 
+    /// <summary>Verifies the scoped provider keeps the request's own authorization scheme rather than falling back to the default (#1679).</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task AddAuthorizationHeaderValueProviderPreservesRequestAuthorizationScheme()
+    {
+        const string customScheme = "Custom";
+        var capturingHandler = new CapturingAuthorizationHandler();
+        var services = new ServiceCollection();
+
+        var builder = services.AddRefitClient<IFooWithOtherAttribute>(
+            new RefitSettings { HttpMessageHandlerFactory = () => capturingHandler });
+        _ = builder.AddAuthorizationHeaderValueProvider(
+            static (_, _, _) => new ValueTask<string>(FirstRequestToken));
+
+        var serviceProvider = services.BuildServiceProvider();
+        var factory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        var client = factory.CreateClient(builder.Name);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ScopedRequestUri))
+        {
+            Headers = { Authorization = new(customScheme) }
+        };
+        using var response = await client.SendAsync(request);
+
+        await Assert.That(capturingHandler.Scheme).IsEqualTo(customScheme);
+        await Assert.That(capturingHandler.Parameter).IsEqualTo(FirstRequestToken);
+    }
+
+    /// <summary>Verifies an empty resolved token drops the authorization header rather than sending a blank scheme (#1688).</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task AddAuthorizationHeaderValueProviderWithEmptyTokenRemovesAuthorizationHeader()
+    {
+        var capturingHandler = new CapturingAuthorizationHandler();
+        var services = new ServiceCollection();
+
+        var builder = services.AddRefitClient<IFooWithOtherAttribute>(
+            new RefitSettings { HttpMessageHandlerFactory = () => capturingHandler });
+        _ = builder.AddAuthorizationHeaderValueProvider(
+            static (_, _, _) => new ValueTask<string>(string.Empty));
+
+        var serviceProvider = services.BuildServiceProvider();
+        var factory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        var client = factory.CreateClient(builder.Name);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ScopedRequestUri))
+        {
+            Headers = { Authorization = new("Bearer", "preset-token") }
+        };
+        using var response = await client.SendAsync(request);
+
+        await Assert.That(capturingHandler.HadAuthorizationHeader).IsFalse();
+    }
+
     /// <summary>Carries a per-request token through ambient <see cref="AsyncLocal{T}"/> state, standing in for a host-registered accessor.</summary>
     private sealed class AmbientToken
     {
@@ -133,6 +187,31 @@ public partial class HttpClientFactoryExtensionsTests
             var parameter = request.Headers.Authorization?.Parameter ?? string.Empty;
             await onRequest().ConfigureAwait(false);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(parameter) };
+        }
+    }
+
+    /// <summary>Terminal handler that records the authorization header exactly as the scoped handler left it.</summary>
+    private sealed class CapturingAuthorizationHandler : HttpMessageHandler
+    {
+        /// <summary>Gets a value indicating whether the request still carried an authorization header.</summary>
+        public bool HadAuthorizationHeader { get; private set; }
+
+        /// <summary>Gets the scheme of the received authorization header, or null when none was sent.</summary>
+        public string? Scheme { get; private set; }
+
+        /// <summary>Gets the parameter of the received authorization header, or null when none was sent.</summary>
+        public string? Parameter { get; private set; }
+
+        /// <inheritdoc/>
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var authorization = request.Headers.Authorization;
+            HadAuthorizationHeader = authorization is not null;
+            Scheme = authorization?.Scheme;
+            Parameter = authorization?.Parameter;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
         }
     }
 }

@@ -257,6 +257,27 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(result).IsEqualTo("Ok");
     }
 
+    /// <summary>Verifies the handler strips an already-present authorization header when the token getter yields an empty token (#1688).</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task AuthenticatedHandlerRemovesPresentAuthorizationHeaderWhenTokenIsEmpty()
+    {
+        var terminalHandler = new TestHttpMessageHandler();
+        var handler = new AuthenticatedHttpClientHandler(
+            terminalHandler,
+            static (_, _) => new ValueTask<string>(string.Empty));
+        var httpClient = new HttpClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, AuthUrl)
+        {
+            Headers = { Authorization = new("Bearer", TokenValue) }
+        };
+
+        using var response = await httpClient.SendAsync(request);
+
+        await Assert.That(response.IsSuccessStatusCode).IsTrue();
+        await Assert.That(terminalHandler.RequestMessage!.Headers.Authorization).IsNull();
+    }
+
     /// <summary>Verifies authentication works when the token is supplied as a method parameter.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
