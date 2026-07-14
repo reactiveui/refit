@@ -265,6 +265,10 @@ internal partial class RequestBuilderImplementation
     {
         var cancellationToken = CancellationToken.None;
 
+        // Retain the full declared-order arguments (including any CancellationToken) so a captured MethodArguments
+        // option aligns 1:1 with MethodInfo.GetParameters(); request mapping below uses the token-stripped copy.
+        var declaredArguments = paramList;
+
         if (paramsContainsCancellationToken)
         {
             cancellationToken = GetCancellationToken(paramList);
@@ -292,7 +296,7 @@ internal partial class RequestBuilderImplementation
             await AddAuthorizationHeadersFromGetterAsync(ret, cancellationToken)
                 .ConfigureAwait(false);
 
-            AddPropertiesToRequest(restMethod, ret, paramList);
+            AddPropertiesToRequest(restMethod, ret, paramList, declaredArguments);
 #if NET6_0_OR_GREATER
             AddVersionToRequest(ret);
 #endif
