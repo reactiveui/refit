@@ -26,6 +26,9 @@ public class ExplicitInterfaceRefitTests
     /// <summary>Plain text content returned by the stubbed responses.</summary>
     private const string HelloContent = "hello";
 
+    /// <summary>The plain text media type used by the stubbed responses.</summary>
+    private const string PlainTextMediaType = "text/plain";
+
     /// <summary>A simple interface whose member is reused by explicit-implementation fixtures.</summary>
     public interface IFoo
     {
@@ -183,7 +186,7 @@ public class ExplicitInterfaceRefitTests
         {
             {
                 Route.Get(ResourceUrl),
-                Reply.Text(HelloContent, "text/plain")
+                Reply.Text(HelloContent, PlainTextMediaType)
             },
         };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
@@ -205,7 +208,7 @@ public class ExplicitInterfaceRefitTests
         {
             {
                 Route.Get(ResourceUrl),
-                Reply.Text(HelloContent, "text/plain")
+                Reply.Text(HelloContent, PlainTextMediaType)
             },
         };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
@@ -276,7 +279,7 @@ public class ExplicitInterfaceRefitTests
         {
             {
                 Route.Get(ResourceUrl),
-                Reply.Text(HelloContent, "text/plain")
+                Reply.Text(HelloContent, PlainTextMediaType)
             },
         };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);

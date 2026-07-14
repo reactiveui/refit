@@ -15,6 +15,9 @@ public class GeneratedCodeComplianceTests
     /// <summary>The generated implementation hint name used by compatibility tests.</summary>
     private const string GeneratedClientHintName = "IGeneratedClient.g.cs";
 
+    /// <summary>The <c>#nullable</c> directive that must be absent from C# 7.3-targeted generated source.</summary>
+    private const string NullableDirective = "#nullable";
+
     /// <summary>Verifies generated source compiles for projects using C# 7.3.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -43,9 +46,102 @@ public class GeneratedCodeComplianceTests
         await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
         foreach (var generatedSource in result.GeneratedSources)
         {
-            await Assert.That(generatedSource.Value).DoesNotContain("#nullable");
+            await Assert.That(generatedSource.Value).DoesNotContain(NullableDirective);
             await Assert.That(generatedSource.Value).DoesNotContain("static (");
         }
+    }
+
+    /// <summary>Verifies the unrolled form-url-encoded fast path compiles down to the C# 7.3 baseline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GeneratedFormBodyUnrollCompilesWithCSharp73Baseline()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest
+            {
+                /// <summary>A scalar form body.</summary>
+                public class LoginForm
+                {
+                    /// <summary>Gets or sets the user name.</summary>
+                    public string UserName { get; set; }
+
+                    /// <summary>Gets or sets the age.</summary>
+                    public int Age { get; set; }
+                }
+
+                /// <summary>Generated client test interface.</summary>
+                public interface IGeneratedClient
+                {
+                    /// <summary>Posts a scalar form body.</summary>
+                    /// <param name="form">The form body.</param>
+                    /// <returns>A task representing the request.</returns>
+                    [Post("/login")]
+                    Task Login([Body(BodySerializationMethod.UrlEncoded)] LoginForm form);
+                }
+            }
+            """;
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true, LanguageVersion.CSharp7_3);
+
+        // A stray nullable annotation ('string?') or C# 9 pattern would be a compile error at the 7.3 baseline.
+        await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
+
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+        await Assert.That(generated).DoesNotContain(NullableDirective);
+        await Assert.That(generated).DoesNotContain(".Add(new(");
+        await Assert.That(generated).Contains("new global::System.Collections.Generic.KeyValuePair<string, string>(");
+        await Assert.That(generated).Contains(" != null");
+    }
+
+    /// <summary>Verifies the form-field descriptor path (collection body) compiles down to the C# 7.3 baseline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GeneratedFormDescriptorCompilesWithCSharp73Baseline()
+    {
+        const string source =
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest
+            {
+                /// <summary>A form body with a collection field, which uses the descriptor path.</summary>
+                public class RolesForm
+                {
+                    /// <summary>Gets or sets the user name.</summary>
+                    public string UserName { get; set; }
+
+                    /// <summary>Gets or sets the roles.</summary>
+                    [Query(CollectionFormat.Multi)]
+                    public List<string> Roles { get; set; }
+                }
+
+                /// <summary>Generated client test interface.</summary>
+                public interface IGeneratedClient
+                {
+                    /// <summary>Posts a form with a collection field.</summary>
+                    /// <param name="form">The form body.</param>
+                    /// <returns>A task representing the request.</returns>
+                    [Post("/roles")]
+                    Task Post([Body(BodySerializationMethod.UrlEncoded)] RolesForm form);
+                }
+            }
+            """;
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true, LanguageVersion.CSharp7_3);
+
+        // The 'static' lambda (C# 9) and 'object?' cast (C# 8) in the descriptor getter must degrade at the 7.3 baseline.
+        await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
+
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+        await Assert.That(generated).DoesNotContain(NullableDirective);
+        await Assert.That(generated).DoesNotContain("static body =>");
+        await Assert.That(generated).DoesNotContain("(object?)");
+        await Assert.That(generated).Contains("global::Refit.FormField<");
+        await Assert.That(generated).Contains("body => (object)body.@UserName");
     }
 
     /// <summary>Verifies generated source emits nullable annotations when the consumer language version supports them.</summary>

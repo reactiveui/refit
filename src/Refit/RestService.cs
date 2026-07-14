@@ -66,8 +66,8 @@ public static class RestService
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no generated implementation is registered for <typeparamref name="T"/>.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public static T ForGenerated<T>(HttpClient client) => ForGenerated<T>(client, new());
 
@@ -78,8 +78,8 @@ public static class RestService
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no generated implementation is registered for <typeparamref name="T"/>.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public static T ForGenerated<T>(HttpClient client, RefitSettings settings)
     {
@@ -115,8 +115,8 @@ public static class RestService
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no generated implementation is registered for <typeparamref name="T"/>.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public static T ForGenerated<T>(string hostUrl) => ForGenerated<T>(hostUrl, new());
 
@@ -127,8 +127,8 @@ public static class RestService
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no generated implementation is registered for <typeparamref name="T"/>.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public static T ForGenerated<T>(string hostUrl, RefitSettings settings)
     {
@@ -202,8 +202,8 @@ public static class RestService
     /// <param name="settings"><see cref="RefitSettings"/> to use to configure the HttpClient.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static T For<
@@ -213,6 +213,18 @@ public static class RestService
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(HttpClient client, RefitSettings? settings)
     {
+        // A generated settings factory means every method builds its request inline, so the reflection
+        // request builder (and the Refit.Reflection assembly) is never needed for this interface.
+        if (GeneratedSettingsFactory<T>.Factory is { } settingsFactory)
+        {
+            return settingsFactory(client, settings ?? new());
+        }
+
+        if (_generatedSettingsFactories.TryGetValue(typeof(T), out var untypedSettingsFactory))
+        {
+            return (T)untypedSettingsFactory(client, settings ?? new());
+        }
+
         var requestBuilder = RequestBuilder.ForType<T>(settings);
 
         return For(client, requestBuilder);
@@ -223,8 +235,8 @@ public static class RestService
     /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static T For<
@@ -240,8 +252,8 @@ public static class RestService
     /// <param name="settings"><see cref="RefitSettings"/> to use to configure the HttpClient.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static T For<
@@ -261,8 +273,8 @@ public static class RestService
     /// <param name="hostUrl">Base address the implementation will use.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static T For<
@@ -312,6 +324,13 @@ public static class RestService
         HttpClient client,
         RefitSettings? settings)
     {
+        // A generated settings factory means every method builds its request inline, so the reflection
+        // request builder (and the Refit.Reflection assembly) is never needed for this interface.
+        if (_generatedSettingsFactories.TryGetValue(refitInterfaceType, out var settingsFactory))
+        {
+            return settingsFactory(client, settings ?? new());
+        }
+
         var requestBuilder = RequestBuilder.ForType(refitInterfaceType, settings);
 
         return For(refitInterfaceType, client, requestBuilder);

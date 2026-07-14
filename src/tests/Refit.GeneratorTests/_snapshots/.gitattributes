@@ -1,0 +1,6 @@
+# Verify's text comparer rejects any verified file that contains a carriage return
+# ("Verified file must use \n line endings, but it contains a \r"). Pin the snapshots
+# to LF so a Windows checkout keeps them as LF instead of rewriting them to CRLF.
+# Everything else in this directory follows the repository default.
+* text=auto
+*.verified.* text eol=lf

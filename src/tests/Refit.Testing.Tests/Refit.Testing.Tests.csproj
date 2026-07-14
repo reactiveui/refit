@@ -15,6 +15,7 @@
     <PackageReference Include="TUnit" />
     <ProjectReference Include="..\..\Refit.Testing\Refit.Testing.csproj" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\Refit.Reflection\Refit.Reflection.csproj" />
     <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 

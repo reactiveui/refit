@@ -20,9 +20,10 @@ public interface IGeneratedFactoryApi
     [Get("/generated/{id}")]
     Task GetById(string id);
 
-    /// <summary>Gets the generated endpoint with a query parameter.</summary>
-    /// <param name="id">The generated endpoint identifier.</param>
+    /// <summary>Searches the generated endpoint; the dynamic query-map parameter keeps this interface on the
+    /// reflection request builder so no generated settings factory is registered for it.</summary>
+    /// <param name="filter">A dynamic query-map filter that is not inline-eligible.</param>
     /// <returns>A task that completes when the request finishes.</returns>
     [Get("/generated")]
-    Task GetQuery(string id);
+    Task Search(object filter);
 }

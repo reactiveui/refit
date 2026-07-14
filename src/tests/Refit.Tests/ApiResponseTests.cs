@@ -13,6 +13,12 @@ public sealed class ApiResponseTests
     /// <summary>The example request URI reused across the response tests.</summary>
     private const string ExampleUri = "https://example.test";
 
+    /// <summary>The response body content reused across the payload tests.</summary>
+    private const string PayloadContent = "payload";
+
+    /// <summary>The content value reused across the successful-response tests.</summary>
+    private const string HelloContent = "hello";
+
     /// <summary>The expected length of the five-character body used by the narrowing tests.</summary>
     private const int ExpectedContentLength = 5;
 
@@ -77,7 +83,7 @@ public sealed class ApiResponseTests
 
         IApiResponse<string> asInterface = response;
         await Assert
-            .That(() => (Task)asInterface.EnsureSuccessStatusCodeAsync())
+            .That(async () => await asInterface.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<ApiException>();
     }
 
@@ -99,7 +105,7 @@ public sealed class ApiResponseTests
 
         IApiResponse<string> failInterface = failure;
         await Assert
-            .That(() => (Task)failInterface.EnsureSuccessfulAsync())
+            .That(async () => await failInterface.EnsureSuccessfulAsync())
             .ThrowsExactly<ApiException>();
     }
 
@@ -111,10 +117,10 @@ public sealed class ApiResponseTests
         const IApiResponse<string> nullResponse = null!;
 
         await Assert
-            .That(static () => (Task)nullResponse.EnsureSuccessStatusCodeAsync())
+            .That(static async () => await nullResponse.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<ArgumentNullException>();
         await Assert
-            .That(static () => (Task)nullResponse.EnsureSuccessfulAsync())
+            .That(static async () => await nullResponse.EnsureSuccessfulAsync())
             .ThrowsExactly<ArgumentNullException>();
     }
 
@@ -129,7 +135,7 @@ public sealed class ApiResponseTests
 
         IApiResponse<string> asInterface = response;
         await Assert
-            .That(() => (Task)asInterface.EnsureSuccessStatusCodeAsync())
+            .That(async () => await asInterface.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -162,7 +168,7 @@ public sealed class ApiResponseTests
         await Assert.That(response.StatusCode).IsNull();
         await Assert.That(response.Version).IsNull();
         await Assert.That(response.RequestMessage).IsSameReferenceAs(request);
-        await Assert.That(() => (Task)response.EnsureSuccessStatusCodeAsync())
+        await Assert.That(async () => await response.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -171,15 +177,15 @@ public sealed class ApiResponseTests
     [Test]
     public async Task SuccessResponseExposesMetadataAndUsesFastEnsurePath()
     {
-        using var responseMessage = CreateResponse(HttpStatusCode.OK, "payload");
-        using var response = new ApiResponse<string>(responseMessage, "payload", new());
+        using var responseMessage = CreateResponse(HttpStatusCode.OK, PayloadContent);
+        using var response = new ApiResponse<string>(responseMessage, PayloadContent, new());
 
         var success = await response.EnsureSuccessStatusCodeAsync();
         var successful = await response.EnsureSuccessfulAsync();
 
         await Assert.That(success).IsSameReferenceAs(response);
         await Assert.That(successful).IsSameReferenceAs(response);
-        await Assert.That(response.Content).IsEqualTo("payload");
+        await Assert.That(response.Content).IsEqualTo(PayloadContent);
         await Assert.That(response.Headers).IsNotNull();
         await Assert.That(response.ContentHeaders).IsNotNull();
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
@@ -187,6 +193,19 @@ public sealed class ApiResponseTests
         await Assert.That(response.IsReceived).IsTrue();
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(response.Version).IsEqualTo(responseMessage.Version);
+    }
+
+    /// <summary>Verifies the concrete ensure path builds a fresh exception when an unsuccessful response has no captured error.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ConcreteEnsureBuildsExceptionWhenNoErrorCaptured()
+    {
+        using var badResponse = CreateResponse(HttpStatusCode.BadRequest, "boom");
+        using var response = new ApiResponse<string>(badResponse, null, new());
+
+        // No captured error, so ThrowsApiExceptionAsync takes the `?? ApiException.Create(...)` branch.
+        await Assert.That(async () => await response.EnsureSuccessfulAsync())
+            .ThrowsExactly<ApiException>();
     }
 
     /// <summary>Verifies typed error helpers distinguish request and response errors.</summary>
@@ -230,7 +249,7 @@ public sealed class ApiResponseTests
         await Assert.That(responseErrorResponse.HasResponseError(out var typedResponseError)).IsTrue();
         await Assert.That(typedResponseError).IsSameReferenceAs(apiError);
         await Assert.That(responseErrorResponse.HasRequestError(out _)).IsFalse();
-        await Assert.That(() => (Task)responseErrorResponse.EnsureSuccessfulAsync())
+        await Assert.That(async () => await responseErrorResponse.EnsureSuccessfulAsync())
             .ThrowsExactly<ApiException>();
     }
 
@@ -307,7 +326,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task IsSuccessfulWithContentNarrowsContent()
     {
-        using var response = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), "hello", new());
+        using var response = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), HelloContent, new());
 
         if (response.IsSuccessfulWithContent)
         {
@@ -471,7 +490,8 @@ public sealed class ApiResponseTests
     [Test]
     public async Task ValueTypeContentIsAlwaysPresent()
     {
-        using var success = new ApiResponse<int>(CreateResponse(HttpStatusCode.OK, "5"), 5, new());
+        const int bodyValue = 5;
+        using var success = new ApiResponse<int>(CreateResponse(HttpStatusCode.OK, "5"), bodyValue, new());
         await Assert.That(success.HasContent).IsTrue();
         await Assert.That(success.IsSuccessfulWithContent).IsTrue();
 
@@ -486,7 +506,8 @@ public sealed class ApiResponseTests
     [Test]
     public async Task NullableValueTypeContentTracksNull()
     {
-        using var present = new ApiResponse<int?>(CreateResponse(HttpStatusCode.OK, "7"), 7, new());
+        const int presentValue = 7;
+        using var present = new ApiResponse<int?>(CreateResponse(HttpStatusCode.OK, "7"), presentValue, new());
         await Assert.That(present.HasContent).IsTrue();
         await Assert.That(present.IsSuccessfulWithContent).IsTrue();
 
@@ -558,7 +579,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task StatusCodeOrNullContentGuardStillNarrows()
     {
-        using var ok = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), "hello", new());
+        using var ok = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), HelloContent, new());
         if (!ok.IsSuccessStatusCode || ok.Content is null)
         {
             Assert.Fail("Expected a successful response with content.");
@@ -582,7 +603,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task SuccessfulOrHasContentGuardEqualsIsSuccessfulWithContent()
     {
-        using var ok = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), "hello", new());
+        using var ok = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), HelloContent, new());
         if (!ok.IsSuccessful || !ok.HasContent)
         {
             Assert.Fail("Expected a successful response with content.");

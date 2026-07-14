@@ -16,6 +16,9 @@ public class DefaultInterfaceMethodTests
     /// <summary>The base address and stub URL used across the tests.</summary>
     private const string HttpBinUrl = "https://httpbin.org/";
 
+    /// <summary>The HTML media type returned by the stub responses.</summary>
+    private const string HtmlMediaType = "text/html";
+
     /// <summary>Verifies an internal interface member can be invoked through Refit.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -25,7 +28,7 @@ public class DefaultInterfaceMethodTests
         {
             {
                 Route.Get(HttpBinUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = "text/html" }
+                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType }
             },
         };
 
@@ -46,7 +49,7 @@ public class DefaultInterfaceMethodTests
         {
             {
                 Route.Get(HttpBinUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = "text/html" }
+                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType }
             },
         };
 
@@ -67,7 +70,7 @@ public class DefaultInterfaceMethodTests
         {
             {
                 Route.Get(HttpBinUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = "text/html" }
+                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType }
             },
         };
 

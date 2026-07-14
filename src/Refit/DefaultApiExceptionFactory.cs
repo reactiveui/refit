@@ -8,22 +8,19 @@ namespace Refit;
 /// <param name="refitSettings">The Refit settings used when building exceptions.</param>
 public class DefaultApiExceptionFactory(RefitSettings refitSettings)
 {
-    /// <summary>A completed task that yields a null exception for successful responses.</summary>
-    private static readonly Task<Exception?> _nullTask = Task.FromResult<Exception?>(null);
-
     /// <summary>Creates the asynchronous.</summary>
     /// <param name="responseMessage">The response message.</param>
     /// <returns>A task that yields the created exception, or null when the response was successful.</returns>
-    public Task<Exception?> CreateAsync(HttpResponseMessage responseMessage) =>
+    public ValueTask<Exception?> CreateAsync(HttpResponseMessage responseMessage) =>
         responseMessage?.IsSuccessStatusCode == false
             ? CreateExceptionAsync(responseMessage, refitSettings)
-            : _nullTask;
+            : default;
 
     /// <summary>Builds an <see cref="ApiException"/> for the given unsuccessful response.</summary>
     /// <param name="responseMessage">The response message.</param>
     /// <param name="refitSettings">The Refit settings.</param>
     /// <returns>The created exception.</returns>
-    private static async Task<Exception?> CreateExceptionAsync(
+    private static async ValueTask<Exception?> CreateExceptionAsync(
         HttpResponseMessage responseMessage,
         RefitSettings refitSettings)
     {

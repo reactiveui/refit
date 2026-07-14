@@ -9,6 +9,16 @@ public sealed class RefitInterfaceAnalyzerTests
     /// <summary>The diagnostic identifier for non-Refit interface members.</summary>
     private const string NonRefitMemberDiagnosticId = "RF001";
 
+    /// <summary>The diagnostic identifier for methods that fall back to the reflection request builder.</summary>
+    private const string GeneratedRequestBuildingFallbackDiagnosticId = "RF006";
+
+    /// <summary>A Refit method shape that the generator cannot build inline, so it falls back to reflection (RF006).</summary>
+    private const string ReflectionFallbackMethodBody =
+        """
+        [Get("/query-map")]
+        Task<string> Search(object filters);
+        """;
+
     /// <summary>Verifies analysis exits when the compilation does not reference Refit.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -79,6 +89,26 @@ public sealed class RefitInterfaceAnalyzerTests
         await Assert.That(diagnosticIds).Contains("RF003");
         await Assert.That(diagnosticIds).Contains("RF004");
         await Assert.That(diagnosticIds).Contains("RF005");
+    }
+
+    /// <summary>Verifies duplicate HeaderCollection and Authorize parameters are reported.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReportsDuplicateSpecialParameterDiagnostics()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Get("/headers")]
+            Task<string> TwoHeaderCollections([HeaderCollection] IDictionary<string, string> a, [HeaderCollection] IDictionary<string, string> b);
+
+            [Get("/auth")]
+            Task<string> TwoAuthorize([Authorize] string a, [Authorize] string b);
+            """);
+
+        var diagnosticIds = diagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+
+        await Assert.That(diagnosticIds).Contains("RF008");
+        await Assert.That(diagnosticIds).Contains("RF009");
     }
 
     /// <summary>Verifies non-Refit members on Refit interfaces are reported.</summary>
@@ -152,6 +182,112 @@ public sealed class RefitInterfaceAnalyzerTests
 
         await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .Contains(NonRefitMemberDiagnosticId);
+    }
+
+    /// <summary>Verifies reflection-only method shapes are flagged as incompatible with generated-only clients.</summary>
+    /// <param name="body">The interface member body source.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments(ReflectionFallbackMethodBody)]
+    [Arguments("""
+        [Post("/form")]
+        Task<string> PostForm<T>([Body(BodySerializationMethod.UrlEncoded)] T form);
+        """)]
+    [Arguments("""
+        [Multipart]
+        [Post("/upload")]
+        Task<string> Upload(object payload);
+        """)]
+    public async Task ReportsReflectionFallbackShapes(string body)
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(body);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .Contains(GeneratedRequestBuildingFallbackDiagnosticId);
+    }
+
+    /// <summary>Verifies inline-eligible methods - including query and route parameters - are not flagged.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DoesNotReportInlineSupportedMethods()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Get("/users")]
+            Task<string> List();
+
+            [Get("/signin")]
+            Task<string> SignIn([AliasAs("login")] string login, [AliasAs("code")] string code);
+
+            [Get("/users/{id}")]
+            Task<string> GetUser(string id);
+
+            [Get("/items")]
+            Task<string> Items([Query(CollectionFormat.Multi)] int[] ids);
+
+            [Post("/users")]
+            Task<string> Create([Body] string payload);
+
+            [Get("/ping")]
+            Task Ping([Header("X-Trace")] string trace, CancellationToken cancellationToken);
+
+            [Get("/values")]
+            Task<T> GetValue<T>();
+
+            [Post("/echo")]
+            Task<T> Echo<T>([Body] T payload);
+
+            [Multipart]
+            [Post("/upload")]
+            Task<string> Upload([AliasAs("file")] StreamPart stream);
+
+            [Get("/stream")]
+            IObservable<string> Observe();
+            """);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
+    }
+
+    /// <summary>Verifies the fallback diagnostic is suppressed when generated request building is disabled.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DoesNotReportFallbackWhenGeneratedRequestBuildingDisabled()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            ReflectionFallbackMethodBody,
+            generatedRequestBuilding: false);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
+    }
+
+    /// <summary>Verifies a bare <c>.editorconfig</c> toggle disabling generated request building suppresses the fallback diagnostic.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DoesNotReportFallbackWhenEditorConfigDisablesGeneratedRequestBuilding()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBodyWithAnalyzerConfigOption(
+            ReflectionFallbackMethodBody,
+            "RefitGeneratedRequestBuilding",
+            "false");
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
+    }
+
+    /// <summary>Verifies an unparsable bare <c>.editorconfig</c> toggle is ignored and the default (fallback reported) behavior applies.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReportsFallbackWhenEditorConfigToggleIsUnparsable()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBodyWithAnalyzerConfigOption(
+            ReflectionFallbackMethodBody,
+            "RefitGeneratedRequestBuilding",
+            "notabool");
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .Contains(GeneratedRequestBuildingFallbackDiagnosticId);
     }
 
     /// <summary>Verifies HTTP path extraction handles missing attribute data.</summary>

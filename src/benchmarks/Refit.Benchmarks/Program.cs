@@ -15,3 +15,12 @@ else
     // To run a different suite by default, swap the type above for StartupBenchmark,
     // PerformanceBenchmark, or SourceGeneratorBenchmark (or pass a filter on the command line).
 }
+
+/// <summary>The generated top-level program's declaring type, sealed so the JIT can devirtualize its members.</summary>
+internal sealed partial class Program
+{
+    /// <summary>Initializes a new instance of the <see cref="Program"/> class. Unused; the entry point is the generated top-level <c>Main</c>.</summary>
+    private Program()
+    {
+    }
+}

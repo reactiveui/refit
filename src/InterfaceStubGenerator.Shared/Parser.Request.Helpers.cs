@@ -8,6 +8,15 @@ namespace Refit.Generator;
 /// <summary>Internal request parser helpers that are directly covered by focused tests.</summary>
 internal static partial class Parser
 {
+    /// <summary>The underlying value for <c>BodySerializationMethod.UrlEncoded</c>.</summary>
+    private const int BodySerializationUrlEncoded = 2;
+
+    /// <summary>The underlying value for <c>BodySerializationMethod.Serialized</c>.</summary>
+    private const int BodySerializationSerialized = 3;
+
+    /// <summary>The underlying value for <c>BodySerializationMethod.JsonLines</c>.</summary>
+    private const int BodySerializationJsonLines = 4;
+
     /// <summary>Finds the HTTP method attribute on a Refit method.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>
     /// <param name="httpMethodAttribute">The Refit HTTP method base attribute symbol.</param>
@@ -30,10 +39,11 @@ internal static partial class Parser
     /// <summary>Determines whether the initial inline emitter can use the path as a literal URI.</summary>
     /// <param name="path">The path to inspect.</param>
     /// <returns><see langword="true"/> when the path is supported.</returns>
+    /// <remarks>A no-leading-slash path is supported: it resolves against the base address under RFC 3986 and throws
+    /// under legacy resolution at request time, exactly as the reflection request builder validates it.</remarks>
     internal static bool IsPathSupported(string path)
     {
-        return (path.Length == 0 || path[0] == '/')
-            && IsPathTemplateValid(path)
+        return IsPathTemplateValid(path)
             && path.IndexOf('\\') < 0
             && path.IndexOf('\r') < 0
             && path.IndexOf('\n') < 0;

@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -15,15 +14,6 @@ internal static partial class Parser
 {
     /// <summary>The suffix used for generator-private Refit helper types.</summary>
     private const string RefitInternalGeneratedSuffix = "RefitInternalGenerated";
-
-    /// <summary>The underlying value for <c>BodySerializationMethod.UrlEncoded</c>.</summary>
-    private const int BodySerializationUrlEncoded = 2;
-
-    /// <summary>The underlying value for <c>BodySerializationMethod.Serialized</c>.</summary>
-    private const int BodySerializationSerialized = 3;
-
-    /// <summary>The underlying value for <c>BodySerializationMethod.JsonLines</c>.</summary>
-    private const int BodySerializationJsonLines = 4;
 
     /// <summary>Builds the generator model for the candidate Refit interfaces.</summary>
     /// <param name="compilation">The compilation.</param>
@@ -49,28 +39,13 @@ internal static partial class Parser
 
         refitInternalNamespace = BuildRefitInternalNamespace(refitInternalNamespace);
 
-        var options = (CSharpParseOptions)compilation.SyntaxTrees[0].Options;
-
-        // Resolve the handful of well-known symbols directly. The previous WellKnownTypes wrapper
-        // allocated a dictionary-backed cache object every pass for just these two lookups.
-        var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable");
-        var httpMethodBaseAttributeSymbol = compilation.GetTypeByMetadataName(
-            "Refit.HttpMethodAttribute");
-        var formattableSymbol = compilation.GetTypeByMetadataName("System.IFormattable");
+        var httpMethodBaseAttributeSymbol = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute");
 
         var diagnostics = new List<Diagnostic>();
         if (httpMethodBaseAttributeSymbol is null)
         {
             diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.RefitNotReferenced, null));
-            return (
-                diagnostics,
-                new(
-                    refitInternalNamespace,
-                    string.Empty,
-                    generatedRequestBuilding,
-                    emitGeneratedCodeMarkers,
-                    ImmutableEquatableArrayFactory.Empty<InterfaceModel>())
-            );
+            return CreateEmptyResult(diagnostics, refitInternalNamespace, generatedRequestBuilding, emitGeneratedCodeMarkers);
         }
 
         var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>(
@@ -88,16 +63,84 @@ internal static partial class Parser
         // Nothing needs to be generated in this pass.
         if (interfaces.Count == 0)
         {
-            return (
-                diagnostics,
-                new(
-                    refitInternalNamespace,
-                    string.Empty,
-                    generatedRequestBuilding,
-                    emitGeneratedCodeMarkers,
-                    ImmutableEquatableArrayFactory.Empty<InterfaceModel>())
-            );
+            return CreateEmptyResult(diagnostics, refitInternalNamespace, generatedRequestBuilding, emitGeneratedCodeMarkers);
         }
+
+        var context = CreateGenerationContext(
+            compilation,
+            diagnostics,
+            refitInternalNamespace,
+            httpMethodBaseAttributeSymbol,
+            generatedRequestBuilding,
+            emitGeneratedCodeMarkers,
+            cancellationToken);
+
+        var interfaceModels = BuildInterfaceModels(
+            interfaces,
+            interfaceToNullableEnabledMap,
+            context,
+            cancellationToken);
+
+        var contextGenerationSpec = new ContextGenerationModel(
+            refitInternalNamespace,
+            context.PreserveAttributeDisplayName,
+            generatedRequestBuilding,
+            emitGeneratedCodeMarkers,
+            interfaceModels);
+        return (diagnostics, contextGenerationSpec);
+    }
+
+    /// <summary>Builds the empty generation result returned when there is nothing to generate.</summary>
+    /// <param name="diagnostics">The diagnostics collected so far.</param>
+    /// <param name="refitInternalNamespace">The resolved internal generated namespace.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
+    /// <returns>The diagnostics paired with an empty context model.</returns>
+    private static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec) CreateEmptyResult(
+        List<Diagnostic> diagnostics,
+        string refitInternalNamespace,
+        bool generatedRequestBuilding,
+        bool emitGeneratedCodeMarkers) =>
+        (
+            diagnostics,
+            new(
+                refitInternalNamespace,
+                string.Empty,
+                generatedRequestBuilding,
+                emitGeneratedCodeMarkers,
+                ImmutableEquatableArrayFactory.Empty<InterfaceModel>())
+        );
+
+    /// <summary>Resolves the well-known symbols and language capabilities used throughout a single generation pass.</summary>
+    /// <param name="compilation">The compilation.</param>
+    /// <param name="diagnostics">The list that collects diagnostics produced during processing.</param>
+    /// <param name="refitInternalNamespace">The resolved internal generated namespace.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The resolved Refit HTTP method attribute symbol.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The generation context for the pass.</returns>
+    private static InterfaceGenerationContext CreateGenerationContext(
+        CSharpCompilation compilation,
+        List<Diagnostic> diagnostics,
+        string refitInternalNamespace,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        bool generatedRequestBuilding,
+        bool emitGeneratedCodeMarkers,
+        CancellationToken cancellationToken)
+    {
+        var options = (CSharpParseOptions)compilation.SyntaxTrees[0].Options;
+
+        // Resolve the handful of well-known symbols directly. The previous WellKnownTypes wrapper
+        // allocated a dictionary-backed cache object every pass for just these lookups.
+        var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable");
+        var formattableSymbol = compilation.GetTypeByMetadataName("System.IFormattable");
+
+        // Resolve the value-formatting fast-path capabilities once per pass (never per interface or per parameter) and
+        // thread them through the context. ISpanFormattable is net6+, and the query builder percent-encodes a formatted
+        // span in place on every net6+ target, so the span-escape tier applies wherever ISpanFormattable exists.
+        var spanFormattableSymbol = compilation.GetTypeByMetadataName("System.ISpanFormattable");
+        var supportsSpanEscape = spanFormattableSymbol is not null;
 
         var supportsNullable = options.LanguageVersion >= LanguageVersion.CSharp8;
         var supportsStaticLambdas = options.LanguageVersion >= LanguageVersion.CSharp9;
@@ -109,30 +152,27 @@ internal static partial class Parser
         // every generator pass, which mutated the compilation and forced an extra bind.
         var preserveAttributeDisplayName = $"global::{refitInternalNamespace}.PreserveAttribute";
 
-        var context = new InterfaceGenerationContext(
+        var returnTypeAdapterInterface = ResolveReturnTypeAdapterInterface(compilation);
+        var returnTypeAdapters = DiscoverReturnTypeAdapters(compilation, returnTypeAdapterInterface, cancellationToken);
+
+        return new InterfaceGenerationContext(
             diagnostics,
             preserveAttributeDisplayName,
             disposableInterfaceSymbol,
             httpMethodBaseAttributeSymbol,
             formattableSymbol,
+            spanFormattableSymbol,
+            supportsSpanEscape,
             generatedRequestBuilding,
             emitGeneratedCodeMarkers,
             supportsNullable,
-            supportsStaticLambdas);
-
-        var interfaceModels = BuildInterfaceModels(
-            interfaces,
-            interfaceToNullableEnabledMap,
-            context,
-            cancellationToken);
-
-        var contextGenerationSpec = new ContextGenerationModel(
-            refitInternalNamespace,
-            preserveAttributeDisplayName,
-            generatedRequestBuilding,
-            emitGeneratedCodeMarkers,
-            interfaceModels);
-        return (diagnostics, contextGenerationSpec);
+            supportsStaticLambdas,
+            options.LanguageVersion >= LanguageVersion.CSharp12,
+            compilation,
+            returnTypeAdapterInterface,
+            returnTypeAdapters,
+            [],
+            new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default));
     }
 
     /// <summary>Builds the internal generated namespace from a consumer-provided namespace prefix.</summary>
@@ -162,7 +202,9 @@ internal static partial class Parser
             _ = builder.Append(normalized);
         }
 
-        return builder.Length == 0 ? RefitInternalGeneratedSuffix : builder.ToString();
+        // The raw namespace always contains the non-empty RefitInternalGeneratedSuffix segment, so at least one
+        // normalized part is appended and the builder is never empty here.
+        return builder.ToString();
     }
 
     /// <summary>Normalizes one namespace segment into a valid identifier.</summary>
@@ -261,10 +303,10 @@ internal static partial class Parser
         foreach (var iface in candidateInterfaces)
         {
             var model = compilation.GetSemanticModel(iface.SyntaxTree);
-            var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken);
+            var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken)!;
 
             // Skip duplicates already captured from candidate methods.
-            if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
+            if (interfaces.ContainsKey(ifaceSymbol))
             {
                 continue;
             }
@@ -294,7 +336,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<InterfaceModel> BuildInterfaceModels(
         Dictionary<INamedTypeSymbol, List<IMethodSymbol>> interfaces,
         Dictionary<INamedTypeSymbol, bool> interfaceToNullableEnabledMap,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         CancellationToken cancellationToken)
     {
         var keyCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -311,19 +353,22 @@ internal static partial class Parser
             var keyName = group.Key.Name;
             while (keyCount.TryGetValue(keyName, out var value))
             {
-                keyName = $"{keyName}{++value}";
+                value++;
+                keyName = $"{keyName}{value}";
             }
 
             // A failed TryGetValue leaves value at its default of 0, so the deduplicated name starts at zero.
             keyCount[keyName] = 0;
             var fileName = $"{keyName}.g.cs";
 
-            interfaceModels[index++] = ProcessInterface(
+            // A fresh collector per interface: each generated file declares only the extern aliases its own types use.
+            interfaceModels[index] = ProcessInterface(
                 fileName,
                 group.Key,
                 group.Value,
                 interfaceToNullableEnabledMap[group.Key],
-                context);
+                context with { ExternAliases = [] });
+            index++;
         }
 
         return ImmutableEquatableArrayFactory.FromArray(interfaceModels);
@@ -341,12 +386,12 @@ internal static partial class Parser
         INamedTypeSymbol interfaceSymbol,
         List<IMethodSymbol> refitMethods,
         bool nullableEnabled,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var names = ComputeInterfaceNames(interfaceSymbol);
         var members = interfaceSymbol.GetMembers();
 
-        var partition = PartitionMethods(
+        var partition = PartitionMembers(
             interfaceSymbol,
             members,
             refitMethods,
@@ -362,10 +407,11 @@ internal static partial class Parser
 
         var nonRefitMethodModels = BuildNonRefitMethodModels(
             partition.NonRefitMethods,
-            partition.DerivedNonRefitMethods);
-        var properties = BuildInterfacePropertyModels(interfaceSymbol, members);
+            partition.DerivedNonRefitMethods,
+            context);
+        var properties = BuildInterfacePropertyModels(members, partition.InheritedProperties, context);
 
-        var constraints = GenerateConstraints(interfaceSymbol.TypeParameters, false);
+        var constraints = GenerateConstraints(interfaceSymbol.TypeParameters, false, context);
         var nullability = (context.SupportsNullable, nullableEnabled) switch
         {
             (false, _) => Nullability.None,
@@ -384,6 +430,7 @@ internal static partial class Parser
             context.EmitGeneratedCodeMarkers,
             context.SupportsNullable,
             context.SupportsStaticLambdas,
+            context.SupportsCollectionExpressions,
             constraints,
             memberNames,
             properties,
@@ -391,7 +438,23 @@ internal static partial class Parser
             refitMethodsArray,
             derivedRefitMethodsArray,
             nullability,
-            partition.HasDispose);
+            partition.HasDispose,
+            BuildSortedExternAliases(context.ExternAliases));
+    }
+
+    /// <summary>Builds the deterministically-ordered set of extern aliases an interface's types reference.</summary>
+    /// <param name="aliases">The collected extern aliases.</param>
+    /// <returns>The sorted extern aliases, or an empty array when none were used.</returns>
+    private static ImmutableEquatableArray<string> BuildSortedExternAliases(HashSet<string> aliases)
+    {
+        if (aliases.Count == 0)
+        {
+            return ImmutableEquatableArray<string>.Empty;
+        }
+
+        var sorted = new List<string>(aliases);
+        sorted.Sort(StringComparer.Ordinal);
+        return sorted.ToImmutableEquatableArray();
     }
 
     /// <summary>Computes the generated identifiers and display names for an interface.</summary>
@@ -411,42 +474,44 @@ internal static partial class Parser
 
         // Use the simple interface name for the generated class suffix.
         var classSuffix = (interfaceSymbol.ContainingType?.Name) + interfaceSymbol.Name;
-        var ns = interfaceSymbol.ContainingNamespace?.ToDisplayString();
+        var ns = interfaceSymbol.ContainingNamespace.ToDisplayString();
 
         // Keep generated names stable for interfaces declared in the global namespace.
-        if (interfaceSymbol.ContainingNamespace is { IsGlobalNamespace: true })
+        if (interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
         {
             ns = string.Empty;
         }
 
         // Flatten dots out of the namespace for generated identifiers.
-        ns = ns!.Replace(".", string.Empty);
+        ns = ns.Replace(".", string.Empty);
         var interfaceDisplayName = interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         return new(className, classDeclaration, classSuffix, ns, interfaceDisplayName);
     }
 
-    /// <summary>Splits the interface's direct and inherited members into Refit and non-Refit sets.</summary>
+    /// <summary>Splits the interface's direct and inherited members into the sets the generated stub emits.</summary>
     /// <param name="interfaceSymbol">The interface symbol being processed.</param>
     /// <param name="members">The directly declared members of the interface.</param>
     /// <param name="refitMethods">The Refit methods declared on the interface.</param>
     /// <param name="context">The shared generation context.</param>
-    /// <returns>The partitioned method sets.</returns>
-    private static MethodPartition PartitionMethods(
+    /// <returns>The partitioned member sets.</returns>
+    private static MethodPartition PartitionMembers(
         INamedTypeSymbol interfaceSymbol,
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> refitMethods,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var nonRefitMethods = CollectDirectNonRefitMethods(members, refitMethods);
 
         var derivedRefitMethods = new List<IMethodSymbol>();
         var derivedNonRefitMethods = new List<IMethodSymbol>();
-        var hasDispose = CollectDerivedMethods(
+        var inheritedProperties = new List<IPropertySymbol>();
+        var hasDispose = CollectDerivedMembers(
             interfaceSymbol,
             context,
             derivedRefitMethods,
-            derivedNonRefitMethods);
+            derivedNonRefitMethods,
+            inheritedProperties);
 
         derivedNonRefitMethods = ExcludeExplicitlyImplementedBaseMethods(
             members,
@@ -456,6 +521,7 @@ internal static partial class Parser
             nonRefitMethods,
             derivedRefitMethods,
             derivedNonRefitMethods,
+            inheritedProperties,
             hasDispose);
     }
 
@@ -490,45 +556,58 @@ internal static partial class Parser
         return nonRefitMethods;
     }
 
-    /// <summary>Walks the inherited interfaces, splitting their methods into Refit and non-Refit sets.</summary>
+    /// <summary>Walks the inherited interfaces once, collecting derived methods and inherited properties.</summary>
     /// <param name="interfaceSymbol">The interface symbol being processed.</param>
     /// <param name="context">The shared generation context.</param>
     /// <param name="derivedRefitMethods">Receives the Refit methods inherited from base interfaces.</param>
     /// <param name="derivedNonRefitMethods">Receives the non-Refit methods inherited from base interfaces.</param>
+    /// <param name="inheritedProperties">Receives the emittable properties inherited from base interfaces.</param>
     /// <returns><see langword="true"/> if the interface inherits <c>IDisposable.Dispose</c>; otherwise, <see langword="false"/>.</returns>
-    private static bool CollectDerivedMethods(
+    private static bool CollectDerivedMembers(
         INamedTypeSymbol interfaceSymbol,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         List<IMethodSymbol> derivedRefitMethods,
-        List<IMethodSymbol> derivedNonRefitMethods)
+        List<IMethodSymbol> derivedNonRefitMethods,
+        List<IPropertySymbol> inheritedProperties)
     {
-        // Walk all inherited interfaces once, pulling out the IDisposable.Dispose method and
-        // splitting the rest into Refit and non-Refit methods.
+        // Walk all inherited interfaces (and each base's members) exactly once: pull out the IDisposable.Dispose
+        // method, split the remaining methods into Refit and non-Refit sets, and collect inherited emittable
+        // properties in the same pass. Methods and properties were previously two separate AllInterfaces walks.
         var disposableInterfaceSymbol = context.DisposableInterfaceSymbol;
         var hasDispose = false;
-        var seenDerivedNonRefitMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        var seenInheritedProperties = new HashSet<IPropertySymbol>(SymbolEqualityComparer.Default);
         foreach (var baseInterface in interfaceSymbol.AllInterfaces)
         {
             foreach (var member in baseInterface.GetMembers())
             {
-                if (member is not IMethodSymbol method)
+                switch (member)
                 {
-                    continue;
-                }
+                    case IMethodSymbol method when IsDisposeMethod(method, disposableInterfaceSymbol):
+                    {
+                        hasDispose = true;
+                        break;
+                    }
 
-                if (IsDisposeMethod(method, disposableInterfaceSymbol))
-                {
-                    hasDispose = true;
-                    continue;
-                }
+                    case IMethodSymbol method when IsRefitMethod(method, context.HttpMethodBaseAttributeSymbol):
+                    {
+                        derivedRefitMethods.Add(method);
+                        break;
+                    }
 
-                if (IsRefitMethod(method, context.HttpMethodBaseAttributeSymbol))
-                {
-                    derivedRefitMethods.Add(method);
-                }
-                else if (seenDerivedNonRefitMethods.Add(method))
-                {
-                    derivedNonRefitMethods.Add(method);
+                    case IMethodSymbol method:
+                    {
+                        // Each inherited interface contributes its own members once across AllInterfaces, so a method
+                        // symbol never repeats here and no per-method de-duplication is needed.
+                        derivedNonRefitMethods.Add(method);
+                        break;
+                    }
+
+                    case IPropertySymbol property
+                        when IsEmittableProperty(property) && seenInheritedProperties.Add(property):
+                    {
+                        inheritedProperties.Add(property);
+                        break;
+                    }
                 }
             }
         }
@@ -541,9 +620,7 @@ internal static partial class Parser
     /// <param name="disposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
     /// <returns><see langword="true"/> if the method is declared on <c>IDisposable</c>; otherwise, <see langword="false"/>.</returns>
     private static bool IsDisposeMethod(IMethodSymbol method, ISymbol? disposableInterfaceSymbol) =>
-        method.ContainingType?.Equals(
-            disposableInterfaceSymbol,
-            SymbolEqualityComparer.Default) == true;
+        method.ContainingType.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default);
 
     /// <summary>Removes base methods that the current interface re-declares as explicit Refit members.</summary>
     /// <param name="members">The directly declared members of the interface.</param>
@@ -591,478 +668,6 @@ internal static partial class Parser
         return filteredDerivedNonRefitMethods;
     }
 
-    /// <summary>Collects the distinct member names declared on the interface, preserving order.</summary>
-    /// <param name="members">The directly declared members of the interface.</param>
-    /// <returns>The distinct member names.</returns>
-    private static ImmutableEquatableArray<string> CollectMemberNames(in ImmutableArray<ISymbol> members)
-    {
-        var seenMemberNames = new HashSet<string>();
-        var memberNames = new string[members.Length];
-        var count = 0;
-        foreach (var member in members)
-        {
-            if (seenMemberNames.Add(member.Name))
-            {
-                memberNames[count++] = member.Name;
-            }
-        }
-
-        return TrimAndWrap(memberNames, count);
-    }
-
-    /// <summary>Wraps a fully populated array, or copies the populated prefix before wrapping.</summary>
-    /// <param name="values">The array containing populated values at the front.</param>
-    /// <param name="count">The number of populated entries.</param>
-    /// <typeparam name="T">The element type.</typeparam>
-    /// <returns>The immutable equatable array.</returns>
-    private static ImmutableEquatableArray<T> TrimAndWrap<T>(T[] values, int count)
-        where T : IEquatable<T>
-    {
-        if (count == 0)
-        {
-            return ImmutableEquatableArrayFactory.Empty<T>();
-        }
-
-        if (count == values.Length)
-        {
-            return ImmutableEquatableArrayFactory.FromArray(values);
-        }
-
-        var trimmed = new T[count];
-        Array.Copy(values, trimmed, count);
-        return ImmutableEquatableArrayFactory.FromArray(trimmed);
-    }
-
-    /// <summary>Builds models for interface properties implemented by the generated stub.</summary>
-    /// <param name="interfaceSymbol">The interface symbol being processed.</param>
-    /// <param name="members">The directly declared interface members.</param>
-    /// <returns>The property models.</returns>
-    private static ImmutableEquatableArray<InterfacePropertyModel> BuildInterfacePropertyModels(
-        INamedTypeSymbol interfaceSymbol,
-        in ImmutableArray<ISymbol> members)
-    {
-        var properties = new List<InterfacePropertyModel>();
-        foreach (var member in members)
-        {
-            if (member is IPropertySymbol property && IsEmittableProperty(property))
-            {
-                properties.Add(ParseInterfaceProperty(property, false));
-            }
-        }
-
-        var seenInheritedProperties = new HashSet<IPropertySymbol>(SymbolEqualityComparer.Default);
-        foreach (var baseInterface in interfaceSymbol.AllInterfaces)
-        {
-            foreach (var member in baseInterface.GetMembers())
-            {
-                if (member is IPropertySymbol property
-                    && IsEmittableProperty(property)
-                    && seenInheritedProperties.Add(property))
-                {
-                    properties.Add(ParseInterfaceProperty(property, true));
-                }
-            }
-        }
-
-        return properties.ToImmutableEquatableArray();
-    }
-
-    /// <summary>Determines whether an interface property should be implemented by the generated stub.</summary>
-    /// <param name="property">The property to inspect.</param>
-    /// <returns><see langword="true"/> when the property should be emitted.</returns>
-    private static bool IsEmittableProperty(IPropertySymbol property) =>
-        !property.IsStatic
-        && property.IsAbstract
-        && property.Parameters.IsEmpty;
-
-    /// <summary>Builds an interface property model.</summary>
-    /// <param name="property">The property to parse.</param>
-    /// <param name="isDerived">Whether the property comes from a base interface.</param>
-    /// <returns>The property model.</returns>
-    private static InterfacePropertyModel ParseInterfaceProperty(IPropertySymbol property, bool isDerived)
-    {
-        var annotation =
-            !property.Type.IsValueType && property.NullableAnnotation == NullableAnnotation.Annotated;
-        var propertyType = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var containingType = property.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var requestPropertyKey = GetInterfacePropertyRequestKey(property);
-        var isSatisfiedByGeneratedMember = IsGeneratedClientProperty(property, propertyType);
-        var isExplicitInterface =
-            isDerived || (HasGeneratedMemberNameCollision(property) && !isSatisfiedByGeneratedMember);
-
-        return new(
-            property.MetadataName,
-            propertyType,
-            annotation,
-            containingType,
-            requestPropertyKey,
-            property.GetMethod is not null,
-            property.SetMethod is not null,
-            isSatisfiedByGeneratedMember,
-            isExplicitInterface);
-    }
-
-    /// <summary>Determines whether the generated stub's existing <c>Client</c> property satisfies an interface property.</summary>
-    /// <param name="property">The property to inspect.</param>
-    /// <param name="propertyType">The fully-qualified property type display string.</param>
-    /// <returns><see langword="true"/> when no extra property emission is required.</returns>
-    private static bool IsGeneratedClientProperty(IPropertySymbol property, string propertyType) =>
-        property.MetadataName == "Client"
-        && propertyType == "global::System.Net.Http.HttpClient"
-        && property.GetMethod is not null
-        && property.SetMethod is null;
-
-    /// <summary>Determines whether an interface property name collides with generated stub infrastructure members.</summary>
-    /// <param name="property">The property to inspect.</param>
-    /// <returns><see langword="true"/> when the property should be emitted explicitly to avoid a member collision.</returns>
-    private static bool HasGeneratedMemberNameCollision(IPropertySymbol property) =>
-        property.MetadataName is "Client" or "requestBuilder";
-
-    /// <summary>Gets the request-property key declared on an interface property.</summary>
-    /// <param name="property">The property to inspect.</param>
-    /// <returns>The request-property key, or an empty string when the property is not request-bound.</returns>
-    [ExcludeFromCodeCoverage]
-    private static string GetInterfacePropertyRequestKey(IPropertySymbol property)
-    {
-        foreach (var attribute in property.GetAttributes())
-        {
-            if (attribute.AttributeClass?.ToDisplayString() != "Refit.PropertyAttribute")
-            {
-                continue;
-            }
-
-            var arguments = attribute.ConstructorArguments;
-            return !arguments.IsEmpty && arguments[0].Value is string { Length: > 0 } key
-                ? key
-                : property.MetadataName;
-        }
-
-        return string.Empty;
-    }
-
-    /// <summary>Parses a set of Refit methods into method models.</summary>
-    /// <param name="methods">The Refit methods to parse.</param>
-    /// <param name="isImplicitInterface">Whether the methods belong to the implicitly implemented interface.</param>
-    /// <param name="context">The shared generation context.</param>
-    /// <returns>The method models.</returns>
-    private static ImmutableEquatableArray<MethodModel> ParseMethods(
-        List<IMethodSymbol> methods,
-        bool isImplicitInterface,
-        in InterfaceGenerationContext context)
-    {
-        if (methods.Count == 0)
-        {
-            return ImmutableEquatableArrayFactory.Empty<MethodModel>();
-        }
-
-        var methodModels = new MethodModel[methods.Count];
-        for (var i = 0; i < methods.Count; i++)
-        {
-            methodModels[i] = ParseMethod(methods[i], isImplicitInterface, context);
-        }
-
-        return ImmutableEquatableArrayFactory.FromArray(methodModels);
-    }
-
-    /// <summary>Builds the non-Refit method models from the interface's direct and derived methods.</summary>
-    /// <param name="nonRefitMethods">The non-Refit methods declared directly on the interface.</param>
-    /// <param name="derivedNonRefitMethods">The non-Refit methods inherited from base interfaces.</param>
-    /// <returns>The non-Refit method models.</returns>
-    private static ImmutableEquatableArray<MethodModel> BuildNonRefitMethodModels(
-        List<IMethodSymbol> nonRefitMethods,
-        List<IMethodSymbol> derivedNonRefitMethods)
-    {
-        // Only abstract instance methods become non-Refit method models.
-        var methodModels = new MethodModel[nonRefitMethods.Count + derivedNonRefitMethods.Count];
-        var count = 0;
-        foreach (var method in nonRefitMethods)
-        {
-            if (IsEmittableNonRefitMethod(method))
-            {
-                methodModels[count++] = ParseNonRefitMethod(method, false);
-            }
-        }
-
-        foreach (var method in derivedNonRefitMethods)
-        {
-            if (IsEmittableNonRefitMethod(method))
-            {
-                // Derived non-Refit methods are emitted as explicit interface implementations.
-                methodModels[count++] = ParseNonRefitMethod(method, true);
-            }
-        }
-
-        return TrimAndWrap(methodModels, count);
-    }
-
-    /// <summary>Determines whether a non-Refit method should be emitted as a method model.</summary>
-    /// <param name="method">The candidate method.</param>
-    /// <returns><see langword="true"/> if the method is an abstract instance method; otherwise, <see langword="false"/>.</returns>
-    private static bool IsEmittableNonRefitMethod(IMethodSymbol method) =>
-        !method.IsStatic
-        && method.MethodKind != MethodKind.PropertyGet
-        && method.MethodKind != MethodKind.PropertySet
-        && method.IsAbstract;
-
-    /// <summary>Builds a method model for a non-Refit interface method.</summary>
-    /// <param name="methodSymbol">The non-Refit method symbol.</param>
-    /// <param name="isDerived">Whether the method comes from a base interface.</param>
-    /// <returns>The model describing the non-Refit method.</returns>
-    private static MethodModel ParseNonRefitMethod(
-        IMethodSymbol methodSymbol,
-        bool isDerived)
-    {
-        // Derived base-interface methods are emitted as explicit implementations.
-        var explicitImpl = FirstExplicitInterfaceImplementation(methodSymbol);
-        var containingTypeSymbol = explicitImpl?.ContainingType ?? methodSymbol.ContainingType;
-        var containingType = containingTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-        var declaredBaseName = BuildDeclaredBaseName(methodSymbol);
-        var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var returnTypeInfo = GetReturnTypeInfo(methodSymbol);
-        var parameters = ParseParameters(methodSymbol.Parameters);
-
-        var isExplicit = isDerived || explicitImpl is not null;
-        var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit);
-
-        return new(
-            methodSymbol.Name,
-            returnType,
-            containingType,
-            declaredBaseName,
-            returnTypeInfo,
-            RequestModel.Empty,
-            parameters,
-            constraints,
-            isExplicit);
-    }
-
-    /// <summary>Gets the first explicit interface implementation for a method, if one exists.</summary>
-    /// <param name="methodSymbol">The method symbol to inspect.</param>
-    /// <returns>The first explicit interface implementation, or <see langword="null"/> when there is none.</returns>
-    private static IMethodSymbol? FirstExplicitInterfaceImplementation(IMethodSymbol methodSymbol)
-    {
-        var implementations = methodSymbol.ExplicitInterfaceImplementations;
-        return implementations.IsEmpty ? null : implementations[0];
-    }
-
-    /// <summary>Classifies a method's return type into its <see cref="ReturnTypeInfo"/> shape.</summary>
-    /// <param name="methodSymbol">The method symbol.</param>
-    /// <returns>The classified return type information.</returns>
-    private static ReturnTypeInfo GetReturnTypeInfo(IMethodSymbol methodSymbol) =>
-        methodSymbol.ReturnType.MetadataName switch
-        {
-            "Task" => ReturnTypeInfo.AsyncVoid,
-            "Task`1" or "ValueTask`1" => ReturnTypeInfo.AsyncResult,
-            "IAsyncEnumerable`1" => ReturnTypeInfo.AsyncEnumerable,
-            "Void" => ReturnTypeInfo.SyncVoid,
-            _ => ReturnTypeInfo.Return
-        };
-
-    /// <summary>Builds the constraint models for a set of type parameters.</summary>
-    /// <param name="typeParameters">The type parameters to generate constraints for.</param>
-    /// <param name="isOverrideOrExplicitImplementation">Whether the member is an override or explicit implementation.</param>
-    /// <returns>The constraint models for the type parameters.</returns>
-    private static ImmutableEquatableArray<TypeConstraint> GenerateConstraints(
-        in ImmutableArray<ITypeParameterSymbol> typeParameters,
-        bool isOverrideOrExplicitImplementation)
-    {
-        if (typeParameters.IsEmpty)
-        {
-            return ImmutableEquatableArrayFactory.Empty<TypeConstraint>();
-        }
-
-        var constraints = new TypeConstraint[typeParameters.Length];
-        for (var i = 0; i < typeParameters.Length; i++)
-        {
-            constraints[i] = ParseConstraintsForTypeParameter(
-                typeParameters[i],
-                isOverrideOrExplicitImplementation);
-        }
-
-        return ImmutableEquatableArrayFactory.FromArray(constraints);
-    }
-
-    /// <summary>Builds the constraint model for a single type parameter.</summary>
-    /// <param name="typeParameter">The type parameter to parse.</param>
-    /// <param name="isOverrideOrExplicitImplementation">Whether the member is an override or explicit implementation.</param>
-    /// <returns>The constraint model for the type parameter.</returns>
-    private static TypeConstraint ParseConstraintsForTypeParameter(
-        ITypeParameterSymbol typeParameter,
-        bool isOverrideOrExplicitImplementation)
-    {
-        var known = ComputeKnownConstraints(typeParameter, isOverrideOrExplicitImplementation);
-
-        var constraints = ImmutableEquatableArray<string>.Empty;
-        if (!isOverrideOrExplicitImplementation)
-        {
-            constraints = ParseConstraintTypes(typeParameter.ConstraintTypes);
-        }
-
-        var declaredName = typeParameter.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        return new(typeParameter.Name, declaredName, known, constraints);
-    }
-
-    /// <summary>Computes the set of well-known constraint flags emittable for a type parameter.</summary>
-    /// <param name="typeParameter">The type parameter to inspect.</param>
-    /// <param name="isOverrideOrExplicitImplementation">Whether the member is an override or explicit implementation.</param>
-    /// <returns>The combined well-known constraint flags.</returns>
-    private static KnownTypeConstraint ComputeKnownConstraints(
-        ITypeParameterSymbol typeParameter,
-        bool isOverrideOrExplicitImplementation)
-    {
-        // Explicit implementations and overrides can only emit the subset of constraints that
-        // the generated member declaration is allowed to repeat.
-        var known = KnownTypeConstraint.None;
-
-        if (typeParameter.HasReferenceTypeConstraint)
-        {
-            known |= KnownTypeConstraint.Class;
-        }
-
-        if (typeParameter.HasUnmanagedTypeConstraint && !isOverrideOrExplicitImplementation)
-        {
-            known |= KnownTypeConstraint.Unmanaged;
-        }
-
-        // `unmanaged` already implies `struct`, so avoid duplicating it.
-        if (typeParameter.HasValueTypeConstraint && !typeParameter.HasUnmanagedTypeConstraint)
-        {
-            known |= KnownTypeConstraint.Struct;
-        }
-
-        if (typeParameter.HasNotNullConstraint && !isOverrideOrExplicitImplementation)
-        {
-            known |= KnownTypeConstraint.NotNull;
-        }
-
-        // The `new()` constraint must be emitted last.
-        if (typeParameter.HasConstructorConstraint && !isOverrideOrExplicitImplementation)
-        {
-            known |= KnownTypeConstraint.New;
-        }
-
-        return known;
-    }
-
-    /// <summary>Builds a parameter model from a parameter symbol.</summary>
-    /// <param name="param">The parameter symbol to parse.</param>
-    /// <returns>The model describing the parameter.</returns>
-    private static ParameterModel ParseParameter(IParameterSymbol param)
-    {
-        var annotation =
-            !param.Type.IsValueType && param.NullableAnnotation == NullableAnnotation.Annotated;
-
-        var paramType = param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var isGeneric = ContainsTypeParameter(param.Type);
-
-        return new(param.MetadataName, paramType, annotation, isGeneric);
-    }
-
-    /// <summary>Builds parameter models from a fixed Roslyn parameter array.</summary>
-    /// <param name="parameters">The parameters to parse.</param>
-    /// <returns>The parsed parameter models.</returns>
-    private static ImmutableEquatableArray<ParameterModel> ParseParameters(
-        in ImmutableArray<IParameterSymbol> parameters)
-    {
-        if (parameters.IsEmpty)
-        {
-            return ImmutableEquatableArrayFactory.Empty<ParameterModel>();
-        }
-
-        var parameterModels = new ParameterModel[parameters.Length];
-        for (var i = 0; i < parameters.Length; i++)
-        {
-            parameterModels[i] = ParseParameter(parameters[i]);
-        }
-
-        return ImmutableEquatableArrayFactory.FromArray(parameterModels);
-    }
-
-    /// <summary>Builds constraint display names from a fixed Roslyn type array.</summary>
-    /// <param name="constraintTypes">The constraint types to parse.</param>
-    /// <returns>The parsed constraint type display names.</returns>
-    private static ImmutableEquatableArray<string> ParseConstraintTypes(
-        in ImmutableArray<ITypeSymbol> constraintTypes)
-    {
-        if (constraintTypes.IsEmpty)
-        {
-            return ImmutableEquatableArrayFactory.Empty<string>();
-        }
-
-        var constraints = new string[constraintTypes.Length];
-        for (var i = 0; i < constraintTypes.Length; i++)
-        {
-            constraints[i] = constraintTypes[i].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        }
-
-        return ImmutableEquatableArrayFactory.FromArray(constraints);
-    }
-
-    /// <summary>Determines whether a type or any of its type arguments is a type parameter.</summary>
-    /// <param name="symbol">The type symbol to inspect.</param>
-    /// <returns><see langword="true"/> if the type involves a type parameter; otherwise, <see langword="false"/>.</returns>
-    private static bool ContainsTypeParameter(ITypeSymbol symbol)
-    {
-        if (symbol is ITypeParameterSymbol)
-        {
-            return true;
-        }
-
-        if (symbol is not INamedTypeSymbol { TypeParameters.Length: > 0 } namedType)
-        {
-            return false;
-        }
-
-        foreach (var typeArg in namedType.TypeArguments)
-        {
-            if (ContainsTypeParameter(typeArg))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>Builds a method model for a Refit interface method.</summary>
-    /// <param name="methodSymbol">The Refit method symbol.</param>
-    /// <param name="isImplicitInterface">Whether the method belongs to the implicitly implemented interface.</param>
-    /// <param name="context">The shared generation context.</param>
-    /// <returns>The model describing the Refit method.</returns>
-    private static MethodModel ParseMethod(
-        IMethodSymbol methodSymbol,
-        bool isImplicitInterface,
-        in InterfaceGenerationContext context)
-    {
-        var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-        // For explicit interface implementations, emit the interface being implemented, not the
-        // interface that originally declared the method.
-        var explicitImpl = FirstExplicitInterfaceImplementation(methodSymbol);
-        var containingTypeSymbol = explicitImpl?.ContainingType ?? methodSymbol.ContainingType;
-        var containingType = containingTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-        var declaredBaseName = BuildDeclaredBaseName(methodSymbol);
-        var returnTypeInfo = GetReturnTypeInfo(methodSymbol);
-        var request = ParseRequest(methodSymbol, returnTypeInfo, context);
-        var parameters = ParseParameters(methodSymbol.Parameters);
-
-        var isExplicit = explicitImpl is not null;
-        var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit || !isImplicitInterface);
-
-        return new(
-            methodSymbol.Name,
-            returnType,
-            containingType,
-            declaredBaseName,
-            returnTypeInfo,
-            request,
-            parameters,
-            constraints,
-            isExplicit);
-    }
-
     /// <summary>The generated identifiers and display names computed for an interface.</summary>
     /// <param name="ClassName">The simple generated class name.</param>
     /// <param name="ClassDeclaration">The generated class declaration name.</param>
@@ -1076,14 +681,16 @@ internal static partial class Parser
         string Namespace,
         string InterfaceDisplayName);
 
-    /// <summary>The interface's methods partitioned into Refit and non-Refit sets.</summary>
+    /// <summary>The interface's members partitioned into the sets the generated stub emits.</summary>
     /// <param name="NonRefitMethods">The non-Refit methods declared directly on the interface.</param>
     /// <param name="DerivedRefitMethods">The Refit methods inherited from base interfaces.</param>
     /// <param name="DerivedNonRefitMethods">The non-Refit methods inherited from base interfaces.</param>
+    /// <param name="InheritedProperties">The emittable properties inherited from base interfaces, in discovery order.</param>
     /// <param name="HasDispose">Whether the interface inherits <c>IDisposable.Dispose</c>.</param>
     private readonly record struct MethodPartition(
         List<IMethodSymbol> NonRefitMethods,
         List<IMethodSymbol> DerivedRefitMethods,
         List<IMethodSymbol> DerivedNonRefitMethods,
+        List<IPropertySymbol> InheritedProperties,
         bool HasDispose);
 }

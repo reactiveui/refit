@@ -14,8 +14,8 @@ namespace Refit;
     "Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem",
     false)]
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Major Code Smell",
-    "S1133:Deprecated code should be removed",
+    "Design",
+    "SST2310:Deprecated code should be removed",
     Justification = "Public API retained for backwards compatibility; cannot remove without a breaking change.")]
 public sealed class AttachmentNameAttribute(string name) : Attribute
 {

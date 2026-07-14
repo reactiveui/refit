@@ -60,4 +60,26 @@ public class SourceGeneratorBenchmark
     /// <returns>The resulting generator driver.</returns>
     [Benchmark]
     public GeneratorDriver CachedMany() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
+
+    /// <summary>Prepares the query-heavy compilation for a cold generator run.</summary>
+    [GlobalSetup(Target = nameof(CompileQueryHeavy))]
+    public void SetupQueryHeavy() =>
+        (_compilation, _driver) = GeneratorBenchmarkHarness.Create(
+            SourceGeneratorBenchmarksProjects.QueryHeavyInterface);
+
+    /// <summary>Benchmarks a cold generator run over the query-heavy interface.</summary>
+    /// <returns>The updated generator driver.</returns>
+    [Benchmark]
+    public GeneratorDriver CompileQueryHeavy() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
+
+    /// <summary>Prepares the query-heavy compilation for a cached generator run.</summary>
+    [GlobalSetup(Target = nameof(CachedQueryHeavy))]
+    public void SetupCachedQueryHeavy() =>
+        (_compilation, _driver) = GeneratorBenchmarkHarness.CreatePrimedForCachedRun(
+            SourceGeneratorBenchmarksProjects.QueryHeavyInterface);
+
+    /// <summary>Benchmarks a cached generator run over the query-heavy interface.</summary>
+    /// <returns>The updated generator driver.</returns>
+    [Benchmark]
+    public GeneratorDriver CachedQueryHeavy() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
 }

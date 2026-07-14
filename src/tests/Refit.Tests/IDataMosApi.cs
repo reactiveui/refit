@@ -14,8 +14,8 @@ public interface IDataMosApi
     /// <returns>The dataset rows.</returns>
     [Get("/datasets/{dataSet}/rows")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters to enable type inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
     Task<DatasetQueryItem<TResultRow>[]> GetDataSetItems<TResultRow>()
         where TResultRow : class, new();

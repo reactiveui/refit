@@ -37,14 +37,23 @@ namespace Refit.Implementation
                 _settings = requestBuilder.Settings;
             }
 
+            /// <summary>Initializes a new instance of the RefitTestsTestNestedINestedGitHubApi class for generated-only execution.</summary>
+            /// <param name="client">The HTTP client used by the generated implementation.</param>
+            /// <param name="settings">The settings used by the generated implementation.</param>
+            public RefitTestsTestNestedINestedGitHubApi(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
+            {
+                Client = client;
+                _settings = settings;
+            }
             /// <summary>Cached attribute provider for the generated GetUser method's userName parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>());
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, ((7, 17), _settings.UrlParameterFormatter.Format(userName, ______userNameAttributeProvider, typeof(string)))), refitSettings.UrlResolution));
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider, typeof(string)))]), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;
@@ -61,40 +70,73 @@ namespace Refit.Implementation
                     global::System.Threading.CancellationToken.None);
             }
 
+            /// <summary>Cached attribute provider for the generated GetUserObservable method's userName parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider0 = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
-            /// <summary>Cached parameter type array for the generated GetUserObservable method.</summary>
-            private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
             public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
             {
-                var refitArguments = new object[] { @userName };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters );
-
-                return (global::System.IObservable<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider0, typeof(string)))]), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<global::Refit.Tests.User, global::Refit.Tests.User>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    false,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
+            /// <summary>Cached attribute provider for the generated GetUserCamelCase method's userName parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider1 = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
-            /// <summary>Cached parameter type array for the generated GetUserCamelCase method.</summary>
-            private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
             public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
             {
-                var refitArguments = new object[] { @userName };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters0 );
-
-                return (global::System.IObservable<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{userName}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider1, typeof(string)))]), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<global::Refit.Tests.User, global::Refit.Tests.User>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    false,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
             /// <summary>Cached attribute provider for the generated GetOrgMembers method's orgName parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______orgNameAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>());
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______orgNameAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName)
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/orgs/{orgname}/members", refitSettings.AllowUnmatchedRouteParameters, ((6, 15), _settings.UrlParameterFormatter.Format(orgName, ______orgNameAttributeProvider, typeof(string)))), refitSettings.UrlResolution));
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/orgs/{orgname}/members", refitSettings.AllowUnmatchedRouteParameters, [((6, 15), refitUseDefaultFormatting ? (@orgName) : refitSettings.UrlParameterFormatter.Format(@orgName, ______orgNameAttributeProvider, typeof(string)))]), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;
@@ -111,17 +153,34 @@ namespace Refit.Implementation
                     global::System.Threading.CancellationToken.None);
             }
 
+            /// <summary>Cached attribute provider for the generated FindUsers method's q parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______qAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
-            /// <summary>Cached parameter type array for the generated FindUsers method.</summary>
-            private static readonly global::System.Type[] ______typeParameters1 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
-            public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
+            public global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
             {
-                var refitArguments = new object[] { @q };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters1 );
-
-                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
+                var refitSettings = _settings;
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitQueryBuilder = new global::Refit.GeneratedQueryStringBuilder("/search/users", false);
+                if (@q != null)
+                {
+                    refitQueryBuilder.AddPreEscapedKey("q", refitUseDefaultFormatting ? (@q) : refitSettings.UrlParameterFormatter.Format(@q, ______qAttributeProvider, typeof(string)), false);
+                }
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, refitQueryBuilder.Build(), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
+                return global::Refit.GeneratedRequestRunner.SendAsync<global::Refit.Tests.UserSearchResult, global::Refit.Tests.UserSearchResult>(
+                    this.Client,
+                    refitRequest,
+                    refitSettings,
+                    false,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
             /// <inheritdoc />
@@ -148,11 +207,26 @@ namespace Refit.Implementation
             /// <inheritdoc />
             public global::System.IObservable<string> GetIndexObservable()
             {
-                var refitArguments = global::System.Array.Empty<object>();
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", global::System.Array.Empty<global::System.Type>() );
-
-                return (global::System.IObservable<string>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/", refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<string, string>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    false,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
             /// <inheritdoc />

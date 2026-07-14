@@ -11,6 +11,15 @@ namespace Refit;
 /// <summary>Default Url parameter formater.</summary>
 public class DefaultUrlParameterFormatter : IUrlParameterFormatter
 {
+    /// <summary>
+    /// Gets a value indicating whether this instance is the unmodified default formatter — not a derived type and
+    /// with no registered formats — so generated request building may format statically-known values inline.
+    /// </summary>
+    internal bool IsPristineDefault =>
+        GetType() == typeof(DefaultUrlParameterFormatter)
+        && SpecificFormats.Count == 0
+        && GeneralFormats.Count == 0;
+
     /// <summary>Gets the registered format strings keyed by container and parameter type.</summary>
     private Dictionary<(Type containerType, Type parameterType), string> SpecificFormats { get; } = [];
 
@@ -24,14 +33,20 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <param name="format">The format string.</param>
     /// <typeparam name="TContainer">Container class type.</typeparam>
     /// <typeparam name="TParameter">Parameter type.</typeparam>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     public void AddFormat<TContainer, TParameter>(string format) =>
         SpecificFormats.Add((typeof(TContainer), typeof(TParameter)), format);
 
     /// <summary>Add format for specified parameter type. Might be suppressed by a QueryAttribute format or a container specific format.</summary>
     /// <param name="format">The format string.</param>
     /// <typeparam name="TParameter">Parameter type.</typeparam>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     public void AddFormat<TParameter>(string format) => GeneralFormats.Add(typeof(TParameter), format);
 
     /// <summary>Formats the specified parameter value.</summary>
@@ -71,16 +86,9 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <returns>The first query attribute, or null when absent.</returns>
     private static QueryAttribute? GetFirstQueryAttribute(ICustomAttributeProvider attributeProvider)
     {
+        // GetCustomAttributes is type-filtered, so every element is a QueryAttribute; take the first, if any.
         var attributes = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true);
-        for (var i = 0; i < attributes.Length; i++)
-        {
-            if (attributes[i] is QueryAttribute attribute)
-            {
-                return attribute;
-            }
-        }
-
-        return null;
+        return attributes.Length > 0 ? attributes[0] as QueryAttribute : null;
     }
 
     /// <summary>Selects the effective format string, preferring the attribute format, then specific, then general formats.</summary>

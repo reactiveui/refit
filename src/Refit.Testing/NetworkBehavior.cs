@@ -25,16 +25,16 @@ namespace Refit.Testing;
 public sealed class NetworkBehavior
 {
     /// <summary>The default base delay, in seconds.</summary>
-    private const double DefaultDelaySeconds = 2d;
+    private const double DefaultDelaySeconds = 2D;
 
     /// <summary>The default latency variance as a fraction of the delay.</summary>
-    private const double DefaultVariance = 0.4d;
+    private const double DefaultVariance = 0.4D;
 
     /// <summary>The default probability that a request simulates a network failure.</summary>
-    private const double DefaultFailurePercent = 0.03d;
+    private const double DefaultFailurePercent = 0.03D;
 
     /// <summary>The width of the symmetric variance window applied to the delay.</summary>
-    private const double VarianceSpan = 2d;
+    private const double VarianceSpan = 2D;
 
     /// <summary>Guards <see cref="_random"/>, which is not thread-safe.</summary>
     private readonly Lock _gate = new();
@@ -88,8 +88,8 @@ public sealed class NetworkBehavior
             sample = _random.NextDouble();
         }
 
-        var factor = 1d + (((sample * VarianceSpan) - 1d) * Variance);
-        return TimeSpan.FromMilliseconds(Delay.TotalMilliseconds * Math.Max(0d, factor));
+        var factor = 1D + (((sample * VarianceSpan) - 1D) * Variance);
+        return TimeSpan.FromMilliseconds(Delay.TotalMilliseconds * Math.Max(0D, factor));
     }
 
     /// <summary>Determines whether the next request should simulate a network failure.</summary>

@@ -23,4 +23,18 @@ public class GeneratedFormData
     /// <summary>Gets or sets a nullable property serialized even when null.</summary>
     [Query(SerializeNull = true)]
     public string? Nullable { get; set; }
+
+    /// <summary>Gets or sets an integer scalar rendered without boxing on the fast path.</summary>
+    public int Age { get; set; }
+
+    /// <summary>Gets or sets an enum scalar rendered by the generated formatter.</summary>
+    public GeneratedFormColor Color { get; set; }
+
+    /// <summary>Gets or sets a formatted numeric scalar.</summary>
+    [Query(Format = "0.00")]
+    public double Ratio { get; set; }
+
+    /// <summary>Gets or sets a prefixed scalar composing its field name from the query prefix.</summary>
+    [Query("-", "addr")]
+    public string? City { get; set; }
 }

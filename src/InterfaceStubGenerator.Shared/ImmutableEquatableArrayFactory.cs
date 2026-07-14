@@ -11,7 +11,10 @@ internal static class ImmutableEquatableArrayFactory
     /// <summary>Gets an empty immutable equatable array.</summary>
     /// <typeparam name="T">The element type.</typeparam>
     /// <returns>An empty array instance.</returns>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter is intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter is intentionally specified explicitly by callers.")]
     public static ImmutableEquatableArray<T> Empty<T>()
         where T : IEquatable<T> => ImmutableEquatableArray<T>.Empty;
 

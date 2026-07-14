@@ -20,7 +20,10 @@ public sealed class NonStreamingContentSerializer : IHttpContentSerializer
     public HttpContent ToHttpContent<T>(T item) => _inner.ToHttpContent(item);
 
     /// <inheritdoc/>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
         _inner.FromHttpContentAsync<T>(content, cancellationToken);
 

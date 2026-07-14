@@ -9,7 +9,7 @@ namespace Refit;
 internal sealed class AuthenticatedHttpClientHandler : DelegatingHandler
 {
     /// <summary>The function used to retrieve the authentication token for a request.</summary>
-    private readonly Func<HttpRequestMessage, CancellationToken, Task<string>> _getToken;
+    private readonly Func<HttpRequestMessage, CancellationToken, ValueTask<string>> _getToken;
 
     /// <summary>Initializes a new instance of the <see cref="AuthenticatedHttpClientHandler"/> class.</summary>
     /// <param name="getToken">The function to get the authentication token.</param>
@@ -21,7 +21,7 @@ internal sealed class AuthenticatedHttpClientHandler : DelegatingHandler
     /// a behavior which is incompatible with the <c>IHttpClientBuilder</c>.
     /// </remarks>
     public AuthenticatedHttpClientHandler(
-        Func<HttpRequestMessage, CancellationToken, Task<string>> getToken,
+        Func<HttpRequestMessage, CancellationToken, ValueTask<string>> getToken,
         HttpMessageHandler? innerHandler = null)
         : base(innerHandler ?? new HttpClientHandler())
     {
@@ -41,7 +41,7 @@ internal sealed class AuthenticatedHttpClientHandler : DelegatingHandler
     /// </remarks>
     public AuthenticatedHttpClientHandler(
         HttpMessageHandler? innerHandler,
-        Func<HttpRequestMessage, CancellationToken, Task<string>> getToken)
+        Func<HttpRequestMessage, CancellationToken, ValueTask<string>> getToken)
     {
         ArgumentExceptionHelper.ThrowIfNull(getToken);
         _getToken = getToken;

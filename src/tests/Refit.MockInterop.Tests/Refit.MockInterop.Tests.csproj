@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="TUnit" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\Refit.Reflection\Refit.Reflection.csproj" />
     <ProjectReference Include="..\..\Refit.Testing\Refit.Testing.csproj" />
   </ItemGroup>
 

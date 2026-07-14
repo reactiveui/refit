@@ -55,8 +55,9 @@ public sealed class DemoBackendHandler : HttpMessageHandler
         var size = 100;
         foreach (var part in query)
         {
-            var kv = part.Split('=', 2);
-            if (kv.Length == 2 && kv[0] == "size" && int.TryParse(Uri.UnescapeDataString(kv[1]), out var parsed))
+            const int keyValuePartCount = 2;
+            var kv = part.Split('=', keyValuePartCount);
+            if (kv.Length == keyValuePartCount && kv[0] == "size" && int.TryParse(Uri.UnescapeDataString(kv[1]), out var parsed))
             {
                 size = parsed;
                 break;

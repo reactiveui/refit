@@ -7,8 +7,8 @@ using Refit;
 
 /// <summary>Intentional fixture declared in the global namespace to test generation without a namespace.</summary>
 [SuppressMessage(
-    "Major Code Smell",
-    "S3903:Types should be defined in named namespaces",
+    "Design",
+    "SST2312:Types should be declared in a named namespace",
     Justification = "Fixture must stay in the global namespace; consumed as a source file by the generator no-namespace smoke test.")]
 [SuppressMessage(
     "Design",

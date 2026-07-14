@@ -152,7 +152,8 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
     /// <returns>The fixable diagnostic IDs.</returns>
     private static ImmutableArray<string> CreateFixableDiagnosticIds()
     {
-        var builder = ImmutableArray.CreateBuilder<string>(2);
+        const int fixableDiagnosticCount = 2;
+        var builder = ImmutableArray.CreateBuilder<string>(fixableDiagnosticCount);
         builder.Add(DiagnosticIds.InvalidRouteBackslash);
         builder.Add(DiagnosticIds.InvalidHeaderCollectionParameter);
         return builder.MoveToImmutable();

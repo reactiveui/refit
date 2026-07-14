@@ -18,8 +18,29 @@ public partial class RequestBuilderTests
     /// <summary>The name of the cancellable GET method exercised by the cancellation tests.</summary>
     private const string GetWithCancellationMethod = "GetWithCancellation";
 
+    /// <summary>The single positional argument reused by the dynamic-invocation tests.</summary>
+    private const string ValueArgument = "value";
+
+    /// <summary>The name of the void method with a query alias exercised by the escaping tests.</summary>
+    private const string FetchVoidQueryAliasMethodName = "FetchSomeStuffWithVoidAndQueryAlias";
+
+    /// <summary>A sample email query argument exercised by the escaping tests.</summary>
+    private const string ExampleEmailValue = "test@example.com";
+
+    /// <summary>A sample query argument containing reserved characters exercised by the escaping tests.</summary>
+    private const string PushNotPullValue = "push!=pull";
+
+    /// <summary>The canonical sample route id passed as the first argument to most request-builder tests.</summary>
+    private const int SampleId = 6;
+
+    /// <summary>An alternate sample route id used where a test needs an id distinct from <see cref="SampleId"/>.</summary>
+    private const int AlternateSampleId = 42;
+
     /// <summary>The integer array {1, 2, 3} used as query test data.</summary>
     private static readonly int[] _intArray123 = [1, 2, 3];
+
+    /// <summary>The byte array {1, 2, 3} used as sample stream request-body content.</summary>
+    private static readonly byte[] _byteArray123 = [1, 2, 3];
 
     /// <summary>The integer array {5, 7} used as query test data.</summary>
     private static readonly int[] _intArray57 = [5, 7];
@@ -92,7 +113,7 @@ public partial class RequestBuilderTests
         var factory = fixture.RunRequest("GetWithNullableCancellation");
 
         using var cts = new CancellationTokenSource();
-        var output = await factory([42, cts.Token]);
+        var output = await factory([AlternateSampleId, cts.Token]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/42");
@@ -110,7 +131,7 @@ public partial class RequestBuilderTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        var output = await factory([42, cts.Token]);
+        var output = await factory([AlternateSampleId, cts.Token]);
 
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsTrue();
     }
@@ -158,7 +179,7 @@ public partial class RequestBuilderTests
             AuthorizationHeaderValueGetter = (_, cancellationToken) =>
             {
                 observedCancellationToken = cancellationToken;
-                return Task.FromResult("tokenValue");
+                return new ValueTask<string>("tokenValue");
             }
         };
 
@@ -240,7 +261,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IStreamApi>();
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IStreamApi.PostStream));
 
-        await using var stream = new MemoryStream([1, 2, 3]);
+        await using var stream = new MemoryStream(_byteArray123);
         var request = await factory([stream]);
 
         await Assert.That(request.Content).IsTypeOf<StreamContent>();
@@ -396,7 +417,7 @@ public partial class RequestBuilderTests
                 {
                     BaseAddress = new(ApiBaseUrlWithSlash)
                 },
-                ["value"])!;
+                [ValueArgument])!;
 
         var result = await valueTask;
 
@@ -419,7 +440,7 @@ public partial class RequestBuilderTests
                 {
                     BaseAddress = new(ApiBaseUrlWithSlash)
                 },
-                ["value"])!;
+                [ValueArgument])!;
 
         using var response = await valueTask;
 
@@ -447,7 +468,7 @@ public partial class RequestBuilderTests
                 {
                     BaseAddress = new(ApiBaseUrlWithSlash)
                 },
-                ["value", cts.Token])!;
+                [ValueArgument, cts.Token])!;
 
         await Assert.That(() => (Task)ObservableTestHelpers.Await(observable)).ThrowsExactly<TaskCanceledException>();
         await Assert.That(testHttpMessageHandler.RequestMessage!.RequestUri!.ToString()).IsEqualTo("http://api/value/value");
@@ -508,254 +529,5 @@ public partial class RequestBuilderTests
 
             await Assert.That(shouldDie).IsFalse();
         }
-    }
-
-    /// <summary>A hardcoded query parameter appears in the URL.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task HardcodedQueryParamShouldBeInUrl()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithHardcodedQueryParameter");
-        var output = await factory([6]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf");
-    }
-
-    /// <summary>Parameterized query parameters appear in the URL.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task ParameterizedQueryParamsShouldBeInUrl()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithHardcodedAndOtherQueryParameters");
-        var output = await factory([6, "foo"]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf&search_for=foo");
-    }
-
-    /// <summary>A parameter that appears more than once is rendered each time.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task ParameterizedValuesShouldBeInUrlMoreThanOnce()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            nameof(IDummyHttpApi.SomeApiThatUsesParameterMoreThanOnceInTheUrl));
-        var output = await factory([6]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/api/foo/6/file_6?query=6");
-    }
-
-    /// <summary>Round-tripping parameterized query parameters appear in the URL.</summary>
-    /// <param name="path">The path segment value to round-trip.</param>
-    /// <param name="expectedQuery">The expected resulting path and query.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    [Arguments("aaa/bbb", "/foo/bar/aaa/bbb/1")]
-    [Arguments("aaa/bbb/ccc", "/foo/bar/aaa/bbb/ccc/1")]
-    [Arguments("aaa", "/foo/bar/aaa/1")]
-    [Arguments("aa a/bb-b", "/foo/bar/aa%20a/bb-b/1")]
-    public async Task RoundTrippingParameterizedQueryParamsShouldBeInUrl(
-        string path,
-        string expectedQuery)
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithRoundTrippingParam");
-        var output = await factory([path, 1]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-        await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
-    }
-
-    /// <summary>Null query parameters render as blank in the URL.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    [UnconditionalSuppressMessage(
-        "SingleFile",
-        "IL3000:Avoid accessing Assembly file path when publishing as a single file",
-        Justification = "Test reads the on-disk assembly path to build a FileInfo argument; never run as a single-file app.")]
-    public async Task ParameterizedNullQueryParamsShouldBeBlankInUrl()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod("PostWithQueryStringParameters");
-        var output = await factory(
-            [new FileInfo(typeof(RequestBuilderTests).Assembly.Location), null!]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?name=");
-    }
-
-    /// <summary>Parameters are put as an explicit query string.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task ParametersShouldBePutAsExplicitQueryString()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            nameof(IDummyHttpApi.QueryWithExplicitParameters));
-        var output = await factory(["value1", "value2"]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/query?q1=value1&q2=value2");
-    }
-
-    /// <summary>A query parameter is formatted using its format attribute.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task QueryParamShouldFormat()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithQueryFormat");
-        var output = await factory([6]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6.0");
-    }
-
-    /// <summary>Parameterized query parameters appear in the URL with values encoded.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task ParameterizedQueryParamsShouldBeInUrlAndValuesEncoded()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithHardcodedAndOtherQueryParameters");
-        var output = await factory([6, "push!=pull&push"]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf&search_for=push%21%3Dpull%26push");
-    }
-
-    /// <summary>Mixed replacement and query values are encoded in the URL.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQuery()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = await factory(["6 & 7/8", "test@example.com", "push!=pull"]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6%20%26%207%2F8/path?a=test%40example.com&b=push%21%3Dpull");
-    }
-
-    /// <summary>Query parameters with a path delimiter are encoded.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task QueryParamWithPathDelimiterShouldBeEncoded()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = await factory(["6/6", "test@example.com", "push!=pull"]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6%2F6/path?a=test%40example.com&b=push%21%3Dpull");
-    }
-
-    /// <summary>Query parameters ending in double quotes are not truncated.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task QueryParamWhichEndsInDoubleQuotesShouldNotBeTruncated()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithDoubleQuotesInUrl");
-        var output = await factory([42]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?q=app_metadata.id%3A%2242%22");
-    }
-
-    /// <summary>Captures the last character when a route ends with a constant.</summary>
-    /// <param name="methodToTest">The name of the interface method to build.</param>
-    /// <param name="constantChar">The trailing constant character expected in the URL.</param>
-    /// <param name="contains">The substring expected to appear in the URL.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    [Arguments("GetWithTrainingParenthesis", ")", "/foo/bar/(1)")]
-    [Arguments("GetWithTrailingSlash", "/", "/foo/bar/1/")]
-    public async Task ShouldCaptureLastCharacterWhenRouteEndsWithConstant(string methodToTest, string constantChar, string contains)
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            methodToTest);
-        var output = await factory(["1"]);
-
-        var uri = new Uri(new(ApiBaseUrlWithSlash), output.RequestUri!);
-
-        await Assert.That(uri.PathAndQuery).EndsWith(constantChar);
-        await Assert.That(uri.PathAndQuery).Contains(contains);
-    }
-
-    /// <summary>Mixed replacement and query values are encoded for a bad id.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQueryBadId()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = await factory(["6", "test@example.com", "push!=pull"]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6/path?a=test%40example.com&b=push%21%3Dpull");
-    }
-
-    /// <summary>Non-formattable query parameters are included in the URL.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task NonFormattableQueryParamsShouldBeIncluded()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithNonFormattableQueryParams");
-        var output = await factory([true, 'x']);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?b=True&c=x");
-    }
-
-    /// <summary>Multiple parameters in the same segment are generated correctly.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task MultipleParametersInTheSameSegmentAreGeneratedProperly()
-    {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomethingWithMultipleParametersPerSegment");
-        var output = await factory([6, 1024, 768]);
-
-        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
-        await Assert.That(uri.PathAndQuery).IsEqualTo("/6/1024x768/foo");
-    }
-
-    /// <summary>Verifies a simple string path parameter is formatted with the expected metadata.</summary>
-    /// <returns>A task that represents the asynchronous test.</returns>
-    [Test]
-    public async Task UrlParameterShouldWorkWithGeneratedCode()
-    {
-        var fixture = new RequestBuilderImplementation<IBasicApi>();
-        var factory = fixture.BuildRequestFactoryForMethod(nameof(IBasicApi.GetParam));
-        var output = await factory([nameof(IBasicApi.GetParam)]);
-
-        var uri = new Uri(new("http://api"), output.RequestUri!);
-        await Assert.That(uri.PathAndQuery).IsEqualTo($"/{nameof(IBasicApi.GetParam)}");
     }
 }

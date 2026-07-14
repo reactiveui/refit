@@ -14,10 +14,6 @@ namespace System;
 /// because every use is a stack-local accumulator; that keeps it from ever being boxed or
 /// compared, so it needs no equality members.
 /// </remarks>
-[Diagnostics.CodeAnalysis.SuppressMessage(
-    "Style",
-    "S1118:Utility classes should not have public constructors",
-    Justification = "BCL-shaped mutable hash accumulator must be constructible.")]
 [Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal ref struct HashCode
 {

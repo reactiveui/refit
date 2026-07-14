@@ -127,8 +127,8 @@ public class CachedRequestBuilderTests
 
         /// <inheritdoc />
         [SuppressMessage(
-            "Major Code Smell",
-            "S4018:Generic methods should provide type parameters",
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
             Justification = "The method implements IHttpContentSerializer and must preserve the interface shape.")]
         public Task<T?> FromHttpContentAsync<T>(
             HttpContent content,

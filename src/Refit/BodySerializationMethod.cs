@@ -13,8 +13,8 @@ public enum BodySerializationMethod
     /// <summary>Json encodes everything, including strings.</summary>
     [Obsolete("Use BodySerializationMethod.Serialized instead", false)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S1133:Deprecated code should be removed",
+        "Design",
+        "SST2310:Deprecated code should be removed",
         Justification = "Public API retained for backwards compatibility; cannot remove without a breaking change.")]
     Json,
 

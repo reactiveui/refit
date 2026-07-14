@@ -20,6 +20,12 @@ public class StreamingResponseTests
     /// <summary>The base address used by the streaming test clients.</summary>
     private const string BaseUrl = "http://foo";
 
+    /// <summary>A single-element JSON array body used by the streaming tests.</summary>
+    private const string SingleItemJson = "[{\"id\":2}]";
+
+    /// <summary>A three-element JSON array body used by the streaming tests.</summary>
+    private const string ThreeItemJson = "[{\"id\":1},{\"id\":2},{\"id\":3}]";
+
     /// <summary>Expected element id value 2 in streamed payloads.</summary>
     private const int ExpectedId2 = 2;
 
@@ -49,7 +55,7 @@ public class StreamingResponseTests
     [Test]
     public async Task StreamsJsonArrayElements()
     {
-        var fixture = CreateFixture(JsonMediaType, "[{\"id\":1},{\"id\":2},{\"id\":3}]");
+        var fixture = CreateFixture(JsonMediaType, ThreeItemJson);
 
         var ids = new List<int>();
         await foreach (var item in fixture.GetArray())
@@ -169,7 +175,7 @@ public class StreamingResponseTests
     [Test]
     public async Task HonorsCancellationToken()
     {
-        var fixture = CreateFixture(JsonMediaType, "[{\"id\":1},{\"id\":2},{\"id\":3}]");
+        var fixture = CreateFixture(JsonMediaType, ThreeItemJson);
 
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
@@ -209,7 +215,8 @@ public class StreamingResponseTests
     [Test]
     public async Task StreamsJsonLinesWithSourceGenContextAndReaderEdges()
     {
-        var bigGap = new string(' ', 5000);
+        const int bufferExceedingGapLength = 5000;
+        var bigGap = new string(' ', bufferExceedingGapLength);
 
         // Includes a whitespace-only line (skipped), a line larger than the read buffer, CRLF endings, and no final newline.
         var payload = "{\"id\":1}\r\n   \r\n{" + bigGap + "\"id\":2}\r\n{\"id\":3}";
@@ -232,7 +239,7 @@ public class StreamingResponseTests
     [Test]
     public async Task JsonArrayStreamDisposesEnumeratorEarly()
     {
-        var fixture = CreateFixture(JsonMediaType, "[{\"id\":1},{\"id\":2},{\"id\":3}]");
+        var fixture = CreateFixture(JsonMediaType, ThreeItemJson);
 
         await using var enumerator = fixture.GetArray().GetAsyncEnumerator();
 
@@ -302,7 +309,7 @@ public class StreamingResponseTests
     [Test]
     public async Task ReflectionRequestBuilderStreamsAsyncEnumerable()
     {
-        var (builder, client) = CreateReflectionBuilder("[{\"id\":2}]");
+        var (builder, client) = CreateReflectionBuilder(SingleItemJson);
         var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArray));
 
         var ids = new List<int>();
@@ -366,7 +373,7 @@ public class StreamingResponseTests
     [Test]
     public async Task ReflectionRequestBuilderStreamingDisposesWithoutMoving()
     {
-        var (builder, client) = CreateReflectionBuilder("[{\"id\":2}]");
+        var (builder, client) = CreateReflectionBuilder(SingleItemJson);
         var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArray));
         var sequence = (IAsyncEnumerable<StreamItem?>)func(client, [])!;
 
@@ -381,7 +388,7 @@ public class StreamingResponseTests
     [Test]
     public async Task ReflectionRequestBuilderStreamingPropagatesCancellation()
     {
-        var (builder, client) = CreateReflectionBuilder("[{\"id\":2}]");
+        var (builder, client) = CreateReflectionBuilder(SingleItemJson);
         var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArrayCancellable));
         using var cancellationTokenSource = new CancellationTokenSource();
         await cancellationTokenSource.CancelAsync();

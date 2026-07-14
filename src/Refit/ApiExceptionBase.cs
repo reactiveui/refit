@@ -7,13 +7,13 @@ namespace Refit;
 
 /// <summary>Represents an error that occurred while sending an API request.</summary>
 [SuppressMessage(
-    "Usage",
-    "CA1032:Implement standard exception constructors",
+    "Design",
+    "SST1488:Exception types should declare the standard constructors",
     Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
 [SuppressMessage(
-    "Major Code Smell",
-    "S4027:Exceptions should provide standard constructors",
-    Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
+    "Design",
+    "SST1496:An abstract type declares nothing abstract",
+    Justification = "Intentional abstract base for the API exception hierarchy; instantiation is prevented by its protected constructors and it shares state rather than an abstract contract.")]
 public abstract class ApiExceptionBase : Exception
 {
     /// <summary>Initializes a new instance of the <see cref="ApiExceptionBase"/> class.</summary>

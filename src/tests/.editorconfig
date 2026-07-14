@@ -16,3 +16,17 @@ dotnet_diagnostic.CA2213.severity = none # Disposable fields should be disposed
 # SonarAnalyzer (S) — relaxed for test projects
 ###################
 dotnet_diagnostic.S5332.severity = none # Using http protocol is insecure (test URLs are not real endpoints)
+
+###################
+# StyleSharp (SST) — relaxed for test projects
+###################
+dotnet_diagnostic.SST2016.severity = none # Prefer DateTimeOffset over DateTime on a visible signature — test models exercise DateTime handling deliberately
+dotnet_diagnostic.SST2410.severity = none # A created disposable is never disposed — test-local disposables are short-lived and GC-reclaimed
+
+###################
+# PerformanceSharp (PSH) — relaxed for test projects
+###################
+performancesharp.avoid_linq_on_hot_path = false
+dotnet_diagnostic.PSH1100.severity = none # Tests can use LINQ for clarity
+dotnet_diagnostic.PSH1101.severity = error # In tests, simplify LINQ Where plus terminal calls instead of banning LINQ
+dotnet_diagnostic.PSH1102.severity = error # In tests, simplify LINQ type filters instead of banning LINQ

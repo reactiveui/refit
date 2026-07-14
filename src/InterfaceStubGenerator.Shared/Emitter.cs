@@ -18,6 +18,12 @@ internal static partial class Emitter
     /// <summary>The number of quote characters wrapping a C# string literal.</summary>
     private const int StringLiteralQuoteLength = 2;
 
+    /// <summary>The rendered length of the <c>", "</c> separator emitted between joined items.</summary>
+    private const int ListSeparatorLength = 2;
+
+    /// <summary>The number of generated factory registrations emitted per non-generic interface.</summary>
+    private const int RegistrationsPerInterface = 2;
+
     /// <summary>The radix used when rendering decimal integers.</summary>
     private const int DecimalRadix = 10;
 
@@ -40,6 +46,9 @@ internal static partial class Emitter
     /// <summary>The number of spaces in one generated indentation level.</summary>
     private const int CharsPerIndentation = 4;
 
+    /// <summary>The highest indentation level kept in the shared <see cref="IndentCache"/>; deeper levels allocate.</summary>
+    private const int MaxCachedIndentLevel = 8;
+
     /// <summary>Indentation level for generated nested implementation classes.</summary>
     private const int ClassMemberIndentation = 2;
 
@@ -52,19 +61,8 @@ internal static partial class Emitter
     /// <summary>The generated attribute that identifies source produced by this generator.</summary>
     private static readonly string GeneratedCodeAttribute = BuildGeneratedCodeAttribute();
 
-#if NETSTANDARD2_0
-    /// <summary>Delegate used to fill a generated string buffer.</summary>
-    /// <typeparam name="TState">The state type.</typeparam>
-    /// <param name="destination">The target character buffer.</param>
-    /// <param name="state">The caller supplied state.</param>
-    private delegate void GeneratedStringAction<in TState>(char[] destination, TState state);
-#else
-    /// <summary>Delegate used to fill a generated string buffer.</summary>
-    /// <typeparam name="TState">The state type.</typeparam>
-    /// <param name="destination">The target character buffer.</param>
-    /// <param name="state">The caller supplied state.</param>
-    private delegate void GeneratedStringAction<in TState>(Span<char> destination, TState state);
-#endif
+    /// <summary>The XML metacharacters that force <see cref="ToXmlDocumentationText"/> onto its escaping path.</summary>
+    private static readonly char[] XmlEscapeChars = ['&', '<', '>'];
 
     /// <summary>Emits the shared preserve attribute and factory registration code.</summary>
     /// <param name="model">The context generation model describing the interfaces.</param>
@@ -78,75 +76,9 @@ internal static partial class Emitter
             return;
         }
 
-        const string attributeUsageLine =
-            "[global::System.AttributeUsage (global::System.AttributeTargets.Class | "
-            + "global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | "
-            + "global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | "
-            + "global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | "
-            + "global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | "
-            + "global::System.AttributeTargets.Delegate)]";
-
         var generatedFileHeader = BuildSharedGeneratedFileHeader(model.Interfaces, model.EmitGeneratedCodeMarkers);
-        var generatedCodeAttribute = GeneratedCodeAttribute;
-        var attributeText = $$"""
-            {{generatedFileHeader}}
-            namespace {{model.RefitInternalNamespace}}
-            {
-                /// <summary>Identifies generated members that should be preserved by tools that honor this attribute.</summary>
-                {{generatedCodeAttribute}}
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                {{attributeUsageLine}}
-                internal sealed class PreserveAttribute : global::System.Attribute
-                {
-                    /// <summary>Gets or sets a value indicating whether all members should be preserved.</summary>
-                    public bool AllMembers { get; set; }
-
-                    /// <summary>Gets or sets a value indicating whether preservation should be conditional.</summary>
-                    public bool Conditional { get; set; }
-                }
-            }
-
-            """;
-
-        // add the attribute text
-        addSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
-
-        const string dynamicDependencyLine =
-            "[System.Diagnostics.CodeAnalysis.DynamicDependency("
-            + "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, "
-            + "typeof(global::Refit.Implementation.Generated))]";
-
-        var generatedSource = $$"""
-            {{generatedFileHeader}}
-            namespace Refit.Implementation
-            {
-                /// <summary>Registers generated Refit factories for interfaces discovered at compile time.</summary>
-                {{generatedCodeAttribute}}
-                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                [global::System.Diagnostics.DebuggerNonUserCode]
-                [{{model.PreserveAttributeDisplayName}}]
-                [global::System.Reflection.Obfuscation(Exclude=true)]
-                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                internal static partial class Generated
-                {
-            #if NET5_0_OR_GREATER
-                    /// <summary>Registers generated Refit factories when the assembly is loaded.</summary>
-                    [global::System.Diagnostics.CodeAnalysis.SuppressMessage(
-                        "Usage",
-                        "CA2255:The ModuleInitializer attribute should not be used in libraries",
-                        Justification = "ModuleInitializer is used intentionally so generated Refit factories are registered when the assembly loads.")]
-                    [System.Runtime.CompilerServices.ModuleInitializer]
-                    {{dynamicDependencyLine}}
-                    internal static void Initialize()
-                    {
-            {{BuildGeneratedFactoryRegistrations(model.Interfaces)}}        }
-            #endif
-                }
-            }
-
-            """;
-        addSource("Generated.g.cs", ToSourceText(generatedSource));
+        EmitPreserveAttribute(model, generatedFileHeader, addSource);
+        EmitGeneratedFactoryModule(model, generatedFileHeader, addSource);
     }
 
     /// <summary>Emits the generated implementation source for a single interface.</summary>
@@ -158,24 +90,7 @@ internal static partial class Emitter
         uniqueNames.Reserve(model.MemberNames);
         var requestBuilderFieldName = uniqueNames.New("_requestBuilder");
         var settingsFieldName = uniqueNames.New("_settings");
-        var propertySource = BuildInterfaceProperties(model.Properties, model.SupportsNullable);
-        var refitMethodSource = BuildRefitMethods(
-            model.RefitMethods,
-            true,
-            model,
-            uniqueNames,
-            requestBuilderFieldName,
-            settingsFieldName);
-        var derivedRefitMethodSource = BuildRefitMethods(
-            model.DerivedRefitMethods,
-            false,
-            model,
-            uniqueNames,
-            requestBuilderFieldName,
-            settingsFieldName);
-        var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods, model.SupportsNullable);
-        var disposableSource = BuildDisposableMethod(model.DisposeMethod);
-        var memberSource = propertySource + refitMethodSource + derivedRefitMethodSource + nonRefitMethodSource + disposableSource;
+        var memberSource = BuildInterfaceMemberSource(model, uniqueNames, requestBuilderFieldName, settingsFieldName);
         var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
         var generatedCodeAttribute = GeneratedCodeAttribute;
         var settingsConstructorSource = BuildSettingsConstructor(model, settingsFieldName);
@@ -183,7 +98,7 @@ internal static partial class Emitter
             ? "global::Refit.IRequestBuilder?"
             : "global::Refit.IRequestBuilder";
         var source = $$"""
-            {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}
+            {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}{{BuildExternAliasDirectives(model.ExternAliases)}}
             namespace Refit.Implementation
             {
                 /// <summary>Contains generated Refit implementation types.</summary>
@@ -225,6 +140,52 @@ internal static partial class Emitter
         return ToSourceText(source);
     }
 
+    /// <summary>Concatenates the generated property, method, and dispose member blocks for an interface.</summary>
+    /// <param name="model">The interface model being emitted.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
+    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <returns>The concatenated member source.</returns>
+    private static string BuildInterfaceMemberSource(
+        InterfaceModel model,
+        UniqueNameBuilder uniqueNames,
+        string requestBuilderFieldName,
+        string settingsFieldName)
+    {
+        var enumFormatterScope = new EnumFormatterScope(uniqueNames);
+        var propertySource = BuildInterfaceProperties(model.Properties, model.SupportsNullable);
+        var refitMethodSource = BuildRefitMethods(
+            model.RefitMethods,
+            true,
+            model,
+            uniqueNames,
+            requestBuilderFieldName,
+            settingsFieldName,
+            enumFormatterScope);
+        var derivedRefitMethodSource = BuildRefitMethods(
+            model.DerivedRefitMethods,
+            false,
+            model,
+            uniqueNames,
+            requestBuilderFieldName,
+            settingsFieldName,
+            enumFormatterScope);
+        var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods, model.SupportsNullable);
+        var disposableSource = BuildDisposableMethod(model.DisposeMethod);
+
+        // Concatenate the five member blocks through a pooled buffer instead of a five-operand '+', which would
+        // allocate a params string[] for the String.Concat overload.
+        return new PooledStringBuilder(
+                propertySource.Length + refitMethodSource.Length + derivedRefitMethodSource.Length
+                + nonRefitMethodSource.Length + disposableSource.Length)
+            .Append(propertySource)
+            .Append(refitMethodSource)
+            .Append(derivedRefitMethodSource)
+            .Append(nonRefitMethodSource)
+            .Append(disposableSource)
+            .ToString();
+    }
+
     /// <summary>Creates source text from generated source.</summary>
     /// <param name="source">The generated source.</param>
     /// <returns>The generated source text.</returns>
@@ -234,12 +195,13 @@ internal static partial class Emitter
     /// <returns>The generated attribute source.</returns>
     private static string BuildGeneratedCodeAttribute()
     {
+        // This generator assembly always carries a name and version, so no placeholder fallback is reachable.
         var assemblyName = typeof(Emitter).Assembly.GetName();
         return
             "[global::System.CodeDom.Compiler.GeneratedCodeAttribute("
-            + ToCSharpStringLiteral(assemblyName.Name ?? "Refit.Generator")
+            + ToCSharpStringLiteral(assemblyName.Name!)
             + ", "
-            + ToCSharpStringLiteral(assemblyName.Version?.ToString() ?? "0.0.0.0")
+            + ToCSharpStringLiteral(assemblyName.Version!.ToString())
             + ")]";
     }
 
@@ -248,7 +210,14 @@ internal static partial class Emitter
     /// <returns>The escaped XML documentation text.</returns>
     private static string ToXmlDocumentationText(string value)
     {
-        var builder = new StringBuilder(value.Length);
+        // Most identifiers and type names contain none of the XML metacharacters, so return them untouched
+        // instead of allocating a builder and copying character by character.
+        if (value.IndexOfAny(XmlEscapeChars) < 0)
+        {
+            return value;
+        }
+
+        var builder = new PooledStringBuilder(value.Length);
         foreach (var c in value)
         {
             switch (c)
@@ -277,6 +246,25 @@ internal static partial class Emitter
                         break;
                     }
             }
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>Builds the <c>extern alias</c> directives an interface's types require, if any.</summary>
+    /// <param name="aliases">The extern aliases the interface's types reference.</param>
+    /// <returns>The directives, or an empty string when none are needed.</returns>
+    private static string BuildExternAliasDirectives(ImmutableEquatableArray<string> aliases)
+    {
+        if (aliases.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var builder = new PooledStringBuilder();
+        foreach (var alias in aliases)
+        {
+            _ = builder.Append("extern alias ").Append(alias).AppendLine(";");
         }
 
         return builder.ToString();
@@ -343,7 +331,7 @@ internal static partial class Emitter
     /// <returns>The generated factory registrations.</returns>
     private static string BuildGeneratedFactoryRegistrations(ImmutableEquatableArray<InterfaceModel> interfaces)
     {
-        var registrations = new string[interfaces.Count * 2];
+        var registrations = new string[interfaces.Count * RegistrationsPerInterface];
         var count = 0;
         for (var i = 0; i < interfaces.Count; i++)
         {
@@ -357,19 +345,21 @@ internal static partial class Emitter
 
             // The static modifier on a lambda is C# 9; older consumers must not see it.
             var lambdaModifier = interfaceModel.SupportsStaticLambdas ? "static " : string.Empty;
-            registrations[count++] = $$"""
+            registrations[count] = $$"""
                                     global::Refit.RestService.RegisterGeneratedFactory<{{interfaceModel.InterfaceDisplayName}}>(
                                         {{lambdaModifier}}(client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
 
                         """;
+            count++;
 
             if (CanUseGeneratedSettingsFactory(interfaceModel))
             {
-                registrations[count++] = $$"""
+                registrations[count] = $$"""
                                         global::Refit.RestService.RegisterGeneratedSettingsFactory<{{interfaceModel.InterfaceDisplayName}}>(
                                             {{lambdaModifier}}(client, settings) => new {{generatedType}}(client, settings));
 
                             """;
+                count++;
             }
         }
 
@@ -457,7 +447,8 @@ internal static partial class Emitter
             var source = BuildInterfaceProperty(properties[i], supportsNullable);
             if (source.Length != 0)
             {
-                parts[count++] = source;
+                parts[count] = source;
+                count++;
             }
         }
 
@@ -471,6 +462,7 @@ internal static partial class Emitter
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
     /// <returns>The generated method implementations.</returns>
     private static string BuildRefitMethods(
         ImmutableEquatableArray<MethodModel> methods,
@@ -478,7 +470,8 @@ internal static partial class Emitter
         InterfaceModel interfaceModel,
         UniqueNameBuilder uniqueNames,
         string requestBuilderFieldName,
-        string settingsFieldName)
+        string settingsFieldName,
+        EnumFormatterScope enumFormatterScope)
     {
         if (methods.Count == 0)
         {
@@ -494,7 +487,8 @@ internal static partial class Emitter
                 interfaceModel,
                 uniqueNames,
                 requestBuilderFieldName,
-                settingsFieldName);
+                settingsFieldName,
+                enumFormatterScope);
         }
 
         return ConcatParts(parts, parts.Length);
@@ -532,7 +526,14 @@ internal static partial class Emitter
     /// <returns>The escaped C# string literal.</returns>
     private static string ToCSharpStringLiteral(string value)
     {
-        var builder = new StringBuilder(value.Length + 2);
+        // The vast majority of emitted literals (query keys, header names, paths) need no escaping, so wrap them in
+        // quotes with a single concat instead of allocating a builder and appending each character.
+        if (!NeedsCSharpEscaping(value))
+        {
+            return "\"" + value + "\"";
+        }
+
+        var builder = new PooledStringBuilder(value.Length + StringLiteralQuoteLength);
         _ = builder.Append('"');
         foreach (var c in value)
         {
@@ -543,87 +544,20 @@ internal static partial class Emitter
         return builder.ToString();
     }
 
-    /// <summary>Builds the <c>object[]</c> literal that holds the method's argument values.</summary>
-    /// <param name="methodModel">The method model being emitted.</param>
-    /// <returns>The generated argument array literal.</returns>
-    private static string BuildArgumentsArrayLiteral(MethodModel methodModel)
+    /// <summary>Determines whether any character in a value requires C# string-literal escaping.</summary>
+    /// <param name="value">The value to inspect.</param>
+    /// <returns><see langword="true"/> when at least one character needs an escape sequence.</returns>
+    private static bool NeedsCSharpEscaping(string value)
     {
-        var parameters = methodModel.Parameters.AsArray();
-        if (parameters.Length == 0)
+        foreach (var c in value)
         {
-            return "global::System.Array.Empty<object>()";
-        }
-
-        const string prefix = "new object[] { ";
-        const string suffix = " }";
-        var length = prefix.Length + suffix.Length + ((parameters.Length - 1) * 2);
-        for (var i = 0; i < parameters.Length; i++)
-        {
-            length += 1 + parameters[i].MetadataName.Length;
-        }
-
-        return CreateGeneratedString(
-            length,
-            parameters,
-            static (destination, values) =>
+            if (EscapeSequence(c) is not null)
             {
-                var position = 0;
-                AppendText(destination, prefix, ref position);
-                for (var i = 0; i < values.Length; i++)
-                {
-                    if (i > 0)
-                    {
-                        AppendText(destination, ", ", ref position);
-                    }
-
-                    destination[position++] = '@';
-                    AppendText(destination, values[i].MetadataName, ref position);
-                }
-
-                AppendText(destination, suffix, ref position);
-            });
-    }
-
-    /// <summary>Builds the optional generic <c>Type[]</c> argument for the request builder call.</summary>
-    /// <param name="methodModel">The method model being emitted.</param>
-    /// <returns>The generated generic type argument, or an empty string.</returns>
-    private static string BuildGenericTypesArgument(MethodModel methodModel)
-    {
-        var constraints = methodModel.Constraints.AsArray();
-        if (constraints.Length == 0)
-        {
-            return string.Empty;
+                return true;
+            }
         }
 
-        const string prefix = ", new global::System.Type[] { ";
-        const string suffix = " }";
-        var length = prefix.Length + suffix.Length + ((constraints.Length - 1) * 2);
-        for (var i = 0; i < constraints.Length; i++)
-        {
-            length += TypeOfPrefix.Length + constraints[i].DeclaredName.Length + 1;
-        }
-
-        return CreateGeneratedString(
-            length,
-            constraints,
-            static (destination, values) =>
-            {
-                var position = 0;
-                AppendText(destination, prefix, ref position);
-                for (var i = 0; i < values.Length; i++)
-                {
-                    if (i > 0)
-                    {
-                        AppendText(destination, ", ", ref position);
-                    }
-
-                    AppendText(destination, TypeOfPrefix, ref position);
-                    AppendText(destination, values[i].DeclaredName, ref position);
-                    destination[position++] = ')';
-                }
-
-                AppendText(destination, suffix, ref position);
-            });
+        return false;
     }
 
     /// <summary>Builds a stub body for a non-Refit method that throws at runtime.</summary>
@@ -696,329 +630,4 @@ internal static partial class Emitter
 
             """;
     }
-
-    /// <summary>Builds a cached field for non-generic method parameter types, when possible.</summary>
-    /// <param name="methodModel">The method model being emitted.</param>
-    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
-    /// <returns>The generated field source and field name, if one was generated.</returns>
-    private static (string Source, string? FieldName) BuildTypeParameterField(
-        MethodModel methodModel,
-        UniqueNameBuilder uniqueNames)
-    {
-        if (methodModel.Parameters.Count == 0 || ContainsGenericParameter(methodModel.Parameters))
-        {
-            return (string.Empty, null);
-        }
-
-        var typeParameterFieldName = uniqueNames.New(TypeParameterVariableName);
-        var typeList = BuildParameterTypeList(methodModel.Parameters);
-        var memberIndent = Indent(MethodMemberIndentation);
-        var source = $$"""
-
-
-            {{memberIndent}}/// <summary>Cached parameter type array for the generated {{ToXmlDocumentationText(methodModel.DeclaredMethod)}} method.</summary>
-            {{memberIndent}}private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] { {{typeList}} };
-            """;
-        return (source, typeParameterFieldName);
-    }
-
-    /// <summary>Determines whether any parameter type depends on a method type parameter.</summary>
-    /// <param name="parameters">The parameter models to inspect.</param>
-    /// <returns>True when at least one parameter is generic.</returns>
-    private static bool ContainsGenericParameter(ImmutableEquatableArray<ParameterModel> parameters)
-    {
-        for (var i = 0; i < parameters.Count; i++)
-        {
-            if (parameters[i].IsGeneric)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>Builds the expression used to pass the method's parameter types to the request builder.</summary>
-    /// <param name="parameters">The parameter models to emit.</param>
-    /// <param name="cachedTypeParameterFieldName">The cached field name, if one was generated.</param>
-    /// <returns>The generated type parameter expression.</returns>
-    private static string BuildTypeParameterExpression(
-        ImmutableEquatableArray<ParameterModel> parameters,
-        string? cachedTypeParameterFieldName) =>
-        parameters.Count == 0
-            ? "global::System.Array.Empty<global::System.Type>()"
-            : cachedTypeParameterFieldName ?? $"new global::System.Type[] {{ {BuildParameterTypeList(parameters)} }}";
-
-    /// <summary>Builds the generated <c>typeof(...)</c> argument list for method parameters.</summary>
-    /// <param name="parameters">The parameter models to emit.</param>
-    /// <returns>The generated parameter type list.</returns>
-    private static string BuildParameterTypeList(ImmutableEquatableArray<ParameterModel> parameters)
-    {
-        if (parameters.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        var length = (parameters.Count - 1) * 2;
-        for (var i = 0; i < parameters.Count; i++)
-        {
-            length += TypeOfPrefix.Length + parameters[i].Type.Length + 1;
-        }
-
-        return CreateGeneratedString(
-            length,
-            parameters.AsArray(),
-            static (destination, values) =>
-            {
-                var position = 0;
-                for (var i = 0; i < values.Length; i++)
-                {
-                    if (i > 0)
-                    {
-                        AppendText(destination, ", ", ref position);
-                    }
-
-                    AppendText(destination, TypeOfPrefix, ref position);
-                    AppendText(destination, values[i].Type, ref position);
-                    destination[position++] = ')';
-                }
-            });
-    }
-
-    /// <summary>Builds the generated return statement for the reflection-backed Refit method path.</summary>
-    /// <param name="methodModel">The method model being emitted.</param>
-    /// <param name="returnPrefix">The return statement prefix.</param>
-    /// <param name="returnType">The generated return type.</param>
-    /// <param name="configureAwait">The generated configure-await suffix.</param>
-    /// <param name="funcLocal">The generated request-func local name.</param>
-    /// <param name="argumentsLocal">The generated arguments-array local name.</param>
-    /// <returns>The generated return statement.</returns>
-    private static string BuildRefitReturnStatement(
-        MethodModel methodModel,
-        string returnPrefix,
-        string returnType,
-        string configureAwait,
-        string funcLocal,
-        string argumentsLocal)
-    {
-        var bodyIndent = Indent(MethodBodyIndentation);
-        return methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid
-            ? $"{bodyIndent}{funcLocal}(this.Client, {argumentsLocal});\n"
-            : $"{bodyIndent}{returnPrefix}({returnType}){funcLocal}(this.Client, {argumentsLocal}){configureAwait};\n";
-    }
-
-    /// <summary>Concatenates populated source fragments without allocating a trimmed array.</summary>
-    /// <param name="parts">The source fragments.</param>
-    /// <param name="count">The populated fragment count.</param>
-    /// <returns>The concatenated source.</returns>
-    private static string ConcatParts(string[] parts, int count)
-    {
-        var length = 0;
-        for (var i = 0; i < count; i++)
-        {
-            length += parts[i].Length;
-        }
-
-        return CreateGeneratedString(
-            length,
-            (Parts: parts, Count: count),
-            static (destination, state) =>
-            {
-                var position = 0;
-                for (var i = 0; i < state.Count; i++)
-                {
-                    AppendText(destination, state.Parts[i], ref position);
-                }
-            });
-    }
-
-    /// <summary>Joins populated source fragments without allocating a trimmed array.</summary>
-    /// <param name="parts">The source fragments.</param>
-    /// <param name="count">The populated fragment count.</param>
-    /// <param name="separator">The separator text.</param>
-    /// <returns>The joined source.</returns>
-    private static string JoinParts(string[] parts, int count, string separator)
-    {
-        if (count == 0)
-        {
-            return string.Empty;
-        }
-
-        var length = separator.Length * (count - 1);
-        for (var i = 0; i < count; i++)
-        {
-            length += parts[i].Length;
-        }
-
-        return CreateGeneratedString(
-            length,
-            (Parts: parts, Count: count, Separator: separator),
-            static (destination, state) =>
-            {
-                var position = 0;
-                for (var i = 0; i < state.Count; i++)
-                {
-                    if (i > 0)
-                    {
-                        AppendText(destination, state.Separator, ref position);
-                    }
-
-                    AppendText(destination, state.Parts[i], ref position);
-                }
-            });
-    }
-
-    /// <summary>Builds a generated indentation string.</summary>
-    /// <param name="level">The indentation level.</param>
-    /// <returns>The generated indentation.</returns>
-    private static string Indent(int level) => new(' ', level * CharsPerIndentation);
-
-#if NETSTANDARD2_0
-    /// <summary>Writes a C# string literal or the <c>null</c> keyword into a generated string buffer.</summary>
-    /// <param name="destination">The target character buffer.</param>
-    /// <param name="value">The value to quote, or <see langword="null"/>.</param>
-    /// <param name="position">The current write position.</param>
-    private static void AppendLiteralOrNull(char[] destination, string? value, ref int position)
-    {
-        if (value is null)
-        {
-            AppendText(destination, NullLiteral, ref position);
-            return;
-        }
-
-        destination[position++] = '"';
-        foreach (var character in value)
-        {
-            var escape = EscapeSequence(character);
-            if (escape is null)
-            {
-                destination[position++] = character;
-            }
-            else
-            {
-                AppendText(destination, escape, ref position);
-            }
-        }
-
-        destination[position++] = '"';
-    }
-
-    /// <summary>Writes the decimal rendering of a non-negative 32-bit integer into a generated string buffer.</summary>
-    /// <param name="destination">The target character buffer.</param>
-    /// <param name="value">The non-negative value to render (callers only pass <c>CollectionFormat</c> values).</param>
-    /// <param name="position">The current write position.</param>
-    private static void AppendInt32(char[] destination, int value, ref int position)
-    {
-        var end = position + Int32Length(value);
-        var write = end;
-        do
-        {
-            destination[--write] = (char)('0' + (value % DecimalRadix));
-            value /= DecimalRadix;
-        }
-        while (value > 0);
-
-        position = end;
-    }
-#else
-    /// <summary>Writes a C# string literal or the <c>null</c> keyword into a generated string buffer.</summary>
-    /// <param name="destination">The target character span.</param>
-    /// <param name="value">The value to quote, or <see langword="null"/>.</param>
-    /// <param name="position">The current write position.</param>
-    private static void AppendLiteralOrNull(Span<char> destination, string? value, ref int position)
-    {
-        if (value is null)
-        {
-            AppendText(destination, NullLiteral, ref position);
-            return;
-        }
-
-        destination[position++] = '"';
-        foreach (var character in value)
-        {
-            var escape = EscapeSequence(character);
-            if (escape is null)
-            {
-                destination[position++] = character;
-            }
-            else
-            {
-                AppendText(destination, escape, ref position);
-            }
-        }
-
-        destination[position++] = '"';
-    }
-
-    /// <summary>Writes the decimal rendering of a non-negative 32-bit integer into a generated string buffer.</summary>
-    /// <param name="destination">The target character span.</param>
-    /// <param name="value">The non-negative value to render (callers only pass <c>CollectionFormat</c> values).</param>
-    /// <param name="position">The current write position.</param>
-    private static void AppendInt32(Span<char> destination, int value, ref int position)
-    {
-        var end = position + Int32Length(value);
-        var write = end;
-        do
-        {
-            destination[--write] = (char)('0' + (value % DecimalRadix));
-            value /= DecimalRadix;
-        }
-        while (value > 0);
-
-        position = end;
-    }
-#endif
-
-#if NETSTANDARD2_0
-    /// <summary>Creates a generated string using a pre-sized buffer.</summary>
-    /// <typeparam name="TState">The state type.</typeparam>
-    /// <param name="length">The string length.</param>
-    /// <param name="state">The caller supplied state.</param>
-    /// <param name="action">The buffer fill callback.</param>
-    /// <returns>The generated string.</returns>
-    private static string CreateGeneratedString<TState>(
-        int length,
-        TState state,
-        GeneratedStringAction<TState> action)
-    {
-        var destination = new char[length];
-        action(destination, state);
-        return new(destination);
-    }
-
-    /// <summary>Appends text into a generated string buffer.</summary>
-    /// <param name="destination">The target character buffer.</param>
-    /// <param name="text">The text to append.</param>
-    /// <param name="position">The current write position.</param>
-    private static void AppendText(char[] destination, string text, ref int position)
-    {
-        text.CopyTo(0, destination, position, text.Length);
-        position += text.Length;
-    }
-#else
-    /// <summary>Creates a generated string using <see cref="string.Create{TState}(int, TState, System.Buffers.SpanAction{char, TState})"/>.</summary>
-    /// <typeparam name="TState">The state type.</typeparam>
-    /// <param name="length">The string length.</param>
-    /// <param name="state">The caller supplied state.</param>
-    /// <param name="action">The buffer fill callback.</param>
-    /// <returns>The generated string.</returns>
-    private static string CreateGeneratedString<TState>(
-        int length,
-        TState state,
-        GeneratedStringAction<TState> action) =>
-        string.Create(
-            length,
-            (State: state, Action: action),
-            static (destination, context) => context.Action(destination, context.State));
-
-    /// <summary>Appends text into a generated string buffer.</summary>
-    /// <param name="destination">The target character buffer.</param>
-    /// <param name="text">The text to append.</param>
-    /// <param name="position">The current write position.</param>
-    private static void AppendText(Span<char> destination, string text, ref int position)
-    {
-        text.AsSpan().CopyTo(destination[position..]);
-        position += text.Length;
-    }
-#endif
 }

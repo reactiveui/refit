@@ -10,10 +10,15 @@ namespace Refit.Generator;
 /// <param name="Format">The <c>[Query]</c> value format, or <see langword="null"/>.</param>
 /// <param name="CollectionFormatValue">The explicit collection format underlying value, or <see langword="null"/> to use the settings default.</param>
 /// <param name="SerializeNull">Whether a <see langword="null"/> value should be serialized as an empty field.</param>
+/// <param name="CanBeNull">Whether the field value can be <see langword="null"/> and therefore needs a null guard.</param>
+/// <param name="ValueFormat">The reflection-free scalar value fast-path descriptor, or <see langword="null"/> when the
+/// field is not a simple scalar (a collection or complex property) and the body must keep using the descriptor path.</param>
 internal sealed record FormFieldModel(
     string PropertyName,
     string? ExplicitName,
     string? PrefixSegment,
     string? Format,
     int? CollectionFormatValue,
-    bool SerializeNull);
+    bool SerializeNull,
+    bool CanBeNull,
+    InlineValueFormatModel? ValueFormat);

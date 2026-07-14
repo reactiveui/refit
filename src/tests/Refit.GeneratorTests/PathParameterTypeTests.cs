@@ -35,25 +35,101 @@ public sealed class PathParameterTypeTests
     [Arguments("System.Int128")]
     [Arguments("System.Half")]
     [Arguments("System.DayOfWeek")]
-    public async Task ScalarPathParameterGeneratesInline(string parameterType)
+    [Arguments("byte[]")]
+    [Arguments("int[]")]
+    [Arguments("System.Collections.Generic.List<int>")]
+    public async Task ScalarOrCollectionPathParameterGeneratesInline(string parameterType)
     {
         var generated = Generate($"[Get(\"/items/{{value}}\")] Task<string> Get({parameterType} value);");
 
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
-    /// <summary>Verifies non-scalar path-parameter types fall back to the reflection request builder.</summary>
+    /// <summary>Verifies an enum with duplicate constants as a path parameter renders through the URL parameter
+    /// formatter (no reflection-free fast path) while still generating inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DuplicateEnumPathParameterUsesFormatter()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public enum Duplicated { First = 1, Alias = 1 }
+
+            public interface IGeneratedClient
+            {
+                [Get("/items/{mode}")]
+                Task<string> Get(Duplicated mode);
+            }
+            """;
+
+        var generated = Fixture.RunGenerator(source, generatedRequestBuilding: true)
+            .GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a concrete class (sealed or open) or value type that only overrides <c>ToString</c> generates
+    /// inline: the reflection builder's route value is a virtual <c>ToString</c> call that dispatches to the runtime type
+    /// exactly as the generated code does, so the rendering matches.</summary>
+    /// <param name="typeDeclaration">The custom type declaration.</param>
     /// <param name="parameterType">The path parameter type expression.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments("byte[]")]
-    [Arguments("int[]")]
-    [Arguments("System.Collections.Generic.List<int>")]
-    public async Task NonScalarPathParameterFallsBack(string parameterType)
+    [Arguments("public sealed class Money { public override string ToString() => \"$5\"; }", "Money")]
+    [Arguments("public readonly struct Coordinate { public override string ToString() => \"1,2\"; }", "Coordinate")]
+    [Arguments("public class OpenValue { public override string ToString() => \"x\"; }", "OpenValue")]
+    public async Task ConcreteOrValuePathParameterGeneratesInline(string typeDeclaration, string parameterType)
     {
-        var generated = Generate($"[Get(\"/items/{{value}}\")] Task<string> Get({parameterType} value);");
+        var generated = GenerateWithType(typeDeclaration, parameterType);
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies an <c>object</c> or interface path parameter stays on the reflection builder - it has no usable
+    /// declared shape, so the value must be inspected at runtime.</summary>
+    /// <param name="typeDeclaration">The custom type declaration, or empty for a built-in type.</param>
+    /// <param name="parameterType">The path parameter type expression.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("public interface IThing { }", "IThing")]
+    [Arguments("", "object")]
+    public async Task PolymorphicPathParameterFallsBack(string typeDeclaration, string parameterType)
+    {
+        var generated = GenerateWithType(typeDeclaration, parameterType);
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Runs the generator over a client that declares a custom path-parameter type.</summary>
+    /// <param name="typeDeclaration">The custom type declaration, or empty for a built-in type.</param>
+    /// <param name="parameterType">The path parameter type expression.</param>
+    /// <returns>The generated client source text.</returns>
+    private static string GenerateWithType(string typeDeclaration, string parameterType)
+    {
+        var source =
+            $$"""
+              using System;
+              using System.Threading.Tasks;
+              using Refit;
+
+              namespace RefitGeneratorTest;
+
+              {{typeDeclaration}}
+
+              public interface IGeneratedClient
+              {
+                  [Get("/items/{value}")]
+                  Task<string> Get({{parameterType}} value);
+              }
+              """;
+
+        return Fixture.RunGenerator(source, generatedRequestBuilding: true)
+            .GeneratedSources[GeneratedClientHintName];
     }
 
     /// <summary>Runs the generator over an interface body and returns the generated client source.</summary>

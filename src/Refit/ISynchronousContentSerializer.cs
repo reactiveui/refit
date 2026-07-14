@@ -20,7 +20,10 @@ public interface ISynchronousContentSerializer
     /// <typeparam name="T">The type of the object to serialize.</typeparam>
     /// <param name="item">The object to serialize.</param>
     /// <returns>A buffered <see cref="HttpContent"/> (for example a <c>ByteArrayContent</c>) containing the serialized object.</returns>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     HttpContent ToHttpContentSynchronous<T>(T item);
 
     /// <summary>
@@ -30,6 +33,9 @@ public interface ISynchronousContentSerializer
     /// <typeparam name="T">The type of the object to serialize.</typeparam>
     /// <param name="item">The object to serialize.</param>
     /// <returns>A streaming <see cref="HttpContent"/> that writes the serialized object when sent.</returns>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     HttpContent ToStreamingHttpContent<T>(T item);
 }

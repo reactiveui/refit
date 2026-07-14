@@ -15,14 +15,20 @@ public static class UniqueName
     /// <summary>Builds the unique name for the generated implementation of the given interface type.</summary>
     /// <typeparam name="T">The Refit interface type.</typeparam>
     /// <returns>The unique generated type name.</returns>
-    [SuppressMessage("Sonar", "S4018", Justification = "T is bound via typeof(T); there is no value argument to infer it from, so callers pass it explicitly.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "T is bound via typeof(T); there is no value argument to infer it from, so callers pass it explicitly.")]
     public static string ForType<T>() => ForType(typeof(T));
 
     /// <summary>Builds the unique name for the given interface type and service key.</summary>
     /// <typeparam name="T">The Refit interface type.</typeparam>
     /// <param name="serviceKey">The service key to incorporate.</param>
     /// <returns>The unique generated type name.</returns>
-    [SuppressMessage("Sonar", "S4018", Justification = "T is bound via typeof(T); there is no value argument to infer it from, so callers pass it explicitly.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "T is bound via typeof(T); there is no value argument to infer it from, so callers pass it explicitly.")]
     public static string ForType<T>(object? serviceKey) => ForType(typeof(T), serviceKey);
 
     /// <summary>Builds the unique name for the given interface type and service key.</summary>

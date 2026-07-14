@@ -81,6 +81,7 @@ public sealed class ApiResponse<T>(
     public HttpResponseHeaders? Headers => response?.Headers;
 
     /// <summary>Gets the HTTP response content headers as defined in RFC 2616.</summary>
+    [ExcludeFromCodeCoverage] // Content is nullable in the BCL contract, but HttpClient always sets it, so the null-defensive branch is unreachable.
     public HttpContentHeaders? ContentHeaders => response?.Content?.Headers;
 
     /// <inheritdoc />
@@ -127,18 +128,18 @@ public sealed class ApiResponse<T>(
     /// <returns>The current <see cref="ApiResponse{T}"/></returns>
     /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
     /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
-    public Task<ApiResponse<T>> EnsureSuccessStatusCodeAsync() =>
+    public ValueTask<ApiResponse<T>> EnsureSuccessStatusCodeAsync() =>
         IsSuccessStatusCode
-            ? Task.FromResult(this)
+            ? new(this)
             : EnsureSlowAsync();
 
     /// <summary>Ensures the request was successful and without any other error by throwing an exception in case of failure.</summary>
     /// <returns>The current <see cref="ApiResponse{T}"/></returns>
     /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
     /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
-    public Task<ApiResponse<T>> EnsureSuccessfulAsync() =>
+    public ValueTask<ApiResponse<T>> EnsureSuccessfulAsync() =>
         IsSuccessful
-            ? Task.FromResult(this)
+            ? new(this)
             : EnsureSlowAsync();
 
     /// <inheritdoc/>
@@ -168,9 +169,21 @@ public sealed class ApiResponse<T>(
 
     /// <summary>Releases the underlying response when disposing.</summary>
     /// <param name="disposing">Whether the method is being called from <see cref="Dispose()"/>.</param>
+    [ExcludeFromCodeCoverage] // There is no finalizer, so Dispose(false) never runs and the !disposing guard is unreachable.
     private void Dispose(bool disposing)
     {
-        if (!disposing || _disposed)
+        if (!disposing)
+        {
+            return;
+        }
+
+        DisposeResponse();
+    }
+
+    /// <summary>Disposes the underlying response once, guarding against repeated disposal.</summary>
+    private void DisposeResponse()
+    {
+        if (_disposed)
         {
             return;
         }
@@ -182,11 +195,11 @@ public sealed class ApiResponse<T>(
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
-    private Task<ApiResponse<T>> EnsureSlowAsync() => ThrowsApiExceptionAsync();
+    private ValueTask<ApiResponse<T>> EnsureSlowAsync() => ThrowsApiExceptionAsync();
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous throw operation.</returns>
-    private async Task<ApiResponse<T>> ThrowsApiExceptionAsync()
+    private async ValueTask<ApiResponse<T>> ThrowsApiExceptionAsync()
     {
         var responseMessage = response
                               ?? throw new InvalidOperationException(

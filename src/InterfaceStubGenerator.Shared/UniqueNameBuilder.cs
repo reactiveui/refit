@@ -27,6 +27,10 @@ public class UniqueNameBuilder
         }
     }
 
+    /// <summary>Reserves a single name so it will not be handed out by <see cref="New"/>.</summary>
+    /// <param name="name">The name to reserve.</param>
+    public void Reserve(string name) => _usedNames.Add(name);
+
     /// <summary>Generate a unique name.</summary>
     /// <param name="name">The desired base name.</param>
     /// <returns>A unique name not used in this or any parent scope.</returns>

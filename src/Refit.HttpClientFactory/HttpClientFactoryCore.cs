@@ -92,7 +92,10 @@ internal static class HttpClientFactoryCore
     /// <param name="settings">A factory that produces the Refit settings, or null.</param>
     /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
     /// <returns>The HTTP client builder for further configuration.</returns>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
     internal static IHttpClientBuilder AddRefitClientCore<
         [DynamicallyAccessedMembers(
@@ -111,20 +114,20 @@ internal static class HttpClientFactoryCore
         _ = services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
 
         // register RequestBuilder
-        _ = services.AddSingleton(provider =>
+        _ = services.AddSingleton(static provider =>
             RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings));
 
         // create HttpClientBuilder
         var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>());
 
         // configure the primary handler from the supplied settings (or fall back to the default)
-        _ = builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+        _ = builder.ConfigurePrimaryHttpMessageHandler(static serviceProvider =>
             CreateInnerHandlerIfProvided(
                 serviceProvider.GetRequiredService<SettingsFor<T>>().Settings)
             ?? new HttpClientHandler());
 
         // add typed client using framework AddTypedClient
-        return builder.AddTypedClient((client, serviceProvider) =>
+        return builder.AddTypedClient(static (client, serviceProvider) =>
             RestService.For<T>(
                 client,
                 serviceProvider.GetRequiredService<IRequestBuilder<T>>()));
@@ -208,7 +211,10 @@ internal static class HttpClientFactoryCore
     /// <param name="settings">A factory that produces the Refit settings, or null.</param>
     /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
     /// <returns>The HTTP client builder for further configuration.</returns>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
     internal static IHttpClientBuilder AddKeyedRefitClientCore<
         [DynamicallyAccessedMembers(
@@ -267,7 +273,10 @@ internal static class HttpClientFactoryCore
     /// <param name="settings">A factory that produces the Refit settings, or null.</param>
     /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
     /// <returns>The HTTP client builder for further configuration.</returns>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
     internal static IHttpClientBuilder AddRefitGeneratedClientCore<T>(
         IServiceCollection services,
         Func<IServiceProvider, RefitSettings?>? settings,
@@ -283,13 +292,13 @@ internal static class HttpClientFactoryCore
         var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>());
 
         // configure the primary handler from the supplied settings (or fall back to the default)
-        _ = builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+        _ = builder.ConfigurePrimaryHttpMessageHandler(static serviceProvider =>
             CreateInnerHandlerIfProvided(
                 serviceProvider.GetRequiredService<SettingsFor<T>>().Settings)
             ?? new HttpClientHandler());
 
         // add typed client backed by the source generator only; throws clearly if no generated client exists
-        return builder.AddTypedClient((client, serviceProvider) =>
+        return builder.AddTypedClient(static (client, serviceProvider) =>
             RestService.ForGenerated<T>(
                 client,
                 serviceProvider.GetRequiredService<SettingsFor<T>>().Settings ?? new RefitSettings()));

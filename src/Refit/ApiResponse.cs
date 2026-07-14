@@ -18,8 +18,8 @@ internal static class ApiResponse
     /// <param name="error">The exception, if the request failed.</param>
     /// <returns>The created API response.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     internal static T Create<T, TBody>(
         HttpRequestMessage request,

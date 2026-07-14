@@ -7,6 +7,12 @@ using Refit.NativeAotSmoke;
 
 const int ExpectedTodoId = 42;
 
+const int FormCount = 2;
+
+const int SearchPage = 3;
+
+const int SecondSearchId = 2;
+
 var handler = new NativeAotSmokeHandler();
 
 using var client = new HttpClient(handler) { BaseAddress = new("https://aot.refit.test") };
@@ -25,7 +31,7 @@ if (created.Id != ExpectedTodoId || created.Title != "prove native aot")
     throw new InvalidOperationException("The AOT POST response was not deserialized correctly.");
 }
 
-var formResponse = await api.SubmitFormAsync(new("Ada", 2)).ConfigureAwait(false);
+var formResponse = await api.SubmitFormAsync(new("Ada", FormCount)).ConfigureAwait(false);
 
 if (formResponse != "accepted")
 {
@@ -44,9 +50,35 @@ if (!handler.SawPostBody)
     throw new InvalidOperationException("The AOT request body was not serialized through Refit.");
 }
 
+// A generic method closed over a concrete type: generated inline (generic JSON body + SendAsync<T, TBody>), no reflection.
+var echoed = await api.EchoAsync<Todo>(new("generic inline")).ConfigureAwait(false);
+
+if (echoed.Id != ExpectedTodoId || echoed.Title != "generic inline")
+{
+    throw new InvalidOperationException("The AOT generic method result was not deserialized correctly.");
+}
+
+var searched = await api
+    .SearchAsync("a b", SearchPage, [1, SecondSearchId], SmokeSort.DateDescending, "ready", "x%2Fy")
+    .ConfigureAwait(false);
+
+if (searched.Name != "native-aot" || !handler.SawExpectedQuery)
+{
+    throw new InvalidOperationException("The AOT generated query string was not constructed correctly.");
+}
+
 if (!handler.SawFormBody)
 {
     throw new InvalidOperationException("The AOT URL-encoded request body was not serialized through generated Refit code.");
 }
 
 Console.WriteLine("Native AOT Refit smoke test passed.");
+
+/// <summary>The generated top-level program's declaring type, sealed so the JIT can devirtualize its members.</summary>
+internal sealed partial class Program
+{
+    /// <summary>Initializes a new instance of the <see cref="Program"/> class. Unused; the entry point is the generated top-level <c>Main</c>.</summary>
+    private Program()
+    {
+    }
+}

@@ -20,7 +20,8 @@ public class SynchronousBodySerializationTests
     [Test]
     public async Task BufferedInlinePathSerializesBufferedJson()
     {
-        var capture = await PostAsync(RequestBodySerializationMode.Buffered, static api => api.PostItem(new() { Id = 42 }));
+        const int itemId = 42;
+        var capture = await PostAsync(RequestBodySerializationMode.Buffered, static api => api.PostItem(new() { Id = itemId }));
 
         await Assert.That(capture.MediaType).IsEqualTo(JsonMediaType);
         await Assert.That(capture.ContentLength).IsNotNull();
@@ -32,7 +33,8 @@ public class SynchronousBodySerializationTests
     [Test]
     public async Task BufferedReflectionPathSerializesBufferedJson()
     {
-        var capture = await PostAsync(RequestBodySerializationMode.Buffered, static api => api.PostItemReflected(new StreamItem { Id = 7 }));
+        const int itemId = 7;
+        var capture = await PostAsync(RequestBodySerializationMode.Buffered, static api => api.PostItemReflected(new StreamItem { Id = itemId }));
 
         await Assert.That(capture.MediaType).IsEqualTo(JsonMediaType);
         await Assert.That(capture.ContentLength).IsNotNull();
@@ -44,7 +46,8 @@ public class SynchronousBodySerializationTests
     [Test]
     public async Task StreamedInlinePathSerializesWithoutContentLength()
     {
-        var capture = await PostAsync(RequestBodySerializationMode.Streamed, static api => api.PostItem(new() { Id = 99 }));
+        const int itemId = 99;
+        var capture = await PostAsync(RequestBodySerializationMode.Streamed, static api => api.PostItem(new() { Id = itemId }));
 
         await Assert.That(capture.MediaType).IsEqualTo(JsonMediaType);
         await Assert.That(capture.ContentLength).IsNull();
@@ -56,7 +59,8 @@ public class SynchronousBodySerializationTests
     [Test]
     public async Task StreamedReflectionPathSerializesWithoutContentLength()
     {
-        var capture = await PostAsync(RequestBodySerializationMode.Streamed, static api => api.PostItemReflected(new StreamItem { Id = 13 }));
+        const int itemId = 13;
+        var capture = await PostAsync(RequestBodySerializationMode.Streamed, static api => api.PostItemReflected(new StreamItem { Id = itemId }));
 
         await Assert.That(capture.MediaType).IsEqualTo(JsonMediaType);
         await Assert.That(capture.ContentLength).IsNull();
@@ -68,9 +72,10 @@ public class SynchronousBodySerializationTests
     [Test]
     public async Task SourceGenBufferedSerializesBody()
     {
+        const int itemId = 21;
         var capture = await PostAsync(
             RequestBodySerializationMode.Buffered,
-            static api => api.PostItem(new() { Id = 21 }),
+            static api => api.PostItem(new() { Id = itemId }),
             new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
 
         await Assert.That(capture.ContentLength).IsNotNull();
@@ -82,9 +87,10 @@ public class SynchronousBodySerializationTests
     [Test]
     public async Task SourceGenStreamedSerializesBody()
     {
+        const int itemId = 34;
         var capture = await PostAsync(
             RequestBodySerializationMode.Streamed,
-            static api => api.PostItem(new() { Id = 34 }),
+            static api => api.PostItem(new() { Id = itemId }),
             new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
 
         await Assert.That(capture.ContentLength).IsNull();

@@ -37,12 +37,16 @@ public class RestServiceExceptions
         await AssertExceptionContains("HeaderCollection parameter of type", exception!);
     }
 
-    /// <summary>Verifies that a URL not starting with a slash throws.</summary>
+    /// <summary>Verifies that a URL not starting with a slash throws under legacy resolution. Generated request building
+    /// validates the leading slash when the request is built rather than when the client is created, so the throw
+    /// surfaces on the first call instead of from <see cref="RestService.For{T}(string, RefitSettings)"/>.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task UrlDoesntStartWithSlashShouldThrow()
     {
-        var exception = await Assert.That(static () => RestService.For<IDoesNotStartSlash>(BaseAddress)).ThrowsExactly<ArgumentException>();
+        var api = RestService.For<IDoesNotStartSlash>(BaseAddress);
+        Func<Task> call = () => api.GetValue();
+        var exception = await Assert.That(call).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("must start with '/' and be of the form", exception!);
     }
 
@@ -55,13 +59,34 @@ public class RestServiceExceptions
         await AssertExceptionContains("must not contain CR or LF characters", exception!);
     }
 
-    /// <summary>Verifies that a non-string round-tripping parameter throws.</summary>
+    /// <summary>Verifies that a non-string round-tripping parameter is formatted via <c>ToString</c>, preserving its
+    /// <c>/</c> separators as path structure (issue #2046).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task RoundTripParameterNotStringShouldThrow()
+    public async Task RoundTripParameterNotStringFormatsAndPreservesSlashes()
     {
-        var exception = await Assert.That(static () => RestService.For<IRoundTripNotString>(BaseAddress)).ThrowsExactly<ArgumentException>();
-        await AssertExceptionContains("has round-tripping parameter", exception!);
+        var request = await new RequestBuilderImplementation<IRoundTripNotString>()
+            .BuildRequestFactoryForMethod(nameof(IRoundTripNotString.GetValue))([new RepoPath("some/repo")]);
+
+        await Assert.That(request.RequestUri!.PathAndQuery).IsEqualTo("/repos/some/repo/contents");
+    }
+
+    /// <summary>Verifies the source-generated non-string round-trip path matches the reflection builder, escaping
+    /// each segment while preserving the separators.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RoundTripNotStringGeneratedMatchesReflection()
+    {
+        var repoPath = new RepoPath("some/repo dir");
+        using var handler = new TestHttpMessageHandler();
+        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        _ = await RestService.ForGenerated<IRoundTripNotString>(client).GetValue(repoPath);
+        var generatedUri = handler.RequestMessage!.RequestUri!.PathAndQuery;
+
+        var reflected = await new RequestBuilderImplementation<IRoundTripNotString>()
+            .BuildRequestFactoryForMethod(nameof(IRoundTripNotString.GetValue))([repoPath]);
+
+        await Assert.That(generatedUri).IsEqualTo(reflected.RequestUri!.PathAndQuery);
     }
 
     /// <summary>Verifies that a round-tripping parameter name with leading whitespace throws.</summary>
@@ -69,8 +94,11 @@ public class RestServiceExceptions
     [Test]
     public async Task RoundTripWithLeadingWhitespaceShouldThrow()
     {
-        var exception = await Assert.That(static () => RestService.For<IRoundTrippingLeadingWhitespace>(BaseAddress)).ThrowsExactly<ArgumentException>();
-        await AssertExceptionContains("has parameter  **path, but no method parameter matches", exception!);
+        // The whitespace-damaged placeholder binds no parameter, so the interface generates inline and the
+        // unmatched-placeholder check now runs when the request is built rather than at client creation.
+        var service = RestService.For<IRoundTrippingLeadingWhitespace>(BaseAddress);
+        var exception = await Assert.That(() => (Task)service.GetValue("value")).ThrowsExactly<ArgumentException>();
+        await AssertExceptionContains("has parameter { **path}, but no method parameter matches", exception!);
     }
 
     /// <summary>Verifies that a round-tripping parameter name with trailing whitespace throws.</summary>
@@ -78,8 +106,11 @@ public class RestServiceExceptions
     [Test]
     public async Task RoundTripWithTrailingWhitespaceShouldThrow()
     {
-        var exception = await Assert.That(static () => RestService.For<IRoundTrippingTrailingWhitespace>(BaseAddress)).ThrowsExactly<ArgumentException>();
-        await AssertExceptionContains("has parameter ** path, but no method parameter matches", exception!);
+        // The whitespace-damaged placeholder binds no parameter, so the interface generates inline and the
+        // unmatched-placeholder check now runs when the request is built rather than at client creation.
+        var service = RestService.For<IRoundTrippingTrailingWhitespace>(BaseAddress);
+        var exception = await Assert.That(() => (Task)service.GetValue("value")).ThrowsExactly<ArgumentException>();
+        await AssertExceptionContains("has parameter {** path}, but no method parameter matches", exception!);
     }
 
     /// <summary>Verifies that an invalid parameter substitution token throws when invoked.</summary>
@@ -107,7 +138,10 @@ public class RestServiceExceptions
     [Test]
     public async Task UrlNoMatchingParameterShouldThrow()
     {
-        var exception = await Assert.That(static () => RestService.For<IUrlNoMatchingParameters>(BaseAddress)).ThrowsExactly<ArgumentException>();
+        // With no parameters at all the interface generates inline, so the unmatched-placeholder check
+        // now runs when the request is built rather than at client creation.
+        var service = RestService.For<IUrlNoMatchingParameters>(BaseAddress);
+        var exception = await Assert.That(() => (Task)service.GetValue()).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("but no method parameter matches", exception!);
     }
 

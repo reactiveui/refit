@@ -112,12 +112,14 @@ public sealed class RetryAndTimeoutTests
     [Test]
     public async Task RequestSlowerThanClientTimeoutThrowsApiRequestException()
     {
-        var handler = CreateDelayedHandler(TimeSpan.FromSeconds(10));
+        const int injectedDelaySeconds = 10;
+        const int clientTimeoutMilliseconds = 50;
+        var handler = CreateDelayedHandler(TimeSpan.FromSeconds(injectedDelaySeconds));
 
         using var client = new HttpClient(handler)
         {
             BaseAddress = new(BaseUrl),
-            Timeout = TimeSpan.FromMilliseconds(50),
+            Timeout = TimeSpan.FromMilliseconds(clientTimeoutMilliseconds),
         };
         var api = RestService.For<IUserApi>(client);
 
@@ -131,12 +133,13 @@ public sealed class RetryAndTimeoutTests
     [Test]
     public async Task RequestFasterThanClientTimeoutSucceeds()
     {
+        const int clientTimeoutSeconds = 30;
         var handler = CreateDelayedHandler(TimeSpan.FromMilliseconds(1));
 
         using var client = new HttpClient(handler)
         {
             BaseAddress = new(BaseUrl),
-            Timeout = TimeSpan.FromSeconds(30),
+            Timeout = TimeSpan.FromSeconds(clientTimeoutSeconds),
         };
         var api = RestService.For<IUserApi>(client);
 
@@ -154,9 +157,9 @@ public sealed class RetryAndTimeoutTests
         var behavior = new NetworkBehavior
         {
             Delay = delay,
-            Variance = 0d,
-            FailurePercent = 0d,
-            ErrorPercent = 0d,
+            Variance = 0D,
+            FailurePercent = 0D,
+            ErrorPercent = 0D,
         };
 
         return new(behavior)

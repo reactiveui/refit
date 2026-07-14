@@ -14,10 +14,10 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 _ = builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new(builder.HostEnvironment.BaseAddress) });
 
-_ = builder.Services.AddScoped(sp =>
+_ = builder.Services.AddScoped(static sp =>
     RestService.For<IIssue2065Api>(sp.GetRequiredService<HttpClient>()));
 
-_ = builder.Services.AddScoped(sp =>
+_ = builder.Services.AddScoped(static sp =>
     RestService.For<IIssue2067Api>(
         sp.GetRequiredService<HttpClient>(),
         new RefitSettings(
@@ -25,3 +25,12 @@ _ = builder.Services.AddScoped(sp =>
                 SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))));
 
 await builder.Build().RunAsync();
+
+/// <summary>The generated top-level program's declaring type, sealed so the JIT can devirtualize its members.</summary>
+internal sealed partial class Program
+{
+    /// <summary>Initializes a new instance of the <see cref="Program"/> class. Unused; the entry point is the generated top-level <c>Main</c>.</summary>
+    private Program()
+    {
+    }
+}

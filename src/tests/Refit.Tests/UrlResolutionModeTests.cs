@@ -30,7 +30,8 @@ public class UrlResolutionModeTests
     [Test]
     public async Task Rfc3986ExpandsDynamicSegment()
     {
-        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetUser(7));
+        const int userId = 7;
+        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetUser(userId));
         await Assert.That(captured!.AbsoluteUri).IsEqualTo("http://foo/api/v1/users/7");
     }
 
@@ -48,15 +49,21 @@ public class UrlResolutionModeTests
     [Test]
     public async Task Rfc3986PreservesQueryParameters()
     {
-        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetValuesWithQuery(3));
+        const int pageNumber = 3;
+        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetValuesWithQuery(pageNumber));
         await Assert.That(captured!.AbsoluteUri).IsEqualTo("http://foo/api/v1/values?active=true&page=3");
     }
 
-    /// <summary>Verifies a leading-slash-less route still throws under the default legacy mode.</summary>
+    /// <summary>Verifies a leading-slash-less route still throws under the default legacy mode. Generated request building
+    /// validates the leading slash when the request is built, so the throw surfaces on the first call.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task LegacyModeRejectsLeadingSlashlessRoute() =>
-        await Assert.That(static () => RestService.For<IRfcUrlResolutionApi>(BaseAddress)).ThrowsExactly<ArgumentException>();
+    public async Task LegacyModeRejectsLeadingSlashlessRoute()
+    {
+        var api = RestService.For<IRfcUrlResolutionApi>(BaseAddress);
+        Func<Task> call = () => api.GetValuesRelative();
+        _ = await Assert.That(call).ThrowsExactly<ArgumentException>();
+    }
 
     /// <summary>Invokes a call under <see cref="UrlResolutionMode.Rfc3986"/> and returns the captured request URI.</summary>
     /// <param name="baseAddress">The client base address.</param>

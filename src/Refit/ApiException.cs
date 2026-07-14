@@ -10,12 +10,8 @@ namespace Refit;
 
 /// <summary>Represents an error that occurred after a response was received from the server.</summary>
 [SuppressMessage(
-    "Usage",
-    "CA1032:Implement standard exception constructors",
-    Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
-[SuppressMessage(
-    "Major Code Smell",
-    "S4027:Exceptions should provide standard constructors",
+    "Design",
+    "SST1488:Exception types should declare the standard constructors",
     Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
 public class ApiException : ApiExceptionBase
 {
@@ -56,6 +52,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="headers">The headers.</param>
     /// <param name="refitSettings">The refit settings.</param>
     /// <param name="innerException">The inner exception.</param>
+    [SuppressMessage("Design", "SST1472:Signatures should not declare too many parameters", Justification = "Shipped protected API constructor; grouping parameters would break the public surface.")]
     protected ApiException(
         HttpRequestMessage message,
         HttpMethod httpMethod,
@@ -87,6 +84,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="reasonPhrase">The reason phrase.</param>
     /// <param name="headers">The headers.</param>
     /// <param name="refitSettings">The refit settings.</param>
+    [SuppressMessage("Design", "SST1472:Signatures should not declare too many parameters", Justification = "Shipped protected API constructor; grouping parameters would break the public surface.")]
     protected ApiException(
         string exceptionMessage,
         HttpRequestMessage message,
@@ -119,6 +117,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="headers">The headers.</param>
     /// <param name="refitSettings">The refit settings.</param>
     /// <param name="innerException">The inner exception.</param>
+    [SuppressMessage("Design", "SST1472:Signatures should not declare too many parameters", Justification = "Shipped protected API constructor; grouping parameters would break the public surface.")]
     protected ApiException(
         string exceptionMessage,
         HttpRequestMessage message,
@@ -242,10 +241,6 @@ public class ApiException : ApiExceptionBase
         "Usage",
         "VSTHRD200:Use \"Async\" suffix for async methods",
         Justification = "Public API name preserved for backwards compatibility.")]
-    [SuppressMessage(
-        "Major Code Smell",
-        "CA1031:Do not catch general exception types",
-        Justification = "Best-effort content read while already handling an error; any failure must not hide the original error.")]
     public static async Task<ApiException> Create(
         string exceptionMessage,
         HttpRequestMessage message,
@@ -310,8 +305,8 @@ public class ApiException : ApiExceptionBase
     /// <typeparam name="T">Type to deserialize the content to.</typeparam>
     /// <returns>The response content deserialized as <typeparamref name="T"/></returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public async Task<T?> GetContentAsAsync<T>() =>
         HasContent
@@ -331,8 +326,8 @@ public class ApiException : ApiExceptionBase
     /// <see cref="ISynchronousContentDeserializer"/>.
     /// </exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public T? GetContentAs<T>()
     {
@@ -362,13 +357,9 @@ public class ApiException : ApiExceptionBase
     /// <see langword="true"/> when the content was present and deserialized to a non-null value; otherwise <see langword="false"/>.
     /// </returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [SuppressMessage(
-        "Major Code Smell",
-        "CA1031:Do not catch general exception types",
-        Justification = "Try-pattern peek into an error body must never throw; any failure simply yields false.")]
     public bool TryGetContentAs<T>(out T? content)
     {
         content = default;

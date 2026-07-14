@@ -13,7 +13,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task SendAsyncWrapsCancellationWhenCallerTokenNotSignalled()
     {
         var handler = new CapturingHandler(
-            (_, _) => throw new TaskCanceledException("timeout"));
+            static (_, _) => throw new TaskCanceledException("timeout"));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -38,9 +38,9 @@ public partial class GeneratedRequestRunnerTests
     public async Task SendAsyncHonorsCustomTransportExceptionFactory()
     {
         var settings = CreateSettings();
-        settings.TransportExceptionFactory = (_, _, _) => new InvalidOperationException("mapped by factory");
+        settings.TransportExceptionFactory = static (_, _, _) => new InvalidOperationException("mapped by factory");
         var handler = new CapturingHandler(
-            (_, _) => throw new HttpRequestException("boom"));
+            static (_, _) => throw new HttpRequestException("boom"));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 

@@ -39,6 +39,27 @@ public partial class RestServiceIntegrationTests
     /// <summary>Sample large path-bound foo identifier.</summary>
     private const int LargeFooId = 12_345;
 
+    /// <summary>Stub endpoint URL returning a value body.</summary>
+    private const string FooValueUrl = "http://foo/value";
+
+    /// <summary>Stub endpoint URL used by the no-body request tests.</summary>
+    private const string FooNobodyUrl = "http://foo/nobody";
+
+    /// <summary>Query key asserted by the dynamic query-parameter tests.</summary>
+    private const string SomeProperty2Key = "SomeProperty2";
+
+    /// <summary>Stub endpoint URL used by the nested-path POST tests.</summary>
+    private const string Foos22BarBarUrl = "http://foo/foos/22/bar/bar";
+
+    /// <summary>Relative path to the sample PDF used by the file-upload tests.</summary>
+    private const string TestFilePath = "Test Files/Test.pdf";
+
+    /// <summary>File name used for the sample PDF multipart part.</summary>
+    private const string TestFileName = "Test.pdf";
+
+    /// <summary>Media type used for the sample PDF multipart part.</summary>
+    private const string PdfMediaType = "application/pdf";
+
     /// <summary>JSON serializer options that apply the camelCase property naming policy.</summary>
     private static readonly JsonSerializerOptions _camelCaseJsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -304,7 +325,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Get("http://foo/value"),
+                Route.Get(FooValueUrl),
                 Reply.Text("test", "text/plain")
             },
         };
@@ -359,8 +380,13 @@ public partial class RestServiceIntegrationTests
     /// <summary>Verifies an unmatched route placeholder still throws by default.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task UnmatchedRouteParameterStillThrowsByDefault() =>
-        await Assert.That(static () => RestService.For<IUrlNoMatchingParameters>(BaseUrl)).ThrowsExactly<ArgumentException>();
+    public async Task UnmatchedRouteParameterStillThrowsByDefault()
+    {
+        // With no parameters at all the interface generates inline, so the unmatched-placeholder check
+        // now runs when the request is built rather than at client creation.
+        var service = RestService.For<IUrlNoMatchingParameters>(BaseUrl);
+        _ = await Assert.That(() => (Task)service.GetValue()).ThrowsExactly<ArgumentException>();
+    }
 
     /// <summary>Verifies methods returning a <see cref="ValueTask{TResult}"/> of an API response work.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -370,7 +396,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Get("http://foo/value"),
+                Route.Get(FooValueUrl),
                 Reply.Text("test", "text/plain")
             },
         };
@@ -381,7 +407,7 @@ public partial class RestServiceIntegrationTests
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
         await Assert.That(response.Content).IsEqualTo("test");
         await Assert.That(response.RequestMessage!.Method).IsEqualTo(HttpMethod.Get);
-        await Assert.That(response.RequestMessage.RequestUri?.ToString()).IsEqualTo("http://foo/value");
+        await Assert.That(response.RequestMessage.RequestUri?.ToString()).IsEqualTo(FooValueUrl);
         await handler.VerifyAllCalledAsync();
     }
 
@@ -396,7 +422,7 @@ public partial class RestServiceIntegrationTests
                 new RouteMatcher
                 {
                     Method = HttpMethod.Post,
-                    Template = "http://foo/nobody",
+                    Template = FooNobodyUrl,
                     Headers = [("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")],
                     Body = string.Empty,
                     Where = static r => r.Content?.Headers.ContentLength == 0,
@@ -562,378 +588,6 @@ public partial class RestServiceIntegrationTests
         await handler.VerifyAllCalledAsync();
     }
 
-    /// <summary>Verifies a path-bound object maps its properties into the path.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundObject()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetFooBars(
-            new PathBoundObject { SomeProperty = 1, SomeProperty2 = BarNoneValue });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a long path-bound value is mapped into the path.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithLongPathBoundObject()
-    {
-        var longPathString = string.Concat(Enumerable.Repeat(BarNoneValue, 1000));
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = $"http://foo/foos/12345/bar/{longPathString}", ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetFooBars(
-            new PathBoundObject { SomeProperty = LargeFooId, SomeProperty2 = longPathString });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies path tokens with different casing still bind to the object's properties.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundObjectDifferentCasing()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetFooBarsWithDifferentCasing(
-            new() { SomeProperty = 1, SomeProperty2 = BarNoneValue });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies an explicit parameter combines with a path-bound object.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundObjectAndParameter()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/myId/22/bar/bart", ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetBarsByFoo(
-            "myId",
-            new() { SomeProperty = FooId, SomeProperty2 = "bart" });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies an explicit parameter takes precedence over a path-bound property.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundObjectAndParameterParameterPrecedence()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/chooseMe/bar/barNone", ExactQueryParams = [("SomeProperty", "1")] },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetFooBars(
-            new() { SomeProperty = 1, SomeProperty2 = BarNoneValue },
-            "chooseMe");
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a derived path-bound object maps its properties into the path.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundDerivedObject()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/1/bar/test", ExactQueryParams = [("SomeProperty2", BarNoneValue)] },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetFooBarsDerived(
-            new()
-            {
-                SomeProperty = 1,
-                SomeProperty2 = BarNoneValue,
-                SomeProperty3 = "test"
-            });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a derived object passed as its base type does not duplicate the bound property.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithDerivedObjectAsBaseType()
-    {
-        // see https://github.com/reactiveui/refit/issues/1882: a property bound to the
-        // path must not also be emitted as a query parameter when a derived instance is
-        // passed for a base-typed parameter.
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher
-                {
-                    Method = HttpMethod.Get,
-                    Template = "http://foo/foos/1/bar",
-                    ExactQueryParams = [("SomeProperty3", "test"), ("SomeProperty2", BarNoneValue)],
-                },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetBarsByFoo(
-            new PathBoundDerivedObject
-            {
-                SomeProperty = 1,
-                SomeProperty2 = BarNoneValue,
-                SomeProperty3 = "test"
-            });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a path-bound object combines with an explicit query parameter.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundObjectAndQueryParameter()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/22/bar", ExactQueryParams = [("SomeProperty2", "bart")] },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetBarsByFoo(
-            new() { SomeProperty = FooId, SomeProperty2 = "bart" });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a POST binds a path object alongside a body.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task PostFooBarPathBoundObject()
-    {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post("http://foo/foos/22/bar/bart"),
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.PostFooBar(
-            new() { SomeProperty = FooId, SomeProperty2 = "bart" },
-            new { });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies path-bound collection values respect the configured URL formatter.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task PathBoundObjectsRespectFormatter()
-    {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://foo/foos/22%2C23"),
-                Reply.Json("Ok")
-            },
-        };
-
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            UrlParameterFormatter = new TestEnumerableUrlParameterFormatter()
-        };
-        var fixture = RestService.For<IApiBindPathToObject>(BaseUrl, settings);
-
-        await fixture.GetFoos(
-            new()
-            {
-                Values = [FooId, SecondFooValue]
-            });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a path-bound object combines with a query property.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundObjectAndQuery()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = "SomeQuery=test" },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetFooBars(
-            new PathBoundObjectWithQuery
-            {
-                SomeProperty = 1,
-                SomeProperty2 = BarNoneValue,
-                SomeQuery = "test"
-            });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a path-bound query property uses its custom format.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundObjectAndQueryWithFormat()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foo", ExactQuery = "SomeQueryWithFormat=2020-03-05T13:55:00Z" },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.GetBarsWithCustomQueryFormat(
-            new()
-            {
-                SomeQueryWithFormat = new DateTimeOffset(2020, 03, 05, 13, 55, 00, TimeSpan.Zero).UtcDateTime
-            });
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a path-bound object combines with a query object body.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathBoundObjectAndQueryObject()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = FoosBarBarNoneUrl, ExactQuery = "Property1=test&Property2=test2" },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await fixture.PostFooBar(
-            new() { SomeProperty = 1, SomeProperty2 = BarNoneValue },
-            new() { Property1 = "test", Property2 = "test2" });
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a multipart POST binds a path object and uploads a stream part.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task PostFooBarPathMultipart()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
-        await fixture.PostFooBarStreamPart(
-            new PathBoundObject { SomeProperty = FooId, SomeProperty2 = "bar" },
-            new(stream, "Test.pdf", "application/pdf"));
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a multipart POST binds a path-and-query object and uploads a stream part.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task PostFooBarPathQueryMultipart()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = "SomeQuery=test" },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
-        await fixture.PostFooBarStreamPart(
-            new PathBoundObjectWithQuery
-            {
-                SomeProperty = FooId,
-                SomeProperty2 = "bar",
-                SomeQuery = "test"
-            },
-            new(stream, "Test.pdf", "application/pdf"));
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a multipart POST binds a path object, query object, and stream part.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task PostFooBarPathQueryObjectMultipart()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = "Property1=test&Property2=test2" },
-                Reply.Json("Ok")
-            },
-        };
-
-        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
-
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
-        await fixture.PostFooBarStreamPart(
-            new() { SomeProperty = FooId, SomeProperty2 = "bar" },
-            new() { Property1 = "test", Property2 = "test2" },
-            new(stream, "Test.pdf", "application/pdf"));
-        await handler.VerifyAllCalledAsync();
-    }
-
     /// <summary>Verifies content is not automatically added to a GET request.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -942,7 +596,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/nobody", Where = static r => r.Content is null },
+                new RouteMatcher { Method = HttpMethod.Get, Template = FooNobodyUrl, Where = static r => r.Content is null },
                 Reply.Json("Ok")
             },
         };
@@ -961,208 +615,13 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Head, Template = "http://foo/nobody", Where = static r => r.Content is null },
+                new RouteMatcher { Method = HttpMethod.Head, Template = FooNobodyUrl, Where = static r => r.Content is null },
                 Reply.Json("Ok")
             },
         };
         var fixture = handler.CreateClient<IBodylessApi>(BaseUrl);
 
         await fixture.Head();
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a decimal query parameter is formatted correctly.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithDecimal()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [(DecimalQueryKey, "3.456")] },
-                Reply.Json("Ok")
-            },
-        };
-        var fixture = handler.CreateClient<IApiWithDecimal>(BaseUrl);
-
-        const decimal val = 3.456M;
-
-        _ = await fixture.GetWithDecimal(val);
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a decimal query parameter is formatted correctly.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithDecimalGenerated()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [(DecimalQueryKey, "3.456")] },
-                Reply.Json("Ok")
-            },
-        };
-        var fixture = handler.CreateClient<IApiWithDecimal>(BaseUrl);
-
-        const decimal val = 3.456M;
-
-        _ = await fixture.GetWithDecimalGenerated(val);
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a path parameter is formatted correctly.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithPathParameterGenerated()
-    {
-        var handler = new StubHttp
-        {
-            { Route.Get("http://foo/bar"), Reply.Json("Ok") },
-        };
-        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
-
-        _ = await fixture.GetPath("bar");
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a DateOnly path parameter is formatted and substituted by the generated client.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithDateOnlyPathParameterGenerated()
-    {
-        Uri? captured = null;
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.From(request =>
-                {
-                    captured = request.RequestUri;
-                    return new(HttpStatusCode.OK) { Content = new StringContent("Ok") };
-                })
-            },
-        };
-        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
-
-        var date = new DateOnly(2024, 1, 2);
-        _ = await fixture.GetDateOnlyPath(date);
-
-        var expected = ((IFormattable)date).ToString(null, System.Globalization.CultureInfo.InvariantCulture);
-        await Assert.That(captured).IsNotNull();
-        await Assert.That(Uri.UnescapeDataString(captured!.ToString()))
-            .IsEqualTo($"http://foo/events/{expected}");
-    }
-
-    /// <summary>Verifies a query parameter is formatted correctly.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithQueryParameterGenerated()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", ExactQueryParams = [("q", "bar")] },
-                Reply.Json("Ok")
-            },
-        };
-        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
-
-        _ = await fixture.GetQuery("bar");
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies an aliased query parameter is formatted correctly.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithAliasedQueryParameterGenerated()
-    {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", ExactQueryParams = [("q", "bar")] },
-                Reply.Json("Ok")
-            },
-        };
-        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
-
-        _ = await fixture.GetQueryAlias("bar");
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a URL with multiple query parameters is formatted correctly.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithMultipleParametersGenerated()
-    {
-        const int id = 1;
-        const int width = 800;
-        const int height = 600;
-
-        var handler = new StubHttp
-        {
-            { Route.Get("http://foo/1/800x600/foo"), Reply.Json("Ok") },
-        };
-        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
-
-        _ = await fixture.FetchSomethingWithMultipleParametersPerSegment(id, width, height);
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a URL with multiple repeated query parameters is formatted correctly.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithMultipleRepeatedParametersGenerated()
-    {
-        const int id = 1;
-        const int size = 300;
-
-        var handler = new StubHttp
-        {
-            { Route.Get("http://foo/1/300x300/foo"), Reply.Json("Ok") },
-        };
-        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
-
-        _ = await fixture.FetchSomethingWithMultipleRepeatedParametersPerSegment(id, size);
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a URL with a nullable parameters is formatted correctly.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithNullableParameterGenerated()
-    {
-        var handler = new StubHttp
-        {
-            { Route.Get("http://foo/a//b"), Reply.Json("Ok") },
-        };
-        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
-
-        _ = await fixture.GetNullableParam(null);
-
-        await handler.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Verifies a round trip URL with a nullable parameter.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetWithNullRoundTripParameterGenerated()
-    {
-        var handler = new StubHttp
-        {
-            { Route.Get(BaseUrlWithSlash), Reply.Json("Ok") },
-        };
-        var fixture = handler.CreateClient<IRoundTrippingNullString>(BaseUrl);
-
-        _ = await fixture.GetValue(null);
 
         await handler.VerifyAllCalledAsync();
     }
