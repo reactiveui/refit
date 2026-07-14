@@ -242,6 +242,8 @@ The main package also ships analyzers. They flag common interface issues at comp
 * route templates that use backslashes instead of forward slashes
 * methods with more than one `CancellationToken` parameter
 * `[HeaderCollection]` parameters that are not `IDictionary<string, string>`
+* methods with more than one `[Body]` parameter
+* `[Multipart]` methods that also declare a `[Body]` parameter
 
 Mechanical fixes ship as code fixes: replacing route backslashes with forward slashes, and changing an invalid
 `[HeaderCollection]` parameter to `IDictionary<string, string>`.
