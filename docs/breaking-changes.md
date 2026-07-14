@@ -201,6 +201,23 @@ Two breaking changes are called out for migration:
   members still binds to the inherited base members, but assemblies compiled against v8-v11 should be recompiled.
   If you used `IsSuccessful` to narrow `Content` to non-null on an `IApiResponse<T>` value, use `HasContent` or
   `IsSuccessfulWithContent` instead.
+
+  Because the shadow is gone, `Error` is now typed as `ApiExceptionBase?`, which exposes only request-side context
+  (`RequestContent`, `HttpMethod`, `Uri`, `RequestMessage`). The response body lives on the derived `ApiException`, so
+  `response.Error.Content` no longer compiles. The feature was not removed; the body simply moved to the derived type.
+  Migrate like this:
+
+  ```csharp
+  // Before (v8-v11)
+  var content = response.Error.Content;
+
+  // After (v12+) - null-safe typed access to the response body
+  if (response.HasResponseError(out var apiException))
+      logger.LogError(apiException, apiException.Content);
+
+  // Or, as a shorthand cast when you just want the body
+  var content = (response.Error as ApiException)?.Content;
+  ```
 * The default `System.Text.Json` serializer now reads numbers from JSON strings by setting
   `JsonNumberHandling.AllowReadingFromString`. To opt back out, set `NumberHandling = JsonNumberHandling.Strict` on
   your `JsonSerializerOptions`.
