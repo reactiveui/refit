@@ -236,7 +236,7 @@ internal static partial class Parser
     {
         foreach (var attribute in property.GetAttributes())
         {
-            var attributeName = attribute.AttributeClass?.ToDisplayString();
+            var attributeName = attribute.AttributeClass!.ToDisplayString();
             if (attributeName is "System.Runtime.Serialization.IgnoreDataMemberAttribute"
                 or "System.Text.Json.Serialization.JsonIgnoreAttribute"
                 or "Newtonsoft.Json.JsonIgnoreAttribute")
@@ -341,9 +341,10 @@ internal static partial class Parser
         // accessed through .Value after the null check the emitter already emits for a nullable nested property.
         var nestedType = property.Type;
         var nestedThroughValue = false;
-        if (property.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableValueType)
+        if (property.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
         {
-            nestedType = nullableValueType.TypeArguments[0];
+            // A nested Nullable<T> is always a constructed named type, so its single type argument is the struct.
+            nestedType = ((INamedTypeSymbol)property.Type).TypeArguments[0];
             nestedThroughValue = true;
         }
 

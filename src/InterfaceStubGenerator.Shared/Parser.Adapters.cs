@@ -56,19 +56,16 @@ internal static partial class Parser
         foreach (var member in namespaceSymbol.GetMembers())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            switch (member)
-            {
-                case INamespaceSymbol nestedNamespace:
-                {
-                    CollectReturnTypeAdapters(nestedNamespace, adapterInterface, adapters, cancellationToken);
-                    break;
-                }
 
-                case INamedTypeSymbol type:
-                {
-                    CollectReturnTypeAdapterType(type, adapterInterface, adapters);
-                    break;
-                }
+            // A namespace's members are either nested namespaces or named types; anything that is not a nested
+            // namespace is a named type.
+            if (member is INamespaceSymbol nestedNamespace)
+            {
+                CollectReturnTypeAdapters(nestedNamespace, adapterInterface, adapters, cancellationToken);
+            }
+            else
+            {
+                CollectReturnTypeAdapterType((INamedTypeSymbol)member, adapterInterface, adapters);
             }
         }
     }
@@ -160,8 +157,10 @@ internal static partial class Parser
             return null;
         }
 
-        var openInterface = FindImplementedAdapterInterface(adapter, adapterInterface);
-        return openInterface?.TypeArguments[0] is INamedTypeSymbol templateReturn
+        // Every adapter reaching here was discovered by CollectReturnTypeAdapterType, which only keeps types that
+        // implement the adapter interface, so this lookup always resolves.
+        var openInterface = FindImplementedAdapterInterface(adapter, adapterInterface)!;
+        return openInterface.TypeArguments[0] is INamedTypeSymbol templateReturn
             && SymbolEqualityComparer.Default.Equals(templateReturn.OriginalDefinition, returnType.OriginalDefinition)
             && TryMapAdapterTypeArguments(templateReturn, returnType, adapter, out var adapterOrdered)
             ? adapter.Construct(adapterOrdered)

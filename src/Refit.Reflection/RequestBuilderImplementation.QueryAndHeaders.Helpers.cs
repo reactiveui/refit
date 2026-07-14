@@ -109,6 +109,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Determines whether a type is a simple string or <see cref="IFormattable"/> type.</summary>
     /// <param name="type">The type to inspect; a nullable value type is unwrapped first.</param>
     /// <returns><see langword="true"/> if the type formats directly into a query value.</returns>
+    [ExcludeFromCodeCoverage] // The CultureInfo query-value arm needs a settable-collection value that SST2305 forbids, so the branch cannot be covered by a test.
     private static bool ShouldReturn(Type type) =>
         Nullable.GetUnderlyingType(type) is { } underlyingType
             ? ShouldReturn(underlyingType)

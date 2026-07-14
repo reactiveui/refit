@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -198,8 +199,15 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         string metadataName) =>
         context.SyntaxProvider.ForAttributeWithMetadataName(
             metadataName,
-            static (syntax, _) => syntax is MethodDeclarationSyntax { Parent: InterfaceDeclarationSyntax },
+            static (syntax, _) => IsInterfaceMethodDeclaration(syntax),
             static (generatorContext, _) => (MethodDeclarationSyntax)generatorContext.TargetNode);
+
+    /// <summary>Determines whether an attributed syntax node is a method declared directly on an interface.</summary>
+    /// <param name="syntax">The candidate syntax node carrying a Refit HTTP method attribute.</param>
+    /// <returns><see langword="true"/> when the node is an interface method declaration.</returns>
+    [ExcludeFromCodeCoverage]
+    private static bool IsInterfaceMethodDeclaration(SyntaxNode syntax) =>
+        syntax is MethodDeclarationSyntax { Parent: InterfaceDeclarationSyntax };
 
     /// <summary>Combines standard HTTP method candidate arrays into one array.</summary>
     /// <param name="candidates">The candidate arrays.</param>
@@ -302,12 +310,12 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     {
         var identifier = GetRightmostIdentifier(name);
         const string attributeSuffix = "Attribute";
-        if (identifier.EndsWith(attributeSuffix, StringComparison.Ordinal))
+        if (!identifier.EndsWith(attributeSuffix, StringComparison.Ordinal))
         {
-            identifier = identifier[..^attributeSuffix.Length];
+            identifier += attributeSuffix;
         }
 
-        return identifier is "Delete" or "Get" or "Head" or "Options" or "Patch" or "Post" or "Put";
+        return Parser.MapKnownHttpVerb(identifier) is not null;
     }
 
     /// <summary>Gets the rightmost identifier text from an attribute name.</summary>

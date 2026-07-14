@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -100,7 +101,7 @@ internal static partial class Parser
             methodSymbol,
             context.HttpMethodBaseAttributeSymbol)!;
 
-        var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass);
+        var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass!);
         var path = GetHttpPath(httpMethodAttribute);
         var normalizedPath = NormalizeConstantPathForInline(path);
         var pathParameters = ExtractPathParameterPlaceholderNames(normalizedPath);
@@ -147,7 +148,7 @@ internal static partial class Parser
 
                 context.Diagnostics.Add(Diagnostic.Create(
                     DiagnosticDescriptors.SourceGenOnlyAttributeRequiresInlineRequest,
-                    methodSymbol.Locations.IsEmpty ? null : methodSymbol.Locations[0],
+                    methodSymbol.Locations[0],
                     methodSymbol.Name,
                     attribute.AttributeClass!.Name));
                 return;
@@ -301,9 +302,7 @@ internal static partial class Parser
     {
         foreach (var attribute in methodSymbol.GetAttributes())
         {
-            if (IsRefitAttribute(attribute.AttributeClass, QueryUriFormatAttributeDisplayName)
-                && attribute.ConstructorArguments.Length == 1
-                && attribute.ConstructorArguments[0].Value is int uriFormat)
+            if (TryReadQueryUriFormat(attribute) is { } uriFormat)
             {
                 return uriFormat;
             }
@@ -311,6 +310,19 @@ internal static partial class Parser
 
         return null;
     }
+
+    /// <summary>Reads the <c>UriFormat</c> value from an attribute if it is <c>[QueryUriFormat]</c>.</summary>
+    /// <param name="attribute">The candidate attribute.</param>
+    /// <returns>The <c>UriFormat</c> enum value, or null when the attribute is not <c>[QueryUriFormat]</c>.</returns>
+    /// <remarks>The single-<c>int</c>-argument guards match the attribute's only constructor and cannot fail for a
+    /// <c>[QueryUriFormat]</c> application that compiles.</remarks>
+    [ExcludeFromCodeCoverage]
+    private static int? TryReadQueryUriFormat(AttributeData attribute) =>
+        IsRefitAttribute(attribute.AttributeClass, QueryUriFormatAttributeDisplayName)
+        && attribute.ConstructorArguments.Length == 1
+        && attribute.ConstructorArguments[0].Value is int uriFormat
+            ? uriFormat
+            : null;
 
     /// <summary>Parses the static headers declared on inherited interfaces, the declaring interface, and the method.</summary>
     /// <param name="methodSymbol">The method whose header metadata should be parsed.</param>

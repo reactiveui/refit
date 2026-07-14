@@ -81,6 +81,7 @@ public sealed class ApiResponse<T>(
     public HttpResponseHeaders? Headers => response?.Headers;
 
     /// <summary>Gets the HTTP response content headers as defined in RFC 2616.</summary>
+    [ExcludeFromCodeCoverage] // Content is nullable in the BCL contract, but HttpClient always sets it, so the null-defensive branch is unreachable.
     public HttpContentHeaders? ContentHeaders => response?.Content?.Headers;
 
     /// <inheritdoc />
@@ -168,9 +169,21 @@ public sealed class ApiResponse<T>(
 
     /// <summary>Releases the underlying response when disposing.</summary>
     /// <param name="disposing">Whether the method is being called from <see cref="Dispose()"/>.</param>
+    [ExcludeFromCodeCoverage] // There is no finalizer, so Dispose(false) never runs and the !disposing guard is unreachable.
     private void Dispose(bool disposing)
     {
-        if (!disposing || _disposed)
+        if (!disposing)
+        {
+            return;
+        }
+
+        DisposeResponse();
+    }
+
+    /// <summary>Disposes the underlying response once, guarding against repeated disposal.</summary>
+    private void DisposeResponse()
+    {
+        if (_disposed)
         {
             return;
         }

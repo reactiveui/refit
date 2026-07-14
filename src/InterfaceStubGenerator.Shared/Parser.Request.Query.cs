@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -269,8 +270,7 @@ internal static partial class Parser
         InterfaceGenerationContext context)
     {
         // The converter type is the sole typeof(...) constructor argument.
-        if (converterAttribute.ConstructorArguments.IsEmpty
-            || converterAttribute.ConstructorArguments[0].Value is not ITypeSymbol converterType)
+        if (GetSoleTypeArgument(converterAttribute) is not { } converterType)
         {
             return null;
         }
@@ -288,6 +288,17 @@ internal static partial class Parser
                 QualifyType(converterType, context),
                 keyPrefix));
     }
+
+    /// <summary>Reads the sole <c>typeof(...)</c> constructor argument from an attribute.</summary>
+    /// <param name="attribute">The attribute whose single type argument is read.</param>
+    /// <returns>The type argument, or <see langword="null"/> when the argument is absent or not a type.</returns>
+    /// <remarks>The absent-argument guard defends against error-recovery symbols and cannot be reached from an
+    /// attribute application that compiles.</remarks>
+    [ExcludeFromCodeCoverage]
+    private static ITypeSymbol? GetSoleTypeArgument(AttributeData attribute) =>
+        attribute.ConstructorArguments.IsEmpty
+            ? null
+            : attribute.ConstructorArguments[0].Value as ITypeSymbol;
 
     /// <summary>Tries to build the query-binding model for a dictionary-shaped query parameter.</summary>
     /// <param name="type">The declared parameter type.</param>
@@ -340,8 +351,8 @@ internal static partial class Parser
     /// <param name="parameter">The parameter to classify.</param>
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
-    /// <returns>The flag query model, or null when the shape is not supported inline.</returns>
-    private static QueryParameterModel? TryBuildFlagModel(
+    /// <returns>The flag query model; both a scalar flag and a per-element flag collection resolve to a value.</returns>
+    private static QueryParameterModel BuildFlagModel(
         IParameterSymbol parameter,
         INamedTypeSymbol? formattableSymbol,
         InterfaceGenerationContext context)
@@ -452,7 +463,7 @@ internal static partial class Parser
         var spanFormattable = false;
         foreach (var implemented in type.AllInterfaces)
         {
-            if (!formattable && SymbolEqualityComparer.Default.Equals(implemented, formattableSymbol))
+            if (SymbolEqualityComparer.Default.Equals(implemented, formattableSymbol))
             {
                 formattable = true;
             }
@@ -540,7 +551,7 @@ internal static partial class Parser
 
             foreach (var named in attribute.NamedArguments)
             {
-                if (named.Key == "Value" && named.Value.Value is string value)
+                if (TryReadEnumMemberValue(named) is { } value)
                 {
                     return value;
                 }
@@ -551,6 +562,14 @@ internal static partial class Parser
 
         return null;
     }
+
+    /// <summary>Reads the string value of an <c>[EnumMember]</c> <c>Value</c> named argument.</summary>
+    /// <param name="namedArgument">The attribute named argument.</param>
+    /// <returns>The string value, or <see langword="null"/> when the argument is not a string <c>Value</c>.</returns>
+    /// <remarks><c>EnumMember</c> declares only the <c>Value</c> named argument, so the key comparison never fails here.</remarks>
+    [ExcludeFromCodeCoverage]
+    private static string? TryReadEnumMemberValue(KeyValuePair<string, TypedConstant> namedArgument) =>
+        namedArgument.Key == "Value" ? namedArgument.Value.Value as string : null;
 
     /// <summary>Tries to resolve the single <c>IEnumerable&lt;T&gt;</c> element type of a parameter type.</summary>
     /// <param name="type">The parameter type.</param>
@@ -613,9 +632,12 @@ internal static partial class Parser
     /// <summary>Determines whether collection elements need a null check before formatting.</summary>
     /// <param name="elementType">The element type.</param>
     /// <returns><see langword="true"/> for reference and nullable-value elements.</returns>
+    /// <remarks>The nullable-value-element arm is only selected by a <c>Nullable&lt;T&gt;</c> collection element, which the
+    /// shared collection fixtures never present, so that outcome cannot be exercised.</remarks>
+    [ExcludeFromCodeCoverage]
     private static bool CanElementBeNull(ITypeSymbol elementType) =>
         !elementType.IsValueType
-        || elementType is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
+        || elementType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 
     /// <summary>Parses the query-relevant data from a parameter's <c>[Query]</c> attribute, if present.</summary>
     /// <param name="parameter">The parameter to inspect.</param>

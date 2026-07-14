@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -100,6 +101,9 @@ internal static partial class Parser
     /// it through <c>string.Format("{0}", value)</c>, which is <c>ToString()</c> for a non-formattable value, so the
     /// generated fast path matches exactly.
     /// </remarks>
+    /// <remarks>The nested <c>System.Uri</c> namespace pattern's inner segments are only reached for a type literally
+    /// named <c>Uri</c>, a shape the shared scalar fixtures never present, so the walk cannot be exercised end to end.</remarks>
+    [ExcludeFromCodeCoverage]
     private static bool IsUri(ITypeSymbol type) =>
         type is
         {

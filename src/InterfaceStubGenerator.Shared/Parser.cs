@@ -202,7 +202,9 @@ internal static partial class Parser
             _ = builder.Append(normalized);
         }
 
-        return builder.Length == 0 ? RefitInternalGeneratedSuffix : builder.ToString();
+        // The raw namespace always contains the non-empty RefitInternalGeneratedSuffix segment, so at least one
+        // normalized part is appended and the builder is never empty here.
+        return builder.ToString();
     }
 
     /// <summary>Normalizes one namespace segment into a valid identifier.</summary>
@@ -301,10 +303,10 @@ internal static partial class Parser
         foreach (var iface in candidateInterfaces)
         {
             var model = compilation.GetSemanticModel(iface.SyntaxTree);
-            var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken);
+            var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken)!;
 
             // Skip duplicates already captured from candidate methods.
-            if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
+            if (interfaces.ContainsKey(ifaceSymbol))
             {
                 continue;
             }
@@ -472,16 +474,16 @@ internal static partial class Parser
 
         // Use the simple interface name for the generated class suffix.
         var classSuffix = (interfaceSymbol.ContainingType?.Name) + interfaceSymbol.Name;
-        var ns = interfaceSymbol.ContainingNamespace?.ToDisplayString();
+        var ns = interfaceSymbol.ContainingNamespace.ToDisplayString();
 
         // Keep generated names stable for interfaces declared in the global namespace.
-        if (interfaceSymbol.ContainingNamespace is { IsGlobalNamespace: true })
+        if (interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
         {
             ns = string.Empty;
         }
 
         // Flatten dots out of the namespace for generated identifiers.
-        ns = ns!.Replace(".", string.Empty);
+        ns = ns.Replace(".", string.Empty);
         var interfaceDisplayName = interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         return new(className, classDeclaration, classSuffix, ns, interfaceDisplayName);
@@ -573,7 +575,6 @@ internal static partial class Parser
         // properties in the same pass. Methods and properties were previously two separate AllInterfaces walks.
         var disposableInterfaceSymbol = context.DisposableInterfaceSymbol;
         var hasDispose = false;
-        var seenDerivedNonRefitMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         var seenInheritedProperties = new HashSet<IPropertySymbol>(SymbolEqualityComparer.Default);
         foreach (var baseInterface in interfaceSymbol.AllInterfaces)
         {
@@ -593,8 +594,10 @@ internal static partial class Parser
                         break;
                     }
 
-                    case IMethodSymbol method when seenDerivedNonRefitMethods.Add(method):
+                    case IMethodSymbol method:
                     {
+                        // Each inherited interface contributes its own members once across AllInterfaces, so a method
+                        // symbol never repeats here and no per-method de-duplication is needed.
                         derivedNonRefitMethods.Add(method);
                         break;
                     }
@@ -617,9 +620,7 @@ internal static partial class Parser
     /// <param name="disposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
     /// <returns><see langword="true"/> if the method is declared on <c>IDisposable</c>; otherwise, <see langword="false"/>.</returns>
     private static bool IsDisposeMethod(IMethodSymbol method, ISymbol? disposableInterfaceSymbol) =>
-        method.ContainingType?.Equals(
-            disposableInterfaceSymbol,
-            SymbolEqualityComparer.Default) == true;
+        method.ContainingType.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default);
 
     /// <summary>Removes base methods that the current interface re-declares as explicit Refit members.</summary>
     /// <param name="members">The directly declared members of the interface.</param>

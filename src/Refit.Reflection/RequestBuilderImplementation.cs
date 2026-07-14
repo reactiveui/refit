@@ -455,11 +455,12 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         RestMethodInfoInternal restMethod)
     {
         var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
+
+        // This runs only when HasReturnTypeAdapter already matched an adapter for this exact return type and adapter
+        // set, so ResolveClosedAdapterType resolves the same match and never returns null here.
         var adapterType = ReturnTypeAdapterResolver.ResolveClosedAdapterType(
-                              restMethod.ReturnType,
-                              restMethod.RefitSettings.ReturnTypeAdapters)
-                          ?? throw new InvalidOperationException(
-                              $"No registered IReturnTypeAdapter surfaces return type '{restMethod.ReturnType}'.");
+            restMethod.ReturnType,
+            restMethod.RefitSettings.ReturnTypeAdapters)!;
         var adapter = Activator.CreateInstance(adapterType)!;
 
         // The adapter implements IReturnTypeAdapter<ReturnType, T>; T is the inner result classified for it, so the

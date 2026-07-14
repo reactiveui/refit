@@ -233,8 +233,7 @@ internal partial class RestMethodInfoInternal
     /// <returns>The multipart boundary text, or an empty string for non-multipart requests.</returns>
     private static string GetMultipartBoundary(MethodInfo methodInfo, bool isMultipart) =>
         isMultipart
-            ? methodInfo.GetCustomAttribute<MultipartAttribute>(true)?.BoundaryText
-              ?? new MultipartAttribute().BoundaryText
+            ? methodInfo.GetCustomAttribute<MultipartAttribute>(true)!.BoundaryText // [Multipart] is present whenever isMultipart is true, and its BoundaryText is never null.
             : string.Empty;
 
     /// <summary>Determines whether the result type is one of the supported API response wrappers.</summary>

@@ -255,7 +255,7 @@ public class ValidationApiException : ApiException
     /// <returns>The error message.</returns>
     private static string ReadErrorMessage(JsonElement element) =>
         element.ValueKind == JsonValueKind.String
-            ? element.GetString() ?? string.Empty
+            ? element.GetString()! // A String-kind element always yields a non-null string.
             : element.GetRawText();
 
     /// <summary>Reads extension data using the same inferred primitives as the System.Text.Json converter.</summary>
@@ -269,7 +269,7 @@ public class ValidationApiException : ApiException
             JsonValueKind.Number when element.TryGetInt64(out var integer) => integer,
             JsonValueKind.Number => element.GetDouble(),
             JsonValueKind.String when element.TryGetDateTime(out var dateTime) => dateTime,
-            JsonValueKind.String => element.GetString() ?? string.Empty,
+            JsonValueKind.String => element.GetString()!, // A String-kind element always yields a non-null string.
             _ => element.Clone()
         };
 }

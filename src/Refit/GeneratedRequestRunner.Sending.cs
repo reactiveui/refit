@@ -109,17 +109,7 @@ public static partial class GeneratedRequestRunner
         {
             // Link the method's CancellationToken argument (if any) with the per-subscription token, allocating a linked
             // source only when both can cancel - mirroring StreamAsync.
-            CancellationTokenSource? linked = null;
-            CancellationToken token;
-            if (methodCancellationToken.CanBeCanceled && subscriptionToken.CanBeCanceled)
-            {
-                linked = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, subscriptionToken);
-                token = linked.Token;
-            }
-            else
-            {
-                token = methodCancellationToken.CanBeCanceled ? methodCancellationToken : subscriptionToken;
-            }
+            var (token, linked) = ResolveRequestCancellationToken(methodCancellationToken, subscriptionToken);
 
             try
             {
@@ -148,6 +138,7 @@ public static partial class GeneratedRequestRunner
         "Major Code Smell",
         "S2360:Optional parameters should not be used",
         Justification = "The optional CancellationToken carries the [EnumeratorCancellation] token for the await-foreach WithCancellation pattern.")]
+    [ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
     public static async IAsyncEnumerable<T?> StreamAsync<T>(
         HttpClient client,
         HttpRequestMessage request,
@@ -160,17 +151,7 @@ public static partial class GeneratedRequestRunner
         // Only allocate a linked source when both tokens can actually cancel; linking a non-cancelable token is a
         // no-op, so when the method has no CancellationToken parameter or the consumer enumerates without
         // WithCancellation the request runs against whichever token can cancel (or none) with no CTS allocation.
-        CancellationTokenSource? linked = null;
-        CancellationToken token;
-        if (methodCancellationToken.CanBeCanceled && cancellationToken.CanBeCanceled)
-        {
-            linked = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, cancellationToken);
-            token = linked.Token;
-        }
-        else
-        {
-            token = methodCancellationToken.CanBeCanceled ? methodCancellationToken : cancellationToken;
-        }
+        var (token, linked) = ResolveRequestCancellationToken(methodCancellationToken, cancellationToken);
 
         try
         {
@@ -185,5 +166,24 @@ public static partial class GeneratedRequestRunner
         {
             linked?.Dispose();
         }
+    }
+
+    /// <summary>Resolves the effective cancellation token for a request, linking the method-argument token with the
+    /// per-subscription or enumeration token into a new source only when both can cancel.</summary>
+    /// <param name="methodCancellationToken">The cancellation token supplied as a method argument, if any.</param>
+    /// <param name="consumerCancellationToken">The per-subscription (or per-enumeration) cancellation token.</param>
+    /// <returns>The token the request should run against, and the linked source to dispose once the request completes
+    /// (null when no source was allocated).</returns>
+    private static (CancellationToken Token, CancellationTokenSource? LinkedSource) ResolveRequestCancellationToken(
+        CancellationToken methodCancellationToken,
+        CancellationToken consumerCancellationToken)
+    {
+        if (methodCancellationToken.CanBeCanceled && consumerCancellationToken.CanBeCanceled)
+        {
+            var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, consumerCancellationToken);
+            return (linkedSource.Token, linkedSource);
+        }
+
+        return (methodCancellationToken.CanBeCanceled ? methodCancellationToken : consumerCancellationToken, null);
     }
 }

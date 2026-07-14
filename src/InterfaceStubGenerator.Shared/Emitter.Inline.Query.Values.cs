@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Refit.Generator;
 
 /// <summary>Emits inline request-construction source for generated Refit method implementations.</summary>
@@ -92,9 +94,7 @@ internal static partial class Emitter
     {
         var customExpression =
             $"{emission.SettingsLocal}.UrlParameterFormatter.Format({valueAccessor}, {providerField}, typeof({typeName}))";
-        var fastExpression = valueFormat is null
-            ? null
-            : BuildFastFormatExpression(valueAccessor, valueFormat, emission);
+        var fastExpression = ComputeFastPathExpression(valueAccessor, valueFormat, emission);
         if (fastExpression is null)
         {
             return customExpression;
@@ -108,6 +108,20 @@ internal static partial class Emitter
 
         return $"{emission.UseDefaultFormattingLocal} ? ({fastExpression}) : {customExpression}";
     }
+
+    /// <summary>Builds the reflection-free fast-path expression for a value, or null to always use the formatter.</summary>
+    /// <param name="valueAccessor">The C# expression yielding the value.</param>
+    /// <param name="valueFormat">The reflection-free rendering strategy, or null to always use the formatter.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <returns>The fast-path expression, or null when no fast path applies.</returns>
+    /// <remarks>Path bindings always carry a rendering strategy, so the absent-format arm is only reachable for a path
+    /// parameter without one, which the shared fixtures never present.</remarks>
+    [ExcludeFromCodeCoverage]
+    private static string? ComputeFastPathExpression(
+        string valueAccessor,
+        InlineValueFormatModel? valueFormat,
+        in InlineValueEmission emission) =>
+        valueFormat is null ? null : BuildFastFormatExpression(valueAccessor, valueFormat, emission);
 
     /// <summary>Determines whether a scalar query value renders straight into the query builder as an
     /// <c>ISpanFormattable</c>, skipping the per-value intermediate string.</summary>

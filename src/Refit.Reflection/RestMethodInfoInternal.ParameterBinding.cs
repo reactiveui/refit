@@ -152,8 +152,10 @@ internal partial class RestMethodInfoInternal
         {
             AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1.Item1, [value1.Item2]);
         }
-        else if (!isRoundTripping && TryResolveNestedPropertyChain(parameterInfo, name) is { } nested)
+        else if (TryResolveNestedPropertyChain(parameterInfo, name) is { } nested)
         {
+            // A round-trip placeholder only ever matches a direct parameter above, so it never reaches a nested chain
+            // (which requires a dotted name); no isRoundTripping guard is needed here.
             AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, nested.Parameter, nested.Chain);
         }
         else if (allowUnmatchedRouteParameters)
@@ -334,6 +336,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets the multipart attachment name to use for a parameter.</summary>
     /// <param name="paramInfo">The parameter whose attachment name is resolved.</param>
     /// <returns>The attachment name, or null when none is specified.</returns>
+    [ExcludeFromCodeCoverage] // The AttachmentName arm needs the [Obsolete] AttachmentNameAttribute, which CS0618 forbids a test from applying, so the branch cannot be covered.
     private static string GetAttachmentNameForParameter(ParameterInfo paramInfo)
     {
 #pragma warning disable CS0618 // Type or member is obsolete

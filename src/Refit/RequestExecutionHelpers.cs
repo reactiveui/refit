@@ -233,6 +233,7 @@ internal static class RequestExecutionHelpers
     /// <summary>Returns the response content, substituting empty content when the response has none.</summary>
     /// <param name="response">The response whose content is read.</param>
     /// <returns>The response content, or empty content when none is present.</returns>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Content is nullable in the BCL contract, but HttpClient always sets it, so the null-defensive fallback is unreachable.
     internal static HttpContent EnsureResponseContent(HttpResponseMessage response) =>
         response.Content ?? new StringContent(string.Empty);
 
@@ -277,6 +278,7 @@ internal static class RequestExecutionHelpers
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
     private static async IAsyncEnumerable<T?> StreamResponseIteratorAsync<T>(
         HttpClient client,
         HttpRequestMessage request,

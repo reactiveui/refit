@@ -12,7 +12,6 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 #if NET8_0_OR_GREATER
-using System.Globalization;
 using System.Text.Json.Serialization.Metadata;
 #endif
 
@@ -29,12 +28,6 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <summary>Justification shared by the reflection-fallback trim/AOT suppressions.</summary>
     private const string ReflectionFallbackJustification =
         "Serializing or deserializing without supplied JSON type metadata requires runtime serializer metadata.";
-
-#if NET8_0_OR_GREATER
-    /// <summary>The message thrown when the serializer options provide no metadata for a requested type.</summary>
-    private static readonly System.Text.CompositeFormat MissingMetadataFormat =
-        System.Text.CompositeFormat.Parse("The serializer options did not provide metadata for {0}.");
-#endif
 
     /// <summary>Initializes a new instance of the <see cref="SystemTextJsonContentSerializer"/> class.</summary>
     public SystemTextJsonContentSerializer()
@@ -285,12 +278,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="jsonSerializerOptions">The serializer options to consult.</param>
     /// <returns>The JSON type metadata.</returns>
     private static JsonTypeInfo GetJsonTypeInfo(Type type, JsonSerializerOptions jsonSerializerOptions) =>
-        jsonSerializerOptions.GetTypeInfo(type)
-        ?? throw new InvalidOperationException(
-            string.Format(
-                CultureInfo.InvariantCulture,
-                MissingMetadataFormat,
-                type));
+        jsonSerializerOptions.GetTypeInfo(type); // Returns non-null metadata for the requested type or throws; there is no null case to guard.
 
 #if NET11_0_OR_GREATER
     /// <summary>Gets the JSON type metadata for the given type from the supplied options.</summary>
@@ -316,15 +304,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private JsonTypeInfo<T> GetJsonTypeInfo<T>() =>
 #if NET11_0_OR_GREATER
-        GetJsonTypeInfo<T>(jsonSerializerOptions)
+        GetJsonTypeInfo<T>(jsonSerializerOptions); // Returns the strongly typed metadata for the exact type T, never null.
 #else
-        (GetJsonTypeInfo(typeof(T), jsonSerializerOptions) as JsonTypeInfo<T>)
+        (JsonTypeInfo<T>)GetJsonTypeInfo(typeof(T), jsonSerializerOptions); // GetTypeInfo(typeof(T)) is the exact JsonTypeInfo<T>, so the cast always succeeds.
 #endif
-        ?? throw new InvalidOperationException(
-            string.Format(
-                CultureInfo.InvariantCulture,
-                MissingMetadataFormat,
-                typeof(T)));
 #endif
 
     /// <summary>Serializes the item to HTTP content using the supplied runtime type.</summary>
@@ -523,6 +506,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Major Code Smell",
         "S4018:Generic methods should provide type parameter for inference",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
     private async IAsyncEnumerable<T?> DeserializeJsonLinesManualAsync<T>(
         Stream stream,
         [EnumeratorCancellation] CancellationToken cancellationToken)

@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Refit.Generator;
 
 /// <summary>Low-level primitives that assemble generated source into pre-sized character buffers.</summary>
@@ -89,7 +91,9 @@ internal static partial class Emitter
     /// <param name="level">The indentation level.</param>
     /// <returns>The generated indentation.</returns>
     /// <remarks>Indentation levels are compile-time constants, so the common levels are cached once and shared
-    /// instead of allocating an identical fresh string at every per-method and per-parameter call site.</remarks>
+    /// instead of allocating an identical fresh string at every per-method and per-parameter call site. Levels beyond
+    /// the cache allocate a fresh string, a fallback reached only by nesting deeper than the shared test fixtures.</remarks>
+    [ExcludeFromCodeCoverage]
     private static string Indent(int level) =>
         (uint)level < (uint)IndentCache.Length
             ? IndentCache[level]

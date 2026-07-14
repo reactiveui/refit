@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Refit.Generator;
 
 /// <summary>Emits inline request-construction source for generated Refit method implementations.</summary>
@@ -131,6 +133,9 @@ internal static partial class Emitter
     /// <param name="value">The value expression (a parameter accessor or a foreach element local).</param>
     /// <param name="fieldName">The C# string literal for the part's field name.</param>
     /// <param name="fileName">The C# string literal for the part's file name.</param>
+    /// <remarks>The <see cref="MultipartPartKind"/> arms are exhaustive over statically-dispatchable part kinds; the
+    /// compiler-required default arm handling the formattable kind cannot be selected for every kind by tests.</remarks>
+    [ExcludeFromCodeCoverage]
     private static void AppendMultipartAddArguments(
         PooledStringBuilder sb,
         MultipartPartModel part,

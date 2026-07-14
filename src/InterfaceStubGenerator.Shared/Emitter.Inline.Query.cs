@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Refit.Generator;
 
 /// <summary>Emits inline request-construction source for generated Refit method implementations.</summary>
@@ -232,41 +234,60 @@ internal static partial class Emitter
 
             // A converter parameter needs no attribute provider (it formats its own values), so it may be absent.
             _ = parameterInfoNames.TryGetValue(parameter.Name, out var providerField);
-            switch (query.Shape)
-            {
-                case QueryParameterShape.Scalar or QueryParameterShape.Flag:
-                {
-                    AppendScalarQueryStatement(sb, parameter, query, providerField, emission);
-                    break;
-                }
-
-                case QueryParameterShape.Object:
-                {
-                    AppendObjectQueryStatements(sb, parameter, query, providerField, emission);
-                    break;
-                }
-
-                case QueryParameterShape.Dictionary:
-                {
-                    AppendDictionaryQueryStatements(sb, parameter, query, providerField, emission);
-                    break;
-                }
-
-                case QueryParameterShape.Converter:
-                {
-                    AppendConverterQueryStatements(sb, parameter, query, emission);
-                    break;
-                }
-
-                default:
-                {
-                    AppendCollectionQueryStatement(sb, parameter, query, providerField, emission);
-                    break;
-                }
-            }
+            AppendInlineQueryStatement(sb, parameter, query, providerField, emission);
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>Appends the query-building statements for one parameter, dispatched on its query shape.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="parameter">The parsed request parameter.</param>
+    /// <param name="query">The parameter's query-binding metadata.</param>
+    /// <param name="providerField">The cached attribute-provider field name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <remarks>The <see cref="QueryParameterShape"/> arms are exhaustive over the shapes the parser produces; the
+    /// compiler-required collection default arm cannot be reached for every shape value by tests.</remarks>
+    [ExcludeFromCodeCoverage]
+    private static void AppendInlineQueryStatement(
+        PooledStringBuilder sb,
+        RequestParameterModel parameter,
+        QueryParameterModel query,
+        string providerField,
+        in InlineValueEmission emission)
+    {
+        switch (query.Shape)
+        {
+            case QueryParameterShape.Scalar or QueryParameterShape.Flag:
+            {
+                AppendScalarQueryStatement(sb, parameter, query, providerField, emission);
+                break;
+            }
+
+            case QueryParameterShape.Object:
+            {
+                AppendObjectQueryStatements(sb, parameter, query, providerField, emission);
+                break;
+            }
+
+            case QueryParameterShape.Dictionary:
+            {
+                AppendDictionaryQueryStatements(sb, parameter, query, providerField, emission);
+                break;
+            }
+
+            case QueryParameterShape.Converter:
+            {
+                AppendConverterQueryStatements(sb, parameter, query, emission);
+                break;
+            }
+
+            default:
+            {
+                AppendCollectionQueryStatement(sb, parameter, query, providerField, emission);
+                break;
+            }
+        }
     }
 
     /// <summary>Appends the statement emitting one scalar query value or flag.</summary>

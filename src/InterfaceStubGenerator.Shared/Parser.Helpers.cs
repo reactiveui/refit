@@ -68,7 +68,7 @@ internal static partial class Parser
         // Avoid LINQ here: this is called for every candidate method and every inherited member.
         foreach (var attributeData in methodSymbol.GetAttributes())
         {
-            if (attributeData.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true)
+            if (attributeData.AttributeClass!.InheritsFromOrEquals(httpMethodAttribute))
             {
                 return true;
             }

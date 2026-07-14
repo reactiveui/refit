@@ -233,9 +233,9 @@ internal static partial class Parser
     {
         foreach (var attribute in methodSymbol.GetAttributes())
         {
-            var attributeClass = attribute.AttributeClass;
-            if (attributeClass?.Name == attributeName
-                && attributeClass.ContainingNamespace?.ToDisplayString() == "System.Diagnostics.CodeAnalysis")
+            var attributeClass = attribute.AttributeClass!;
+            if (attributeClass.Name == attributeName
+                && attributeClass.ContainingNamespace.ToDisplayString() == "System.Diagnostics.CodeAnalysis")
             {
                 return true;
             }

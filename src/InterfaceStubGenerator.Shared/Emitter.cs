@@ -195,12 +195,13 @@ internal static partial class Emitter
     /// <returns>The generated attribute source.</returns>
     private static string BuildGeneratedCodeAttribute()
     {
+        // This generator assembly always carries a name and version, so no placeholder fallback is reachable.
         var assemblyName = typeof(Emitter).Assembly.GetName();
         return
             "[global::System.CodeDom.Compiler.GeneratedCodeAttribute("
-            + ToCSharpStringLiteral(assemblyName.Name ?? "Refit.Generator")
+            + ToCSharpStringLiteral(assemblyName.Name!)
             + ", "
-            + ToCSharpStringLiteral(assemblyName.Version?.ToString() ?? "0.0.0.0")
+            + ToCSharpStringLiteral(assemblyName.Version!.ToString())
             + ")]";
     }
 

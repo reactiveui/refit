@@ -255,6 +255,34 @@ public ref struct GeneratedQueryStringBuilder
         return _text.ToString();
     }
 
+#if NET6_0_OR_GREATER
+    /// <summary>Formats a span-formattable value into <paramref name="buffer"/>, growing a rented buffer until the value fits.</summary>
+    /// <typeparam name="T">The span-formattable value type.</typeparam>
+    /// <param name="value">The value to render.</param>
+    /// <param name="buffer">The target buffer, replaced with a larger rented buffer when the value overflows it.</param>
+    /// <param name="rented">The rented buffer to grow and return to the pool, or null while the stack buffer is in use.</param>
+    /// <param name="format">The compile-time format, or null for the default rendering.</param>
+    /// <returns>The number of characters written into <paramref name="buffer"/>.</returns>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // The grow back-edge only fires for a value larger than the stack buffer; the compiler's loop second-jump stays unreachable in practice.
+    private static int FormatWithGrowth<T>(T value, ref Span<char> buffer, ref char[]? rented, string? format)
+        where T : ISpanFormattable
+    {
+        int written;
+        while (!value.TryFormat(buffer, out written, format.AsSpan(), System.Globalization.CultureInfo.InvariantCulture))
+        {
+            if (rented is not null)
+            {
+                System.Buffers.ArrayPool<char>.Shared.Return(rented);
+            }
+
+            rented = System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * BufferGrowthFactor);
+            buffer = rented;
+        }
+
+        return written;
+    }
+#endif
+
     /// <summary>Appends the <c>?</c> or <c>&amp;</c> separator, materializing the text buffer on first use.</summary>
     private void AppendSeparator()
     {
@@ -313,17 +341,7 @@ public ref struct GeneratedQueryStringBuilder
         char[]? rented = null;
         try
         {
-            int written;
-            while (!value.TryFormat(buffer, out written, format.AsSpan(), System.Globalization.CultureInfo.InvariantCulture))
-            {
-                if (rented is not null)
-                {
-                    System.Buffers.ArrayPool<char>.Shared.Return(rented);
-                }
-
-                rented = System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * BufferGrowthFactor);
-                buffer = rented;
-            }
+            var written = FormatWithGrowth(value, ref buffer, ref rented, format);
 
             var formatted = (ReadOnlySpan<char>)buffer[..written];
             if (escape)

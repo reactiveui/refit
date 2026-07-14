@@ -351,10 +351,8 @@ internal static partial class Parser
 
         if (HasParameterAttribute(parameter, QueryNameAttributeDisplayName))
         {
-            var flagModel = TryBuildFlagModel(parameter, context.FormattableSymbol, context.Generation);
-            return flagModel is not null
-                ? new(QueryRequestParameter(parameter, parameterType, flagModel, context.Generation), true, 0, 0, 0)
-                : new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+            var flagModel = BuildFlagModel(parameter, context.FormattableSymbol, context.Generation);
+            return new(QueryRequestParameter(parameter, parameterType, flagModel, context.Generation), true, 0, 0, 0);
         }
 
         // Body resolution precedes query mapping in the reflection builder: on POST/PUT/PATCH the first
