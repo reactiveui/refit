@@ -478,5 +478,3 @@ Refit.SystemTextJsonQueryConverter<T>.Flatten(T value, string! keyPrefix, ref Re
 Refit.IReturnTypeAdapter<TReturn, TResult>
 Refit.IReturnTypeAdapter<TReturn, TResult>.Adapt(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! invoke) -> TReturn
 Refit.RefitSettings.ReturnTypeAdapters.get -> System.Collections.Generic.IList<System.Type!>!
-static Refit.GeneratedRequestRunner.FormatUrlParameter(Refit.RefitSettings! settings, object? value, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string?
-static Refit.GeneratedRequestRunner.RoundTripEscapePath(string? value, Refit.RefitSettings! settings, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string!

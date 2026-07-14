@@ -3,6 +3,8 @@ Refit.GeneratedQueryStringBuilder.AddCollectionValueFormatted<T>(T value) -> voi
 Refit.GeneratedQueryStringBuilder.AddFormatted<T>(string! name, T value, string? format, bool preEncoded) -> void
 static Refit.GeneratedRequestRunner.CanUnrollForm(object? body) -> bool
 static Refit.GeneratedRequestRunner.BuildRequestPath<T>(string! relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value) -> string!
+static Refit.GeneratedRequestRunner.RoundTripEscapePath(string? value, Refit.RefitSettings! settings, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string!
+static Refit.GeneratedRequestRunner.FormatUrlParameter(Refit.RefitSettings! settings, object? value, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string?
 Refit.GeneratedQueryStringBuilder.GeneratedQueryStringBuilder(string! relativePath, bool hasQuery) -> void
 static readonly Refit.GeneratedParameterAttributeProvider.Empty -> Refit.GeneratedParameterAttributeProvider!
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value)> uriParams) -> string!
