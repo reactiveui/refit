@@ -148,6 +148,13 @@ visible in three places.
   generator discovers adapters declared in your project at compile time and emits a direct `Adapt` call — no reflection,
   so adapter-backed methods stay trim and Native AOT clean; the reflection request builder resolves adapters registered
   in `RefitSettings.ReturnTypeAdapters`. See [Custom return types](../README.md#custom-return-types-ireturntypeadapter).
+* **Exposing the current call's arguments (`RefitSettings.CaptureMethodArguments`).** Opt in and a `DelegatingHandler`
+  can read the call's argument values from `HttpRequestMessageOptions.MethodArguments` — an `object?[]` in declared
+  parameter order (including any `CancellationToken`), the equivalent of Retrofit's `Invocation.arguments`. It is off by
+  default because it boxes and retains the arguments on every request, the same allocation/retention/PII trade-off as
+  `CaptureRequestContent`. The values are positional; the generated path supplies the bare array while the reflection
+  path also exposes `RestMethodInfo` for parameter names. See
+  [Inspecting the current call's arguments](../README.md#inspecting-the-current-calls-arguments).
 
 ## V13.x.x
 
