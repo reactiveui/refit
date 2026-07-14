@@ -68,9 +68,14 @@ internal static partial class Parser
         var data = ParseParameterQueryData(parameter);
         var parameterPrefixSegment = string.IsNullOrWhiteSpace(data.Prefix) ? null : data.Prefix + data.Delimiter;
 
+        // A constrained generic parameter flattens its residual properties against the constraint's class type - the
+        // same declared shape the reflection builder walks once the generic method is closed over its argument. An
+        // unconstrained or interface-only parameter has no class type to flatten, so it keeps using reflection.
+        var flattenType = ResolveConstraintClassType(parameter.Type);
+
         // A path-bound property is always a simple scalar, so it flattens here without issue; a null result therefore
         // means a residual property has an unsupported shape, which falls the whole parameter back to reflection.
-        var properties = TryBuildQueryObjectProperties(parameter.Type, parameterPrefixSegment, formattableSymbol, context);
+        var properties = TryBuildQueryObjectProperties(flattenType, parameterPrefixSegment, formattableSymbol, context);
         if (properties is null)
         {
             return false;
@@ -97,7 +102,7 @@ internal static partial class Parser
             HasParameterAttribute(parameter, EncodedAttributeDisplayName),
             data.CollectionFormatValue,
             ElementCanBeNull: false,
-            BuildValueFormat(parameter.Type, null, formattableSymbol, context),
+            BuildValueFormat(flattenType, null, formattableSymbol, context),
             residual.ToImmutableEquatableArray(),
             NestingDelimiter: string.IsNullOrEmpty(data.Delimiter) ? "." : data.Delimiter);
         return true;
@@ -202,6 +207,22 @@ internal static partial class Parser
     /// <returns>The matching property, or null when none is readable.</returns>
     private static IPropertySymbol? FindReadablePathProperty(ITypeSymbol type, string propertyName)
     {
+        // A generic type parameter has no members of its own; the reflection builder binds against the closed generic
+        // method's concrete argument. A class or interface constraint exposes those members at compile time, so resolve
+        // the placeholder against each constraint type exactly as a declared type is resolved.
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            foreach (var constraintType in typeParameter.ConstraintTypes)
+            {
+                if (FindReadablePathProperty(constraintType, propertyName) is { } constraintProperty)
+                {
+                    return constraintProperty;
+                }
+            }
+
+            return null;
+        }
+
         for (var current = type; current is not null && current.SpecialType != SpecialType.System_Object; current = current.BaseType)
         {
             foreach (var member in current.GetMembers())
@@ -216,6 +237,34 @@ internal static partial class Parser
         }
 
         return null;
+    }
+
+    /// <summary>Resolves a generic type parameter to the class constraint used to flatten its residual query properties.</summary>
+    /// <param name="type">The declared parameter type.</param>
+    /// <returns>The constraint's class type when <paramref name="type"/> is a type parameter so constrained; otherwise the type unchanged.</returns>
+    /// <remarks>
+    /// Only a class constraint exposes a statically-known, flattenable property set. A type parameter can carry at most
+    /// one class constraint, so the resolution is unambiguous; an interface-only or unconstrained parameter resolves to
+    /// itself, which the query flattener rejects, keeping it on the reflection request builder.
+    /// </remarks>
+    private static ITypeSymbol ResolveConstraintClassType(ITypeSymbol type)
+    {
+        if (type is not ITypeParameterSymbol typeParameter)
+        {
+            return type;
+        }
+
+        foreach (var constraintType in typeParameter.ConstraintTypes)
+        {
+            // A constraint may itself be a type parameter (where T : U), so resolve through it to the underlying class.
+            var resolved = ResolveConstraintClassType(constraintType);
+            if (resolved.TypeKind == TypeKind.Class && resolved.SpecialType != SpecialType.System_Object)
+            {
+                return resolved;
+            }
+        }
+
+        return type;
     }
 
     /// <summary>Builds the path parameter model for an object whose dotted placeholders bind its properties.</summary>

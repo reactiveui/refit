@@ -65,6 +65,7 @@ lets you stub responses and verify requests with a declarative route table — s
     * [Static headers](#static-headers)
     * [Dynamic headers](#dynamic-headers)
     * [Bearer Authentication](#bearer-authentication)
+    * [Scoped (per-request) authorization tokens with dependency injection](#scoped-per-request-authorization-tokens-with-dependency-injection)
     * [Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)](#reducing-header-boilerplate-with-delegatinghandlers-authorization-headers-worked-example)
     * [Redefining headers](#redefining-headers)
     * [Removing headers](#removing-headers)
@@ -288,6 +289,20 @@ class UserGroupRequest{
 }
 
 ```
+
+When the bound object is a generic method's type parameter, the placeholders are
+resolved against a class constraint at compile time, so a constrained generic
+method is generated inline (no reflection fallback, no `RF006`):
+
+```csharp
+// Generated inline: {request.groupId}/{request.userId} bind against UserGroupRequest.
+[Get("/group/{request.groupId}/users/{request.userId}")]
+Task<List<User>> GroupList<T>(T request) where T : UserGroupRequest;
+```
+
+An *unconstrained* generic parameter (`GroupList<T>(T request)`) still falls back
+to the reflection request builder, because the concrete type - and its bound
+properties - are only known at call time.
 
 Parameters that are not specified as a URL substitution will automatically be
 used as query parameters. This is different than Retrofit, where all
@@ -1161,6 +1176,37 @@ your app needs, so you don't have to pass a token into each method.
 `AuthorizationHeaderValueGetter` works whether you create clients with `RestService.For<T>("https://...")` or supply
 your own `HttpClient` via `RestService.For<T>(httpClient, settings)`. If your API methods accept a `CancellationToken`,
 that token is propagated to the getter delegate.
+
+If your getter returns `null`, an empty string, or whitespace, Refit omits the `Authorization` header for that request
+instead of sending a blank `Authorization: <scheme>` value. This lets a single client make both authenticated and
+anonymous calls: return a token when you have one, and return an empty string to skip auth for that request. Omitting
+the `Authorization` placeholder entirely (no `[Headers("Authorization: Bearer")]`) skips auth for the whole method.
+
+#### Scoped (per-request) authorization tokens with dependency injection
+
+When you register a client through `Refit.HttpClientFactory`, you can resolve the token from dependency injection with
+`AddAuthorizationHeaderValueProvider`:
+
+```csharp
+services.AddRefitClient<IMyApi>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"))
+    .AddAuthorizationHeaderValueProvider((serviceProvider, request, cancellationToken) =>
+    {
+        var tokenService = serviceProvider.GetRequiredService<IMyTokenService>();
+        return new ValueTask<string>(tokenService.GetTokenForCurrentRequest());
+    });
+```
+
+The delegate receives an `IServiceProvider`, the outgoing `HttpRequestMessage`, and a `CancellationToken`, and returns
+the token to place in the `Authorization` header (returning `null`/empty/whitespace skips auth for that request, exactly
+like `AuthorizationHeaderValueGetter`).
+
+Caveat: `IHttpClientFactory` pools message handlers for their configured lifetime, so a scoped service captured directly
+by a handler would bleed across requests. To keep the provider correctly per-request, this extension creates a fresh DI
+scope for every request and resolves your delegate from that scope's `IServiceProvider`, disposing the scope when the
+request completes. True per-request isolation therefore relies on either per-request state you read from the `request`
+argument, or ambient `AsyncLocal`-based state (such as a host-registered `IHttpContextAccessor`) that flows into the
+fresh scope. No `Microsoft.AspNetCore.*` reference is required.
 
 #### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
 

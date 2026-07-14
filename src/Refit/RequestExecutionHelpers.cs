@@ -172,7 +172,7 @@ internal static class RequestExecutionHelpers
             cancellationToken);
     }
 
-    /// <summary>Populates an empty Authorization header through the configured token getter.</summary>
+    /// <summary>Populates an empty Authorization header through the configured token getter, removing the header when the getter returns an empty token.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="cancellationToken">A token to cancel the token getter.</param>
@@ -195,7 +195,12 @@ internal static class RequestExecutionHelpers
 
         var token = await settings.AuthorizationHeaderValueGetter(request, cancellationToken)
             .ConfigureAwait(false);
-        request.Headers.Authorization = new(auth.Scheme, token);
+
+        // An empty token means "no credentials for this request": drop the header rather than
+        // sending a blank `Authorization: <scheme>` value (#1688).
+        request.Headers.Authorization = string.IsNullOrWhiteSpace(token)
+            ? null
+            : new(auth.Scheme, token);
     }
 
     /// <summary>
