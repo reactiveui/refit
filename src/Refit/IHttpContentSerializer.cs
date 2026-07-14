@@ -16,7 +16,10 @@ public interface IHttpContentSerializer
     /// <returns><see cref="HttpContent"/> that contains the serialized <typeparamref name="T"/> object.</returns>
 #if !NET8_0_OR_GREATER
 #endif
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     HttpContent ToHttpContent<T>(T item);
 
     /// <summary>Deserializes an object of type <typeparamref name="T"/> from an <see cref="HttpContent"/> object.</summary>
@@ -26,7 +29,10 @@ public interface IHttpContentSerializer
     /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
 #if !NET8_0_OR_GREATER
 #endif
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     [SuppressMessage(
         "Major Code Smell",
         "S2360:Optional parameters should not be used",

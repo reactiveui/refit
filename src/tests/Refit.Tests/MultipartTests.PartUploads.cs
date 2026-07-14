@@ -586,8 +586,8 @@ public partial class MultipartTests
     /// <param name="part">The multipart part to read.</param>
     /// <returns>The deserialized value.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The type argument selects the deserialization target and cannot be inferred from the content parameter.")]
     private static async Task<T?> DeserializeMultipartPart<T>(HttpContent part) =>
         SystemTextJsonSerializer.Deserialize<T>(

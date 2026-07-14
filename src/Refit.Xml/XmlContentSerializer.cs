@@ -82,7 +82,10 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
     /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter selected explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter selected explicitly by callers.")]
     public async Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
         CancellationToken cancellationToken = default)
@@ -110,7 +113,10 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
     /// <inheritdoc/>
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter selected explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter selected explicitly by callers.")]
     public T? DeserializeFromString<T>(string content)
     {
         var xmlSerializer = _serializerCache.GetOrAdd(

@@ -25,8 +25,8 @@ public static class RequestBuilder
     /// <returns>An instance of IRequestBuilder T that can be used to construct HTTP requests for the specified interface
     /// type.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder<T> ForType<
@@ -42,8 +42,8 @@ public static class RequestBuilder
     /// construction.</typeparam>
     /// <returns>An object that can be used to build requests for the specified type.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder<T> ForType<

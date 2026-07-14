@@ -517,8 +517,8 @@ public partial class HttpClientFactoryExtensionsTests
     /// <param name="settings">The settings factory argument.</param>
     /// <param name="httpClientName">The client name argument.</param>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter is intentionally specified explicitly by the test caller.")]
     private static void InvokeAddRefitClientCoreGeneric<T>(
         IServiceCollection services,
@@ -548,8 +548,8 @@ public partial class HttpClientFactoryExtensionsTests
     /// <param name="settings">The settings factory argument.</param>
     /// <param name="httpClientName">The client name argument.</param>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter is intentionally specified explicitly by the test caller.")]
     private static void InvokeAddKeyedRefitClientCoreGeneric<T>(
         IServiceCollection services,

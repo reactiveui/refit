@@ -10,8 +10,8 @@ internal class RequestBuilderFactory : IRequestBuilderFactory
 {
     /// <inheritdoc/>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public IRequestBuilder<T> Create<

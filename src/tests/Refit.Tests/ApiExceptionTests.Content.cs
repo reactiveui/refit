@@ -231,8 +231,8 @@ public sealed partial class ApiExceptionTests
 
     /// <summary>A serializer that only supports asynchronous deserialization (no sync capability).</summary>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Mirrors the explicit type parameters of the wrapped IHttpContentSerializer contract.")]
     private sealed class AsyncOnlySerializer : IHttpContentSerializer
     {

@@ -36,8 +36,8 @@ public class JsonContentSerializer : IHttpContentSerializer
     /// </returns>
     /// <exception cref="System.NotSupportedException">Always thrown; this serializer is obsolete.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public Task<T?> FromHttpContentAsync<T>(
         HttpContent content,

@@ -525,8 +525,8 @@ public partial class GeneratedRequestRunnerTests
 
         /// <inheritdoc />
         [SuppressMessage(
-            "Major Code Smell",
-            "S4018:Generic methods should provide type parameters",
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
             Justification = "The method implements Refit's published serializer interface.")]
         public Task<T?> FromHttpContentAsync<T>(
             HttpContent content,

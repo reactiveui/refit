@@ -45,8 +45,8 @@ public interface IUseOverloadedGenericMethods<TResponse, in TParam, in THeader>
     /// <param name="someVal">A value passed in the query string.</param>
     /// <returns>The deserialized response payload.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Intentional Refit fixture: the explicit return type argument cannot be inferred and is exercised by the generator tests.")]
     [Get("/get")]
     Task<TValue> Get<TValue>(int someVal);
@@ -57,8 +57,8 @@ public interface IUseOverloadedGenericMethods<TResponse, in TParam, in THeader>
     /// <param name="input">The input value passed in the query string.</param>
     /// <returns>The deserialized response payload.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Intentional Refit fixture: the explicit return type argument cannot be inferred and is exercised by the generator tests.")]
     [Get("/get")]
     Task<TValue> Get<TValue, TInput>(TInput input);

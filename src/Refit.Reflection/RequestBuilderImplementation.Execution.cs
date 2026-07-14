@@ -17,8 +17,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="linked">The linked cancellation source, disposed when enumeration finishes.</param>
     /// <returns>The streamed elements.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     internal async IAsyncEnumerable<T?> StreamAsyncEnumerableRequestAsync<T>(
@@ -117,8 +117,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized result, or default when there is no content.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     private async Task<T?> ExecuteRequestAsync<T, TBody>(
@@ -154,8 +154,8 @@ internal partial class RequestBuilderImplementation
     /// <see cref="StreamAsyncEnumerableRequestAsync{T}"/>, which is covered directly.
     /// </remarks>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     [ExcludeFromCodeCoverage]
@@ -181,8 +181,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that sends the request with a cancellation token.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     private Func<HttpClient, CancellationToken, object[], Task<T?>> BuildCancellableTaskFuncForMethod<T, TBody>(
@@ -218,8 +218,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized result, or default when there is no content.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private Task<T?> SendAndProcessResponseAsync<T, TBody>(
         HttpClient client,

@@ -81,8 +81,8 @@ internal static class RequestExecutionHelpers
         "S1541:Methods and properties should not be too complex",
         Justification = "This is Refit's shared response state machine; keeping it centralized avoids duplicated generated/reflection hot paths.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by generated and reflection callers for ApiResponse<T> body deserialization.")]
     public static async Task<T?> SendAndProcessResponseAsync<T, TBody>(
         HttpClient client,
@@ -146,8 +146,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel streaming.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
     public static IAsyncEnumerable<T?> StreamResponseAsync<T>(
         HttpClient client,
@@ -275,8 +275,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel streaming.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
     private static async IAsyncEnumerable<T?> StreamResponseIteratorAsync<T>(
@@ -354,8 +354,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The send result.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by callers for ApiResponse<T> failure wrapping.")]
     private static async Task<SendResult<T>> SendOrCaptureExceptionAsync<T, TBody>(
         HttpClient client,
@@ -416,8 +416,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized or wrapped response.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by generated and reflection callers for ApiResponse<T> body deserialization.")]
     private static async Task<T?> DispatchResponseAsync<T, TBody>(
         HttpRequestMessage request,
@@ -465,8 +465,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the read.</param>
     /// <returns>The constructed API response.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by callers for ApiResponse<T> body deserialization.")]
     private static async ValueTask<T?> BuildApiResponseAsync<T, TBody>(
         HttpRequestMessage request,
@@ -510,8 +510,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the read.</param>
     /// <returns>The deserialized result.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
     private static async ValueTask<T?> DeserializeOrThrowAsync<T>(
         HttpRequestMessage request,
@@ -584,8 +584,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the read.</param>
     /// <returns>The deserialized value, or default when there is no content.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
     private static async ValueTask<T?> DeserializeContentAsync<T>(
         HttpResponseMessage response,
@@ -650,8 +650,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the read.</param>
     /// <returns>The deserialized value, or default when there is no content.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
     private static async ValueTask<T?> DeserializeSerializedContentAsync<T>(
         HttpResponseMessage response,

@@ -309,8 +309,8 @@ public class ApiException : ApiExceptionBase
     /// <typeparam name="T">Type to deserialize the content to.</typeparam>
     /// <returns>The response content deserialized as <typeparamref name="T"/></returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public async Task<T?> GetContentAsAsync<T>() =>
         HasContent
@@ -330,8 +330,8 @@ public class ApiException : ApiExceptionBase
     /// <see cref="ISynchronousContentDeserializer"/>.
     /// </exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public T? GetContentAs<T>()
     {
@@ -361,8 +361,8 @@ public class ApiException : ApiExceptionBase
     /// <see langword="true"/> when the content was present and deserialized to a non-null value; otherwise <see langword="false"/>.
     /// </returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [SuppressMessage(
         "Major Code Smell",

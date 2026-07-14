@@ -1590,6 +1590,7 @@ dotnet_diagnostic.SST2303.severity = error # A [Flags] enum's members are not di
 dotnet_diagnostic.SST2304.severity = error # An event's delegate does not have the standard (object sender, TEventArgs e) shape
 dotnet_diagnostic.SST2305.severity = error # A mutable collection property declares a caller-visible setter
 dotnet_diagnostic.SST2306.severity = error # A collection-returning member hands back null
+dotnet_diagnostic.SST2307.severity = error # A generic method has a type parameter that cannot be inferred from its parameters
 dotnet_diagnostic.SST2308.severity = error # An [Obsolete] attribute carries no message
 
 # Correctness
@@ -2289,7 +2290,7 @@ dotnet_diagnostic.S3897.severity = error # Classes that provide "Equals(<T>)" sh
 dotnet_diagnostic.S3962.severity = none # "static readonly" constants should be "const" instead - DUPLICATE CA1802
 dotnet_diagnostic.S3963.severity = none # "static" fields should be initialized inline - DUPLICATE CA1810
 dotnet_diagnostic.S3967.severity = none # Multidimensional arrays should not be used - DUPLICATE CA1814
-dotnet_diagnostic.S4018.severity = error # All type parameters should be used in the parameter list to enable type inference
+dotnet_diagnostic.S4018.severity = none # All type parameters should be used in the parameter list to enable type inference — covered by SST2307
 dotnet_diagnostic.S4022.severity = error # Enumerations should have "Int32" storage
 dotnet_diagnostic.S4023.severity = none # Interfaces should not be empty — covered by SST1437
 dotnet_diagnostic.S4026.severity = error # Assemblies should be marked with "NeutralResourcesLanguageAttribute"

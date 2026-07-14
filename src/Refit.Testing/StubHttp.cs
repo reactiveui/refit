@@ -135,8 +135,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="hostUrl">The base address the client sends requests to.</param>
     /// <returns>A Refit client that sends every request to this handler.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The interface type is intentionally specified explicitly by the caller, matching RestService.For<T>.")]
     [RequiresUnreferencedCode("Creating a Refit client through the reflection path requires runtime type lookup and request metadata.")]
     public T CreateClient<
@@ -156,8 +156,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="baseSettings">The settings to route through this handler.</param>
     /// <returns>A Refit client that sends every request to this handler.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The interface type is intentionally specified explicitly by the caller, matching RestService.For<T>.")]
     [RequiresUnreferencedCode("Creating a Refit client through the reflection path requires runtime type lookup and request metadata.")]
     public T CreateClient<
@@ -177,8 +177,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <returns>A source-generated Refit client that sends every request to this handler.</returns>
     /// <exception cref="InvalidOperationException">No generated implementation is registered for <typeparamref name="T"/>.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The interface type is intentionally specified explicitly by the caller, matching RestService.ForGenerated<T>.")]
     public T CreateGeneratedClient<T>(string hostUrl) => CreateGeneratedClient<T>(hostUrl, new RefitSettings());
 
@@ -192,8 +192,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <returns>A source-generated Refit client that sends every request to this handler.</returns>
     /// <exception cref="InvalidOperationException">No generated implementation is registered for <typeparamref name="T"/>.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The interface type is intentionally specified explicitly by the caller, matching RestService.ForGenerated<T>.")]
     public T CreateGeneratedClient<T>(string hostUrl, RefitSettings baseSettings) => RestService.ForGenerated<T>(hostUrl, ToSettings(baseSettings));
 
@@ -202,8 +202,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <returns>The deserialized request body, or <see langword="default"/> when the body is empty.</returns>
     /// <exception cref="InvalidOperationException">No request has been received yet.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The body type is intentionally specified explicitly by the caller, like a deserialization target.")]
     public Task<T?> LastRequestBodyAsync<T>()
     {
@@ -227,8 +227,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <returns>The deserialized request body, or <see langword="default"/> when the body is empty.</returns>
     /// <exception cref="ArgumentOutOfRangeException">No request exists at <paramref name="index"/>.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The body type is intentionally specified explicitly by the caller, like a deserialization target.")]
     public Task<T?> RequestBodyAsync<T>(int index)
     {
@@ -439,8 +439,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="body">The buffered body, or <see langword="null"/> when none was captured.</param>
     /// <returns>The deserialized body, or <see langword="default"/> when there is no content.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The body type is intentionally specified explicitly by the caller, like a deserialization target.")]
     private Task<T?> DeserializeBodyAsync<T>(CapturedBody? body)
     {

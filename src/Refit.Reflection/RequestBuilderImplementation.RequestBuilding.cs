@@ -129,8 +129,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="body">The body value to serialize.</param>
     /// <returns>The serialized HTTP content.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private static HttpContent SerializeBodyGeneric<T>(IHttpContentSerializer serializer, object? body) =>
         serializer.ToHttpContent((T)body!);
@@ -160,8 +160,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="body">The body value to serialize.</param>
     /// <returns>The serialized, buffered HTTP content.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private static HttpContent SerializeBodySynchronouslyGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
         serializer.ToHttpContentSynchronous((T)body!);
@@ -191,8 +191,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="body">The body value to serialize.</param>
     /// <returns>The streaming HTTP content.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private static HttpContent SerializeBodyStreamingGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
         serializer.ToStreamingHttpContent((T)body!);

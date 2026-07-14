@@ -50,8 +50,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized or wrapped response.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated callers.")]
     public static async Task<T?> SendAsync<T, TBody>(
         HttpClient client,
@@ -94,8 +94,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="methodCancellationToken">The cancellation token supplied as a method argument, if any.</param>
     /// <returns>A cold observable of the deserialized or wrapped response.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameters intentionally specified explicitly by generated callers.")]
     public static IObservable<T?> SendObservable<T, TBody>(
         HttpClient client,
@@ -131,8 +131,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="cancellationToken">The token supplied by the consumer's enumeration.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated callers.")]
     [SuppressMessage(
         "Major Code Smell",

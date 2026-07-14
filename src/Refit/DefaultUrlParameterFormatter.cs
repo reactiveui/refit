@@ -33,14 +33,20 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <param name="format">The format string.</param>
     /// <typeparam name="TContainer">Container class type.</typeparam>
     /// <typeparam name="TParameter">Parameter type.</typeparam>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     public void AddFormat<TContainer, TParameter>(string format) =>
         SpecificFormats.Add((typeof(TContainer), typeof(TParameter)), format);
 
     /// <summary>Add format for specified parameter type. Might be suppressed by a QueryAttribute format or a container specific format.</summary>
     /// <param name="format">The format string.</param>
     /// <typeparam name="TParameter">Parameter type.</typeparam>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     public void AddFormat<TParameter>(string format) => GeneralFormats.Add(typeof(TParameter), format);
 
     /// <summary>Formats the specified parameter value.</summary>

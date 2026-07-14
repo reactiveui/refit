@@ -18,8 +18,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="streamBody">Whether serialized content should be streamed into the request.</param>
     /// <returns>The HTTP content for the body.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated callers.")]
     [SuppressMessage(
         "Usage",
@@ -98,8 +98,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="body">The body value.</param>
     /// <returns>The HTTP content for the URL-encoded body.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
     public static HttpContent CreateUrlEncodedBodyContent<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
@@ -138,8 +138,8 @@ public static partial class GeneratedRequestRunner
     /// so this falls back to the reflection-based <see cref="FormValueMultimap"/>.
     /// </remarks>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
     public static HttpContent CreateUrlEncodedBodyContent<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]

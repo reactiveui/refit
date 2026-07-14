@@ -333,8 +333,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="format">The compile-time format from <c>[Query(Format = ...)]</c>, or null.</param>
     /// <returns>The formatted value.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally inferred from generated call sites to avoid boxing.")]
     public static string FormatInvariant<T>(T value, string? format)
         where T : IFormattable =>
@@ -470,8 +470,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="key">The property key.</param>
     /// <param name="value">The property value.</param>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Generated callers specify the declared property type to avoid call-site boxing.")]
     public static void AddRequestProperty<TValue>(HttpRequestMessage request, string key, TValue value)
     {

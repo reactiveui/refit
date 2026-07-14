@@ -132,7 +132,10 @@ public static partial class HttpClientFactoryExtensions
         /// <summary>Adds a Refit client to the dependency injection container.</summary>
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
@@ -154,7 +157,10 @@ public static partial class HttpClientFactoryExtensions
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
@@ -177,7 +183,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
@@ -202,7 +211,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
@@ -226,7 +238,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
@@ -384,7 +399,10 @@ public static partial class HttpClientFactoryExtensions
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <param name="serviceKey">A key used to associate with the specific Refit client instance.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
@@ -410,7 +428,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="serviceKey">A key used to associate with the specific Refit client instance.</param>
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
@@ -439,7 +460,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
@@ -469,7 +493,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
@@ -499,7 +526,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
@@ -532,7 +562,10 @@ public static partial class HttpClientFactoryExtensions
         /// </summary>
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         public IHttpClientBuilder AddRefitGeneratedClient<T>()
             where T : class
         {
@@ -548,7 +581,10 @@ public static partial class HttpClientFactoryExtensions
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         public IHttpClientBuilder AddRefitGeneratedClient<T>(RefitSettings? settings)
             where T : class
         {
@@ -565,7 +601,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         public IHttpClientBuilder AddRefitGeneratedClient<T>(
             RefitSettings? settings,
             string? httpClientName)
@@ -584,7 +623,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         public IHttpClientBuilder AddRefitGeneratedClient<T>(
             Func<IServiceProvider, RefitSettings?>? settingsAction)
             where T : class
@@ -603,7 +645,10 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Design",
+            "SST2307:Generic method type parameters should be inferable from the parameters",
+            Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         public IHttpClientBuilder AddRefitGeneratedClient<T>(
             Func<IServiceProvider, RefitSettings?>? settingsAction,
             string? httpClientName)

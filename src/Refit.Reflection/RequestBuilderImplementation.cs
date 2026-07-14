@@ -446,8 +446,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that returns the adapter's surfaced value.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Instantiating the adapter and resolving its interface method requires adapter metadata to be available at runtime.")]
     [RequiresDynamicCode("Instantiating the adapter and closing its interface method requires runtime generic type instantiation.")]
@@ -527,8 +527,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that invokes the method synchronously.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
@@ -548,8 +548,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that returns an observable of the result.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     private Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
@@ -582,8 +582,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that returns an asynchronous sequence of the result.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [SuppressMessage(
         "Major Code Smell",
@@ -604,8 +604,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that returns a task of the result.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     private Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(
@@ -625,8 +625,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that returns a value task of the result.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     private Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
