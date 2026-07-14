@@ -7,8 +7,7 @@ using Refit.Buffers;
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="PooledBufferWriter"/> and its detached stream.</summary>
-[SuppressMessage("Performance", "CA1849:Call async methods when in an async method", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
-[SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
+[SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
 [SuppressMessage("Performance", "PSH1313:Blocking call should be awaited", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
 [SuppressMessage("Performance", "PSH1314:Use the Memory-based ReadAsync overload", Justification = "These tests intentionally exercise the byte-array Stream overrides.")]
 public class PooledBufferWriterTests

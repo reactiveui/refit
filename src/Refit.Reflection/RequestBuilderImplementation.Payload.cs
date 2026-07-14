@@ -423,8 +423,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="delimiter">The delimiter between formatted values.</param>
     /// <returns>The joined formatted values.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2930:\"IDisposables\" should be disposed",
+        "Correctness",
+        "SST2410:A created disposable is never disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
     private string JoinFormattedQueryValues(
         IEnumerable paramValues,

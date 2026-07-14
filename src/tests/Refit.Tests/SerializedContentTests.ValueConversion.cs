@@ -130,10 +130,6 @@ public partial class SerializedContentTests
     /// <summary>Verifies that ISO date JSON object values are inferred as <see cref="DateTime"/>.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [SuppressMessage(
-        "Major Code Smell",
-        "S6566:Prefer using \"DateTimeOffset\" instead of \"DateTime\"",
-        Justification = "The serializer under test infers and returns a DateTime; the expected value must match that type.")]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_InferDateObjectValues()
     {
         var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(

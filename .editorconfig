@@ -313,7 +313,7 @@ dotnet_diagnostic.CA1845.severity = error # Use span-based 'string.Concat'
 dotnet_diagnostic.CA1846.severity = none # Prefer AsSpan over Substring — covered by PSH1212
 dotnet_diagnostic.CA1847.severity = none # Use char literal for a single character lookup — disabled because the string.Contains(char) overload doesn't exist on .NET Framework / netstandard2.0 and we target both
 dotnet_diagnostic.CA1848.severity = error # Use the LoggerMessage delegates
-dotnet_diagnostic.CA1849.severity = error # Call async methods when in an async method
+dotnet_diagnostic.CA1849.severity = none # Call async methods when in an async method — covered by PSH1313
 dotnet_diagnostic.CA1850.severity = none # Prefer static HashData method over ComputeHash — covered by PSH1400
 dotnet_diagnostic.CA1851.severity = error # Possible multiple enumerations of IEnumerable collection
 dotnet_diagnostic.CA1852.severity = none # Seal internal types — covered by PSH1411
@@ -958,7 +958,7 @@ dotnet_diagnostic.RCS1136.severity = error # Merge switch sections with equivale
 dotnet_diagnostic.RCS1154.severity = error # Sort enum members
 dotnet_diagnostic.RCS1155.severity = error # Use StringComparison when comparing strings
 dotnet_diagnostic.RCS1156.severity = error # Use string.Length instead of comparison with empty string
-dotnet_diagnostic.RCS1157.severity = error # Composite enum value contains undefined flag
+dotnet_diagnostic.RCS1157.severity = none # Composite enum value contains undefined flag — covered by SST2303
 dotnet_diagnostic.RCS1159.severity = error # Use EventHandler<T>
 dotnet_diagnostic.RCS1160.severity = none # Abstract type should not have public constructors — covered by SST1428
 dotnet_diagnostic.RCS1161.severity = none # Enum should declare explicit values - do not need explicit values
@@ -1126,6 +1126,11 @@ dotnet_diagnostic.RCS0063.severity = none # Remove unnecessary blank line — co
 ###################
 file_header_template = Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.\nReactiveUI and Contributors licenses this file to you under the MIT license.\nSee the LICENSE file in the project root for full license information.
 stylesharp.summary_single_line_max_length = 120
+
+# SonarAnalyzer's S4022 only ever flagged storage narrower than int; uint, long and ulong
+# passed silently. Match that, so retiring S4022 for SST2313 does not fail a build on an
+# enum that was deliberately widened.
+stylesharp.SST2313.allowed_enum_storage = int, uint, long, ulong
 
 # Documentation coverage scope (SST1600/SST1601/SST1602/SST1654).
 # Require documentation on every element, including private members.
@@ -1320,6 +1325,7 @@ dotnet_diagnostic.SST1315.severity = error # Union member names should match the
 dotnet_diagnostic.SST1316.severity = none # Tuple element names should use the configured casing — tuple naming is not enforced here
 dotnet_diagnostic.SST1317.severity = none # Asynchronous method names should end with 'Async' — conflicts with this project's Rx-compatibility and naming mechanism
 dotnet_diagnostic.SST1318.severity = error # Overriding parameter names should match the base declaration
+dotnet_diagnostic.SST1319.severity = error # An enumeration's type name is not PascalCase
 
 # Maintainability
 dotnet_diagnostic.SST1400.severity = error # An element does not declare an access modifier
@@ -1517,6 +1523,8 @@ dotnet_diagnostic.SST2012.severity = error # A GUID is constructed with the para
 dotnet_diagnostic.SST2013.severity = error # An if whose entire body is another if should be merged
 dotnet_diagnostic.SST2014.severity = error # A goto jumps to a label
 dotnet_diagnostic.SST2015.severity = error # A ++ or -- is buried inside a larger expression
+dotnet_diagnostic.SST2016.severity = error # A DateTime on a visible signature loses its offset at the boundary
+dotnet_diagnostic.SST2017.severity = error # A .Date or .TimeOfDay read proves the value is only a date, or only a time of day
 
 # Modern language and library usage
 dotnet_diagnostic.SST1700.severity = error # An extension block declares no members
@@ -1593,6 +1601,11 @@ dotnet_diagnostic.SST2306.severity = error # A collection-returning member hands
 dotnet_diagnostic.SST2307.severity = error # A generic method has a type parameter that cannot be inferred from its parameters
 dotnet_diagnostic.SST2308.severity = error # An [Obsolete] attribute carries no message
 dotnet_diagnostic.SST2309.severity = error # An externally visible member declares an optional parameter, so callers bake in the default
+dotnet_diagnostic.SST2310.severity = error # Deprecated code is still here; remove it once its last caller is gone
+dotnet_diagnostic.SST2311.severity = error # A visible const is copied into every assembly that reads it
+dotnet_diagnostic.SST2312.severity = error # A type is declared outside any namespace
+dotnet_diagnostic.SST2313.severity = error # An enum is stored as a type the project does not allow
+dotnet_diagnostic.SST2314.severity = none # An [Obsolete] has a message but no DiagnosticId — unusable here: ObsoleteAttribute.DiagnosticId is .NET 5+, and this source is shared with net462
 
 # Correctness
 dotnet_diagnostic.SST2400.severity = error # Two arguments name each other's parameters and have been transposed
@@ -1605,6 +1618,7 @@ dotnet_diagnostic.SST2406.severity = error # A loop's stop condition reads only 
 dotnet_diagnostic.SST2407.severity = error # A declared event is never raised
 dotnet_diagnostic.SST2408.severity = error # A StringBuilder is filled and never read
 dotnet_diagnostic.SST2409.severity = error # A throw constructs a general exception type (Exception/SystemException/ApplicationException)
+dotnet_diagnostic.SST2410.severity = error # A created disposable is never disposed and never leaves the method
 
 ###################
 # PerformanceSharp Analyzers (PSH)
@@ -1870,7 +1884,7 @@ dotnet_diagnostic.S1048.severity = error # Finalizers should not throw exception
 dotnet_diagnostic.S2190.severity = none # Loops and recursions should not be infinite
 dotnet_diagnostic.S2275.severity = none # Composite format strings should not lead to unexpected behavior at runtime - DUPLICATE CA2241
 dotnet_diagnostic.S2857.severity = error # SQL keywords should be delimited by whitespace
-dotnet_diagnostic.S2930.severity = error # "IDisposables" should be disposed
+dotnet_diagnostic.S2930.severity = none # "IDisposables" should be disposed — covered by SST2410
 dotnet_diagnostic.S2931.severity = error # Classes with "IDisposable" members should implement "IDisposable"
 dotnet_diagnostic.S3464.severity = error # Type inheritance should not be recursive
 dotnet_diagnostic.S3869.severity = error # "SafeHandle.DangerousGetHandle" should not be called
@@ -1925,7 +1939,7 @@ dotnet_diagnostic.S3466.severity = error # Optional parameters should be passed 
 dotnet_diagnostic.S3598.severity = error # One-way "OperationContract" methods should have "void" return type
 dotnet_diagnostic.S3603.severity = error # Methods with "Pure" attribute should return a value 
 dotnet_diagnostic.S3610.severity = error # Nullable type comparison should not be redundant
-dotnet_diagnostic.S3903.severity = error # Types should be defined in named namespaces
+dotnet_diagnostic.S3903.severity = none # Types should be defined in named namespaces — covered by SST2312
 dotnet_diagnostic.S3923.severity = none # All branches in a conditional structure should not have exactly the same implementation — covered by SST1476
 dotnet_diagnostic.S3926.severity = error # Deserialization methods should be provided for "OptionalField" members
 dotnet_diagnostic.S3927.severity = error # Serialization event handlers should be implemented correctly
@@ -2039,7 +2053,7 @@ dotnet_diagnostic.S2290.severity = error # Field-like events should not be virtu
 dotnet_diagnostic.S2291.severity = error # Overflow checking should not be disabled for "Enumerable.Sum"
 dotnet_diagnostic.S2302.severity = error # "nameof" should be used
 dotnet_diagnostic.S2330.severity = error # Array covariance should not be used
-dotnet_diagnostic.S2339.severity = error # Public constant members should not be used
+dotnet_diagnostic.S2339.severity = none # Public constant members should not be used — covered by SST2311
 dotnet_diagnostic.S2346.severity = none # Flags enumerations zero-value members should be named "None" - DUPLICATE CA1008
 dotnet_diagnostic.S2360.severity = none # Optional parameters should not be used — covered by SST2309
 dotnet_diagnostic.S2365.severity = none # Properties should not make collection or array copies — covered by PSH1017
@@ -2171,7 +2185,7 @@ dotnet_diagnostic.S4050.severity = error # Operators should be overloaded consis
 dotnet_diagnostic.S4055.severity = none # Literals should not be passed as localized parameters
 dotnet_diagnostic.S4057.severity = error # Locales should be set for data types
 dotnet_diagnostic.S4059.severity = none # Property names should not match get methods - DUPLICATE CA1721
-dotnet_diagnostic.S4070.severity = error # Non-flags enums should not be marked with "FlagsAttribute"
+dotnet_diagnostic.S4070.severity = none # Non-flags enums should not be marked with "FlagsAttribute" — covered by SST2303
 dotnet_diagnostic.S4144.severity = error # Methods should not have identical implementations
 dotnet_diagnostic.S4200.severity = error # Native methods should be wrapped
 dotnet_diagnostic.S4214.severity = none # "P/Invoke" methods should not be visible - DUPLICATE CA1401
@@ -2188,7 +2202,7 @@ dotnet_diagnostic.S6423.severity = error # Azure Functions should log all failur
 dotnet_diagnostic.S6561.severity = none # Avoid using "DateTime.Now" for benchmarking or timing operations — covered by PSH1408
 dotnet_diagnostic.S6562.severity = none # Always set the "DateTimeKind" when creating new "DateTime" instances — covered by SST1451
 dotnet_diagnostic.S6563.severity = error # Use UTC when recording DateTime instants
-dotnet_diagnostic.S6566.severity = error # Use "DateTimeOffset" instead of "DateTime"
+dotnet_diagnostic.S6566.severity = none # Use "DateTimeOffset" instead of "DateTime" — covered by SST2016
 dotnet_diagnostic.S6575.severity = error # Use "TimeZoneInfo.FindSystemTimeZoneById" without converting the timezones with "TimezoneConverter"
 dotnet_diagnostic.S6580.severity = none # Use a format provider when parsing date and time - DUPLICATE CA1305
 dotnet_diagnostic.S6673.severity = error # Log message template placeholders should be in the right order
@@ -2202,7 +2216,7 @@ dotnet_diagnostic.S6961.severity = error # API Controllers should derive from Co
 dotnet_diagnostic.S6962.severity = error # You should pool HTTP connections with HttpClientFactory
 dotnet_diagnostic.S6964.severity = error # Value type property used as input in a controller action should be nullable, required or annotated with the JsonRequiredAttribute to avoid under-posting.
 dotnet_diagnostic.S6965.severity = error # REST API actions should be annotated with an HTTP verb attribute
-dotnet_diagnostic.S6966.severity = error # Awaitable method should be used
+dotnet_diagnostic.S6966.severity = none # Awaitable method should be used — covered by PSH1313
 dotnet_diagnostic.S6968.severity = error # Actions that return a value should be annotated with ProducesResponseTypeAttribute containing the return type
 dotnet_diagnostic.S881.severity = none # Increment (++) and decrement (--) operators should not be used in a method call or mixed with other operators in an expression — covered by SST2015
 dotnet_diagnostic.S907.severity = error # "goto" statement should not be used
@@ -2247,7 +2261,7 @@ dotnet_diagnostic.S2221.severity = none # "Exception" should not be caught
 dotnet_diagnostic.S2292.severity = none # Trivial properties should be auto-implemented — covered by SST1420
 dotnet_diagnostic.S2325.severity = none # Methods and properties that don't access instance data should be static - DUPLICATE CA1822
 dotnet_diagnostic.S2333.severity = error # Redundant modifiers should not be used
-dotnet_diagnostic.S2342.severity = error # Enumeration types should comply with a naming convention
+dotnet_diagnostic.S2342.severity = none # Enumeration types should comply with a naming convention — covered by SST1319
 dotnet_diagnostic.S2344.severity = none # Enumeration type names should not have "Flags" or "Enum" suffixes - DUPLICATE CA1711
 dotnet_diagnostic.S2386.severity = error # Mutable fields should not be "public static"
 dotnet_diagnostic.S2486.severity = none # Generic exceptions should not be ignored — covered by SST1429
@@ -2292,7 +2306,7 @@ dotnet_diagnostic.S3962.severity = none # "static readonly" constants should be 
 dotnet_diagnostic.S3963.severity = none # "static" fields should be initialized inline - DUPLICATE CA1810
 dotnet_diagnostic.S3967.severity = none # Multidimensional arrays should not be used - DUPLICATE CA1814
 dotnet_diagnostic.S4018.severity = none # All type parameters should be used in the parameter list to enable type inference — covered by SST2307
-dotnet_diagnostic.S4022.severity = error # Enumerations should have "Int32" storage
+dotnet_diagnostic.S4022.severity = none # Enumerations should have "Int32" storage — covered by SST2313
 dotnet_diagnostic.S4023.severity = none # Interfaces should not be empty — covered by SST1437
 dotnet_diagnostic.S4026.severity = error # Assemblies should be marked with "NeutralResourcesLanguageAttribute"
 dotnet_diagnostic.S4027.severity = none # Exceptions should provide standard constructors - DUPLICATE CA1032
@@ -2339,7 +2353,7 @@ dotnet_diagnostic.S818.severity = none # Literal suffixes should be upper case �
 ###################
 # SonarAnalyzer (Sxxxx) - Info Code Smell
 ###################
-dotnet_diagnostic.S1133.severity = error # Deprecated code should be removed
+dotnet_diagnostic.S1133.severity = none # Deprecated code should be removed — covered by SST2310
 dotnet_diagnostic.S1135.severity = error # Track uses of "TODO" tags
 dotnet_diagnostic.S1309.severity = none # Track uses of in-source issue suppressions
 

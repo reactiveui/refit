@@ -9,7 +9,7 @@
     <TUnitVersion>1.59.0</TUnitVersion>
 
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>3.23.1</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>3.25.2</SharpAnalyzersVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">

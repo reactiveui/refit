@@ -8,8 +8,8 @@ namespace Refit.Generator;
 /// <summary>The set of well-known constraints that can be applied to a generic type parameter.</summary>
 [Flags]
 [SuppressMessage(
-    "Minor Code Smell",
-    "S2342:Enumeration types should comply with a naming convention",
+    "Naming",
+    "SST1319:Enumeration types should be PascalCase",
     Justification = "Name retained; renaming the type to a plural would require changes to Emitter.cs and Parser.cs which are outside the scope of this change.")]
 internal enum KnownTypeConstraint
 {

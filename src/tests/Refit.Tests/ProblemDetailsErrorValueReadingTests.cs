@@ -25,8 +25,7 @@ public sealed class ProblemDetailsErrorValueReadingTests
     /// <summary>Verifies a non-string validation error value is preserved as its raw JSON text.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task NonStringErrorMessageIsPreservedAsRawJson()
     {
         using var response = CreateErrorResponse(
@@ -47,8 +46,7 @@ public sealed class ProblemDetailsErrorValueReadingTests
     /// <summary>Verifies a plain (non date-time) string extension member is read back as its string value.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task PlainStringExtensionIsReadAsString()
     {
         using var response = CreateErrorResponse(

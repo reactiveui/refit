@@ -10,8 +10,8 @@ public static class ThisIsDumbButMightHappen
 {
     /// <summary>A constant string referenced from a Refit attribute argument.</summary>
     [SuppressMessage(
-        "Minor Code Smell",
-        "S2339:Public constant members should not be used",
+        "Design",
+        "SST2311:Visible constants should be static readonly",
         Justification = "Must remain a const because it is consumed as a Refit attribute argument, which requires a compile-time constant.")]
     public const string PeopleDoWeirdStuff = "But we don't let them";
 }

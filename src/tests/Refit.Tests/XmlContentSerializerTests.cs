@@ -239,10 +239,6 @@ public class XmlContentSerializerTests
 
     /// <summary>Builds a populated <see cref="Dto"/> instance for the tests.</summary>
     /// <returns>A new <see cref="Dto"/>.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S6566:Prefer using \"DateTimeOffset\" instead of \"DateTime\"",
-        Justification = "Test intentionally exercises DateTime XML round-trip via XmlConvert.ToDateTime.")]
     private static Dto BuildDto() =>
         new()
         {

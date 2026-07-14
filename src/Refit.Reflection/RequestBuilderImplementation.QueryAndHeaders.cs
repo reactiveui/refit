@@ -137,8 +137,8 @@ internal partial class RequestBuilderImplementation
     /// <param name="queryParamsToAdd">The query parameters to encode.</param>
     /// <returns>The encoded query string.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2930:\"IDisposables\" should be disposed",
+        "Correctness",
+        "SST2410:A created disposable is never disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
     private static string CreateQueryString(List<QueryParameterEntry> queryParamsToAdd)
     {

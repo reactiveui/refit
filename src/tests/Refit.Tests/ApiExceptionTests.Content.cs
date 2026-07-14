@@ -12,8 +12,7 @@ public sealed partial class ApiExceptionTests
     /// <summary>Verifies the synchronous GetContentAs deserializes the buffered error body (#1591).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous content helper.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous content helper.")]
+    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous content helper.")]
     public async Task SyncGetContentAsDeserializesContent()
     {
         using var response = CreateErrorResponse(ValueJson);
@@ -31,8 +30,7 @@ public sealed partial class ApiExceptionTests
     /// <summary>Verifies the synchronous GetContentAs returns default when there is no body (#1591).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous content helper.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous content helper.")]
+    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous content helper.")]
     public async Task SyncGetContentAsReturnsDefaultWhenNoContent()
     {
         using var response = CreateErrorResponse(" ");

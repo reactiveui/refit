@@ -532,8 +532,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="delimiter">The delimiter between formatted values.</param>
     /// <returns>The joined formatted values, empty when the collection has no elements.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2930:\"IDisposables\" should be disposed",
+        "Correctness",
+        "SST2410:A created disposable is never disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
     private static string JoinFormattedElements(
         IEnumerable values,

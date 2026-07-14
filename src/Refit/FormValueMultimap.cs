@@ -167,8 +167,8 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <param name="settings">The Refit settings controlling formatting.</param>
     /// <returns>The joined formatted value.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2930:\"IDisposables\" should be disposed",
+        "Correctness",
+        "SST2410:A created disposable is never disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
     private static string JoinFormattedValues(
         IEnumerable enumerable,

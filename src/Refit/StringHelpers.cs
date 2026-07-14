@@ -87,8 +87,8 @@ internal static class StringHelpers
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2930:\"IDisposables\" should be disposed",
+        "Correctness",
+        "SST2410:A created disposable is never disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
     internal static string RemoveCrOrLf(string value)
     {

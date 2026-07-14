@@ -13,8 +13,8 @@ namespace Refit;
     true)]
 [ExcludeFromCodeCoverage]
 [SuppressMessage(
-    "Major Code Smell",
-    "S1133:Deprecated code should be removed",
+    "Design",
+    "SST2310:Deprecated code should be removed",
     Justification = "Public API type retained for backwards compatibility; cannot be removed without a breaking change.")]
 public class JsonContentSerializer : IHttpContentSerializer
 {

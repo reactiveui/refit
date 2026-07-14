@@ -2,15 +2,9 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
-
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="DefaultUrlParameterFormatter"/> date, collection and enum formatting behaviour.</summary>
-[SuppressMessage(
-    "Major Code Smell",
-    "S6566:Prefer using \"DateTimeOffset\" instead of \"DateTime\"",
-    Justification = "These tests intentionally exercise DateTime formatting; the asserted output and DTO property types are DateTime-specific.")]
 public class DefaultUrlParameterFormatterTests
 {
     /// <summary>A general date format registered for the DateTime formatter tests.</summary>
