@@ -200,15 +200,12 @@ internal static partial class Emitter
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
         var methodPrefix = $"{plan.ParamInfoBuilder}{formFieldsSource}{httpMethodFieldSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
 
-        // The request construction shared by every shape: prologue locals, the message, the version, content, headers,
-        // and request properties. A cold IObservable wraps this in a per-subscription local function so a second
+        // The request construction shared by every shape: prologue locals, the message, content, headers, and request
+        // properties. The configured HTTP version and version policy are applied by AddConfiguredRequestOptions in the
+        // request-property source. A cold IObservable wraps this in a per-subscription local function so a second
         // subscription rebuilds and re-sends instead of reusing a disposed request.
         var requestConstruction = $$"""
             {{requestPrologueSource}}{{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{httpMethodExpression}}, {{requestUriExpression}});
-            {{bodyIndent}}#if NET6_0_OR_GREATER
-            {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
-            {{bodyIndent}}{{requestLocal}}.VersionPolicy = {{settingsLocal}}.VersionPolicy;
-            {{bodyIndent}}#endif
             {{contentSource}}{{headerSource}}{{requestPropertySource}}
             """;
 

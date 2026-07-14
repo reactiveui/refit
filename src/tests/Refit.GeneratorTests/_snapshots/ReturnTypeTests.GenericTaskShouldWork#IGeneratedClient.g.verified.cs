@@ -50,10 +50,6 @@ namespace Refit.Implementation
             {
                 var refitSettings = _settings;
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/users", refitSettings.UrlResolution));
-                #if NET6_0_OR_GREATER
-                refitRequest.Version = refitSettings.Version;
-                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
-                #endif
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
                 return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
                     this.Client,
