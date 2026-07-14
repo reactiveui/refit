@@ -1561,6 +1561,55 @@ into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOpt
 `HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the
 options.
 
+#### Inspecting the current call's arguments
+
+Set `RefitSettings.CaptureMethodArguments = true` to expose the current call's argument values to a `DelegatingHandler`
+via `HttpRequestMessageOptions.MethodArguments`. The stored value is an `object?[]` holding the boxed arguments in the
+method's declared parameter order, including any `CancellationToken`, so it lines up 1:1 with the reflected parameter
+list. This mirrors Retrofit's `Invocation.arguments`.
+
+[//]: # ({% raw %})
+
+```csharp
+var settings = new RefitSettings { CaptureMethodArguments = true };
+
+class ArgumentLoggingHandler : DelegatingHandler
+{
+    public ArgumentLoggingHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (request.Options.TryGetValue(new HttpRequestOptionsKey<object?[]>(HttpRequestMessageOptions.MethodArguments), out var arguments))
+        {
+            // Reflection path: pair the values with RestMethodInfo.MethodInfo.GetParameters() to recover parameter names.
+            if (request.Options.TryGetValue(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), out var restMethodInfo))
+            {
+                var parameters = restMethodInfo.MethodInfo.GetParameters();
+                for (var i = 0; i < arguments.Length; i++)
+                {
+                    Console.WriteLine($"{parameters[i].Name} = {arguments[i]}");
+                }
+            }
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+[//]: # ({% endraw %})
+
+It is **off by default**: enabling it boxes and retains the arguments on every request (and therefore on any resulting
+`ApiException`) for the lifetime of that request, so it adds a per-call allocation, keeps otherwise-collectable
+arguments alive, and the captured values frequently contain credentials or PII — the same trade-offs as
+`CaptureRequestContent`. Use `RefitSettings.ExceptionRedactor` to scrub the values before an exception reaches a logging
+or telemetry pipeline.
+
+The captured values are **positional**. Under the source-generated request path they are supplied as a bare
+`object?[]` with no parameter names attached, so match them against your interface method's declared parameter order.
+`RestMethodInfo` (with its `MethodInfo.GetParameters()`) is only published on the reflection path today, so the
+name-recovery shown above applies there; the generated path does not currently surface `RestMethodInfo`.
+
 ### Multipart uploads
 
 Methods decorated with `Multipart` attribute will be submitted with multipart content type.

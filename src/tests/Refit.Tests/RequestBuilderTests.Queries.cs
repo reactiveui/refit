@@ -242,6 +242,34 @@ public partial class RequestBuilderTests
         await Assert.That(restMethodInfo!.Name).IsEqualTo(nameof(IContainAandB.Ping));
     }
 
+    /// <summary>The declared call arguments, including the cancellation token, appear in order when capture is enabled.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task MethodArgumentsInPropertiesWhenEnabled()
+    {
+        const string orgName = "dotnet";
+        using var cts = new CancellationTokenSource();
+        var token = cts.Token;
+        var fixture = new RequestBuilderImplementation<IGitHubApi>(new() { CaptureMethodArguments = true });
+        var runRequest = fixture.RunRequest(nameof(IGitHubApi.GetOrgMembers), "[]");
+        var handler = await runRequest([orgName, token]);
+
+        await MethodArgumentCaptureAssertions.AssertCapturedAsync(handler.RequestMessage!, orgName, token);
+    }
+
+    /// <summary>The method-arguments option is absent when capture is left at its default (off).</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task MethodArgumentsAbsentByDefault()
+    {
+        const string orgName = "dotnet";
+        var fixture = new RequestBuilderImplementation<IGitHubApi>();
+        var runRequest = fixture.RunRequest(nameof(IGitHubApi.GetOrgMembers), "[]");
+        var handler = await runRequest([orgName, CancellationToken.None]);
+
+        await MethodArgumentCaptureAssertions.AssertAbsentAsync(handler.RequestMessage!);
+    }
+
     /// <summary>Dynamic request properties with default keys appear in the request properties.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
