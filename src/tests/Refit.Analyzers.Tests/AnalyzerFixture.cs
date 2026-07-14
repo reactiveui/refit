@@ -36,8 +36,6 @@ internal static class AnalyzerFixture
     /// <returns>The diagnostics produced by the analyzer.</returns>
     public static Task<ImmutableArray<Diagnostic>> Run(string source, bool? generatedRequestBuilding = null)
     {
-        var compilation = CreateLibrary(source, includeRefitReference: true);
-        var analyzer = new RefitInterfaceAnalyzer();
         var analyzerOptions = generatedRequestBuilding is null
             ? null
             : new AnalyzerOptions(
@@ -45,11 +43,22 @@ internal static class AnalyzerFixture
                 new TestAnalyzerConfigOptionsProvider(
                     "build_property.RefitGeneratedRequestBuilding",
                     generatedRequestBuilding.Value ? "true" : "false"));
-        var compilationWithAnalyzers = compilation.WithAnalyzers(
-            [analyzer],
-            analyzerOptions);
-        return compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+        return Analyze(source, analyzerOptions);
     }
+
+    /// <summary>Runs the Refit interface analyzer over an interface body snippet with a bare analyzer-config option.</summary>
+    /// <remarks>
+    /// The key is supplied without the <c>build_property.</c> prefix, mirroring an <c>.editorconfig</c>/<c>.globalconfig</c>
+    /// entry rather than an MSBuild property, so the analyzer reads it through the bare-name option path.
+    /// </remarks>
+    /// <param name="body">The interface body source.</param>
+    /// <param name="optionKey">The bare analyzer-config option key.</param>
+    /// <param name="optionValue">The analyzer-config option value.</param>
+    /// <returns>The diagnostics produced by the analyzer.</returns>
+    public static Task<ImmutableArray<Diagnostic>> RunForBodyWithAnalyzerConfigOption(string body, string optionKey, string optionValue) =>
+        Analyze(
+            BuildBodySource(body),
+            new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider(optionKey, optionValue)));
 
     /// <summary>Runs the Refit interface analyzer over source without referencing Refit.</summary>
     /// <param name="source">The source to analyze.</param>
@@ -61,6 +70,17 @@ internal static class AnalyzerFixture
         var compilationWithAnalyzers = compilation.WithAnalyzers(
             [analyzer]);
         return compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+    }
+
+    /// <summary>Runs the Refit interface analyzer over Refit-referencing source with the supplied analyzer options.</summary>
+    /// <param name="source">The source to analyze.</param>
+    /// <param name="analyzerOptions">The analyzer options, or <see langword="null"/> to use the defaults.</param>
+    /// <returns>The diagnostics produced by the analyzer.</returns>
+    private static Task<ImmutableArray<Diagnostic>> Analyze(string source, AnalyzerOptions? analyzerOptions)
+    {
+        var compilation = CreateLibrary(source, includeRefitReference: true);
+        var analyzer = new RefitInterfaceAnalyzer();
+        return compilation.WithAnalyzers([analyzer], analyzerOptions).GetAnalyzerDiagnosticsAsync();
     }
 
     /// <summary>Creates a compilation for analyzer tests.</summary>

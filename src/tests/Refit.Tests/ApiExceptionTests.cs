@@ -282,6 +282,18 @@ public sealed partial class ApiExceptionTests
         await Assert.That(static () => new ValidationApiException(MessageText, null!))
             .ThrowsExactly<ArgumentNullException>();
 
+    /// <summary>Verifies the inner-exception request constructor rejects a null inner exception, since its message
+    /// seeds the base exception message.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ApiRequestExceptionInnerConstructorRejectsNullInnerException()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
+
+        await Assert.That(() => new ApiRequestException(request, HttpMethod.Post, new(), null!))
+            .ThrowsExactly<ArgumentNullException>();
+    }
+
     /// <summary>Verifies the problem+json media type is detected case-insensitively per RFC 7231 (#1702).</summary>
     /// <param name="mediaType">The problem details media type with varied casing.</param>
     /// <returns>A task representing the asynchronous test.</returns>

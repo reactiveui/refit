@@ -12,4 +12,11 @@ public interface IDeferredCallApi
     /// <returns>A deferred call producing the user.</returns>
     [Get("/users/{id}")]
     DeferredCall<AdapterUser> GetUser(int id);
+
+    /// <summary>Gets a user by id as a deferred call, threading a method cancellation token.</summary>
+    /// <param name="id">The user id.</param>
+    /// <param name="token">The cancellation token linked into the deferred invocation.</param>
+    /// <returns>A deferred call producing the user.</returns>
+    [Get("/users/{id}")]
+    DeferredCall<AdapterUser> GetUserCancellable(int id, CancellationToken token);
 }

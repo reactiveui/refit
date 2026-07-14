@@ -23,5 +23,10 @@ public sealed class RestServiceGeneratedFactoryFallbackTests
         var api = RestService.For<IRestServiceFallbackApi>(client, new RefitSettings());
 
         await Assert.That(api).IsSameReferenceAs(stub);
+
+        // The same fallback path defaults the settings when none are supplied.
+        var apiWithDefaultSettings = RestService.For<IRestServiceFallbackApi>(client, (RefitSettings?)null);
+
+        await Assert.That(apiWithDefaultSettings).IsSameReferenceAs(stub);
     }
 }

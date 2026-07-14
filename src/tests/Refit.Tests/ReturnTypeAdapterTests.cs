@@ -22,6 +22,12 @@ public sealed class ReturnTypeAdapterTests
     /// <summary>The sample user response body carrying <see cref="UserId"/> and <see cref="UserName"/>.</summary>
     private const string UserJson = """{"id":7,"name":"Ada"}""";
 
+    /// <summary>The JSON media type of the sample user response.</summary>
+    private const string JsonMediaType = "application/json";
+
+    /// <summary>The base address of the stub HTTP client.</summary>
+    private const string ClientBaseAddress = "https://api.example.com";
+
     /// <summary>Verifies the reflection builder surfaces a custom return type from a runtime-registered adapter,
     /// defers the request until invoked, and rebuilds the request on each invocation.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -30,9 +36,9 @@ public sealed class ReturnTypeAdapterTests
     {
         var handler = new TestHttpMessageHandler
         {
-            ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, "application/json"),
+            ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType),
         };
-        var client = new HttpClient(handler) { BaseAddress = new("https://api.example.com") };
+        var client = new HttpClient(handler) { BaseAddress = new(ClientBaseAddress) };
 
         var settings = new RefitSettings();
         settings.ReturnTypeAdapters.Add(typeof(DeferredCallAdapter<>));
@@ -55,6 +61,32 @@ public sealed class ReturnTypeAdapterTests
         await Assert.That(handler.MessagesSent).IsEqualTo(SendsAfterTwoInvocations);
     }
 
+    /// <summary>Verifies the reflection adapter delegate threads the method's own cancellation token into the deferred
+    /// invocation when the adapted method declares one.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReflectionPathAdapterThreadsMethodCancellationToken()
+    {
+        var handler = new TestHttpMessageHandler
+        {
+            ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType),
+        };
+        var client = new HttpClient(handler) { BaseAddress = new(ClientBaseAddress) };
+
+        var settings = new RefitSettings();
+        settings.ReturnTypeAdapters.Add(typeof(DeferredCallAdapter<>));
+
+        var builder = new RequestBuilderImplementation<IDeferredCallApi>(settings);
+        var invoke = builder.BuildRestResultFuncForMethod(nameof(IDeferredCallApi.GetUserCancellable));
+
+        using var methodTokenSource = new CancellationTokenSource();
+        var deferred = (DeferredCall<AdapterUser>)invoke(client, [UserId, methodTokenSource.Token])!;
+
+        var user = await deferred.InvokeAsync(CancellationToken.None);
+        await Assert.That(handler.MessagesSent).IsEqualTo(1);
+        await Assert.That(user!.Id).IsEqualTo(UserId);
+    }
+
     /// <summary>Verifies the generated inline path surfaces a compile-time-discovered adapter's custom return type and
     /// defers the request until invoked, without any runtime adapter registration.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -63,9 +95,9 @@ public sealed class ReturnTypeAdapterTests
     {
         var handler = new TestHttpMessageHandler
         {
-            ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, "application/json"),
+            ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType),
         };
-        var client = new HttpClient(handler) { BaseAddress = new("https://api.example.com") };
+        var client = new HttpClient(handler) { BaseAddress = new(ClientBaseAddress) };
 
         // No adapter is registered on the settings: the generated code discovered it at compile time. If this used the
         // reflection builder it would throw for the unrecognized synchronous return type, so success proves the

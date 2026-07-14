@@ -22,6 +22,13 @@ public sealed class GeneratedQueryStringBuilderTests
     /// <summary>The base of the power used to build the buffer-overflowing value.</summary>
     private const int PowerBase = 10;
 
+    /// <summary>The number of trailing zeros in a value that overflows the 128-char stack buffer but fits the first
+    /// 256-char rented buffer, so the format loop grows exactly once.</summary>
+    private const int SingleGrowthZeroCount = 200;
+
+    /// <summary>The relative path and key prefix of the rendered buffer-overflowing value.</summary>
+    private const string LongValueQueryPrefix = "/x?k=1";
+
     /// <summary>Verifies a null value omits its parameter, leaving the path unchanged.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -42,6 +49,28 @@ public sealed class GeneratedQueryStringBuilderTests
         await Assert.That(result).IsEqualTo(Path);
     }
 
+    /// <summary>Verifies a non-null flag name is escaped and appended as a valueless flag.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddFlagEscapesNonNullFlagName()
+    {
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.AddFlag("a b", false);
+
+        await Assert.That(builder.Build()).IsEqualTo("/x?a%20b");
+    }
+
+    /// <summary>Verifies a pre-encoded flag name is appended verbatim without escaping.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddFlagAppendsPreEncodedFlagNameVerbatim()
+    {
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.AddFlag("a+b", true);
+
+        await Assert.That(builder.Build()).IsEqualTo("/x?a+b");
+    }
+
     /// <summary>Verifies a space-separated collection joins its values with a space.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -60,6 +89,82 @@ public sealed class GeneratedQueryStringBuilderTests
         var result = JoinCollection(CollectionFormat.Tsv);
 
         await Assert.That(result).IsEqualTo("/x?k=a%09b");
+    }
+
+    /// <summary>Verifies a pipe-separated collection joins its values with a pipe.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task BeginCollectionJoinsPipeSeparatedValues()
+    {
+        var result = JoinCollection(CollectionFormat.Pipes);
+
+        await Assert.That(result).IsEqualTo("/x?k=a%7Cb");
+    }
+
+    /// <summary>Verifies a comma-separated (default) collection joins its values with a comma.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task BeginCollectionJoinsCommaSeparatedValues()
+    {
+        var result = JoinCollection(CollectionFormat.Csv);
+
+        await Assert.That(result).IsEqualTo("/x?k=a%2Cb");
+    }
+
+    /// <summary>Verifies a span-formattable value rendered with an explicit compile-time format is padded per the format.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddFormattedAppliesCompileTimeFormat()
+    {
+        const int value = 42;
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.AddFormatted(Key, value, "D5", false);
+
+        await Assert.That(builder.Build()).IsEqualTo("/x?k=00042");
+    }
+
+    /// <summary>Verifies a value rendered with an explicit compile-time format that overflows both the stack buffer and
+    /// the first rented buffer grows the rented buffer and still renders in full.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddFormattedGrowsRentedBufferForLongFormattedValue()
+    {
+        var value = BigInteger.Pow(PowerBase, LongValueZeroCount);
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.AddFormatted(Key, value, "R", false);
+
+        var expected = LongValueQueryPrefix + new string('0', LongValueZeroCount);
+        await Assert.That(builder.Build()).IsEqualTo(expected);
+    }
+
+    /// <summary>Verifies a formatted collection element that overflows the stack and first rented buffer grows the
+    /// rented buffer and still renders in full, exercising the unescaped join path of the format loop.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddCollectionValueFormattedGrowsRentedBufferForLongValue()
+    {
+        var value = BigInteger.Pow(PowerBase, LongValueZeroCount);
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.BeginCollection(Key, CollectionFormat.Csv, false);
+        builder.AddCollectionValueFormatted(value);
+        builder.EndCollection();
+
+        var expected = LongValueQueryPrefix + new string('0', LongValueZeroCount);
+        await Assert.That(builder.Build()).IsEqualTo(expected);
+    }
+
+    /// <summary>Verifies a value that overflows the stack buffer but fits the first rented buffer grows the rented
+    /// buffer exactly once and still renders in full.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddFormattedGrowsRentedBufferOnceForMidLengthValue()
+    {
+        var value = BigInteger.Pow(PowerBase, SingleGrowthZeroCount);
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.AddFormatted(Key, value, null, false);
+
+        var expected = LongValueQueryPrefix + new string('0', SingleGrowthZeroCount);
+        await Assert.That(builder.Build()).IsEqualTo(expected);
     }
 
     /// <summary>Verifies a pre-escaped key with a null value omits the parameter, leaving the path unchanged.</summary>
@@ -95,7 +200,7 @@ public sealed class GeneratedQueryStringBuilderTests
         var builder = new GeneratedQueryStringBuilder(Path);
         builder.AddFormatted(Key, value, null, false);
 
-        var expected = "/x?k=1" + new string('0', LongValueZeroCount);
+        var expected = LongValueQueryPrefix + new string('0', LongValueZeroCount);
         await Assert.That(builder.Build()).IsEqualTo(expected);
     }
 

@@ -160,4 +160,93 @@ public sealed partial class RequestGenerationCoverageTests
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
+
+    /// <summary>Verifies an explicit <c>[Multipart(null)]</c> boundary argument falls to the attribute default boundary.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartNullBoundaryArgumentUsesDefaultBoundary()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Multipart(null)]
+                [Post("/upload")]
+                Task<string> Upload([AliasAs("file")] StreamPart part);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("new global::System.Net.Http.MultipartFormDataContent(\"----MyGreatBoundary\")");
+    }
+
+    /// <summary>Verifies an obsolete <c>[AttachmentName]</c> override supplies a multipart part's file name.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartAttachmentNameOverridesFileName()
+    {
+        // AttachmentNameAttribute is obsolete but still parsed by the generator; it lives inside the generator-input
+        // source string, so no obsolete warning reaches the test project itself.
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Multipart]
+                [Post("/upload")]
+                Task<string> Upload([AliasAs("blob")][AttachmentName("custom.bin")] byte[] data);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("\"custom.bin\"");
+    }
+
+    /// <summary>Verifies multipart parts whose declared type is not statically dispatchable fall back to the reflection
+    /// builder: a <c>[Query]</c> object whose shape cannot flatten, a reference enumerable of an undispatchable element,
+    /// a value-type array, and a value-type enumerable.</summary>
+    /// <param name="body">The interface member body declaring the undispatchable part.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("[Multipart][Post(\"/a\")] Task<string> A([Query] object filter, [AliasAs(\"file\")] StreamPart part);")]
+    [Arguments("[Multipart][Post(\"/b\")] Task<string> B([AliasAs(\"o\")] System.Collections.Generic.IEnumerable<object> objs);")]
+    [Arguments("[Multipart][Post(\"/c\")] Task<string> C([AliasAs(\"n\")] int[] nums);")]
+    [Arguments("[Multipart][Post(\"/d\")] Task<string> D([AliasAs(\"n\")] System.Collections.Generic.IEnumerable<int> nums);")]
+    public async Task MultipartUndispatchablePartsFallBack(string body)
+    {
+        var source =
+            $$"""
+              using System.Threading.Tasks;
+              using Refit;
+
+              namespace RefitGeneratorTest;
+
+              public interface IGeneratedClient
+              {
+                  {{body}}
+              }
+              """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
 }

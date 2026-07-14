@@ -249,4 +249,66 @@ public sealed class PathObjectBindingGenerationTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
         await Assert.That(generated).Contains("@data.Code");
     }
+
+    /// <summary>Verifies a dotted path object parameter that also carries a <c>[Query]</c> prefix and delimiter folds them
+    /// into its residual property's query key.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DottedPathResidualPropertyHonorsQueryPrefixAndDelimiter()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public record class Data(string Value, string Note);
+
+            public interface IGeneratedClient
+            {
+                [Get("/a/{data.Value}")]
+                Task Sample([Query("-", "pfx")] Data data);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("@data.Note");
+        await Assert.That(generated).Contains("pfx-");
+    }
+
+    /// <summary>Verifies a dotted placeholder on an interface-typed parameter whose property chain cannot resolve walks
+    /// the type's (empty) base chain to its end and falls the parameter back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DottedPathOnInterfaceWithUnknownPropertyFallsBack()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IData
+            {
+                string Value { get; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/a/{data.Missing}")]
+                Task Sample(IData data);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
 }

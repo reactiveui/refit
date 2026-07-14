@@ -12,6 +12,13 @@ public sealed class RefitInterfaceAnalyzerTests
     /// <summary>The diagnostic identifier for methods that fall back to the reflection request builder.</summary>
     private const string GeneratedRequestBuildingFallbackDiagnosticId = "RF006";
 
+    /// <summary>A Refit method shape that the generator cannot build inline, so it falls back to reflection (RF006).</summary>
+    private const string ReflectionFallbackMethodBody =
+        """
+        [Get("/query-map")]
+        Task<string> Search(object filters);
+        """;
+
     /// <summary>Verifies analysis exits when the compilation does not reference Refit.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -181,10 +188,7 @@ public sealed class RefitInterfaceAnalyzerTests
     /// <param name="body">The interface member body source.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments("""
-        [Get("/query-map")]
-        Task<string> Search(object filters);
-        """)]
+    [Arguments(ReflectionFallbackMethodBody)]
     [Arguments("""
         [Post("/form")]
         Task<string> PostForm<T>([Body(BodySerializationMethod.UrlEncoded)] T form);
@@ -251,14 +255,39 @@ public sealed class RefitInterfaceAnalyzerTests
     public async Task DoesNotReportFallbackWhenGeneratedRequestBuildingDisabled()
     {
         var diagnostics = await AnalyzerFixture.RunForBody(
-            """
-            [Get("/query-map")]
-            Task<string> Search(object filters);
-            """,
+            ReflectionFallbackMethodBody,
             generatedRequestBuilding: false);
 
         await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
+    }
+
+    /// <summary>Verifies a bare <c>.editorconfig</c> toggle disabling generated request building suppresses the fallback diagnostic.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DoesNotReportFallbackWhenEditorConfigDisablesGeneratedRequestBuilding()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBodyWithAnalyzerConfigOption(
+            ReflectionFallbackMethodBody,
+            "RefitGeneratedRequestBuilding",
+            "false");
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
+    }
+
+    /// <summary>Verifies an unparsable bare <c>.editorconfig</c> toggle is ignored and the default (fallback reported) behavior applies.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReportsFallbackWhenEditorConfigToggleIsUnparsable()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBodyWithAnalyzerConfigOption(
+            ReflectionFallbackMethodBody,
+            "RefitGeneratedRequestBuilding",
+            "notabool");
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .Contains(GeneratedRequestBuildingFallbackDiagnosticId);
     }
 
     /// <summary>Verifies HTTP path extraction handles missing attribute data.</summary>

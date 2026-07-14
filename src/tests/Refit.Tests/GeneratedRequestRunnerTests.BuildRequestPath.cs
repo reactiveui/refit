@@ -117,6 +117,28 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(result).IsEqualTo("/plain");
     }
 
+    /// <summary>Verifies the pre-encoded overload appends a pre-encoded value verbatim while still escaping a
+    /// non-pre-encoded value in the same template.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathAppendsPreEncodedValueVerbatimAndEscapesOthers()
+    {
+        // "/n/{v}/{w}" places {v} at [firstStart, firstEnd) and {w} at [secondStart, secondEnd).
+        const int firstStart = 3;
+        const int firstEnd = 6;
+        const int secondStart = 7;
+        const int secondEnd = 10;
+        ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams =
+        [
+            ((firstStart, firstEnd), "a b", false),
+            ((secondStart, secondEnd), "c d", true)
+        ];
+
+        var result = GeneratedRequestRunner.BuildRequestPath("/n/{v}/{w}", true, uriParams);
+
+        await Assert.That(result).IsEqualTo("/n/a%20b/c d");
+    }
+
     /// <summary>Provides test data for <see cref="GeneratedRequestRunnerTests"/>.</summary>
     internal static class GeneratedRequestRunnerTestsDataSources
     {

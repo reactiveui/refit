@@ -195,6 +195,19 @@ public sealed class ApiResponseTests
         await Assert.That(response.Version).IsEqualTo(responseMessage.Version);
     }
 
+    /// <summary>Verifies the concrete ensure path builds a fresh exception when an unsuccessful response has no captured error.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ConcreteEnsureBuildsExceptionWhenNoErrorCaptured()
+    {
+        using var badResponse = CreateResponse(HttpStatusCode.BadRequest, "boom");
+        using var response = new ApiResponse<string>(badResponse, null, new());
+
+        // No captured error, so ThrowsApiExceptionAsync takes the `?? ApiException.Create(...)` branch.
+        await Assert.That(async () => await response.EnsureSuccessfulAsync())
+            .ThrowsExactly<ApiException>();
+    }
+
     /// <summary>Verifies typed error helpers distinguish request and response errors.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

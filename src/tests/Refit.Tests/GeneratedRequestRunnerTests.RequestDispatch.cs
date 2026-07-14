@@ -8,6 +8,9 @@ namespace Refit.Tests;
 /// <summary>Request header, request-option and relative-URI assembly, and successful request dispatch with response materialization, for the generated request runtime helper.</summary>
 public partial class GeneratedRequestRunnerTests
 {
+    /// <summary>The response body returned by the observable dispatch fixtures.</summary>
+    private const string ObservedResponseContent = "observed";
+
     /// <summary>Verifies that generated header assignment replaces, removes, and sanitizes values.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -454,6 +457,42 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(uri.OriginalString).IsEqualTo("x");
     }
 
+    /// <summary>Verifies the query-format overload prepends the trimmed base path under legacy resolution.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRelativeUriWithQueryFormatPrependsBasePathInLegacyMode()
+    {
+        using var client = new HttpClient { BaseAddress = new("http://foo/api/") };
+
+        var uri = GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy, UriFormat.UriEscaped);
+
+        await Assert.That(uri.OriginalString).IsEqualTo("/api/x");
+    }
+
+    /// <summary>Verifies the query-format overload uses an empty base path for a root base address under legacy resolution.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRelativeUriWithQueryFormatUsesEmptyBasePathForRootBaseAddress()
+    {
+        using var client = new HttpClient { BaseAddress = new("http://foo/") };
+
+        var uri = GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy, UriFormat.UriEscaped);
+
+        await Assert.That(uri.OriginalString).IsEqualTo("/x");
+    }
+
+    /// <summary>Verifies the query-format overload throws when the legacy mode has no base address.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRelativeUriWithQueryFormatThrowsWhenBaseAddressMissing()
+    {
+        using var client = new HttpClient();
+
+        await Assert
+            .That(() => GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy, UriFormat.UriEscaped))
+            .ThrowsExactly<InvalidOperationException>();
+    }
+
     /// <summary>Verifies a cold observable links the method's cancellation token with the per-subscription token when
     /// both can cancel, and still yields the response.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -464,7 +503,7 @@ public partial class GeneratedRequestRunnerTests
             static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("observed")
+                    Content = new StringContent(ObservedResponseContent)
                 }));
         using var client = CreateClient(handler);
         using var methodTokenSource = new CancellationTokenSource();
@@ -480,7 +519,35 @@ public partial class GeneratedRequestRunnerTests
 
         var result = await ObservableTestHelpers.Await(observable);
 
-        await Assert.That(result).IsEqualTo("observed");
+        await Assert.That(result).IsEqualTo(ObservedResponseContent);
+    }
+
+    /// <summary>Verifies a cold observable skips the linked cancellation source when the method's token cannot cancel,
+    /// running against the per-subscription token alone, and still yields the response.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendObservableSkipsLinkedSourceWhenMethodTokenCannotCancel()
+    {
+        var handler = new CapturingHandler(
+            static (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(ObservedResponseContent)
+                }));
+        using var client = CreateClient(handler);
+
+        var observable = GeneratedRequestRunner.SendObservable<string, string>(
+            client,
+            static () => new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath),
+            CreateSettings(),
+            isApiResponse: false,
+            shouldDisposeResponse: true,
+            bufferBody: false,
+            CancellationToken.None);
+
+        var result = await ObservableTestHelpers.Await(observable);
+
+        await Assert.That(result).IsEqualTo(ObservedResponseContent);
     }
 
     /// <summary>Verifies EnsureResponseContent substitutes empty content when the response has none.</summary>

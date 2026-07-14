@@ -279,4 +279,81 @@ public sealed class ReturnTypeAdapterGenerationTests
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
         await Assert.That(result.GeneratedSources[Hint]).Contains(AdaptCall);
     }
+
+    /// <summary>Verifies an adapter whose declared <c>TReturn</c> is a bare type parameter (not a wrapper generic) does
+    /// not surface a generic return type, so the method falls back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AdapterWithBareTypeParameterReturnDoesNotSurfaceGenericReturn()
+    {
+        const string Source =
+            """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Wrapped<T> { }
+
+            // TReturn is the bare type parameter T, not a wrapper generic, so it cannot match a Wrapped<T> return.
+            public sealed class BareAdapter<T> : IReturnTypeAdapter<T, T>
+            {
+                public T Adapt(Func<CancellationToken, Task<T>> invoke) => default!;
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/w")]
+                Wrapped<string> Get();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).Contains(ReflectiveFallback);
+    }
+
+    /// <summary>Verifies an adapter that also implements an unrelated interface still resolves its return-type adapter
+    /// interface, skipping the unrelated one while matching.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AdapterImplementingUnrelatedInterfaceStillMatchesReturnType()
+    {
+        const string Source =
+            """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Boxed
+            {
+                public int Value { get; init; }
+            }
+
+            public sealed class BoxedAdapter : IDisposable, IReturnTypeAdapter<Boxed, int>
+            {
+                public Boxed Adapt(Func<CancellationToken, Task<int>> invoke) => new();
+
+                public void Dispose() { }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/count")]
+                Boxed GetCount();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+        await Assert.That(result.GeneratedSources[Hint]).Contains(AdaptCall);
+    }
 }

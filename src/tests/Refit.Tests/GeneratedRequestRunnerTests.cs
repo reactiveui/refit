@@ -369,6 +369,66 @@ public partial class GeneratedRequestRunnerTests
             .ThrowsExactly<ArgumentOutOfRangeException>();
     }
 
+    /// <summary>Verifies the invariant formatter renders both a value-type and a reference-type formattable value.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task FormatInvariantFormatsValueAndReferenceTypes()
+    {
+        const int value = 42;
+
+        await Assert.That(GeneratedRequestRunner.FormatInvariant(value, "D3")).IsEqualTo("042");
+        await Assert.That(GeneratedRequestRunner.FormatInvariant(new FormattableReference(), "custom")).IsEqualTo("custom");
+    }
+
+    /// <summary>Verifies CanUnrollForm accepts a plain object body and rejects the null, HttpContent, Stream, string and
+    /// dictionary bodies the reflection path special-cases.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task CanUnrollFormAcceptsPlainObjectsAndRejectsSpecialShapes()
+    {
+        using var httpContent = new StringContent("x");
+        await using var stream = new MemoryStream();
+
+        await Assert.That(GeneratedRequestRunner.CanUnrollForm(new DeclaredFormBody())).IsTrue();
+        await Assert.That(GeneratedRequestRunner.CanUnrollForm(null)).IsFalse();
+        await Assert.That(GeneratedRequestRunner.CanUnrollForm(httpContent)).IsFalse();
+        await Assert.That(GeneratedRequestRunner.CanUnrollForm(stream)).IsFalse();
+        await Assert.That(GeneratedRequestRunner.CanUnrollForm("body")).IsFalse();
+        await Assert.That(GeneratedRequestRunner.CanUnrollForm(new Dictionary<string, string>())).IsFalse();
+    }
+
+    /// <summary>Verifies the multipart serializer wraps a serialization failure in a descriptive argument exception for
+    /// both a typed part value and a null part value.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SerializeMultipartPartWrapsSerializerFailure()
+    {
+        var settings = new RefitSettings(
+            new RecordingContentSerializer { SerializeException = new NotSupportedException("boom") });
+
+        await Assert
+            .That(() => GeneratedRequestRunner.SerializeMultipartPart(settings, new DeclaredFormBody(), "field"))
+            .ThrowsExactly<ArgumentException>();
+        await Assert
+            .That(() => GeneratedRequestRunner.SerializeMultipartPart<object?>(settings, null, "field"))
+            .ThrowsExactly<ArgumentException>();
+    }
+
+    /// <summary>Verifies the catch-all path escaper substitutes an empty string when the formatter yields null for a
+    /// section, preserving the separators between the (now-empty) sections.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task RoundTripEscapePathSubstitutesEmptyForNullFormattedSection()
+    {
+        var result = GeneratedRequestRunner.RoundTripEscapePath(
+            "a/b",
+            new NullUrlParameterFormatter(),
+            typeof(string),
+            typeof(string));
+
+        await Assert.That(result).IsEqualTo("/");
+    }
+
     /// <summary>Creates settings backed by the test serializer.</summary>
     /// <param name="serializer">The serializer to assign, or null for a recording serializer.</param>
     /// <returns>The configured settings.</returns>
@@ -448,10 +508,18 @@ public partial class GeneratedRequestRunnerTests
         /// <summary>Gets the exception thrown from deserialization.</summary>
         public Exception? DeserializeException { get; init; }
 
+        /// <summary>Gets the exception thrown from serialization.</summary>
+        public Exception? SerializeException { get; init; }
+
         /// <inheritdoc />
         public HttpContent ToHttpContent<T>(T item)
         {
             SerializeCallCount++;
+            if (SerializeException is not null)
+            {
+                throw SerializeException;
+            }
+
             return new StringContent($"serialized:{item}");
         }
 
@@ -493,6 +561,21 @@ public partial class GeneratedRequestRunnerTests
             length = 1;
             return true;
         }
+    }
+
+    /// <summary>A reference type that renders itself through its format string, exercising the reference-type path of
+    /// the invariant formatter.</summary>
+    private sealed class FormattableReference : IFormattable
+    {
+        /// <inheritdoc/>
+        public string ToString(string? format, IFormatProvider? formatProvider) => format ?? "reference";
+    }
+
+    /// <summary>A URL parameter formatter whose Format always yields null.</summary>
+    private sealed class NullUrlParameterFormatter : IUrlParameterFormatter
+    {
+        /// <inheritdoc/>
+        public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) => null;
     }
 
     /// <summary>Declared form model used to verify generated URL-encoded bodies use compile-time metadata.</summary>

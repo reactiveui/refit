@@ -84,6 +84,21 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.BodyParameterInfo).IsNull();
     }
 
+    /// <summary>Verifies enabling unmatched route parameters short-circuits the route-binding leniency flag before it
+    /// consults whether the method is a generic definition.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task AllowUnmatchedRouteParametersEnablesLenientRouteBinding()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var fixture = new RestMethodInfoInternal(
+            input,
+            input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuff)),
+            new RefitSettings { AllowUnmatchedRouteParameters = true });
+
+        await Assert.That(fixture.ParameterMap[0].Name).IsEqualTo("id");
+    }
+
     /// <summary>Verifies parameter mapping when the same id appears in a few places.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

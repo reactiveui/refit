@@ -310,6 +310,10 @@ public static partial class GeneratorComponentTests
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("Refit.Post"))).IsTrue();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("global::PutAttribute"))).IsTrue();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("global::Refit.PutAttribute"))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("Delete"))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName(nameof(HeadAttribute)))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("Options"))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName(nameof(PatchAttribute)))).IsTrue();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("GetAttribute<string>"))).IsFalse();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName(CustomMethodName))).IsFalse();
         }

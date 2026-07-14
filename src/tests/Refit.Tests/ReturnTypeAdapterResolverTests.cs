@@ -36,6 +36,23 @@ public sealed class ReturnTypeAdapterResolverTests
         await Assert.That(resultType).IsNull();
     }
 
+    /// <summary>Verifies a closed adapter that also implements a non-adapter interface skips that interface during
+    /// matching: the non-adapter interface is evaluated and rejected, and the mismatched return type is not matched.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ClosedAdapterWithNonAdapterInterfaceSkipsNonAdapterInterface()
+    {
+        // The return type does not match the adapter's declared return type, so no interface causes an early match.
+        // Every implemented interface (including the non-adapter IDisposable) is inspected and skipped.
+        var matched = ReturnTypeAdapterResolver.TryResolveResultType(
+            typeof(Wrapped<int>),
+            [typeof(ClosedShapeAdapterWithMarker)],
+            out var resultType);
+
+        await Assert.That(matched).IsFalse();
+        await Assert.That(resultType).IsNull();
+    }
+
     /// <summary>Verifies a null adapter entry is skipped without matching.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -132,6 +149,23 @@ public sealed class ReturnTypeAdapterResolverTests
             out _);
 
         await Assert.That(matched).IsFalse();
+    }
+
+    /// <summary>Verifies an open generic adapter whose declared return shape is non-generic is not matched, because a
+    /// non-generic template return cannot bind the return type's arguments positionally.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task OpenGenericAdapterWithNonGenericTemplateReturnIsNotMatched()
+    {
+        // The return type is generic with matching arity, so mapping is attempted; the adapter's template return
+        // (AdapterShape) is non-generic, so the argument mapping fails immediately.
+        var matched = ReturnTypeAdapterResolver.TryResolveResultType(
+            typeof(Wrapped<int>),
+            [typeof(NonGenericTemplateReturnAdapter<>)],
+            out var resultType);
+
+        await Assert.That(matched).IsFalse();
+        await Assert.That(resultType).IsNull();
     }
 
     /// <summary>Verifies a concrete, fully-closed result type on a generic adapter is surfaced verbatim.</summary>
@@ -260,6 +294,28 @@ public sealed class ReturnTypeAdapterResolverTests
     {
         /// <inheritdoc/>
         public AdapterShape Adapt(Func<CancellationToken, Task<string>> invoke) => new();
+    }
+
+    /// <summary>A closed adapter surfacing <see cref="AdapterShape"/> as a string that also implements a non-adapter
+    /// interface, so matching must skip the non-adapter interface.</summary>
+    private sealed class ClosedShapeAdapterWithMarker : IReturnTypeAdapter<AdapterShape, string>, IDisposable
+    {
+        /// <inheritdoc/>
+        public AdapterShape Adapt(Func<CancellationToken, Task<string>> invoke) => new();
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+        }
+    }
+
+    /// <summary>An open generic adapter whose declared return shape is a non-generic type, so it cannot map a generic
+    /// return type's arguments positionally.</summary>
+    /// <typeparam name="T">The unused result type parameter.</typeparam>
+    private sealed class NonGenericTemplateReturnAdapter<T> : IReturnTypeAdapter<AdapterShape, T>
+    {
+        /// <inheritdoc/>
+        public AdapterShape Adapt(Func<CancellationToken, Task<T>> invoke) => new();
     }
 
     /// <summary>An open generic adapter surfacing <c>Wrapped&lt;T&gt;</c> as <c>T</c>.</summary>

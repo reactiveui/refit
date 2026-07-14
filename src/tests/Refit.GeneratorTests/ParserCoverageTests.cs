@@ -446,6 +446,96 @@ public sealed class ParserCoverageTests
         await Assert.That(interfaceNames).DoesNotContain(static name => name.Contains("IEmpty", StringComparison.Ordinal));
     }
 
+    /// <summary>Verifies the inline return-shape classifier resolves every recognized async wrapper and treats a
+    /// same-named type in a foreign namespace as a plain return shape.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CanBuildRequestInlineClassifiesAsyncReturnShapesAndForeignLookalikes()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+            """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace Foreign
+            {
+                public sealed class Task { }
+                public sealed class ValueTask<T> { }
+                public interface IAsyncEnumerable<T> { }
+                public interface IObservable<T> { }
+            }
+
+            namespace RefitGeneratorTest
+            {
+                public interface IApi
+                {
+                    [Get("/a")] System.Threading.Tasks.Task AsyncVoid();
+                    [Get("/b")] System.Threading.Tasks.ValueTask<string> ValueResult();
+                    [Get("/c")] System.IObservable<string> Observe();
+                    [Get("/d")] Foreign.Task ForeignTask();
+                    [Get("/e")] Foreign.ValueTask<string> ForeignValueTask();
+                    [Get("/f")] Foreign.IAsyncEnumerable<string> ForeignAsyncEnumerable();
+                    [Get("/g")] Foreign.IObservable<string> ForeignObservable();
+                }
+            }
+            """));
+        var httpBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
+        var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
+        var api = compilation.GetTypeByMetadataName(SampleApiMetadataName)!;
+
+        static IMethodSymbol Method(INamedTypeSymbol type, string name) =>
+            type.GetMembers(name).OfType<IMethodSymbol>().First();
+
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "AsyncVoid"), httpBase, formattable)).IsTrue();
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ValueResult"), httpBase, formattable)).IsTrue();
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "Observe"), httpBase, formattable)).IsTrue();
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignTask"), httpBase, formattable)).IsFalse();
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignValueTask"), httpBase, formattable)).IsFalse();
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignAsyncEnumerable"), httpBase, formattable)).IsFalse();
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignObservable"), httpBase, formattable)).IsFalse();
+    }
+
+    /// <summary>Verifies the interface nullable-context flag is set from the compilation-level nullable option even when
+    /// the method's own span reports a disabled context.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GenerateInterfaceStubsHonorsCompilationLevelNullableContext()
+    {
+        var syntaxTree = CSharpSyntaxTree.ParseText(
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/a")]
+                Task<string> Get();
+            }
+            """);
+        var root = await syntaxTree.GetRootAsync();
+        var candidateMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToImmutableArray();
+        var candidateInterfaces = root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToImmutableArray();
+        var compilation = (CSharpCompilation)Fixture.CreateLibrary(syntaxTree)
+            .WithOptions(new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: NullableContextOptions.Enable));
+
+        var (_, model) = Parser.GenerateInterfaceStubs(
+            compilation,
+            "nullable",
+            generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
+            candidateMethods,
+            candidateInterfaces,
+            CancellationToken.None);
+
+        await Assert.That(model.Interfaces.AsArray()[0].Nullability).IsNotEqualTo(Nullability.None);
+    }
+
     /// <summary>Analyzer config options backed by a dictionary for direct helper tests.</summary>
     /// <param name="values">The option values.</param>
     private sealed class DictionaryAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values)

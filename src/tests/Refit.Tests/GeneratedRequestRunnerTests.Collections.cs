@@ -17,14 +17,23 @@ public partial class GeneratedRequestRunnerTests
     /// <summary>Query key shared by the formatted-collection-property fixtures.</summary>
     private const string CollectionPropertyKey = "k";
 
+    /// <summary>The first value in the streamed JSON array body.</summary>
+    private const int StreamedFirstValue = 1;
+
     /// <summary>The second value in the streamed JSON array body.</summary>
     private const int StreamedSecondValue = 2;
+
+    /// <summary>The JSON array body returned by the streaming fixtures.</summary>
+    private const string JsonArrayBody = "[1,2]";
+
+    /// <summary>The media type of the streamed JSON array body.</summary>
+    private const string JsonArrayMediaType = "application/json";
 
     /// <summary>The two-element collection shared by the formatted-collection-property fixtures.</summary>
     private static readonly string[] CollectionElements = ["a", "b"];
 
     /// <summary>The values expected from streaming the JSON array body.</summary>
-    private static readonly int?[] ExpectedStreamedValues = [1, StreamedSecondValue];
+    private static readonly int?[] ExpectedStreamedValues = [StreamedFirstValue, StreamedSecondValue];
 
     /// <summary>Verifies a null collection value appends nothing to the query.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -60,7 +69,7 @@ public partial class GeneratedRequestRunnerTests
             static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("[1,2]", Encoding.UTF8, "application/json")
+                    Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType)
                 }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
@@ -77,6 +86,86 @@ public partial class GeneratedRequestRunnerTests
         }
 
         await Assert.That(values).IsCollectionEqualTo(ExpectedStreamedValues);
+    }
+
+    /// <summary>Verifies streaming skips the linked cancellation source when the method's token cannot cancel, running
+    /// against the consumer token alone.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task StreamAsyncSkipsLinkedSourceWhenMethodTokenCannotCancel()
+    {
+        var handler = new CapturingHandler(
+            static (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType)
+                }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var values = new List<int?>();
+        await foreach (var item in GeneratedRequestRunner
+                           .StreamAsync<int>(client, request, settings, CancellationToken.None))
+        {
+            values.Add(item);
+        }
+
+        await Assert.That(values).IsCollectionEqualTo(ExpectedStreamedValues);
+    }
+
+    /// <summary>Verifies streaming disposes the request and underlying response when enumeration stops early, exercising
+    /// the iterator's early-disposal path rather than natural completion.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task StreamAsyncStopsAndDisposesWhenEnumerationStopsEarly()
+    {
+        var handler = new CapturingHandler(
+            static (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType)
+                }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        await using var enumerator = GeneratedRequestRunner
+            .StreamAsync<int>(client, request, settings, CancellationToken.None)
+            .GetAsyncEnumerator();
+
+        // Advance a single element, then let `await using` dispose the enumerator before the sequence completes.
+        var moved = await enumerator.MoveNextAsync();
+
+        await Assert.That(moved).IsTrue();
+        await Assert.That(enumerator.Current).IsEqualTo(StreamedFirstValue);
+    }
+
+    /// <summary>Verifies streaming surfaces the response error through the iterator, exercising its exceptional-exit
+    /// path where the request and linked source are still disposed.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task StreamAsyncThrowsForUnsuccessfulResponse()
+    {
+        var handler = new CapturingHandler(
+            static (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("boom")
+                }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        await Assert
+            .That(async () =>
+            {
+                await using var enumerator = GeneratedRequestRunner
+                    .StreamAsync<int>(client, request, settings, CancellationToken.None)
+                    .GetAsyncEnumerator();
+                await enumerator.MoveNextAsync();
+            })
+            .Throws<ApiException>();
     }
 
     /// <summary>Verifies the descriptor overload reuses already-created HTTP content.</summary>
