@@ -1716,8 +1716,9 @@ dotnet_diagnostic.PSH1308.severity = error # Return the completed task instead o
 dotnet_diagnostic.PSH1310.severity = error # Dispose asynchronously in async code
 dotnet_diagnostic.PSH1311.severity = error # Remove a pass-through async state machine
 dotnet_diagnostic.PSH1312.severity = error # Return a completed task, never null
-dotnet_diagnostic.PSH1313.severity = error # Call the async overload from an async method instead of blocking
+dotnet_diagnostic.PSH1313.severity = error # A synchronous call where an async overload fits
 dotnet_diagnostic.PSH1314.severity = error # Read and write streams through the memory-based overloads
+dotnet_diagnostic.PSH1315.severity = error # A blocking wait on an awaitable that may not be done
 
 # API selection
 dotnet_diagnostic.PSH1400.severity = error # Use the static HashData method for one-shot hashing
@@ -2025,7 +2026,7 @@ dotnet_diagnostic.S3433.severity = error # Test method signatures should be corr
 dotnet_diagnostic.S3443.severity = error # Type should not be examined on "System.Type" instances
 dotnet_diagnostic.S3875.severity = error # "operator==" should not be overloaded on reference types
 dotnet_diagnostic.S3877.severity = none # Exceptions should not be thrown from unexpected methods — covered by SST1485
-dotnet_diagnostic.S4462.severity = error # Calls to "async" methods should not be blocking
+dotnet_diagnostic.S4462.severity = none # Calls to "async" methods should not be blocking - covered by PSH1315
 dotnet_diagnostic.S6422.severity = error # Calls to "async" methods should not be blocking in Azure Functions
 dotnet_diagnostic.S6424.severity = error # Interfaces for durable entities should satisfy the restrictions
 
