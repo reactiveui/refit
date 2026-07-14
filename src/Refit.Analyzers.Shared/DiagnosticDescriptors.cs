@@ -87,6 +87,28 @@ internal static class DiagnosticDescriptors
             DiagnosticSeverity.Warning,
             true);
 
+    /// <summary>Diagnostic reported when a Refit method declares more than one Body parameter.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    public static readonly DiagnosticDescriptor MultipleBodyParameters =
+        new(
+            DiagnosticIds.MultipleBodyParameters,
+            "Refit methods can only have one Body parameter",
+            "Method {0}.{1} has more than one Body parameter",
+            Category,
+            DiagnosticSeverity.Warning,
+            true);
+
+    /// <summary>Diagnostic reported when a multipart Refit method also declares a Body parameter.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    public static readonly DiagnosticDescriptor MultipartBodyParameter =
+        new(
+            DiagnosticIds.MultipartBodyParameter,
+            "Multipart Refit methods cannot declare a Body parameter",
+            "Method {0}.{1} is multipart and cannot declare a Body parameter",
+            Category,
+            DiagnosticSeverity.Warning,
+            true);
+
     /// <summary>The diagnostic category for Refit analyzer diagnostics.</summary>
     private const string Category = "Refit";
 }
