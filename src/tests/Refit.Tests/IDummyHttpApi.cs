@@ -591,8 +591,8 @@ public interface IDummyHttpApi
     /// <param name="filters">The optional filters formatted as multiple values.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "Refit interface stub intentionally uses optional parameters to exercise default-value handling.")]
     [Get("/api/{id}")]
     Task QueryWithOptionalParameters(
@@ -631,8 +631,8 @@ public interface IDummyHttpApi
     /// <param name="metadata">The optional file metadata.</param>
     /// <returns>A task whose result is the API response.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "Refit interface stub intentionally uses optional parameters to exercise default-value handling.")]
     [Multipart]
     [Post("/companies/{companyId}/{path}")]
@@ -676,8 +676,8 @@ public interface IDummyHttpApi
     /// <param name="filters">The optional filters formatted as multiple values.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "Refit interface stub intentionally uses optional parameters to exercise default-value handling.")]
     [Get("/api/{obj.someProperty}")]
     Task QueryWithOptionalParametersPathBoundObject(

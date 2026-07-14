@@ -44,10 +44,7 @@ lets you stub responses and verify requests with a declarative route table — s
 
 * [Sponsors](#sponsors)
 * [Where does this work?](#where-does-this-work)
-    * [Breaking changes in V13.x](#breaking-changes-in-v13x)
-    * [Breaking changes in V12.x](#breaking-changes-in-v12x)
-    * [Breaking changes in 11.x](#breaking-changes-in-11x)
-    * [Breaking changes in 6.x](#breaking-changes-in-6x)
+* [Breaking changes and release notes](docs/breaking-changes.md)
 * [Source generation](#source-generation)
     * [Generated-only client creation](#generated-only-client-creation)
     * [Generated request building](#generated-request-building)
@@ -56,6 +53,7 @@ lets you stub responses and verify requests with a declarative route table — s
     * [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
     * [Collections as Querystring parameters](#collections-as-querystring-parameters)
     * [Unescape Querystring parameters](#unescape-querystring-parameters)
+    * [Valueless query flags](#valueless-query-flags)
     * [Custom Querystring Parameter formatting](#custom-querystring-parameter-formatting)
 * [Body content](#body-content)
     * [Buffering and the Content-Length header](#buffering-and-the-content-length-header)
@@ -110,139 +108,20 @@ Refit currently supports the following platforms and modern .NET targets:
 
 ### SDK Requirements
 
-### V13.x.x
+### Breaking changes and release notes
 
-#### Breaking changes in V13.x
-
-Refit 13 hardens the default security posture from a security audit. The new behavior is safe by default; the changes
-below only affect code that previously relied on the less-secure defaults.
-
-* **XML responses no longer process DTDs.** `XmlContentSerializer` now forces `DtdProcessing.Prohibit` and clears the
-  `XmlResolver` on every read, blocking XML External Entity (XXE) and entity-expansion ("billion laughs") attacks. If
-  you were deserializing trusted XML that depends on a DTD or external entities, that content will now throw. We
-  **strongly recommend against re-enabling DTD processing**, but if your XML comes from a fully trusted source you can
-  opt out via the obsolete `XmlReaderWriterSettings.AllowDtdProcessing` flag (marked `[Obsolete]` deliberately, so it
-  surfaces a compiler warning) - you must also configure `DtdProcessing`/`XmlResolver` yourself on `ReaderSettings`.
-  Prefer pre-processing untrusted documents instead.
-* **Newtonsoft.Json no longer inherits an unsafe global `TypeNameHandling`.** When you do not pass explicit
-  `JsonSerializerSettings`, `NewtonsoftJsonContentSerializer` now forces `TypeNameHandling.None` even if
-  `JsonConvert.DefaultSettings` configured a different value, closing a known remote-code-execution gadget vector on
-  response bodies. If you genuinely need polymorphic (`$type`) deserialization, opt in explicitly by passing your own
-  `JsonSerializerSettings` (ideally constrained with a `SerializationBinder`).
-
-The release also adds two opt-in, non-breaking knobs on `RefitSettings` for hardening exception handling:
-
-* `RefitSettings.ExceptionRedactor` — a hook invoked before an `ApiException` propagates, so you can scrub the
-  `Authorization` header, request/response bodies, and `Set-Cookie` before they reach logging or telemetry pipelines
-  that serialize exceptions.
-* `RefitSettings.MaxExceptionContentLength` — caps how many characters of an error response body are read into
-  `ApiException.Content`, bounding memory use against hostile or oversized error responses. Defaults to unbounded.
-
-#### New in V13.x
-
-* **`Refit.Testing`** — a new first-party package for testing Refit clients without a mocking library or a live
-  server. You describe expected calls as a route table (`Route` → `Reply`) and point a real client at it via
-  `StubHttp.CreateClient<T>(...)`. Route templates mirror your interface attributes, typed replies (`Reply.With<T>`)
-  are serialized with the client's own serializer, and the sent request body can be read back as a typed object with
-  `LastRequestBodyAsync<T>()`. It also includes `NetworkBehavior` for seeded latency/fault injection and
-  `StubApiResponse<T>` for unit-testing code that consumes `IApiResponse<T>`. See
-  [Testing your Refit clients](#testing-your-refit-clients).
-
-### V12.x.x
-
-#### Breaking changes in V12.x
-
-Refit 12.0 is a large release centered on a near-complete rewrite of request building. The source generator now builds
-eligible HTTP requests inline at compile time instead of going through the reflection request-builder pipeline, with the
-reflection path kept as a fallback for shapes that cannot be generated inline.
-
-Two breaking changes are called out for migration:
-
-* `IApiResponse<T>` no longer shadows base interface members. The `new`-shadowed `Error`, `ContentHeaders`,
-  `IsSuccessStatusCode`, and `IsSuccessful` members were removed from the generic interface. Source that reads these
-  members still binds to the inherited base members, but assemblies compiled against v8-v11 should be recompiled.
-  If you used `IsSuccessful` to narrow `Content` to non-null on an `IApiResponse<T>` value, use `HasContent` or
-  `IsSuccessfulWithContent` instead.
-* The default `System.Text.Json` serializer now reads numbers from JSON strings by setting
-  `JsonNumberHandling.AllowReadingFromString`. To opt back out, set `NumberHandling = JsonNumberHandling.Strict` on
-  your `JsonSerializerOptions`.
-
-See the [Refit 12.0.0 release notes](https://github.com/reactiveui/refit/releases/tag/v12.0.0) for the full release
-details.
-
-### V11.x.x
-
-#### Breaking changes in 11.x
-
-Refit 11 introduces `ApiRequestException` to represent requests that fail before receiving a response from the server.
-This exception will now wrap previous exceptions such as `HttpRequestException` and `TaskCanceledException` when they
-occur during request execution.
-
-* If you were not wrapping responses with `IApiResponse` and were catching these exceptions directly, you will need to
-  update your code to catch `ApiRequestException` instead.
-* If you were wrapping responses with `IApiResponse`, these exceptions will no longer be thrown and will instead be
-  captured in the `IApiResponse.Error` property.
-  You can use the new `IApiResponse.HasRequestError(out var apiRequestException)` method to safely check and retrieve
-  the `ApiRequestException` instance.
-
-The `IApiResponse.Error` property's type has also changed to `ApiExceptionBase`, which is the new base class for
-`ApiException` and `ApiRequestException`.
-If your code accessed members specific to `ApiException` (i.e. anything related to the response from the server), you
-can use the new `IApiResponse.HasResponseError(out var apiException)` method to safely check and retrieve the
-`ApiException` instance.
-
-All response-related properties of `IApiResponse` are now nullable.
-The new `IApiResponse.IsReceived` property can be used to check if a response was received from the server, and will
-mark those properties as non-null.
-The original `IApiResponse.IsSuccessful` and `IApiResponse.IsSuccessStatusCode` properties can still be used to check if
-the response was received and is successful.
-
-### Updates in 8.0.x
-
-Fixes for some issues experienced, this led to some breaking changes.
-See [Releases](https://github.com/reactiveui/refit/releases) for full details.
-
-### V6.x.x
-
-Refit 6 requires Visual Studio 16.8 or higher, or the .NET SDK 5.0.100 or higher. It can target any .NET Standard 2.0
-platform.
-
-Refit 6 does not support the old `packages.config` format for NuGet references (as they do not support analyzers/source
-generators). You must
-[migrate to PackageReference](https://devblogs.microsoft.com/nuget/migrate-packages-config-to-package-reference/) to use
-Refit v6 and later.
-
-#### Breaking changes in 6.x
-
-Refit 6
-makes [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview) the
-default JSON serializer. If you'd like to continue to use `Newtonsoft.Json`, add the `Refit.Newtonsoft.Json` NuGet
-package and set your `ContentSerializer` to `NewtonsoftJsonContentSerializer` on your `RefitSettings` instance.
-`System.Text.Json` is faster and uses less memory, though not all features are supported.
-The [migration guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to?pivots=dotnet-5-0)
-contains more details.
-
-`IContentSerializer` was renamed to `IHttpContentSerializer` to better reflect its purpose. Additionally, two of its
-methods were renamed, `SerializeAsync<T>` -> `ToHttpContent<T>` and `DeserializeAsync<T>` -> `FromHttpContentAsync<T>`.
-Any existing implementations of these will need to be updated, though the changes should be minor.
-
-##### Updates in 6.3
-
-Refit 6.3 splits out the XML serialization via `XmlContentSerializer` into a separate package, `Refit.Xml`. This
-is to reduce the dependency size when using Refit with Web Assembly (WASM) applications. If you require XML, add a
-reference
-to `Refit.Xml`.
+Breaking changes and the notable additions for each major version — including the V14 move of the reflection
+request builder into the opt-in [`Refit.Reflection`](https://www.nuget.org/packages/Refit.Reflection) package —
+are documented in [Breaking changes and release notes](docs/breaking-changes.md).
 
 ### Source generation
 
-Refit ships Roslyn source generators with the main `Refit` package. Projects that reference Refit through
-`PackageReference` get generated client implementations at build time without adding another package.
+The `Refit` package ships Roslyn source generators. A `PackageReference` to Refit gets you generated clients at build
+time — no extra package.
 
-Generated Refit client source is compatible with C# 7.3 as the baseline. When the consuming project uses C# 8 or newer
-and nullable reference types are available, the generator also emits nullable directives and nullable annotations for
-the generated client.
+The generated code targets C# 7.3. On C# 8 or newer, the generator also emits nullable directives and annotations.
 
-The generated clients are still created with the normal APIs:
+You create generated clients with the normal APIs:
 
 ```csharp
 var api = RestService.For<IGitHubApi>("https://api.github.com");
@@ -256,8 +135,8 @@ services
     .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
 ```
 
-The generator uses the same `RefitSettings` you pass to `RestService.For<T>` or `AddRefitClient<T>`. That means generated
-clients continue to honor settings such as:
+Generated clients use the same `RefitSettings` you pass to `RestService.For<T>` or `AddRefitClient<T>`, and honor settings
+such as:
 
 * `ContentSerializer`
 * `UrlParameterFormatter`
@@ -270,10 +149,29 @@ clients continue to honor settings such as:
 * `HttpRequestMessageOptions`
 * `Version` and `VersionPolicy`
 
+#### Automatic client registration
+
+On **.NET 5 and newer** the generator emits a [module initializer](https://learn.microsoft.com/dotnet/csharp/language-reference/proposals/csharp-9.0/module-initializers)
+that registers every generated client factory at assembly load. `RestService.ForGenerated<T>` and
+`AddRefitGeneratedClient<T>` then resolve the client with no runtime reflection. `RestService.For<T>` skips the reflection
+request builder for fully generated interfaces. That keeps trimmed and Native AOT apps reflection-free.
+
+**.NET Framework (net462–net481)** gets no automatic registration. `ModuleInitializerAttribute` arrived in .NET 5 and
+isn't in the .NET Framework BCL, so Refit emits the initializer only for .NET 5+ targets. Raising a project's
+`<LangVersion>` to 9 doesn't change that — the missing type is the blocker, not the language version. (It does switch on
+modern generated syntax like nullable annotations.)
+
+The generated inline code still runs. But `RestService.For<T>` finds the client by runtime type lookup and builds the
+reflection request builder, so you must reference the opt-in [`Refit.Reflection`](https://www.nuget.org/packages/Refit.Reflection)
+package. .NET Framework has no trimming or AOT, so this costs nothing there.
+
+`ForGenerated<T>` and `AddRefitGeneratedClient<T>` need that registration. On .NET Framework they throw unless you register
+the factory yourself with `RegisterGeneratedFactory<T>` / `RegisterGeneratedSettingsFactory<T>` at startup.
+
 #### Generated-only client creation
 
-For Native AoT or trimming-sensitive applications, `RestService.ForGenerated<T>` creates a client only when Refit's
-source generator registered an implementation for that interface:
+For Native AoT or trimmed apps, `RestService.ForGenerated<T>` creates a client only when the generator registered an
+implementation for that interface:
 
 ```csharp
 using var client = new HttpClient
@@ -284,35 +182,38 @@ using var client = new HttpClient
 var api = RestService.ForGenerated<IGitHubApi>(client);
 ```
 
-`ForGenerated<T>` does not fall back to the runtime reflection client. When the generated client can build all requests
-directly, Refit also avoids creating the reflection request builder for that client. If the generated implementation is
-not available at runtime, Refit throws an `InvalidOperationException` that points back to source generation setup.
+`ForGenerated<T>` never falls back to the reflection client. When the generated client builds every request directly,
+Refit skips the reflection request builder too. If no generated implementation is registered, it throws an
+`InvalidOperationException` pointing back to source generation setup.
 
 #### Generated request building
 
-Refit's source generator now emits request construction directly for supported methods by default. Instead of generating
-a method body that calls the reflective runtime request-building pipeline through `BuildRestResultFuncForMethod`, the
-generated client can create the `HttpRequestMessage`, apply headers/properties/body content, and dispatch it through
-Refit's generated-request runtime helpers.
+By default the generator builds requests directly. Instead of a method body that calls the reflective pipeline through
+`BuildRestResultFuncForMethod`, the generated client creates the `HttpRequestMessage`, applies headers, properties, and
+body, then dispatches it through Refit's runtime helpers.
 
-This default path reduces runtime reflection, method metadata lookup, object-array argument packing, and delegate
-construction for request shapes the generator can safely model. It currently covers common request features including:
+This cuts runtime reflection, metadata lookup, argument boxing, and delegate construction. It covers most request shapes:
 
 * parameters that appear in the path template
+* query parameters: auto-appended, `[AliasAs]`, `[Query]` (including `Format` and `CollectionFormat`), scalar
+  collections, `[QueryName]` flags and `[Encoded]` values
+* implicit `[Body]` detection on POST/PUT/PATCH
 * static `[Headers]`
 * dynamic `[Header]` parameters
 * `[HeaderCollection]` dictionaries
 * `[Body]` content
+* `[Multipart]` form uploads whose parts are `StreamPart`/`ByteArrayPart`/`FileInfoPart` (or a `MultipartItem` subclass),
+  `Stream`, `string`, `FileInfo`, `byte[]`, `HttpContent`, a date/time or `Guid` value, or an enumerable of these (an
+  object part serialized through the content serializer still falls back to the runtime builder)
 * `[Property]` parameters
 * `[Property]` interface properties
 * cancellation tokens
 * `Task`, `Task<T>`, `Task<ApiResponse<T>>`, and related response wrappers
 * `IAsyncEnumerable<T>` for streamed responses
 
-If a method uses a shape the generator cannot safely emit yet, Refit falls back to the existing runtime request-builder
-path for that method.
+For a shape the generator can't emit yet, that method falls back to the runtime request builder.
 
-You can explicitly turn generated request building off in a project file:
+Turn generated request building off in a project file:
 
 ```xml
 <PropertyGroup>
@@ -320,10 +221,9 @@ You can explicitly turn generated request building off in a project file:
 </PropertyGroup>
 ```
 
-That keeps the source-generated interface implementation but uses the legacy reflective request-building call path
-inside generated methods.
+That keeps the generated interface implementation but routes its methods through the reflective request builder.
 
-If you need to disable Refit source generation entirely, set:
+Disable source generation entirely:
 
 ```xml
 <PropertyGroup>
@@ -335,15 +235,15 @@ Most applications should leave both settings unset.
 
 #### Analyzer diagnostics and code fixes
 
-Refit also ships analyzers with the main package. They report common interface issues at compile time, including:
+The main package also ships analyzers. They flag common interface issues at compile time:
 
 * methods or properties on Refit interfaces that cannot be generated or called by Refit
 * route templates that use backslashes instead of forward slashes
 * methods with more than one `CancellationToken` parameter
 * `[HeaderCollection]` parameters that are not `IDictionary<string, string>`
 
-Where the fix is mechanical, Refit includes a code fix. Current fixes can replace route backslashes with forward
-slashes and change invalid `[HeaderCollection]` parameter types to `IDictionary<string, string>`.
+Mechanical fixes ship as code fixes: replacing route backslashes with forward slashes, and changing an invalid
+`[HeaderCollection]` parameter to `IDictionary<string, string>`.
 
 ### API Attributes
 
@@ -451,6 +351,10 @@ significant, exactly as with `HttpClient`:
 [Get("/values")]  // -> https://api.example.com/values         (leading slash replaces the base path)
 ```
 
+> **Note:** with generated request building (the default), a leading-slash-less route under the default legacy
+> resolution is validated when the request is built — so the `ArgumentException` surfaces on the first call rather than
+> from `RestService.For<T>(...)`. Under `UrlResolutionMode.Rfc3986` the route is valid and no exception is raised.
+
 ### Querystrings
 
 #### Dynamic Querystring Parameters
@@ -557,6 +461,42 @@ Task Query(string q);
 
 Query("Select+Id,Name+From+Account")
 >>> "/query?q=Select+Id,Name+From+Account"
+```
+
+For a single pre-encoded value, mark the parameter with `[Encoded]` (the equivalent of Retrofit's `encoded = true`)
+and Refit passes it through verbatim while the rest of the request encodes normally. It applies to query values and
+to path segments, including round-tripping `{**param}` segments — the caller becomes responsible for producing valid
+encoded output:
+
+```csharp
+[Get("/calendars/{calId}/events/{**eventId}")]
+Task<CalendarEvent> GetEvent(string calId, [Encoded] string eventId);
+
+GetEvent("work", "3bf0000488fda0ec154ee%40zoho.com")
+>>> "/calendars/work/events/3bf0000488fda0ec154ee%40zoho.com"
+```
+
+`[Encoded]` (and `[QueryName]` below) are handled by generated request building only; using them on a method that
+cannot generate inline is a compile-time error (RF007).
+
+#### Valueless query flags
+
+Some APIs use bare presence-style query switches with no value. Mark a parameter with `[QueryName]` (the equivalent
+of Retrofit's `@QueryName`) and its value becomes the query segment itself; collections render one flag per element
+and `null` values are omitted:
+
+```csharp
+[Get("/items")]
+Task<List<Item>> List([QueryName] string flag);
+
+List("archived")
+>>> "/items?archived"
+
+[Get("/items")]
+Task<List<Item>> List([QueryName] string[] flags);
+
+List(["a", "b", "c"])
+>>> "/items?a&b&c"
 ```
 
 #### Custom Querystring parameter formatting
@@ -1104,11 +1044,14 @@ public class Measurement
 
 ##### Reflection-free form serialization
 
-When generated request building is enabled (the default), Refit's source generator emits the form-field flattening
-for strongly-typed bodies at compile time, so no reflection is used at request time. This applies when the body is a
-concrete class or struct serialized with the built-in `SystemTextJsonContentSerializer`. Bodies typed as `object`,
-an `IDictionary`, a collection, or serialized with a custom `IHttpContentSerializer` fall back to the reflection-based
-path, which remains fully supported and produces identical output.
+With generated request building on (the default), Refit flattens strongly-typed form bodies at compile time, so no
+reflection runs at request time. This covers a concrete class or struct serialized with the built-in
+`SystemTextJsonContentSerializer`. An `object`, an `IDictionary`, a collection, or a custom `IHttpContentSerializer`
+falls back to the reflection path, which produces identical output.
+
+A body whose properties are all simple scalars (strings, numbers, enums, other `IFormattable` values) takes a faster
+straight-line path: the generator unrolls each field directly, with no descriptor array, getter delegates, or boxing. A
+body with a collection or complex property keeps the descriptor path. All three paths produce identical output.
 
 ### Setting request headers
 
@@ -1719,6 +1662,41 @@ await using var stream = response.Content; // released when the response is disp
 The rule is decided in `RestMethodInfoInternal.DetermineIfResponseMustBeDisposed`: those three types (and their
 `ApiResponse<>` wrappers) are the only ones Refit does not auto-dispose for you.
 
+### Custom return types (`IReturnTypeAdapter`)
+
+Beyond the built-in shapes, you can teach Refit to surface **any** return type by implementing
+`IReturnTypeAdapter<TReturn, TResult>`. `TReturn` is the type your interface method returns; `TResult` is what the HTTP
+call materializes (the deserialized body). The single `Adapt` method receives a deferred call and returns the wrapper:
+
+```csharp
+// A cold, deferred call that runs only when invoked.
+public sealed class DeferredCall<T>(Func<CancellationToken, Task<T>> invoke)
+{
+    public Task<T> InvokeAsync(CancellationToken ct = default) => invoke(ct);
+}
+
+public sealed class DeferredCallAdapter<T> : IReturnTypeAdapter<DeferredCall<T>, T>
+{
+    public DeferredCall<T> Adapt(Func<CancellationToken, Task<T>> invoke) => new(invoke);
+}
+
+public interface IUserApi
+{
+    [Get("/users/{id}")]
+    DeferredCall<User> GetUser(int id); // surfaced by the adapter above
+}
+```
+
+* **Generated (Native AOT / trimming friendly):** the source generator discovers adapters declared in your project at
+  compile time and emits a direct `Adapt` call — no reflection or registration needed.
+* **Reflection (`RestService.For` without the generator, or adapters from another assembly):** register the adapter type
+  on the settings — `settings.ReturnTypeAdapters.Add(typeof(DeferredCallAdapter<>))`.
+
+A generic adapter's single type parameter is treated as the wrapped result type (`Adapter<T> : IReturnTypeAdapter<Wrapper<T>, T>`),
+so `Wrapper<User>` closes it over `User`. Adapters must have a public parameterless constructor. The generated path builds
+the request eagerly and captures it, so a generated deferred call is **single-use**; the reflection path rebuilds the
+request on each invocation, so it can re-run.
+
 ### Using generic interfaces
 
 When using something like ASP.NET Web API, it's a fairly common pattern to have a whole stack of CRUD REST services.
@@ -1990,6 +1968,9 @@ Refit's recommended **source-generator-first** setup for Native AoT and trimmed 
 2. Use `RestService.ForGenerated<T>(...)` when the application should require a source-generated client at runtime.
    Otherwise, prefer `RestService.For<T>(...)` over reflection-heavy manual patterns around `Type` where possible.
 3. Supply source-generated `System.Text.Json` metadata for your DTOs.
+4. Do not reference the [`Refit.Reflection`](https://www.nuget.org/packages/Refit.Reflection) package. The reflection
+   request builder is opt-in, so leaving it out keeps that pipeline out of your application entirely. Build with
+   warnings as errors and the RF006 diagnostic will point at any method that still needs it.
 
 For the default `SystemTextJsonContentSerializer` on .NET 8+, Refit prefers `JsonTypeInfo` metadata from your configured
 `JsonSerializerOptions` when it is available. That means Native AoT apps can improve compatibility by supplying

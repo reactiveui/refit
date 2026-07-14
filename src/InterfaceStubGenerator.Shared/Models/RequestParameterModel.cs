@@ -32,4 +32,34 @@ internal sealed record RequestParameterModel(
     /// body type is not eligible and the reflection-based form path must be used.
     /// </summary>
     public ImmutableEquatableArray<FormFieldModel>? FormFields { get; init; }
+
+    /// <summary>
+    /// Gets the query-binding metadata when this parameter feeds the query string — set for
+    /// <see cref="RequestParameterKind.Query"/> parameters and for <see cref="RequestParameterKind.Property"/>
+    /// parameters that also carry <c>[Query]</c>.
+    /// </summary>
+    public QueryParameterModel? Query { get; init; }
+
+    /// <summary>Gets the reflection-free rendering strategy for a path parameter value, or <see langword="null"/> for non-path parameters.</summary>
+    public InlineValueFormatModel? ValueFormat { get; init; }
+
+    /// <summary>Gets a value indicating whether a path parameter value passes through verbatim because the parameter carries <c>[Encoded]</c>.</summary>
+    public bool PreEncoded { get; init; }
+
+    /// <summary>Gets the literal prefix prepended to a header value, or <see langword="null"/>. Set for an
+    /// <c>[Authorize]</c> parameter, whose <c>Authorization</c> header value is <c>"{scheme} " + value</c>.</summary>
+    public string? HeaderValuePrefix { get; init; }
+
+    /// <summary>Gets a value indicating whether a path parameter binds a round-trip <c>{**param}</c> catch-all whose
+    /// value is split on <c>/</c> with each segment formatted and escaped, preserving the separators.</summary>
+    public bool IsRoundTrip { get; init; }
+
+    /// <summary>Gets the dotted <c>{param.Prop}</c> path placeholder bindings for an object path parameter, or
+    /// <see langword="null"/>. When set, the parameter contributes no direct path value; each binding fills its own
+    /// placeholder with a formatted property value.</summary>
+    public ImmutableEquatableArray<PathObjectBindingModel>? PathObjectBindings { get; init; }
+
+    /// <summary>Gets the multipart part descriptor when this parameter contributes a <c>[Multipart]</c> form part —
+    /// set for <see cref="RequestParameterKind.MultipartPart"/> parameters and <see langword="null"/> otherwise.</summary>
+    public MultipartPartModel? MultipartPart { get; init; }
 }

@@ -27,6 +27,52 @@
     <Compile Include="..\Refit.Analyzers.Shared\**\*.cs" LinkBase="Refit.Analyzers.Shared"/>
   </ItemGroup>
 
+  <ItemGroup Label="Shared generator request classification (keeps RF006 in lockstep with CanGenerateInline)">
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Adapters.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Aliases.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Parameters.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.ParameterKinds.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.HttpMethod.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Path.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Body.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Query.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Query.Objects.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Multipart.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Helpers.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.InlineEligibility.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\DiagnosticDescriptors.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArray.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArrayExtensions.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArrayFactory.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\ITypeSymbolExtensions.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\IsExternalInit.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Polyfills\Index.cs" LinkBase="InterfaceStubGenerator.Shared\Polyfills"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Polyfills\Range.cs" LinkBase="InterfaceStubGenerator.Shared\Polyfills"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\BodyBufferMode.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\EnumFormatMemberModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\FormFieldModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\HeaderModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\InlineFormatKind.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\InlineValueFormatModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\InterfaceGenerationContext.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\NamedAttributeArgument.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\ParameterAttributeModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\QueryConverterModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\QueryDictionaryModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\QueryObjectCollectionModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\QueryObjectPropertyModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\QueryParameterModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\QueryParameterShape.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\RequestModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\RequestParameterKind.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\RequestParameterModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\MultipartPartKind.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\MultipartPartModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\PathObjectBindingModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\ReturnTypeInfo.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+  </ItemGroup>
+
   <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">
     <PropertyGroup>
       <Version>$(BuildVersion)</Version>

@@ -14,10 +14,10 @@ public interface IAmInterfaceEWithNoRefit<in T>
     /// <param name="parameter">An arbitrary parameter.</param>
     /// <returns>A task representing the operation.</returns>
     [SuppressMessage("Refit", "RF001", Justification = "Intentional non-Refit fixture used to verify generator diagnostics.")]
-    public Task DoSomething(T parameter);
+    Task DoSomething(T parameter);
 
     /// <summary>A non-Refit method; intentionally has no HTTP attribute.</summary>
     /// <returns>A task representing the operation.</returns>
     [SuppressMessage("Refit", "RF001", Justification = "Intentional non-Refit fixture used to verify generator diagnostics.")]
-    public Task DoSomethingElse();
+    Task DoSomethingElse();
 }

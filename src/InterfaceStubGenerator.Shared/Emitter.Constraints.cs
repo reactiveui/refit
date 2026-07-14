@@ -7,6 +7,12 @@ namespace Refit.Generator;
 /// <summary>Emits generic type-parameter constraint clauses for generated Refit method implementations.</summary>
 internal static partial class Emitter
 {
+    /// <summary>
+    /// The number of keyword constraints (<c>class</c>, <c>unmanaged</c>, <c>struct</c>, <c>notnull</c>, <c>new()</c>)
+    /// that can be emitted alongside a type parameter's declared type constraints.
+    /// </summary>
+    private const int KeywordConstraintCount = 5;
+
     /// <summary>Builds the generic type constraint clauses for the given type parameters.</summary>
     /// <param name="typeParameters">The type parameter constraints to emit.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
@@ -17,6 +23,12 @@ internal static partial class Emitter
         bool isOverrideOrExplicitImplementation,
         int indentationLevel)
     {
+        // The overwhelmingly common case is a non-generic method: skip the array allocation entirely.
+        if (typeParameters.Count == 0)
+        {
+            return string.Empty;
+        }
+
         var parts = new string[typeParameters.Count];
         var count = 0;
         for (var i = 0; i < typeParameters.Count; i++)
@@ -27,7 +39,8 @@ internal static partial class Emitter
                 indentationLevel);
             if (source.Length != 0)
             {
-                parts[count++] = source;
+                parts[count] = source;
+                count++;
             }
         }
 
@@ -77,7 +90,7 @@ internal static partial class Emitter
         in TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation)
     {
-        var parts = new string[typeParameter.Constraints.Count + 5];
+        var parts = new string[typeParameter.Constraints.Count + KeywordConstraintCount];
         var count = 0;
         var knownConstraints = typeParameter.KnownTypeConstraint;
         AddConstraint(parts, "class", (knownConstraints & KnownTypeConstraint.Class) != 0, ref count);
@@ -125,6 +138,7 @@ internal static partial class Emitter
             return;
         }
 
-        parts[count++] = keyword;
+        parts[count] = keyword;
+        count++;
     }
 }

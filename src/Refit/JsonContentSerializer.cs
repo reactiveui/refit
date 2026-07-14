@@ -13,8 +13,8 @@ namespace Refit;
     true)]
 [ExcludeFromCodeCoverage]
 [SuppressMessage(
-    "Major Code Smell",
-    "S1133:Deprecated code should be removed",
+    "Design",
+    "SST2310:Deprecated code should be removed",
     Justification = "Public API type retained for backwards compatibility; cannot be removed without a breaking change.")]
 public class JsonContentSerializer : IHttpContentSerializer
 {
@@ -36,8 +36,8 @@ public class JsonContentSerializer : IHttpContentSerializer
     /// </returns>
     /// <exception cref="System.NotSupportedException">Always thrown; this serializer is obsolete.</exception>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public Task<T?> FromHttpContentAsync<T>(
         HttpContent content,

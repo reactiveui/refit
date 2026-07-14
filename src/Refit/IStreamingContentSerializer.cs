@@ -19,10 +19,13 @@ public interface IStreamingContentSerializer
     /// <param name="format">How the body is framed (a single JSON array or newline-delimited JSON).</param>
     /// <param name="cancellationToken">A token to cancel enumeration.</param>
     /// <returns>An asynchronous sequence of deserialized values.</returns>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "Optional CancellationToken is part of the published interface contract; overloads need default interface methods unavailable on netstandard2.0/net4x.")]
     IAsyncEnumerable<T?> DeserializeStreamAsync<T>(
         Stream stream,

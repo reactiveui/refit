@@ -2,15 +2,9 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
-
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="DefaultUrlParameterFormatter"/> date, collection and enum formatting behaviour.</summary>
-[SuppressMessage(
-    "Major Code Smell",
-    "S6566:Prefer using \"DateTimeOffset\" instead of \"DateTime\"",
-    Justification = "These tests intentionally exercise DateTime formatting; the asserted output and DTO property types are DateTime-specific.")]
 public class DefaultUrlParameterFormatterTests
 {
     /// <summary>A general date format registered for the DateTime formatter tests.</summary>
@@ -288,12 +282,13 @@ public class DefaultUrlParameterFormatterTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
+        const int secondEntryKey = 2;
         var parameters = new DefaultUrlParameterFormatterTestRequest
         {
             DateTimeDictionary = new Dictionary<int, DateTime>
             {
                 { 1, new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
-                { 2, new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
+                { secondEntryKey, new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
             },
         };
 
@@ -317,12 +312,13 @@ public class DefaultUrlParameterFormatterTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
+        const int secondEntryValue = 2;
         var parameters = new DefaultUrlParameterFormatterTestRequest
         {
             DateTimeKeyedDictionary = new Dictionary<DateTime, int>
             {
                 { new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), 1 },
-                { new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), 2 },
+                { new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), secondEntryValue },
             },
         };
 
@@ -381,10 +377,10 @@ public class DefaultUrlParameterFormatterTests
         public IEnumerable<DateTime>? DateTimeCollection { get; set; }
 
         /// <summary>Gets or sets a dictionary of DateTime values keyed by integer.</summary>
-        public IDictionary<int, DateTime> DateTimeDictionary { get; set; } = new Dictionary<int, DateTime>();
+        public IDictionary<int, DateTime> DateTimeDictionary { get; init; } = new Dictionary<int, DateTime>();
 
         /// <summary>Gets or sets a dictionary of integer values keyed by DateTime.</summary>
-        public IDictionary<DateTime, int> DateTimeKeyedDictionary { get; set; } = new Dictionary<DateTime, int>();
+        public IDictionary<DateTime, int> DateTimeKeyedDictionary { get; init; } = new Dictionary<DateTime, int>();
     }
 
     /// <summary>Request fixture exposing a flags enum query parameter.</summary>

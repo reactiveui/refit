@@ -12,7 +12,6 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 #if NET8_0_OR_GREATER
-using System.Globalization;
 using System.Text.Json.Serialization.Metadata;
 #endif
 
@@ -36,8 +35,16 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     {
     }
 
+    /// <summary>Gets the JSON serialization options this serializer uses, exposed so a query converter can walk a
+    /// registered type's <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfo"/> without reflection.</summary>
+    public JsonSerializerOptions SerializerOptions => jsonSerializerOptions;
+
     /// <summary>Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters.</summary>
     /// <returns>The default <see cref="JsonSerializerOptions"/>.</returns>
+    [SuppressMessage(
+        "Performance",
+        "PSH1416:Cache constructed objects in a static readonly field",
+        Justification = "Returns a new mutable options instance on each call; callers mutate it, so a cached instance would be shared.")]
     public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
     {
         // Default to case insensitive property name matching as that's likely the behavior most users expect
@@ -71,6 +78,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "CA1024:Use properties where appropriate",
         Justification = "Returns a new mutable options instance on each call; a property would wrongly imply a cached value.")]
+    [SuppressMessage(
+        "Performance",
+        "PSH1416:Cache constructed objects in a static readonly field",
+        Justification = "Returns a new mutable options instance on each call; callers mutate it, so a cached instance would be shared.")]
     public static JsonSerializerOptions GetFastPathJsonSerializerOptions() =>
         new()
         {
@@ -104,8 +115,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
     /// <inheritdoc/>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public HttpContent ToHttpContentSynchronous<T>(T item)
     {
@@ -116,8 +127,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
     /// <inheritdoc/>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [SuppressMessage("Roslynator", "RCS1261:Resource can be disposed asynchronously", Justification = "Newer .NET versions only.")]
     public HttpContent ToStreamingHttpContent<T>(T item)
@@ -143,8 +154,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
     /// <inheritdoc/>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
@@ -159,8 +170,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
     /// <inheritdoc/>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public T? DeserializeFromString<T>(string content)
     {
@@ -175,8 +186,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
     /// <inheritdoc/>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public IAsyncEnumerable<T?> DeserializeStreamAsync<T>(
         Stream stream,
@@ -222,18 +233,52 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 #endif
     }
 
+#if !NET9_0_OR_GREATER
+    /// <summary>Determines whether a buffered line is blank, ignoring a trailing carriage return and treating spaces and tabs as blank.</summary>
+    /// <param name="lineBuffer">The buffer holding the line bytes.</param>
+    /// <param name="lineStart">The offset of the line.</param>
+    /// <param name="lineLength">The length of the line.</param>
+    /// <returns><see langword="true"/> when the line contains only spaces and tabs.</returns>
+    private static bool IsBlankLine(byte[] lineBuffer, int lineStart, int lineLength)
+    {
+        var line = new ReadOnlySpan<byte>(lineBuffer, lineStart, lineLength);
+        if (!line.IsEmpty && line[line.Length - 1] == (byte)'\r')
+        {
+            line = line.Slice(0, line.Length - 1);
+        }
+
+        foreach (var b in line)
+        {
+            if (b != (byte)' ' && b != (byte)'\t')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Grows the pooled line-scan buffer, copying the buffered prefix into a larger rented buffer and returning the old one to the pool.</summary>
+    /// <param name="buffer">The current buffer, returned to the pool once its prefix is copied.</param>
+    /// <param name="length">The number of buffered bytes to preserve.</param>
+    /// <param name="growthFactor">The factor by which the buffer capacity grows.</param>
+    /// <returns>The larger rented buffer holding the preserved prefix.</returns>
+    private static byte[] GrowLineScanBuffer(byte[] buffer, int length, int growthFactor)
+    {
+        var larger = ArrayPool<byte>.Shared.Rent(buffer.Length * growthFactor);
+        Buffer.BlockCopy(buffer, 0, larger, 0, length);
+        ArrayPool<byte>.Shared.Return(buffer);
+        return larger;
+    }
+#endif
+
 #if NET8_0_OR_GREATER
     /// <summary>Gets the JSON type metadata for the given runtime type from the supplied options.</summary>
     /// <param name="type">The runtime type to resolve metadata for.</param>
     /// <param name="jsonSerializerOptions">The serializer options to consult.</param>
     /// <returns>The JSON type metadata.</returns>
     private static JsonTypeInfo GetJsonTypeInfo(Type type, JsonSerializerOptions jsonSerializerOptions) =>
-        jsonSerializerOptions.GetTypeInfo(type)
-        ?? throw new InvalidOperationException(
-            string.Format(
-                CultureInfo.InvariantCulture,
-                "The serializer options did not provide metadata for {0}.",
-                type));
+        jsonSerializerOptions.GetTypeInfo(type); // Returns non-null metadata for the requested type or throws; there is no null case to guard.
 
 #if NET11_0_OR_GREATER
     /// <summary>Gets the JSON type metadata for the given type from the supplied options.</summary>
@@ -241,8 +286,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="jsonSerializerOptions">The serializer options to consult.</param>
     /// <returns>The JSON type metadata.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private static JsonTypeInfo<T> GetJsonTypeInfo<T>(JsonSerializerOptions jsonSerializerOptions) =>
         jsonSerializerOptions.GetTypeInfo<T>();
@@ -254,20 +299,15 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type to resolve metadata for.</typeparam>
     /// <returns>The JSON type metadata.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private JsonTypeInfo<T> GetJsonTypeInfo<T>() =>
 #if NET11_0_OR_GREATER
-        GetJsonTypeInfo<T>(jsonSerializerOptions)
+        GetJsonTypeInfo<T>(jsonSerializerOptions); // Returns the strongly typed metadata for the exact type T, never null.
 #else
-        (GetJsonTypeInfo(typeof(T), jsonSerializerOptions) as JsonTypeInfo<T>)
+        (JsonTypeInfo<T>)GetJsonTypeInfo(typeof(T), jsonSerializerOptions); // GetTypeInfo(typeof(T)) is the exact JsonTypeInfo<T>, so the cast always succeeds.
 #endif
-        ?? throw new InvalidOperationException(
-            string.Format(
-                CultureInfo.InvariantCulture,
-                "The serializer options did not provide metadata for {0}.",
-                typeof(T)));
 #endif
 
     /// <summary>Serializes the item to HTTP content using the supplied runtime type.</summary>
@@ -309,8 +349,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     /// <returns>The deserialized value.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
@@ -322,8 +362,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="item">The item to serialize.</param>
     /// <returns>The UTF-8 encoded JSON.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private byte[] SerializeToUtf8Bytes<T>(T item)
     {
@@ -343,8 +383,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private byte[] SerializeToUtf8BytesReflection<T>(T item) =>
         JsonSerializer.SerializeToUtf8Bytes(item, jsonSerializerOptions);
@@ -354,8 +394,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="item">The item to serialize.</param>
     /// <param name="writer">The writer to serialize into.</param>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private void SerializeToWriter<T>(T item, Utf8JsonWriter writer)
     {
@@ -380,8 +420,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private void SerializeToWriterReflection<T>(T item, Utf8JsonWriter writer) =>
         JsonSerializer.Serialize(writer, item, jsonSerializerOptions);
@@ -392,8 +432,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="cancellationToken">A token to cancel enumeration.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private IAsyncEnumerable<T?> DeserializeJsonArrayAsync<T>(Stream stream, CancellationToken cancellationToken)
     {
@@ -414,8 +454,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private IAsyncEnumerable<T?> DeserializeJsonArrayReflectionAsync<T>(Stream stream, CancellationToken cancellationToken) =>
         JsonSerializer.DeserializeAsyncEnumerable<T>(stream, jsonSerializerOptions, cancellationToken);
@@ -426,8 +466,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="cancellationToken">A token to cancel enumeration.</param>
     /// <returns>An asynchronous sequence of deserialized values.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private IAsyncEnumerable<T?> DeserializeJsonLinesAsync<T>(Stream stream, CancellationToken cancellationToken)
     {
@@ -451,8 +491,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private IAsyncEnumerable<T?> DeserializeJsonLinesTopLevelReflectionAsync<T>(Stream stream, CancellationToken cancellationToken) =>
         JsonSerializer.DeserializeAsyncEnumerable<T>(stream, topLevelValues: true, jsonSerializerOptions, cancellationToken);
@@ -463,33 +503,19 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="cancellationToken">A token to cancel enumeration.</param>
     /// <returns>An asynchronous sequence of deserialized values.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
     private async IAsyncEnumerable<T?> DeserializeJsonLinesManualAsync<T>(
         Stream stream,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        static bool IsBlankLine(byte[] lineBuffer, int lineStart, int lineLength)
-        {
-            var line = new ReadOnlySpan<byte>(lineBuffer, lineStart, lineLength);
-            if (!line.IsEmpty && line[line.Length - 1] == (byte)'\r')
-            {
-                line = line.Slice(0, line.Length - 1);
-            }
+        // The initial pooled buffer, and the factor it grows by when a single line does not fit in it.
+        const int lineScanBufferSize = 4096;
+        const int lineScanBufferGrowthFactor = 2;
 
-            foreach (var b in line)
-            {
-                if (b != (byte)' ' && b != (byte)'\t')
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        var buffer = ArrayPool<byte>.Shared.Rent(4096);
+        var buffer = ArrayPool<byte>.Shared.Rent(lineScanBufferSize);
         var start = 0;
         var end = 0;
         try
@@ -518,15 +544,12 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
                 if (end == buffer.Length)
                 {
-                    var larger = ArrayPool<byte>.Shared.Rent(buffer.Length * 2);
-                    Buffer.BlockCopy(buffer, 0, larger, 0, end);
-                    ArrayPool<byte>.Shared.Return(buffer);
-                    buffer = larger;
+                    buffer = GrowLineScanBuffer(buffer, end, lineScanBufferGrowthFactor);
                 }
 
 #if NET8_0_OR_GREATER
                 var read = await stream
-                    .ReadAsync(buffer.AsMemory(end, buffer.Length - end), cancellationToken)
+                    .ReadAsync(buffer.AsMemory(end), cancellationToken)
                     .ConfigureAwait(false);
 #else
                 var read = await stream
@@ -559,8 +582,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="length">The length of the line.</param>
     /// <returns>The deserialized value.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private T? DeserializeLine<T>(byte[] buffer, int start, int length)
     {
@@ -587,8 +610,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private T? DeserializeLineReflection<T>(ReadOnlySpan<byte> utf8Json) =>
         JsonSerializer.Deserialize<T>(utf8Json, jsonSerializerOptions);
@@ -601,8 +624,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameter for inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private T? DeserializeFromStringReflection<T>(string content) =>
         JsonSerializer.Deserialize<T>(content, jsonSerializerOptions);

@@ -53,4 +53,12 @@ public sealed class RouteMatcher
 
     /// <summary>Gets a value indicating whether this route may match repeatedly and is not required by <see cref="StubHttp.VerifyAllCalled"/>.</summary>
     public bool Reusable { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether this route is a catch-all fallback, tried only after every one-shot and
+    /// reusable route fails to match, regardless of where it appears in the table. Like a reusable route it may match
+    /// any number of requests and is not required by <see cref="StubHttp.VerifyAllCalled"/>. Build one with
+    /// <see cref="Route.Fallback()"/>.
+    /// </summary>
+    public bool Fallback { get; init; }
 }

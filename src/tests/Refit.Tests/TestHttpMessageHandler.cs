@@ -12,7 +12,10 @@ public class TestHttpMessageHandler : HttpMessageHandler
 {
     /// <summary>Initializes a new instance of the <see cref="TestHttpMessageHandler"/> class.</summary>
     /// <param name="content">The canned response content body.</param>
-    [SuppressMessage("Major Code Smell", "S2360:Optional parameters should not be used", Justification = "Test handler ctor convenience default; preserves existing call sites.")]
+    [SuppressMessage(
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
+        Justification = "Test handler ctor convenience default; preserves existing call sites.")]
     public TestHttpMessageHandler(string content = "test")
     {
         Content = new StringContent(content);

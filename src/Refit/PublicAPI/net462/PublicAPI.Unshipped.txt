@@ -1,1 +1,14 @@
 #nullable enable
+static Refit.GeneratedRequestRunner.CanUnrollForm(object? body) -> bool
+static Refit.GeneratedRequestRunner.RoundTripEscapePath(string? value, Refit.IUrlParameterFormatter! formatter, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string!
+Refit.GeneratedQueryStringBuilder.GeneratedQueryStringBuilder(string! relativePath, bool hasQuery) -> void
+static readonly Refit.GeneratedParameterAttributeProvider.Empty -> Refit.GeneratedParameterAttributeProvider!
+static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value)> uriParams) -> string!
+static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value, bool preEncoded)> uriParams) -> string!
+static Refit.GeneratedRequestRunner.BuildRelativeUri(System.Net.Http.HttpClient! client, string! relativePath, Refit.UrlResolutionMode urlResolution, System.UriFormat queryUriFormat) -> System.Uri!
+static Refit.GeneratedRequestRunner.SendObservable<T, TBody>(System.Net.Http.HttpClient! client, System.Func<System.Net.Http.HttpRequestMessage!>! requestFactory, Refit.RefitSettings! settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken methodCancellationToken) -> System.IObservable<T?>!
+Refit.RestMethodParameterProperty.RestMethodParameterProperty(string! name, System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo!>! propertyChain) -> void
+Refit.RestMethodParameterProperty.PropertyChain.get -> System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo!>!
+Refit.RestMethodParameterProperty.PropertyChain.set -> void
+static Refit.GeneratedRequestRunner.SerializeMultipartPart<T>(Refit.RefitSettings! settings, T value, string! fieldName) -> System.Net.Http.HttpContent!
+Refit.GeneratedQueryStringBuilder.AddPreEscapedKey(string! name, string? value, bool preEncoded) -> void

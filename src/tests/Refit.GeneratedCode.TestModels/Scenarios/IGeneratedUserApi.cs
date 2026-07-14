@@ -14,7 +14,7 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The user payload.</returns>
         [Get("/users")]
-        public Task<ApiResponse<string>> GetUserAsync(
+        Task<ApiResponse<string>> GetUserAsync(
             CancellationToken cancellationToken);
 
         /// <summary>Creates a user.</summary>
@@ -22,8 +22,25 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         /// <param name="headers">The request headers.</param>
         /// <returns>The created user payload.</returns>
         [Post("/users")]
-        public Task<string> CreateUserAsync(
+        Task<string> CreateUserAsync(
             [Body] string payload,
             [HeaderCollection] IDictionary<string, string> headers);
+
+        /// <summary>Searches users with generated inline query construction.</summary>
+        /// <param name="query">The search text.</param>
+        /// <param name="page">The optional page number.</param>
+        /// <param name="ids">Identifiers expanded as repeated pairs.</param>
+        /// <param name="sort">The compile-time-resolved sort order.</param>
+        /// <param name="flag">A valueless query flag.</param>
+        /// <param name="cursor">A caller-encoded continuation cursor.</param>
+        /// <returns>The matching user payload.</returns>
+        [Get("/users/search")]
+        Task<string> SearchUsersAsync(
+            [AliasAs("q")] string query,
+            int? page,
+            [Query(CollectionFormat.Multi)] IReadOnlyList<int> ids,
+            GeneratedUserSort sort,
+            [QueryName] string flag,
+            [Encoded] string cursor);
     }
 }

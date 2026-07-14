@@ -46,13 +46,18 @@ namespace Refit.Implementation
                 _settings = settings;
             }
             /// <summary>Cached attribute provider for the generated Get method's user parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>());
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<string> Get(int @user)
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, ((7, 13), _settings.UrlParameterFormatter.Format(user, ______userAttributeProvider, typeof(int)))), refitSettings.UrlResolution));
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, (refitUseDefaultFormatting ? global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, (7, 13), @user) : global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, [((7, 13), refitSettings.UrlParameterFormatter.Format(@user, ______userAttributeProvider, typeof(int)))])), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
                 return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
                     this.Client,

@@ -142,4 +142,11 @@ public interface IRunscopeApi
     [Multipart]
     [Post("/")]
     Task<HttpResponseMessage> UploadHttpContent(HttpContent content);
+
+    /// <summary>Uploads a collection of <see cref="HttpContent"/> values, each added as its own multipart part.</summary>
+    /// <param name="contents">The HTTP content values to upload.</param>
+    /// <returns>The HTTP response message.</returns>
+    [Multipart]
+    [Post("/")]
+    Task<HttpResponseMessage> UploadHttpContents(IEnumerable<HttpContent> contents);
 }

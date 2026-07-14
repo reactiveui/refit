@@ -18,6 +18,9 @@ internal enum ReturnTypeInfo
     /// <summary>The method returns an IAsyncEnumerable stream.</summary>
     AsyncEnumerable,
 
+    /// <summary>The method returns an <c>IObservable&lt;T&gt;</c> (a cold observable that sends per subscription).</summary>
+    Observable,
+
     /// <summary>The method returns void synchronously.</summary>
     SyncVoid
 }

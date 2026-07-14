@@ -10,12 +10,8 @@ namespace Refit;
 
 /// <summary>An ApiException that is raised according to RFC 7807, which contains problem details for validation exceptions.</summary>
 [SuppressMessage(
-    "Usage",
-    "CA1032:Implement standard exception constructors",
-    Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
-[SuppressMessage(
-    "Major Code Smell",
-    "S4027:Exceptions should provide standard constructors",
+    "Design",
+    "SST1488:Exception types should declare the standard constructors",
     Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
 public class ValidationApiException : ApiException
 {
@@ -259,7 +255,7 @@ public class ValidationApiException : ApiException
     /// <returns>The error message.</returns>
     private static string ReadErrorMessage(JsonElement element) =>
         element.ValueKind == JsonValueKind.String
-            ? element.GetString() ?? string.Empty
+            ? element.GetString()! // A String-kind element always yields a non-null string.
             : element.GetRawText();
 
     /// <summary>Reads extension data using the same inferred primitives as the System.Text.Json converter.</summary>
@@ -273,7 +269,7 @@ public class ValidationApiException : ApiException
             JsonValueKind.Number when element.TryGetInt64(out var integer) => integer,
             JsonValueKind.Number => element.GetDouble(),
             JsonValueKind.String when element.TryGetDateTime(out var dateTime) => dateTime,
-            JsonValueKind.String => element.GetString() ?? string.Empty,
+            JsonValueKind.String => element.GetString()!, // A String-kind element always yields a non-null string.
             _ => element.Clone()
         };
 }

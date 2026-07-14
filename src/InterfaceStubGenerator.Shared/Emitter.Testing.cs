@@ -61,5 +61,12 @@ internal static partial class Emitter
         UniqueNameBuilder uniqueNames,
         string requestBuilderFieldName,
         string settingsFieldName) =>
-        BuildRefitMethod(methodModel, isTopLevel, interfaceModel, uniqueNames, requestBuilderFieldName, settingsFieldName);
+        BuildRefitMethod(
+            methodModel,
+            isTopLevel,
+            interfaceModel,
+            uniqueNames,
+            requestBuilderFieldName,
+            settingsFieldName,
+            new(uniqueNames));
 }

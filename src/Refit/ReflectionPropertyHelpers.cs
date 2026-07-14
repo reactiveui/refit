@@ -38,7 +38,8 @@ internal static class ReflectionPropertyHelpers
         {
             if (IsReadablePublicProperty(properties[i]))
             {
-                readableProperties[index++] = properties[i];
+                readableProperties[index] = properties[i];
+                index++;
             }
         }
 
@@ -49,5 +50,5 @@ internal static class ReflectionPropertyHelpers
     /// <param name="property">The property to inspect.</param>
     /// <returns><see langword="true"/> when the property is readable; otherwise <see langword="false"/>.</returns>
     private static bool IsReadablePublicProperty(PropertyInfo property) =>
-        property.CanRead && property.GetMethod?.IsPublic == true;
+        property.CanRead && property.GetMethod!.IsPublic; // A readable property (CanRead) always has a non-null GetMethod.
 }

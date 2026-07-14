@@ -22,6 +22,9 @@ public class MethodOverladTests
     /// <summary>The query parameter name exercised by the generic overloads.</summary>
     private const string ParamKey = "param";
 
+    /// <summary>The HTTP status code requested from the stub to exercise the Forbidden response path.</summary>
+    private const int ForbiddenStatusCode = 403;
+
     /// <summary>Verifies that non-generic <c>Get</c> overloads resolve to the correct request.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -42,7 +45,7 @@ public class MethodOverladTests
         var fixture = handler.CreateClient<IUseOverloadedMethods>(BaseUrl);
         var plainText = await fixture.Get();
 
-        var resp = await fixture.Get(403);
+        var resp = await fixture.Get(ForbiddenStatusCode);
 
         await Assert.That(!string.IsNullOrWhiteSpace(plainText)).IsTrue();
         await Assert.That(resp.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
@@ -82,7 +85,7 @@ public class MethodOverladTests
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
-        var resp = await fixture.Get(403);
+        var resp = await fixture.Get(ForbiddenStatusCode);
 
         await Assert.That(resp.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
     }
@@ -102,7 +105,8 @@ public class MethodOverladTests
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
-        var result = await fixture.Get<string>(201);
+        const int someValue = 201;
+        var result = await fixture.Get<string>(someValue);
 
         await Assert.That(result).IsEqualTo("some-T-value");
     }
@@ -122,7 +126,8 @@ public class MethodOverladTests
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
-        var result = await fixture.Get("foo", 99);
+        const int headerValue = 99;
+        var result = await fixture.Get("foo", headerValue);
 
         await Assert.That(result.Args![ParamKey]).IsEqualTo("foo");
     }
@@ -142,7 +147,8 @@ public class MethodOverladTests
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
-        var result = await fixture.Get(99, "foo");
+        const int paramValue = 99;
+        var result = await fixture.Get(paramValue, "foo");
 
         await Assert.That(result.Args![ParamKey]).IsEqualTo("99");
     }
@@ -162,7 +168,8 @@ public class MethodOverladTests
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
-        var result = await fixture.Get<string, int>(99);
+        const int inputValue = 99;
+        var result = await fixture.Get<string, int>(inputValue);
 
         await Assert.That(result).IsEqualTo("generic-output");
     }

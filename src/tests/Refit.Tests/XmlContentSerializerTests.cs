@@ -152,7 +152,7 @@ public class XmlContentSerializerTests
     {
         var sut = new XmlContentSerializer();
 
-        await Assert.That(() => new XmlContentSerializer(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(static () => new XmlContentSerializer(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => sut.ToHttpContent<Dto>(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => sut.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Element))!))
@@ -239,10 +239,6 @@ public class XmlContentSerializerTests
 
     /// <summary>Builds a populated <see cref="Dto"/> instance for the tests.</summary>
     /// <returns>A new <see cref="Dto"/>.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S6566:Prefer using \"DateTimeOffset\" instead of \"DateTime\"",
-        Justification = "Test intentionally exercises DateTime XML round-trip via XmlConvert.ToDateTime.")]
     private static Dto BuildDto() =>
         new()
         {

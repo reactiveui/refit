@@ -77,12 +77,12 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized or wrapped response.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "CodeQuality",
-        "S1541:Methods and properties should not be too complex",
+        "Maintainability",
+        "SST1442:A function has too many direct branch points",
         Justification = "This is Refit's shared response state machine; keeping it centralized avoids duplicated generated/reflection hot paths.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by generated and reflection callers for ApiResponse<T> body deserialization.")]
     public static async Task<T?> SendAndProcessResponseAsync<T, TBody>(
         HttpClient client,
@@ -118,30 +118,13 @@ internal static class RequestExecutionHelpers
                 ? await settings.ExceptionFactory(response).ConfigureAwait(false)
                 : null;
 
-            if (options.IsApiResponse)
-            {
-                return await BuildApiResponseAsync<T, TBody>(
-                        request,
-                        response,
-                        content,
-                        settings,
-                        exception,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-            }
-
-            if (exception is not null)
+            // A non-ApiResponse error hands ownership of the response to the thrown exception, so it must outlive this scope.
+            if (!options.IsApiResponse && exception is not null)
             {
                 disposeResponse = false;
-                throw exception;
             }
 
-            return await DeserializeOrThrowAsync<T>(
-                    request,
-                    response,
-                    content,
-                    settings,
-                    cancellationToken)
+            return await DispatchResponseAsync<T, TBody>(request, response, content, settings, options, exception, cancellationToken)
                 .ConfigureAwait(false);
         }
         finally
@@ -163,8 +146,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel streaming.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
     public static IAsyncEnumerable<T?> StreamResponseAsync<T>(
         HttpClient client,
@@ -250,6 +233,7 @@ internal static class RequestExecutionHelpers
     /// <summary>Returns the response content, substituting empty content when the response has none.</summary>
     /// <param name="response">The response whose content is read.</param>
     /// <returns>The response content, or empty content when none is present.</returns>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Content is nullable in the BCL contract, but HttpClient always sets it, so the null-defensive fallback is unreachable.
     internal static HttpContent EnsureResponseContent(HttpResponseMessage response) =>
         response.Content ?? new StringContent(string.Empty);
 
@@ -291,9 +275,10 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel streaming.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
     private static async IAsyncEnumerable<T?> StreamResponseIteratorAsync<T>(
         HttpClient client,
         HttpRequestMessage request,
@@ -369,8 +354,8 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The send result.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by callers for ApiResponse<T> failure wrapping.")]
     private static async Task<SendResult<T>> SendOrCaptureExceptionAsync<T, TBody>(
         HttpClient client,
@@ -405,9 +390,68 @@ internal static class RequestExecutionHelpers
                 return SendResult<T>.FromFailure(failure);
             }
 
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(transportException).Throw();
-            throw transportException;
+            throw Rethrow(transportException);
         }
+    }
+
+    /// <summary>Rethrows an exception preserving its original stack trace; never returns normally.</summary>
+    /// <param name="exception">The exception to rethrow.</param>
+    /// <returns>Never returns; the return type only lets callers write <c>throw Rethrow(...)</c> as a terminator.</returns>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // The trailing return is unreachable: ExceptionDispatchInfo.Throw() always throws first.
+    private static Exception Rethrow(Exception exception)
+    {
+        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
+        return exception;
+    }
+
+    /// <summary>Turns a received response into the caller's result: an API-response wrapper, a thrown error, or a deserialized value.</summary>
+    /// <typeparam name="T">The result type returned to the caller.</typeparam>
+    /// <typeparam name="TBody">The deserialized body type for API response wrappers.</typeparam>
+    /// <param name="request">The request message.</param>
+    /// <param name="response">The response message.</param>
+    /// <param name="content">The response content.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="options">The send and response-processing options.</param>
+    /// <param name="exception">The exception produced by the exception factory, if any.</param>
+    /// <param name="cancellationToken">A token to cancel the request.</param>
+    /// <returns>The deserialized or wrapped response.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "TBody is intentionally passed explicitly by generated and reflection callers for ApiResponse<T> body deserialization.")]
+    private static async Task<T?> DispatchResponseAsync<T, TBody>(
+        HttpRequestMessage request,
+        HttpResponseMessage response,
+        HttpContent content,
+        RefitSettings settings,
+        RequestExecutionOptions options,
+        Exception? exception,
+        CancellationToken cancellationToken)
+    {
+        if (options.IsApiResponse)
+        {
+            return await BuildApiResponseAsync<T, TBody>(
+                    request,
+                    response,
+                    content,
+                    settings,
+                    exception,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (exception is not null)
+        {
+            throw exception;
+        }
+
+        return await DeserializeOrThrowAsync<T>(
+                request,
+                response,
+                content,
+                settings,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>Builds an API response, deserializing content unless an earlier error exists.</summary>
@@ -421,10 +465,10 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the read.</param>
     /// <returns>The constructed API response.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by callers for ApiResponse<T> body deserialization.")]
-    private static async Task<T?> BuildApiResponseAsync<T, TBody>(
+    private static async ValueTask<T?> BuildApiResponseAsync<T, TBody>(
         HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
@@ -466,10 +510,10 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the read.</param>
     /// <returns>The deserialized result.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async Task<T?> DeserializeOrThrowAsync<T>(
+    private static async ValueTask<T?> DeserializeOrThrowAsync<T>(
         HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
@@ -516,7 +560,7 @@ internal static class RequestExecutionHelpers
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="exception">The original exception.</param>
     /// <returns>The wrapped exception, or null when a configured factory returns null.</returns>
-    private static async Task<Exception?> CreateDeserializationExceptionAsync(
+    private static async ValueTask<Exception?> CreateDeserializationExceptionAsync(
         HttpRequestMessage request,
         HttpResponseMessage response,
         RefitSettings settings,
@@ -540,10 +584,10 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the read.</param>
     /// <returns>The deserialized value, or default when there is no content.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async Task<T?> DeserializeContentAsync<T>(
+    private static async ValueTask<T?> DeserializeContentAsync<T>(
         HttpResponseMessage response,
         HttpContent content,
         RefitSettings settings,
@@ -571,6 +615,7 @@ internal static class RequestExecutionHelpers
             var stream = await content
                 .ReadAsStreamAsync(cancellationToken)
                 .ConfigureAwait(false);
+            string text;
 #if NET8_0_OR_GREATER
             await using (stream.ConfigureAwait(false))
 #else
@@ -579,13 +624,14 @@ internal static class RequestExecutionHelpers
             {
                 using var reader = new StreamReader(stream);
 #if NET8_0_OR_GREATER
-                var str = (object)await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                text = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 #else
                 cancellationToken.ThrowIfCancellationRequested();
-                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                text = await reader.ReadToEndAsync().ConfigureAwait(false);
 #endif
-                return (T)str;
             }
+
+            return (T)(object)text;
         }
 
         return await DeserializeSerializedContentAsync<T>(
@@ -604,10 +650,10 @@ internal static class RequestExecutionHelpers
     /// <param name="cancellationToken">A token to cancel the read.</param>
     /// <returns>The deserialized value, or default when there is no content.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async Task<T?> DeserializeSerializedContentAsync<T>(
+    private static async ValueTask<T?> DeserializeSerializedContentAsync<T>(
         HttpResponseMessage response,
         HttpContent content,
         RefitSettings settings,
@@ -630,10 +676,6 @@ internal static class RequestExecutionHelpers
     /// <param name="content">The content to buffer.</param>
     /// <param name="cancellationToken">A token to cancel buffering.</param>
     /// <returns>A task that completes once buffering has been attempted.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Best-effort buffering matches the existing runtime response path.")]
     private static async Task TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
     {
         try

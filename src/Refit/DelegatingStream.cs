@@ -11,6 +11,10 @@ namespace Refit;
 /// https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/Internal/DelegatingStream.cs.
 /// </remarks>
 [ExcludeFromCodeCoverage]
+[SuppressMessage(
+    "Design",
+    "SST1496:An abstract type declares nothing abstract",
+    Justification = "Verbatim base class ported from System.Net.Http; kept abstract so only concrete stream wrappers are instantiated.")]
 internal abstract class DelegatingStream : Stream
 {
     /// <summary>Indicates whether the inner stream is disposed when this stream is disposed.</summary>

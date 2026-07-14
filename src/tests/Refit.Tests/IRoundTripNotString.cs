@@ -3,12 +3,12 @@
 // See the LICENSE file in the project root for full license information.
 namespace Refit.Tests;
 
-/// <summary>Fixture with a non-string round-tripping parameter, used to verify Refit rejects it.</summary>
+/// <summary>Fixture with a non-string round-tripping parameter formatted via <c>ToString</c>, separators preserved.</summary>
 public interface IRoundTripNotString
 {
     /// <summary>Endpoint with a round-tripping parameter that is not a string.</summary>
     /// <param name="value">The round-tripping value.</param>
     /// <returns>The response body.</returns>
-    [Get("/{**value}")]
-    Task<string> GetValue(int value);
+    [Get("/repos/{**value}/contents")]
+    Task<string> GetValue(RepoPath value);
 }

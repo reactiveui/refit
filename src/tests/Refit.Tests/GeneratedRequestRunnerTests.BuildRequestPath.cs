@@ -7,6 +7,9 @@ namespace Refit.Tests;
 /// <summary>Tests for building request paths with route parameters via <see cref="GeneratedRequestRunner"/>.</summary>
 public partial class GeneratedRequestRunnerTests
 {
+    /// <summary>A single-parameter templated path reused across the BuildRequestPath fixtures.</summary>
+    private const string SingleParameterPath = "/n/{v}";
+
     /// <summary>Verifies BuildRequestPath returns a path with substituted parameters.</summary>
     /// <param name="expectedResult">The expected result.</param>
     /// <param name="path">The templated path.</param>
@@ -27,9 +30,114 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRequestPathFailsOnParameterNotFound() =>
         await Assert
-            .That(static () => GeneratedRequestRunner.BuildRequestPath("/user/{id}", false))
+            .That(static () =>
+            {
+                ((int startIdx, int endIdx) range, string? value)[] uriParams = [];
+                _ = GeneratedRequestRunner.BuildRequestPath("/user/{id}", false, uriParams);
+            })
             .Throws<ArgumentException>()
             .WithMessage("URL /user/{id} has parameter {id}, but no method parameter matches", StringComparison.Ordinal);
+
+    /// <summary>Verifies the span-formattable overload writes an integer into the path without escaping.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathWritesIntegerWithoutEscaping()
+    {
+        const int start = 7;
+        const int end = 11;
+        const int id = 42;
+        var result = GeneratedRequestRunner.BuildRequestPath("/users/{id}/posts", false, (start, end), id);
+
+        await Assert.That(result).EqualTo("/users/42/posts");
+    }
+
+    /// <summary>Verifies the span-formattable overload renders a negative integer.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathWritesNegativeInteger()
+    {
+        const int start = 3;
+        const int end = 6;
+        const long value = -7;
+        var result = GeneratedRequestRunner.BuildRequestPath(SingleParameterPath, false, (start, end), value);
+
+        await Assert.That(result).EqualTo("/n/-7");
+    }
+
+#if NET10_0_OR_GREATER
+    /// <summary>Verifies the escaping span-formattable overload percent-encodes reserved characters (net10+).</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathEscapesSpanFormattableValue()
+    {
+        const int start = 4;
+        const int end = 10;
+        const double value = 1e21;
+        var result = GeneratedRequestRunner.BuildRequestPath("/at/{when}", false, (start, end), value, null);
+
+        // 1e21 renders as "1E+21"; the '+' is URL-reserved and percent-encoded exactly as Uri.EscapeDataString would.
+        await Assert.That(result).EqualTo("/at/1E%2B21");
+    }
+#endif
+
+    /// <summary>Verifies the span-formattable overload escapes a value that cannot format into the stack buffer.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathEscapesUnformattableSpanValue()
+    {
+        const int start = 3;
+        const int end = 6;
+        var result = GeneratedRequestRunner.BuildRequestPath(SingleParameterPath, false, (start, end), new AlwaysUnformattableValue());
+
+        await Assert.That(result).IsEqualTo("/n/a%2Fb");
+    }
+
+    /// <summary>Verifies the format-taking escaping overload falls back to the string escaper when the value cannot
+    /// format into the stack buffer.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathEscapesUnformattableSpanValueWithFormatOverload()
+    {
+        const int start = 3;
+        const int end = 6;
+        var result = GeneratedRequestRunner.BuildRequestPath(SingleParameterPath, false, (start, end), new AlwaysUnformattableValue(), null);
+
+        await Assert.That(result).IsEqualTo("/n/a%2Fb");
+    }
+
+    /// <summary>Verifies the pre-encoded overload returns the template for an empty parameter set.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathReturnsTemplateForEmptyPreEncodedParameters()
+    {
+        ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams = [];
+
+        var result = GeneratedRequestRunner.BuildRequestPath("/plain", true, uriParams);
+
+        await Assert.That(result).IsEqualTo("/plain");
+    }
+
+    /// <summary>Verifies the pre-encoded overload appends a pre-encoded value verbatim while still escaping a
+    /// non-pre-encoded value in the same template.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathAppendsPreEncodedValueVerbatimAndEscapesOthers()
+    {
+        // "/n/{v}/{w}" places {v} at [firstStart, firstEnd) and {w} at [secondStart, secondEnd).
+        const int firstStart = 3;
+        const int firstEnd = 6;
+        const int secondStart = 7;
+        const int secondEnd = 10;
+        ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams =
+        [
+            ((firstStart, firstEnd), "a b", false),
+            ((secondStart, secondEnd), "c d", true)
+        ];
+
+        var result = GeneratedRequestRunner.BuildRequestPath("/n/{v}/{w}", true, uriParams);
+
+        await Assert.That(result).IsEqualTo("/n/a%20b/c d");
+    }
 
     /// <summary>Provides test data for <see cref="GeneratedRequestRunnerTests"/>.</summary>
     internal static class GeneratedRequestRunnerTestsDataSources
@@ -76,6 +184,20 @@ public partial class GeneratedRequestRunnerTests
             }
 
             return [.. located];
+        }
+    }
+
+    /// <summary>A span-formattable value whose <see cref="ISpanFormattable.TryFormat"/> always fails.</summary>
+    private sealed class AlwaysUnformattableValue : ISpanFormattable
+    {
+        /// <inheritdoc/>
+        public string ToString(string? format, IFormatProvider? formatProvider) => "a/b";
+
+        /// <inheritdoc/>
+        public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+        {
+            charsWritten = 0;
+            return false;
         }
     }
 }

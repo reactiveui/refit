@@ -61,6 +61,7 @@ internal ref struct ValueStringBuilder
     /// <summary>Gets the DebuggerDisplay attribute.</summary>
     /// <remarks>ToString() clears the builder, so we need a side-effect free debugger display.</remarks>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Only evaluated by the debugger, never by tests.
     private readonly string DebuggerDisplay => AsSpan().ToString();
 
     /// <summary>Gets a reference to the character at the specified index.</summary>
@@ -358,12 +359,13 @@ internal ref struct ValueStringBuilder
             "Grow called incorrectly, no resize is needed.");
 
         const uint ArrayMaxLength = 0x7FFFFFC7; // same as Array.MaxLength
+        const uint GrowthFactor = 2;
 
         // Increase to at least the required size (_pos + additionalCapacityBeyondPos), but try
         // to double the size if possible, bounding the doubling to not go beyond the max array length.
         var newCapacity = (int)Math.Max(
             (uint)(_pos + additionalCapacityBeyondPos),
-            Math.Min((uint)_chars.Length * 2, ArrayMaxLength));
+            Math.Min((uint)_chars.Length * GrowthFactor, ArrayMaxLength));
 
         // Make sure to let Rent throw an exception if the caller has a bug and the desired capacity is negative.
         // This could also go negative if the actual required length wraps around.

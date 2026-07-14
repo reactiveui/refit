@@ -9,7 +9,7 @@ using System.Text.Json;
 namespace Refit.Tests;
 
 /// <summary>Tests for API exception factory and validation exception edge cases.</summary>
-public sealed class ApiExceptionTests
+public sealed partial class ApiExceptionTests
 {
     /// <summary>The example request URI reused across the exception tests.</summary>
     private const string ExampleUri = "https://example.test";
@@ -25,6 +25,9 @@ public sealed class ApiExceptionTests
 
     /// <summary>A JSON error body that deserializes to <see cref="ResponseModel"/>.</summary>
     private const string ValueJson = "{\"Value\":42}";
+
+    /// <summary>The custom exception message reused across the constructor tests.</summary>
+    private const string CustomMessage = "custom";
 
     /// <summary>The deserialized value asserted by the content-helper tests.</summary>
     private const int ExpectedValue = 42;
@@ -79,7 +82,7 @@ public sealed class ApiExceptionTests
 
         var noContentException = await ApiException.Create(request, HttpMethod.Get, noContentResponse, new());
         var throwingContentException = await ApiException.Create(
-            "custom",
+            CustomMessage,
             request,
             HttpMethod.Get,
             throwingContentResponse,
@@ -105,7 +108,7 @@ public sealed class ApiExceptionTests
             response,
             settings);
         var derived = new DerivedApiException(
-            "custom",
+            CustomMessage,
             response.RequestMessage!,
             HttpMethod.Get,
             "content",
@@ -127,7 +130,7 @@ public sealed class ApiExceptionTests
 
         await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
         await Assert.That(missing).IsNull();
-        await Assert.That(derived.Message).IsEqualTo("custom");
+        await Assert.That(derived.Message).IsEqualTo(CustomMessage);
         await Assert.That(derived.StatusCode).IsEqualTo(HttpStatusCode.Conflict);
         await Assert.That(emptyDerived.HasContent).IsFalse();
     }
@@ -143,7 +146,7 @@ public sealed class ApiExceptionTests
 
         await Assert.That(messageOnly.Message).IsEqualTo(MessageText);
         await Assert.That(withInner.InnerException).IsSameReferenceAs(inner);
-        await Assert.That(() => ValidationApiException.Create(null!))
+        await Assert.That(static () => ValidationApiException.Create(null!))
             .ThrowsExactly<ArgumentNullException>();
 
         using var emptyResponse = CreateErrorResponse(" ");
@@ -159,8 +162,7 @@ public sealed class ApiExceptionTests
     /// <summary>Verifies the synchronous ValidationApiException factory deserializes problem details.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateDeserializesProblemDetails()
     {
         using var response = CreateErrorResponse(
@@ -183,8 +185,7 @@ public sealed class ApiExceptionTests
     /// <summary>Verifies the synchronous ValidationApiException factory hydrates problem detail extensions and scalar errors.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateReadsExtensionsAndScalarErrors()
     {
         using var response = CreateErrorResponse(
@@ -235,8 +236,7 @@ public sealed class ApiExceptionTests
     /// <summary>Verifies the synchronous ValidationApiException factory ignores malformed validation error bags.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateIgnoresNonObjectErrors()
     {
         using var response = CreateErrorResponse(
@@ -257,8 +257,7 @@ public sealed class ApiExceptionTests
     /// <summary>Verifies the synchronous ValidationApiException factory rejects non-object problem details.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateRejectsNonObjectProblemDetails()
     {
         using var response = CreateErrorResponse("[1,2,3]", ProblemJsonMediaType);
@@ -278,6 +277,18 @@ public sealed class ApiExceptionTests
     public async Task ValidationApiExceptionInnerConstructorRejectsNullInnerException() =>
         await Assert.That(static () => new ValidationApiException(MessageText, null!))
             .ThrowsExactly<ArgumentNullException>();
+
+    /// <summary>Verifies the inner-exception request constructor rejects a null inner exception, since its message
+    /// seeds the base exception message.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ApiRequestExceptionInnerConstructorRejectsNullInnerException()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
+
+        await Assert.That(() => new ApiRequestException(request, HttpMethod.Post, new(), null!))
+            .ThrowsExactly<ArgumentNullException>();
+    }
 
     /// <summary>Verifies the problem+json media type is detected case-insensitively per RFC 7231 (#1702).</summary>
     /// <param name="mediaType">The problem details media type with varied casing.</param>
@@ -299,94 +310,6 @@ public sealed class ApiExceptionTests
             new());
 
         await Assert.That(exception).IsTypeOf<ValidationApiException>();
-    }
-
-    /// <summary>Verifies the synchronous GetContentAs deserializes the buffered error body (#1591).</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous content helper.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous content helper.")]
-    public async Task SyncGetContentAsDeserializesContent()
-    {
-        using var response = CreateErrorResponse(ValueJson);
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            new());
-
-        var model = exception.GetContentAs<ResponseModel>();
-
-        await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
-    }
-
-    /// <summary>Verifies the synchronous GetContentAs returns default when there is no body (#1591).</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous content helper.")]
-    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous content helper.")]
-    public async Task SyncGetContentAsReturnsDefaultWhenNoContent()
-    {
-        using var response = CreateErrorResponse(" ");
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            new());
-
-        await Assert.That(exception.GetContentAs<ResponseModel>()).IsNull();
-    }
-
-    /// <summary>Verifies TryGetContentAs returns the value inside an exception filter (#1591).</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task SyncTryGetContentAsReturnsTrueAndValue()
-    {
-        using var response = CreateErrorResponse(ValueJson);
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            new());
-
-        var ok = exception.TryGetContentAs<ResponseModel>(out var model);
-
-        await Assert.That(ok).IsTrue();
-        await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
-    }
-
-    /// <summary>Verifies TryGetContentAs returns false for missing or malformed content (#1591).</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task SyncTryGetContentAsReturnsFalseForMissingOrInvalidContent()
-    {
-        using var empty = CreateErrorResponse(" ");
-        using var invalid = CreateErrorResponse("not json");
-        var emptyException = await ApiException.Create(empty.RequestMessage!, HttpMethod.Get, empty, new());
-        var invalidException = await ApiException.Create(invalid.RequestMessage!, HttpMethod.Get, invalid, new());
-
-        await Assert.That(emptyException.TryGetContentAs<ResponseModel>(out var missing)).IsFalse();
-        await Assert.That(missing).IsNull();
-        await Assert.That(invalidException.TryGetContentAs<ResponseModel>(out var broken)).IsFalse();
-        await Assert.That(broken).IsNull();
-    }
-
-    /// <summary>Verifies the synchronous helpers behave when the serializer lacks sync support (#1591).</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task SyncGetContentAsWithoutSyncSerializerSupport()
-    {
-        using var response = CreateErrorResponse(ValueJson);
-        var settings = new RefitSettings(new AsyncOnlySerializer());
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            settings);
-
-        await Assert.That(exception.TryGetContentAs<ResponseModel>(out _)).IsFalse();
-        await Assert.That(exception.GetContentAs<ResponseModel>)
-            .ThrowsExactly<NotSupportedException>();
     }
 
     /// <summary>Verifies opt-in request content capture is surfaced on the exception (#1189).</summary>
@@ -424,94 +347,6 @@ public sealed class ApiExceptionTests
 
         await Assert.That(exception.HasRequestContent).IsFalse();
         await Assert.That(exception.RequestContent).IsNull();
-    }
-
-    /// <summary>Verifies the error body is truncated to the configured maximum length.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task MaxExceptionContentLengthTruncatesErrorBody()
-    {
-        using var response = CreateErrorResponse(new string('a', LongBodyLength));
-        var settings = new RefitSettings { MaxExceptionContentLength = MaxContentLength };
-
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            settings);
-
-        await Assert.That(exception.Content!.Length).IsEqualTo(MaxContentLength);
-    }
-
-    /// <summary>Verifies an unset maximum length leaves the error body intact.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task MaxExceptionContentLengthUnsetReadsFullBody()
-    {
-        using var response = CreateErrorResponse(new string('a', LongBodyLength));
-
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            new());
-
-        await Assert.That(exception.Content!.Length).IsEqualTo(LongBodyLength);
-    }
-
-    /// <summary>Verifies a zero maximum length yields an empty error body.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task MaxExceptionContentLengthZeroReturnsEmptyContent()
-    {
-        using var response = CreateErrorResponse(new string('a', 100));
-        var settings = new RefitSettings { MaxExceptionContentLength = 0 };
-
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            settings);
-
-        await Assert.That(exception.Content).IsEqualTo(string.Empty);
-    }
-
-    /// <summary>Verifies the error body is still read when the response carries no content type.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task CreateReadsContentWhenContentTypeMissing()
-    {
-        using var response = CreateErrorResponse("{\"Value\":1}");
-        response.Content!.Headers.ContentType = null;
-
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            new());
-
-        await Assert.That(exception).IsTypeOf<ApiException>();
-        await Assert.That(exception.Content).IsEqualTo("{\"Value\":1}");
-    }
-
-    /// <summary>Verifies the error body is read when the content read genuinely suspends asynchronously.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task CreateReadsContentThatCompletesAsynchronously()
-    {
-        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            RequestMessage = new(HttpMethod.Get, ExampleUri),
-            Content = new AsyncReadContent("{\"Value\":7}")
-        };
-
-        var exception = await ApiException.Create(
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            new());
-
-        await Assert.That(exception.Content).IsEqualTo("{\"Value\":7}");
     }
 
     /// <summary>Verifies a problem+json body is built into a validation exception even when the serializer suspends asynchronously.</summary>
@@ -583,31 +418,6 @@ public sealed class ApiExceptionTests
         return response;
     }
 
-    /// <summary>Content whose read genuinely suspends, forcing the asynchronous completion path when the exception reads the body.</summary>
-    private sealed class AsyncReadContent : HttpContent
-    {
-        /// <summary>The UTF-8 payload bytes.</summary>
-        private readonly byte[] _payload;
-
-        /// <summary>Initializes a new instance of the <see cref="AsyncReadContent"/> class.</summary>
-        /// <param name="payload">The string payload.</param>
-        public AsyncReadContent(string payload) => _payload = System.Text.Encoding.UTF8.GetBytes(payload);
-
-        /// <inheritdoc />
-        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
-        {
-            await Task.Yield();
-            await stream.WriteAsync(_payload.AsMemory()).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc />
-        protected override bool TryComputeLength(out long length)
-        {
-            length = _payload.Length;
-            return true;
-        }
-    }
-
     /// <summary>Content that throws when read as a string.</summary>
     private sealed class ThrowingReadContent : HttpContent
     {
@@ -625,16 +435,16 @@ public sealed class ApiExceptionTests
 
     /// <summary>Derived exception exposing protected constructors for coverage.</summary>
     [SuppressMessage(
-        "Usage",
-        "CA1032:Implement standard exception constructors",
-        Justification = "This test fixture exposes only the protected ApiException constructors under test.")]
-    [SuppressMessage(
-        "Major Code Smell",
-        "S4027:Exceptions should provide standard constructors",
+        "Design",
+        "SST1488:An exception type does not declare the standard constructors",
         Justification = "This test fixture exposes only the protected ApiException constructors under test.")]
     private sealed class DerivedApiException : ApiException
     {
         /// <inheritdoc />
+        [SuppressMessage(
+            "Design",
+            "SST1472:Signatures should not declare too many parameters",
+            Justification = "Mirrors the shipped protected ApiException constructor under test; grouping parameters would stop exercising the real 8-parameter surface.")]
         public DerivedApiException(
             string exceptionMessage,
             HttpRequestMessage message,
@@ -670,32 +480,10 @@ public sealed class ApiExceptionTests
         }
     }
 
-    /// <summary>A serializer that only supports asynchronous deserialization (no sync capability).</summary>
-    [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
-        Justification = "Mirrors the explicit type parameters of the wrapped IHttpContentSerializer contract.")]
-    private sealed class AsyncOnlySerializer : IHttpContentSerializer
-    {
-        /// <summary>The wrapped serializer that does the real work.</summary>
-        private readonly SystemTextJsonContentSerializer _inner = new();
-
-        /// <inheritdoc />
-        public HttpContent ToHttpContent<T>(T item) => _inner.ToHttpContent(item);
-
-        /// <inheritdoc />
-        public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
-            _inner.FromHttpContentAsync<T>(content, cancellationToken);
-
-        /// <inheritdoc />
-        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) =>
-            _inner.GetFieldNameForProperty(propertyInfo);
-    }
-
     /// <summary>A serializer that genuinely suspends before delegating, forcing the async deserialization path.</summary>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Mirrors the explicit type parameters of the wrapped IHttpContentSerializer contract.")]
     private sealed class AsyncYieldingSerializer : IHttpContentSerializer
     {

@@ -52,4 +52,9 @@ public static class Route
     /// <param name="template">The path template (relative or absolute; <c>{name}</c> matches one segment).</param>
     /// <returns>A route for the given method.</returns>
     public static RouteMatcher For(HttpMethod method, string template) => new() { Method = method, Template = template };
+
+    /// <summary>Matches any request not matched by a more specific route, tried after all one-shot and reusable
+    /// routes regardless of declaration order.</summary>
+    /// <returns>A catch-all fallback route.</returns>
+    public static RouteMatcher Fallback() => new() { Template = "*", Fallback = true };
 }

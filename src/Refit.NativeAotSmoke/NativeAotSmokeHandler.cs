@@ -15,6 +15,9 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
     /// <summary>Gets a value indicating whether a URL-encoded form body was observed.</summary>
     public bool SawFormBody { get; private set; }
 
+    /// <summary>Gets a value indicating whether the generated query string matched the expected shape.</summary>
+    public bool SawExpectedQuery { get; private set; }
+
     /// <inheritdoc/>
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
@@ -30,6 +33,11 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
             return Json("""{"id":42,"title":"prove native aot"}""");
         }
 
+        if (request.RequestUri?.AbsolutePath == "/echo")
+        {
+            return Json("""{"id":42,"title":"generic inline"}""");
+        }
+
         if (request.RequestUri?.AbsolutePath == "/forms")
         {
             var body = request.Content is null
@@ -41,9 +49,7 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
             return new(HttpStatusCode.OK) { Content = new StringContent("accepted", Encoding.UTF8, "text/plain") };
         }
 
-        return request.RequestUri?.AbsolutePath == "/status"
-            ? Json("""{"name":"native-aot"}""")
-            : new(HttpStatusCode.NotFound);
+        return HandleGetRequest(request);
     }
 
     /// <summary>Builds an OK response with the given JSON content.</summary>
@@ -51,4 +57,21 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
     /// <returns>The constructed JSON response message.</returns>
     private static HttpResponseMessage Json(string content) =>
         new(HttpStatusCode.OK) { Content = new StringContent(content, Encoding.UTF8, "application/json") };
+
+    /// <summary>Serves the bodyless GET endpoints.</summary>
+    /// <param name="request">The request to serve.</param>
+    /// <returns>The canned response.</returns>
+    private HttpResponseMessage HandleGetRequest(HttpRequestMessage request)
+    {
+        if (request.RequestUri?.AbsolutePath == "/search")
+        {
+            SawExpectedQuery = request.RequestUri.PathAndQuery
+                == "/search?q=a%20b&page=3&ids=1&ids=2&sort=date-desc&ready&cursor=x%2Fy";
+            return Json("""{"name":"native-aot"}""");
+        }
+
+        return request.RequestUri?.AbsolutePath == "/status"
+            ? Json("""{"name":"native-aot"}""")
+            : new(HttpStatusCode.NotFound);
+    }
 }

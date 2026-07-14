@@ -180,7 +180,14 @@ internal sealed partial class PooledBufferWriter
         {
             var pooledBuffer = _pooledBuffer ?? throw CreateObjectDisposedException();
 
-            return _position >= _length ? -1 : pooledBuffer[_position++];
+            if (_position >= _length)
+            {
+                return -1;
+            }
+
+            var value = pooledBuffer[_position];
+            _position++;
+            return value;
         }
 
         /// <inheritdoc/>

@@ -72,8 +72,8 @@ public sealed class NewtonsoftJsonContentSerializer(
         "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
         Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Implements IHttpContentSerializer.FromHttpContentAsync<T>; the type parameter is the deserialization target and cannot be inferred from arguments.")]
     public async Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
@@ -119,8 +119,8 @@ public sealed class NewtonsoftJsonContentSerializer(
         "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
         Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Implements ISynchronousContentDeserializer.DeserializeFromString<T>; the type parameter is the deserialization target and cannot be inferred from arguments.")]
     public T? DeserializeFromString<T>(string content) =>
         JsonConvert.DeserializeObject<T>(content, _jsonSerializerSettings.Value);

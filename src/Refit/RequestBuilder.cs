@@ -15,9 +15,6 @@ namespace Refit;
 /// of this class are thread-safe and can be used concurrently across multiple threads.</remarks>
 public static class RequestBuilder
 {
-    /// <summary>The platform request builder factory used to create builders.</summary>
-    private static readonly RequestBuilderFactory _platformRequestBuilderFactory = new();
-
     /// <summary>Creates an HTTP request builder for the specified interface type.</summary>
     /// <remarks>Use this method to obtain a request builder for a given API interface, typically for
     /// advanced scenarios such as custom client generation or integration with dependency injection. The returned
@@ -28,8 +25,8 @@ public static class RequestBuilder
     /// <returns>An instance of IRequestBuilder T that can be used to construct HTTP requests for the specified interface
     /// type.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder<T> ForType<
@@ -38,15 +35,15 @@ public static class RequestBuilder
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(RefitSettings? settings) =>
-        _platformRequestBuilderFactory.Create<T>(settings);
+        ReflectionRequestBuilderResolver.GetFactory().Create<T>(settings);
 
     /// <summary>Creates a request builder for the specified type, enabling construction of requests against its members.</summary>
     /// <typeparam name="T">The type for which to create the request builder. This type's methods will be available for request
     /// construction.</typeparam>
     /// <returns>An object that can be used to build requests for the specified type.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder<T> ForType<
@@ -55,7 +52,7 @@ public static class RequestBuilder
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>() =>
-        _platformRequestBuilderFactory.Create<T>(null);
+        ReflectionRequestBuilderResolver.GetFactory().Create<T>(null);
 
     /// <summary>Creates an implementation of the specified Refit interface for making HTTP requests.</summary>
     /// <remarks>The returned IRequestBuilder uses reflection to analyze the provided interface type.
@@ -74,8 +71,7 @@ public static class RequestBuilder
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         RefitSettings? settings) =>
-        new CachedRequestBuilderImplementation(
-            new RequestBuilderImplementation(refitInterfaceType, settings));
+        ReflectionRequestBuilderResolver.GetFactory().Create(refitInterfaceType, settings);
 
     /// <summary>Creates an instance of an IRequestBuilder for the specified Refit interface type.</summary>
     /// <remarks>The specified interface type must be decorated with Refit attributes to define the

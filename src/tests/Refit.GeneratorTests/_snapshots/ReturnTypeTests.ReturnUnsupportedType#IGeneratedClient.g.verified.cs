@@ -41,6 +41,10 @@ namespace Refit.Implementation
             /// <summary>Cached parameter type array for the generated GetUser method.</summary>
             private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
+            #if NET5_0_OR_GREATER
+            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
+            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
+            #endif
             public string GetUser(string @user)
             {
                 var refitArguments = new object[] { @user };

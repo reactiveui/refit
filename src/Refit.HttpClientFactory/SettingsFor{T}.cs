@@ -10,10 +10,6 @@ namespace Refit;
 /// <remarks>Initializes a new instance of the <see cref="SettingsFor{T}"/> class.</remarks>
 /// <param name="settings">The settings.</param>
 [SuppressMessage(
-    "Major Code Smell",
-    "S2326:Unused type parameters should be removed",
-    Justification = "T is the DI service identity: SettingsFor<T> is registered and resolved by closed generic type to key settings to a Refit interface.")]
-[SuppressMessage(
     "StyleSharp",
     "SST1452:Unused type parameters should be removed",
     Justification = "T is the DI service identity: SettingsFor<T> is registered and resolved by closed generic type to key settings to a Refit interface.")]

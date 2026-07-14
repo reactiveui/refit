@@ -18,6 +18,9 @@ public sealed class RouteTableFeatureTests
     /// <summary>A sample user identifier exercised by the template tests.</summary>
     private const int SampleUserId = 7;
 
+    /// <summary>A sample user login exercised by the template tests.</summary>
+    private const string SampleLogin = "octocat";
+
     /// <summary>Verifies a <c>{id}</c> template placeholder matches any single path segment.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -27,7 +30,7 @@ public sealed class RouteTableFeatureTests
         {
             {
                 Route.Get("/users/{id}"),
-                Reply.With(new User(SampleUserId, "octocat"))
+                Reply.With(new User(SampleUserId, SampleLogin))
             },
         };
 
@@ -35,7 +38,34 @@ public sealed class RouteTableFeatureTests
         var user = await api.GetUser(SampleUserId);
 
         await Assert.That(user.Id).IsEqualTo(SampleUserId);
-        await Assert.That(user.Login).IsEqualTo("octocat");
+        await Assert.That(user.Login).IsEqualTo(SampleLogin);
+        await handler.VerifyAllCalledAsync();
+    }
+
+    /// <summary>Verifies a <see cref="Route.Fallback"/> route is tried only after specific routes, regardless of
+    /// where it is declared in the table, and is not required by <see cref="StubHttp.VerifyAllCalled"/>.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task FallbackRouteIsTriedLastRegardlessOfDeclarationOrder()
+    {
+        var handler = new StubHttp
+        {
+            // Declared first, yet must not shadow the specific route below.
+            { Route.Fallback(), Reply.Status(HttpStatusCode.Accepted) },
+            { Route.Get("/users/{id}"), Reply.With(new User(SampleUserId, SampleLogin)) },
+        };
+
+        var api = handler.CreateClient<IUserApi>(BaseUrl);
+
+        // The specific GET route wins over the earlier-declared fallback.
+        var user = await api.GetUser(SampleUserId);
+        await Assert.That(user.Login).IsEqualTo(SampleLogin);
+
+        // A request no specific route matches falls through to the fallback.
+        var response = await api.CreateUserResponse(new NewUser("mona"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Accepted);
+
+        // The fallback is a background default, not a required expectation.
         await handler.VerifyAllCalledAsync();
     }
 
@@ -63,11 +93,12 @@ public sealed class RouteTableFeatureTests
     [Test]
     public async Task LastRequestBodyDeserializesSentPayload()
     {
+        const int createdUserId = 2;
         var handler = new StubHttp
         {
             {
                 Route.Post("/users"),
-                Reply.With(new User(2, "created"), HttpStatusCode.Created)
+                Reply.With(new User(createdUserId, "created"), HttpStatusCode.Created)
             },
         };
 
@@ -85,11 +116,12 @@ public sealed class RouteTableFeatureTests
     [Test]
     public async Task TypedReplyCarriesStatusCode()
     {
+        const int createdUserId = 3;
         var handler = new StubHttp
         {
             {
                 Route.Post("/users"),
-                Reply.With(new User(3, "created"), HttpStatusCode.Created)
+                Reply.With(new User(createdUserId, "created"), HttpStatusCode.Created)
             },
         };
 

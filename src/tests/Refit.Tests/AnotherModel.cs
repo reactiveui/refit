@@ -7,5 +7,5 @@ namespace Refit.Tests;
 public class AnotherModel
 {
     /// <summary>Gets or sets the array of string values.</summary>
-    public string[]? Foos { get; set; }
+    public string[]? Foos { get; init; }
 }

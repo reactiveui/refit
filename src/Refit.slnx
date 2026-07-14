@@ -51,6 +51,7 @@
     <Project Path="Refit.CodeFixes.Roslyn50/Refit.CodeFixes.Roslyn50.csproj" />
     <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
     <Project Path="Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj" />
+    <Project Path="Refit.Reflection/Refit.Reflection.csproj" />
     <Project Path="Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />
     <Project Path="Refit.Testing/Refit.Testing.csproj" />
     <Project Path="Refit.Xml/Refit.Xml.csproj" />

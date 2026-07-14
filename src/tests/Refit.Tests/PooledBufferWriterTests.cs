@@ -7,8 +7,9 @@ using Refit.Buffers;
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="PooledBufferWriter"/> and its detached stream.</summary>
-[SuppressMessage("Performance", "CA1849:Call async methods when in an async method", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
-[SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
+[SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
+[SuppressMessage("Performance", "PSH1313:Blocking call should be awaited", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
+[SuppressMessage("Performance", "PSH1314:Use the Memory-based ReadAsync overload", Justification = "These tests intentionally exercise the byte-array Stream overrides.")]
 public class PooledBufferWriterTests
 {
     /// <summary>A sample byte marker with the value two.</summary>
@@ -86,7 +87,7 @@ public class PooledBufferWriterTests
     public async Task DetachedStreamReadByteStopsAtUsedLength()
     {
         using var writer = new PooledBufferWriter();
-        var span = writer.GetSpan(2);
+        var span = writer.GetSpan(TwoByteCount);
         span[0] = MarkerByteTen;
         span[1] = MarkerByteTwenty;
         writer.Advance(TwoByteCount);
@@ -103,7 +104,7 @@ public class PooledBufferWriterTests
     [Test]
     public async Task DetachedStreamReadValidatesArguments()
     {
-        using var writer = CreateWriter(1, 2, 3);
+        using var writer = CreateWriter(1, MarkerByteTwo, MarkerByteThree);
         await using var stream = writer.DetachStream();
         var buffer = new byte[2];
 
@@ -115,10 +116,9 @@ public class PooledBufferWriterTests
     /// <summary>Verifies detached stream metadata and partial reads.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Performance", "CA1835:Prefer the memory-based overloads", Justification = "This test intentionally covers the byte-array Stream override.")]
     public async Task DetachedStreamReportsLengthPositionAndPartialReads()
     {
-        using var writer = CreateWriter(1, 2, 3);
+        using var writer = CreateWriter(1, MarkerByteTwo, MarkerByteThree);
         await using var stream = writer.DetachStream();
         var buffer = new byte[2];
 
@@ -141,7 +141,7 @@ public class PooledBufferWriterTests
     [Test]
     public async Task DetachedStreamUnsupportedOperationsThrow()
     {
-        using var writer = CreateWriter(1, 2, 3);
+        using var writer = CreateWriter(1, MarkerByteTwo, MarkerByteThree);
         await using var stream = writer.DetachStream();
 
         await Assert.That(stream.CanRead).IsTrue();
@@ -158,7 +158,7 @@ public class PooledBufferWriterTests
     [Test]
     public async Task DetachedStreamAsyncMethodsHonorCancellation()
     {
-        using var writer = CreateWriter(1, 2, 3);
+        using var writer = CreateWriter(1, MarkerByteTwo, MarkerByteThree);
         await using var stream = writer.DetachStream();
         using var cancellationTokenSource = new CancellationTokenSource();
         await cancellationTokenSource.CancelAsync();
@@ -214,14 +214,14 @@ public class PooledBufferWriterTests
     [Test]
     public async Task DetachedStreamSpanReadStopsAtLength()
     {
-        using var writer = CreateWriter(1, 2, 3);
+        using var writer = CreateWriter(1, MarkerByteTwo, MarkerByteThree);
         await using var stream = writer.DetachStream();
         var buffer = new byte[4];
         const int thirdElementIndex = 2;
         const int fourthElementIndex = 3;
 
-        var firstRead = stream.Read(buffer.AsSpan(0, 2));
-        var secondRead = await stream.ReadAsync(buffer.AsMemory(2, 2));
+        var firstRead = stream.Read(buffer.AsSpan(0, TwoByteCount));
+        var secondRead = await stream.ReadAsync(buffer.AsMemory(thirdElementIndex, TwoByteCount));
         var thirdRead = stream.Read(buffer);
 
         await Assert.That(firstRead).IsEqualTo(TwoByteCount);

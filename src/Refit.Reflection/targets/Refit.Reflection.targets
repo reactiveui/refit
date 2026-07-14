@@ -1,0 +1,12 @@
+<Project>
+
+  <ItemGroup>
+    <!--
+    Core Refit resolves this assembly by name at runtime rather than referencing it, so the trimmer sees no
+    entry point into it and would otherwise remove it entirely. Referencing this package is a deliberate
+    opt-in to the reflection request builder, so keep it.
+    -->
+    <TrimmerRootAssembly Include="Refit.Reflection"/>
+  </ItemGroup>
+
+</Project>

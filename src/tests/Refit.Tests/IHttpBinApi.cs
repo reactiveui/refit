@@ -45,8 +45,8 @@ public interface IHttpBinApi<TResponse, in TParam, in THeader>
     /// <param name="param">The parameter to send as a query.</param>
     /// <returns>The deserialized value.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The Refit test intentionally exercises a generic method whose type parameter is supplied explicitly at the call site.")]
     [Get("/get?hardcoded=true")]
     Task<TValue> GetQuery1<TValue>([Query("_")] TParam param);

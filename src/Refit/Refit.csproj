@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Refit.Tests"/>
+    <InternalsVisibleTo Include="Refit.Reflection"/>
     <PackageReference Include="ReactiveUI.Primitives" ExcludeAssets="analyzers"/>
   </ItemGroup>
 

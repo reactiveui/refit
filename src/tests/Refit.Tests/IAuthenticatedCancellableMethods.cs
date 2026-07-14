@@ -13,8 +13,8 @@ public interface IAuthenticatedCancellableMethods
     /// <param name="token">A token used to cancel the request.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [SuppressMessage(
-        "Major Code Smell",
-        "S2360:Optional parameters should not be used",
+        "Design",
+        "SST2309:An externally visible member declares an optional parameter, so callers bake in the default",
         Justification = "The optional CancellationToken is the idiomatic Refit signature exercised by these tests.")]
     [Headers("Authorization: Bearer")]
     [Get("/foo")]

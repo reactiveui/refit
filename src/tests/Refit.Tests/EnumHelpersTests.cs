@@ -30,7 +30,7 @@ public sealed class EnumHelpersTests
     }
 
     /// <summary>Signed byte-backed enum.</summary>
-    [SuppressMessage("Major Code Smell", "S4022:Enumerations should have Int32 storage", Justification = "This fixture verifies sbyte-backed enum handling.")]
+    [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies sbyte-backed enum handling.")]
     private enum SByteEnum : sbyte
     {
         /// <summary>Default value.</summary>
@@ -41,7 +41,7 @@ public sealed class EnumHelpersTests
     }
 
     /// <summary>Byte-backed enum.</summary>
-    [SuppressMessage("Major Code Smell", "S4022:Enumerations should have Int32 storage", Justification = "This fixture verifies byte-backed enum handling.")]
+    [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies byte-backed enum handling.")]
     private enum ByteEnum : byte
     {
         /// <summary>Default value.</summary>
@@ -52,7 +52,7 @@ public sealed class EnumHelpersTests
     }
 
     /// <summary>Signed 16-bit enum.</summary>
-    [SuppressMessage("Major Code Smell", "S4022:Enumerations should have Int32 storage", Justification = "This fixture verifies short-backed enum handling.")]
+    [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies short-backed enum handling.")]
     private enum Int16Enum : short
     {
         /// <summary>Default value.</summary>
@@ -63,7 +63,7 @@ public sealed class EnumHelpersTests
     }
 
     /// <summary>Unsigned 16-bit enum.</summary>
-    [SuppressMessage("Major Code Smell", "S4022:Enumerations should have Int32 storage", Justification = "This fixture verifies ushort-backed enum handling.")]
+    [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies ushort-backed enum handling.")]
     private enum UInt16Enum : ushort
     {
         /// <summary>Default value.</summary>
@@ -84,7 +84,7 @@ public sealed class EnumHelpersTests
     }
 
     /// <summary>Unsigned 32-bit enum.</summary>
-    [SuppressMessage("Major Code Smell", "S4022:Enumerations should have Int32 storage", Justification = "This fixture verifies uint-backed enum handling.")]
+    [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies uint-backed enum handling.")]
     private enum UInt32Enum : uint
     {
         /// <summary>Default value.</summary>
@@ -95,7 +95,7 @@ public sealed class EnumHelpersTests
     }
 
     /// <summary>Signed 64-bit enum.</summary>
-    [SuppressMessage("Major Code Smell", "S4022:Enumerations should have Int32 storage", Justification = "This fixture verifies long-backed enum handling.")]
+    [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies long-backed enum handling.")]
     private enum Int64Enum : long
     {
         /// <summary>Default value.</summary>
@@ -106,7 +106,7 @@ public sealed class EnumHelpersTests
     }
 
     /// <summary>Unsigned 64-bit enum.</summary>
-    [SuppressMessage("Major Code Smell", "S4022:Enumerations should have Int32 storage", Justification = "This fixture verifies ulong-backed enum handling.")]
+    [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies ulong-backed enum handling.")]
     private enum UInt64Enum : ulong
     {
         /// <summary>Default value.</summary>

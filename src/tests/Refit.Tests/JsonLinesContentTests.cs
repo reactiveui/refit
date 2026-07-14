@@ -10,6 +10,9 @@ namespace Refit.Tests;
 /// <summary>Tests for <see cref="JsonLinesContent"/> and the generated JSON Lines body factory.</summary>
 public class JsonLinesContentTests
 {
+    /// <summary>Sample bytes used to verify that a stream body is wrapped in stream content.</summary>
+    private static readonly byte[] _sampleStreamBytes = [1, 2, 3];
+
     /// <summary>Verifies the constructor rejects a null item sequence.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -41,7 +44,7 @@ public class JsonLinesContentTests
     [Test]
     public async Task CreateJsonLinesBodyContentWrapsStream()
     {
-        await using var stream = new MemoryStream([1, 2, 3]);
+        await using var stream = new MemoryStream(_sampleStreamBytes);
         var content = GeneratedRequestRunner.CreateJsonLinesBodyContent(new(), stream);
         await Assert.That(content).IsTypeOf<StreamContent>();
     }

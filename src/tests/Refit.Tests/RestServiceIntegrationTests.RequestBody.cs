@@ -19,6 +19,12 @@ public partial class RestServiceIntegrationTests
     /// <summary>A sample value routed through a form field named 'Password' to exercise field-descriptor serialization.</summary>
     private const string SensitiveFormValue = "secret";
 
+    /// <summary>A sample integer form value exercising the reflection-free numeric fast path.</summary>
+    private const int SampleFormAge = 42;
+
+    /// <summary>A sample formatted numeric form value; rendered as <c>1.50</c> via <c>[Query(Format = "0.00")]</c>.</summary>
+    private const double SampleFormRatio = 1.5;
+
     /// <summary>Base URL for the httpbin.org request-bin exchanges.</summary>
     private const string HttpBinBaseUrl = "http://httpbin.org/";
 
@@ -36,6 +42,21 @@ public partial class RestServiceIntegrationTests
 
     /// <summary>Sample "Other" collection numeric query value.</summary>
     private const int OtherQueryNumber = 12_345;
+
+    /// <summary>The X-Refit header value passed as the integer type argument in httpbin exchanges.</summary>
+    private const int XRefitHeaderValue = 99;
+
+    /// <summary>The sample postal code used in complex query-parameter exchanges.</summary>
+    private const int PostcodeValue = 9999;
+
+    /// <summary>The custom header name exchanged with httpbin in the header tests.</summary>
+    private const string RefitHeaderName = "X-Refit";
+
+    /// <summary>Stub endpoint URL used by the no-body POST tests.</summary>
+    private const string HttpBinPostUrl = "http://httpbin.org/1h3a5jm1";
+
+    /// <summary>The error response body returned by the bad-request stub.</summary>
+    private const string BadErrorJson = "{\"error\":\"bad\"}";
 
     /// <summary>Verifies the npmjs registry can be queried.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -66,7 +87,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Post("http://httpbin.org/1h3a5jm1"),
+                Route.Post(HttpBinPostUrl),
                 Reply.Status(HttpStatusCode.OK)
             },
         };
@@ -198,11 +219,11 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Post("http://httpbin.org/1h3a5jm1"),
+                Route.Post(HttpBinPostUrl),
                 Reply.Status(HttpStatusCode.OK)
             },
             {
-                Route.Post("http://httpbin.org/1h3a5jm1"),
+                Route.Post(HttpBinPostUrl),
                 Reply.Status(HttpStatusCode.OK)
             },
         };
@@ -288,9 +309,11 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task CanSerializeBigData()
     {
+        const int bigDataByteCount = 800_000;
+        const int byteModulus = 256;
         var bigObject = new BigObject
         {
-            BigData = [.. Enumerable.Range(0, 800_000).Select(x => (byte)(x % 256))]
+            BigData = [.. Enumerable.Range(0, bigDataByteCount).Select(static x => (byte)(x % byteModulus))]
         };
 
         var handler = new StubHttp
@@ -362,18 +385,18 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://httpbin.org/get", Query = [("param", "foo")], Headers = [("X-Refit", "99")] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://httpbin.org/get", Query = [("param", "foo")], Headers = [(RefitHeaderName, "99")] },
                 Reply.Json("{\"url\": \"http://httpbin.org/get?param=foo\", \"args\": {\"param\": \"foo\"}, \"headers\":{\"X-Refit\":\"99\"}}")
             },
         };
 
         var fixture = handler.CreateClient<IHttpBinApi<HttpBinGet, string, int>>("http://httpbin.org/get");
 
-        var result = await fixture.Get("foo", 99);
+        var result = await fixture.Get("foo", XRefitHeaderValue);
 
         await Assert.That(result.Url).IsEqualTo("http://httpbin.org/get?param=foo");
         await Assert.That(result.Args!["param"]).IsEqualTo("foo");
-        await Assert.That(result.Headers!["X-Refit"]).IsEqualTo("99");
+        await Assert.That(result.Headers![RefitHeaderName]).IsEqualTo("99");
 
         await handler.VerifyAllCalledAsync();
     }
@@ -417,7 +440,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "https://httpbin.org/get", Headers = [("X-Refit", "99")] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = HttpBinGetUrl, Headers = [(RefitHeaderName, "99")] },
                 Reply.Json("{\"url\": \"https://httpbin.org/get?FirstName=John&LastName=Rambo\", \"args\": {\"FirstName\": \"John\", \"lName\": \"Rambo\"}}")
             },
         };
@@ -427,12 +450,12 @@ public partial class RestServiceIntegrationTests
         var myParams = new MySimpleQueryParams { FirstName = "John", LastName = RamboLastName };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, MySimpleQueryParams, int>>(
-            "https://httpbin.org/get",
+            HttpBinGetUrl,
             settings);
 
-        var resp = await fixture.Get(myParams, 99);
+        var resp = await fixture.Get(myParams, XRefitHeaderValue);
 
-        await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
+        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
         await Assert.That(resp.Args["lName"]).IsEqualTo(RamboLastName);
     }
 
@@ -444,7 +467,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Get("https://httpbin.org/get"),
+                Route.Get(HttpBinGetUrl),
                 Reply.Json("{\"url\": \"https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo"
                     + "&Addr_Zip=9999&Addr_Street=HomeStreet 99&MetaData_Age=99&MetaData_Initials=JR"
                     + "&MetaData_Birthday=10%2F31%2F1918 4%3A21%3A16 PM&Other=12345"
@@ -463,7 +486,7 @@ public partial class RestServiceIntegrationTests
         {
             FirstName = "John",
             LastName = RamboLastName,
-            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+            Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" },
         };
 
         myParams.MetaData.Add("Age", MetaDataAge);
@@ -480,7 +503,7 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.GetQuery(myParams);
 
-        await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
+        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
         await Assert.That(resp.Args["LastName"]).IsEqualTo(RamboLastName);
         await Assert.That(resp.Args["Addr_Zip"]).IsEqualTo("9999");
     }
@@ -512,7 +535,7 @@ public partial class RestServiceIntegrationTests
         {
             FirstName = "John",
             LastName = RamboLastName,
-            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+            Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" },
         };
 
         myParams.MetaData.Add("Age", MetaDataAge);
@@ -529,7 +552,7 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.PostQuery(myParams);
 
-        await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
+        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
         await Assert.That(resp.Args["LastName"]).IsEqualTo(RamboLastName);
         await Assert.That(resp.Args["Addr_Zip"]).IsEqualTo("9999");
     }
@@ -546,7 +569,17 @@ public partial class RestServiceIntegrationTests
                 {
                     Method = HttpMethod.Post,
                     Template = "http://foo/form",
-                    FormData = [("user_name", "bob"), ("pwd", "secret"), ("Plain", "x"), ("Nullable", string.Empty)],
+                    FormData =
+                    [
+                        ("user_name", "bob"),
+                        ("pwd", "secret"),
+                        ("Plain", "x"),
+                        ("Nullable", string.Empty),
+                        ("Age", "42"),
+                        ("Color", "Green"),
+                        ("Ratio", "1.50"),
+                        ("addr-City", "NYC"),
+                    ],
                 },
                 Reply.Json("\"ok\"")
             },
@@ -561,6 +594,10 @@ public partial class RestServiceIntegrationTests
                 Password = SensitiveFormValue,
                 Plain = "x",
                 Nullable = null,
+                Age = SampleFormAge,
+                Color = GeneratedFormColor.Green,
+                Ratio = SampleFormRatio,
+                City = "NYC",
             });
 
         await handler.VerifyAllCalledAsync();
@@ -575,7 +612,7 @@ public partial class RestServiceIntegrationTests
         {
             {
                 Route.Post(HttpBinFooUrl),
-                Reply.Json("{\"error\":\"bad\"}", HttpStatusCode.BadRequest)
+                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
             },
         };
 
@@ -602,7 +639,7 @@ public partial class RestServiceIntegrationTests
         {
             {
                 Route.Post(HttpBinFooUrl),
-                Reply.Json("{\"error\":\"bad\"}", HttpStatusCode.BadRequest)
+                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
             },
         };
 
@@ -629,7 +666,7 @@ public partial class RestServiceIntegrationTests
         {
             {
                 Route.Post(HttpBinFooUrl),
-                Reply.Json("{\"error\":\"bad\"}", HttpStatusCode.BadRequest)
+                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
             },
         };
 

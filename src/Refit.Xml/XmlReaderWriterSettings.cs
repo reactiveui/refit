@@ -108,8 +108,8 @@ public class XmlReaderWriterSettings
         "Enabling DTD processing re-opens XML External Entity (XXE) and entity-expansion attacks and is strongly "
         + "discouraged. Only set this for XML from a fully trusted source.")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S1133:Do not forget to remove this deprecated code someday",
+        "Design",
+        "SST2310:Deprecated code should be removed",
         Justification = "The attribute is a permanent, intentional warning on a security opt-out, not pending-removal deprecation.")]
     public bool AllowDtdProcessing { get; set; }
 

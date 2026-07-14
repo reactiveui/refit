@@ -16,7 +16,7 @@ public class RefitSettingsTests
         var urlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter();
         var formUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
 
-        var exception = CaptureException(() => new RefitSettings());
+        var exception = CaptureException(static () => new RefitSettings());
         await Assert.That(exception).IsNull();
 
         exception = CaptureException(() => new RefitSettings(contentSerializer));
@@ -40,6 +40,16 @@ public class RefitSettingsTests
                 formUrlEncodedParameterFormatter,
                 urlParameterKeyFormatter));
         await Assert.That(exception).IsNull();
+    }
+
+    /// <summary>Verifies the full constructor rejects a null content serializer.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task Constructor_RejectsNullContentSerializer()
+    {
+        var exception = CaptureException(static () => new RefitSettings(null!, null, null, null));
+
+        await Assert.That(exception).IsTypeOf<ArgumentNullException>();
     }
 
     /// <summary>Invokes a factory and returns any exception it throws, otherwise null.</summary>

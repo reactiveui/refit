@@ -24,8 +24,8 @@ public interface IDataCrudApi<T, TKey>
     /// <returns>The list of entities.</returns>
     [Get("")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters to enable type inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
     [SuppressMessage(
         "StyleSharp",
@@ -40,8 +40,8 @@ public interface IDataCrudApi<T, TKey>
     /// <returns>The list of entities.</returns>
     [Get("")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters to enable type inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
     [SuppressMessage(
         "StyleSharp",
@@ -75,8 +75,8 @@ public interface IDataCrudApi<T, TKey>
     /// <returns>A task that completes when the read finishes.</returns>
     [Get("")]
     [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters to enable type inference",
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
     [SuppressMessage(
         "StyleSharp",

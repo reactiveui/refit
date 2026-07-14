@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 namespace Refit.Generator;
 
@@ -15,6 +14,9 @@ internal static partial class Emitter
 
     /// <summary>The text length added to a non-nullable generated parameter around its type and name.</summary>
     private const int ParameterExtraLength = 2;
+
+    /// <summary>The statement prefix that returns a generated expression to the caller.</summary>
+    private const string ReturnStatementPrefix = "return ";
 
     /// <summary>Builds the request-body buffering expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter, if any.</param>
@@ -60,18 +62,21 @@ internal static partial class Emitter
             : $"this.{property.Name}";
     }
 
-    /// <summary>Ensures a type display name is prefixed with <c>global::</c>.</summary>
+    /// <summary>Ensures a type display name carries an alias qualifier, adding <c>global::</c> when it has none.</summary>
     /// <param name="typeName">The type display name.</param>
-    /// <returns>The globally qualified type display name.</returns>
+    /// <returns>The alias-qualified type display name.</returns>
+    /// <remarks>A name that already carries an alias qualifier (either <c>global::</c> or an extern alias) contains
+    /// the <c>::</c> separator, whereas a bare name never does, so only bare names receive the <c>global::</c> prefix.</remarks>
     internal static string EnsureGlobalPrefix(string typeName) =>
-        typeName.StartsWith(GlobalPrefix, StringComparison.Ordinal)
+        typeName.IndexOf("::", StringComparison.Ordinal) >= 0
             ? typeName
             : GlobalPrefix + typeName;
 
     /// <summary>Maps a parsed HTTP method name to an expression that creates or returns an <see cref="HttpMethod"/>.</summary>
     /// <param name="httpMethod">The HTTP method text.</param>
     /// <returns>The HTTP method expression.</returns>
-    [ExcludeFromCodeCoverage]
+    /// <remarks>Known verbs reuse the cached <see cref="HttpMethod"/> singletons; a custom verb (read from a derived
+    /// attribute's <c>new HttpMethod("VERB")</c> getter) constructs one, matching what the reflection builder does.</remarks>
     internal static string ToHttpMethodExpression(string httpMethod) =>
         httpMethod switch
         {
@@ -81,8 +86,7 @@ internal static partial class Emitter
             "OPTIONS" => "global::System.Net.Http.HttpMethod.Options",
             "POST" => "global::System.Net.Http.HttpMethod.Post",
             "PUT" => "global::System.Net.Http.HttpMethod.Put",
-            "PATCH" => "new global::System.Net.Http.HttpMethod(\"PATCH\")",
-            _ => throw new ArgumentOutOfRangeException(nameof(httpMethod), httpMethod, "Unsupported HTTP method.")
+            _ => $"new global::System.Net.Http.HttpMethod({ToCSharpStringLiteral(httpMethod)})"
         };
 
     /// <summary>Gets the invocation text used for a generated method return type.</summary>
@@ -95,8 +99,9 @@ internal static partial class Emitter
         {
             ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
-            ReturnTypeInfo.AsyncEnumerable => (false, "return ", string.Empty),
-            ReturnTypeInfo.Return => (false, "return ", string.Empty),
+            ReturnTypeInfo.AsyncEnumerable => (false, ReturnStatementPrefix, string.Empty),
+            ReturnTypeInfo.Observable => (false, ReturnStatementPrefix, string.Empty),
+            ReturnTypeInfo.Return => (false, ReturnStatementPrefix, string.Empty),
             ReturnTypeInfo.SyncVoid => (false, string.Empty, string.Empty),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(returnTypeInfo),
@@ -114,10 +119,10 @@ internal static partial class Emitter
     /// <param name="builder">The target builder.</param>
     /// <param name="character">The character to append.</param>
     [SuppressMessage(
-        "CodeQuality",
-        "S1541:Methods and properties should not be too complex",
+        "Maintainability",
+        "SST1442:A function has too many direct branch points",
         Justification = "A compact switch avoids a dictionary or repeated helper calls on the generator hot path.")]
-    internal static void AppendEscapedCharacter(StringBuilder builder, char character) =>
+    internal static void AppendEscapedCharacter(PooledStringBuilder builder, char character) =>
         _ = character switch
         {
             '\\' => builder.Append(@"\\"),
@@ -214,13 +219,15 @@ internal static partial class Emitter
     /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <param name="isAsync">True if the method should be emitted as async.</param>
+    /// <param name="methodAttributes">Attribute lines emitted between the documentation and the signature.</param>
     /// <returns>The generated method opening.</returns>
     internal static string BuildMethodOpening(
         MethodModel methodModel,
         bool isDerivedExplicitImpl,
         bool isExplicitInterface,
         bool supportsNullable,
-        bool isAsync = false)
+        bool isAsync = false,
+        string methodAttributes = "")
     {
         var visibility = !isExplicitInterface ? "public " : string.Empty;
         var asyncKeyword = isAsync ? "async " : string.Empty;
@@ -232,12 +239,55 @@ internal static partial class Emitter
         return $$"""
 
             {{methodIndent}}/// <inheritdoc />
-            {{methodIndent}}{{visibility}}{{asyncKeyword}}{{methodModel.ReturnType}} {{explicitInterface}}{{methodModel.DeclaredMethod}}({{parameters}})
+            {{methodAttributes}}{{methodIndent}}{{visibility}}{{asyncKeyword}}{{methodModel.ReturnType}} {{explicitInterface}}{{methodModel.DeclaredMethod}}({{parameters}})
 
             """
             + constraints
             + methodIndent
             + "{\n";
+    }
+
+    /// <summary>Builds the trim/AOT annotations emitted onto methods that use the reflection request builder.</summary>
+    /// <param name="requiresUnreferencedCode">Whether the interface method declares <c>[RequiresUnreferencedCode]</c>.</param>
+    /// <param name="requiresDynamicCode">Whether the interface method declares <c>[RequiresDynamicCode]</c>.</param>
+    /// <remarks>
+    /// The reflection fallback intentionally trades trim safety for coverage of method shapes the inline emitter does
+    /// not support; RF006/RF007 report those shapes at compile time. When the interface member is unannotated the
+    /// generated call site suppresses the per-interface IL2026/IL3050 noise consumers cannot act on
+    /// (see reactiveui/refit#2200). When the interface member declares the matching <c>[RequiresUnreferencedCode]</c> or
+    /// <c>[RequiresDynamicCode]</c>, the implementation mirrors it instead: that both honours the caller-visible contract
+    /// and satisfies the trim/AOT annotation-matching rule (IL2046/IL3051) between the interface and its implementation.
+    /// </remarks>
+    /// <returns>The generated attribute lines, terminated by a newline.</returns>
+    internal static string BuildReflectionFallbackSuppressions(
+        bool requiresUnreferencedCode,
+        bool requiresDynamicCode)
+    {
+        const string justification =
+            "\"This method's shape is not supported by generated request building and intentionally uses the "
+            + "reflection request builder; trimmed and Native AOT applications must use inline-eligible method "
+            + "shapes instead (Refit reports this at compile time).\"";
+        const string requiresMessage =
+            "\"This generated Refit method's shape is not supported by generated request building and uses the "
+            + "reflection request builder, which requires unreferenced code and runtime code generation.\"";
+        var methodIndent = Indent(MethodMemberIndentation);
+
+        // A [RequiresDynamicCode] attribute only exists on net7.0+, but it is only emitted when the interface member
+        // declares it, which itself can only compile on net7.0+ — so it is always inside the net5.0 guard safely.
+        var unreferencedCodeAttribute = requiresUnreferencedCode
+            ? $"[global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode({requiresMessage})]"
+            : $"[global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(\"Trimming\", \"IL2026\", Justification = {justification})]";
+        var dynamicCodeAttribute = requiresDynamicCode
+            ? $"[global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode({requiresMessage})]"
+            : $"[global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(\"AOT\", \"IL3050\", Justification = {justification})]";
+
+        return $$"""
+            {{methodIndent}}#if NET5_0_OR_GREATER
+            {{methodIndent}}{{unreferencedCodeAttribute}}
+            {{methodIndent}}{{dynamicCodeAttribute}}
+            {{methodIndent}}#endif
+
+            """;
     }
 
     /// <summary>Builds the explicit interface qualifier for a method signature.</summary>
@@ -271,7 +321,7 @@ internal static partial class Emitter
             return string.Empty;
         }
 
-        var length = (parameterModels.Length - 1) * 2;
+        var length = (parameterModels.Length - 1) * ListSeparatorLength;
         for (var i = 0; i < parameterModels.Length; i++)
         {
             var (metadataName, type, annotation, _) = parameterModels[i];
@@ -298,7 +348,8 @@ internal static partial class Emitter
                     AppendText(destination, type, ref position);
                     if (emitNullableAnnotations && annotation)
                     {
-                        destination[position++] = '?';
+                        destination[position] = '?';
+                        position++;
                     }
 
                     AppendText(destination, " @", ref position);

@@ -43,7 +43,7 @@ public class ExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
         {
-            ExceptionFactory = static _ => Task.FromResult<Exception?>(null)
+            ExceptionFactory = static _ => new ValueTask<Exception?>((Exception?)null)
         });
 
         var result = await fixture.GetWithResult();
@@ -67,7 +67,7 @@ public class ExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
         {
-            ExceptionFactory = static _ => Task.FromResult<Exception?>(null)
+            ExceptionFactory = static _ => new ValueTask<Exception?>((Exception?)null)
         });
 
         await fixture.PutWithoutResult();
@@ -90,7 +90,7 @@ public class ExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
         {
-            ExceptionFactory = _ => Task.FromResult<Exception?>(exception)
+            ExceptionFactory = _ => new ValueTask<Exception?>(exception)
         });
 
         var thrownException = await Assert.That(() => (Task)fixture.GetWithResult()).ThrowsExactly<InvalidOperationException>();
@@ -114,7 +114,7 @@ public class ExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
         {
-            ExceptionFactory = _ => Task.FromResult<Exception?>(exception)
+            ExceptionFactory = _ => new ValueTask<Exception?>(exception)
         });
 
         var thrownException = await Assert.That(fixture.PutWithoutResult).ThrowsExactly<InvalidOperationException>();

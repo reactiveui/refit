@@ -19,6 +19,9 @@ public interface ISynchronousContentDeserializer
     /// <typeparam name="T">The type to deserialize the content to.</typeparam>
     /// <param name="content">The already-buffered content string.</param>
     /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
-    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
     T? DeserializeFromString<T>(string content);
 }

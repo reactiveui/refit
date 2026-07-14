@@ -5,7 +5,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Refit.Generator;
 
@@ -13,6 +12,9 @@ namespace Refit.Generator;
 /// <content>Request parsing helpers for the Refit source generator.</content>
 internal static partial class Parser
 {
+    /// <summary>The <c>System</c> namespace name, matched structurally to identify well-known BCL types.</summary>
+    private const string SystemNamespace = "System";
+
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
@@ -21,33 +23,53 @@ internal static partial class Parser
     private static RequestModel ParseRequest(
         IMethodSymbol methodSymbol,
         ReturnTypeInfo returnTypeInfo,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         if (!context.GeneratedRequestBuilding)
         {
+            ReportSourceGenOnlyAttributeMisuse(methodSymbol, context);
             return RequestModel.Empty;
         }
 
-        var httpMethodAttribute = FindHttpMethodAttribute(
-            methodSymbol,
-            context.HttpMethodBaseAttributeSymbol)!;
+        var (httpMethod, path, normalizedPath, pathParameters) = ResolveRequestTarget(methodSymbol, context);
 
-        var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass);
-        var path = GetHttpPath(httpMethodAttribute);
-        var normalizedPath = NormalizeConstantPathForInline(path);
-        var pathParameters = ExtractPathParameterPlaceholderNames(normalizedPath);
-        var returnTypes = GetRequestReturnTypes(methodSymbol);
-        var parameters = ParseRequestParameters(methodSymbol.Parameters, pathParameters.ToImmutableDictionary(pathParameters.Comparer), context.FormattableSymbol, out var parameterEligibility);
+        // A registered IReturnTypeAdapter surfaces the declared return type; the HTTP call materializes the adapter's
+        // wrapped result, so classify the return types against that inner type just like a Task<T>.
+        var (adapterTypeExpression, resultTypeSource) = ResolveReturnTypeAdapter(methodSymbol.ReturnType, context);
+
+        var returnTypes = GetRequestReturnTypes(resultTypeSource, context);
+        var queryUriFormat = ResolveQueryUriFormat(methodSymbol);
+
+        // A multipart method builds its parts inline; each part parameter is classified into a
+        // MultipartFormDataContent entry instead of feeding the query string or an implicit body.
+        var multipartBoundary = ResolveMultipartBoundary(methodSymbol, out var isMultipart);
+
+        // Only POST/PUT/PATCH carry an implicit body, and a multipart method never does — every un-attributed
+        // complex parameter is a form part rather than the request body.
+        var allowImplicitBody = IsBodyCapableHttpMethod(httpMethod) && !isMultipart;
+
+        var parameters = ParseRequestParameters(
+            methodSymbol.Parameters,
+            pathParameters,
+            context.FormattableSymbol,
+            allowImplicitBody,
+            isMultipart,
+            context,
+            out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
-        var canGenerateInline =
-            parameterEligibility
-            && returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
-            && methodSymbol.TypeParameters.IsEmpty
-            && httpMethod.Length > 0
-            && IsPathSupported(path)
-            && IsSupportedInlineBody(parameters)
-            && !HasUnsupportedInlineRequestMetadata(methodSymbol);
+        var canGenerateInline = CanGenerateInlineRequest(
+            parameterEligibility,
+            IsInlineReturnShape(returnTypeInfo, adapterTypeExpression),
+            httpMethod,
+            new(path, normalizedPath),
+            parameters,
+            isMultipart);
+
+        if (!canGenerateInline)
+        {
+            ReportSourceGenOnlyAttributeMisuse(methodSymbol, context);
+        }
 
         return new(
             httpMethod,
@@ -57,9 +79,120 @@ internal static partial class Parser
             returnTypes.IsApiResponse,
             returnTypes.DisposeResponse,
             canGenerateInline,
+            canGenerateInline ? adapterTypeExpression : null,
             staticHeaders,
-            parameters);
+            parameters)
+        {
+            IsMultipart = isMultipart,
+            MultipartBoundary = multipartBoundary,
+            QueryUriFormat = queryUriFormat,
+        };
     }
+
+    /// <summary>Resolves the HTTP verb, path, and path-parameter placeholders declared by a method's HTTP attribute.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="context">The shared generation context.</param>
+    /// <returns>The HTTP method, raw path, normalized path, and path parameter placeholders.</returns>
+    private static (string HttpMethod, string Path, string NormalizedPath, Dictionary<string, List<Range>> PathParameters) ResolveRequestTarget(
+        IMethodSymbol methodSymbol,
+        InterfaceGenerationContext context)
+    {
+        var httpMethodAttribute = FindHttpMethodAttribute(
+            methodSymbol,
+            context.HttpMethodBaseAttributeSymbol)!;
+
+        var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass!);
+        var path = GetHttpPath(httpMethodAttribute);
+        var normalizedPath = NormalizeConstantPathForInline(path);
+        var pathParameters = ExtractPathParameterPlaceholderNames(normalizedPath);
+        return (httpMethod, path, normalizedPath, pathParameters);
+    }
+
+    /// <summary>Classifies the return type against a registered return-type adapter, if one matches.</summary>
+    /// <param name="returnType">The method's declared return type.</param>
+    /// <param name="context">The shared generation context.</param>
+    /// <returns>The adapter type expression (or null) and the result type to classify the request against.</returns>
+    private static (string? AdapterTypeExpression, ITypeSymbol ResultTypeSource) ResolveReturnTypeAdapter(
+        ITypeSymbol returnType,
+        InterfaceGenerationContext context) =>
+        TryMatchReturnTypeAdapter(returnType, context, out var closedAdapter, out var adapterResultType)
+            ? (QualifyType(closedAdapter, context), adapterResultType)
+            : (null, returnType);
+
+    /// <summary>Determines whether a return type shape (or its adapter) is eligible for inline request generation.</summary>
+    /// <param name="returnTypeInfo">The classified return type shape.</param>
+    /// <param name="adapterTypeExpression">The registered adapter expression, or null.</param>
+    /// <returns><see langword="true"/> when the return shape can be generated inline.</returns>
+    private static bool IsInlineReturnShape(ReturnTypeInfo returnTypeInfo, string? adapterTypeExpression) =>
+        returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
+            or ReturnTypeInfo.Observable
+        || adapterTypeExpression is not null;
+
+    /// <summary>Reports an error when a method uses a source-generation-only attribute but cannot generate inline.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="context">The shared generation context.</param>
+    private static void ReportSourceGenOnlyAttributeMisuse(
+        IMethodSymbol methodSymbol,
+        InterfaceGenerationContext context)
+    {
+        foreach (var parameter in methodSymbol.Parameters)
+        {
+            foreach (var attribute in parameter.GetAttributes())
+            {
+                if (!IsRefitAttribute(attribute.AttributeClass, QueryNameAttributeDisplayName)
+                    && !IsRefitAttribute(attribute.AttributeClass, EncodedAttributeDisplayName)
+                    && !IsRefitAttribute(attribute.AttributeClass, QueryConverterAttributeDisplayName))
+                {
+                    continue;
+                }
+
+                context.Diagnostics.Add(Diagnostic.Create(
+                    DiagnosticDescriptors.SourceGenOnlyAttributeRequiresInlineRequest,
+                    methodSymbol.Locations[0],
+                    methodSymbol.Name,
+                    attribute.AttributeClass!.Name));
+                return;
+            }
+        }
+    }
+
+    /// <summary>Determines whether an HTTP method may carry an implicit request body.</summary>
+    /// <param name="httpMethod">The HTTP method name.</param>
+    /// <returns><see langword="true"/> for POST, PUT and PATCH.</returns>
+    private static bool IsBodyCapableHttpMethod(string httpMethod) =>
+        httpMethod is "POST" or "PUT" or "PATCH";
+
+    /// <summary>Determines whether a method's request can be constructed by generated inline code.</summary>
+    /// <param name="parameterEligibility">Whether every parameter binding is inline-supported.</param>
+    /// <param name="returnShapeEligible">Whether the return shape is inline-eligible (a built-in async shape or an adapter-backed return type).</param>
+    /// <param name="httpMethod">The HTTP method name.</param>
+    /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
+    /// <param name="parameters">The parsed request parameter models.</param>
+    /// <param name="isMultipart">Whether the method is multipart, which cannot also carry an explicit <c>[Body]</c>.</param>
+    /// <returns><see langword="true"/> when the request is inline-eligible.</returns>
+    /// <remarks>
+    /// Generic methods are inline-eligible: a type parameter flows straight through to the generic runner
+    /// (<c>SendAsync&lt;T, TBody&gt;</c>) with no reflection. Positions where an open type parameter cannot generate
+    /// correctly or trim-safely — a complex query object (its properties are only known per value) or a form-url-encoded
+    /// body (<c>[DynamicallyAccessedMembers]</c>) — are excluded upstream through <paramref name="parameterEligibility"/>.
+    /// </remarks>
+    private static bool CanGenerateInlineRequest(
+        bool parameterEligibility,
+        bool returnShapeEligible,
+        string httpMethod,
+        in RequestPathForms path,
+        ImmutableEquatableArray<RequestParameterModel> parameters,
+        bool isMultipart) =>
+        parameterEligibility
+        && returnShapeEligible
+        && httpMethod.Length > 0
+        && IsPathSupported(path.Raw)
+        && IsPathSupported(path.Normalized)
+        && IsSupportedInlineBody(parameters)
+
+        // A multipart method with an explicit [Body] is an invalid combination the reflection builder rejects; fall
+        // back so its validation still throws instead of emitting a non-multipart body request.
+        && (!isMultipart || !HasBodyParameter(parameters));
 
     /// <summary>Extracts the path parameter placeholder names and their locations from a URL template.</summary>
     /// <param name="path">The normalized path template.</param>
@@ -109,23 +242,6 @@ internal static partial class Parser
         return paramNames;
     }
 
-    /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
-    /// <param name="attributeClass">The attribute type.</param>
-    /// <returns>The HTTP method name, or an empty string for unsupported custom attributes.</returns>
-    [ExcludeFromCodeCoverage]
-    private static string GetHttpMethodName(INamedTypeSymbol? attributeClass) =>
-        attributeClass?.MetadataName switch
-        {
-            "DeleteAttribute" => "DELETE",
-            "GetAttribute" => "GET",
-            "HeadAttribute" => "HEAD",
-            "OptionsAttribute" => "OPTIONS",
-            "PatchAttribute" => "PATCH",
-            "PostAttribute" => "POST",
-            "PutAttribute" => "PUT",
-            _ => string.Empty
-        };
-
     /// <summary>Gets the literal path from a Refit HTTP method attribute.</summary>
     /// <param name="attributeData">The attribute data.</param>
     /// <returns>The path literal.</returns>
@@ -169,37 +285,44 @@ internal static partial class Parser
         queryBuffer ??= new char[path.Length - queryStart];
         if (queryLength > 0)
         {
-            queryBuffer[queryLength++] = '&';
+            queryBuffer[queryLength] = '&';
+            queryLength++;
         }
 
         path.CopyTo(partStart, queryBuffer, queryLength, partLength);
         queryLength += partLength;
     }
 
-    /// <summary>Determines whether a method carries request metadata the initial inline emitter does not handle.</summary>
+    /// <summary>Reads the <c>System.UriFormat</c> value from a method's <c>[QueryUriFormat]</c> attribute.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>
-    /// <returns><see langword="true"/> when request construction must use the runtime builder.</returns>
-    private static bool HasUnsupportedInlineRequestMetadata(IMethodSymbol methodSymbol) =>
-        HasUnsupportedMethodAttribute(methodSymbol.GetAttributes());
-
-    /// <summary>Determines whether method attributes contain request metadata unsupported by the initial inline emitter.</summary>
-    /// <param name="attributes">The attributes to inspect.</param>
-    /// <returns><see langword="true"/> when an attribute name matches.</returns>
-    private static bool HasUnsupportedMethodAttribute(in ImmutableArray<AttributeData> attributes)
+    /// <returns>The <c>UriFormat</c> enum value, or null when the method has no <c>[QueryUriFormat]</c>.</returns>
+    /// <remarks>The value re-encodes the whole built path and query, matching the reflection builder's final
+    /// <c>Uri.GetComponents(PathAndQuery, QueryUriFormat)</c> pass, so the attribute no longer forces the runtime builder.</remarks>
+    private static int? ResolveQueryUriFormat(IMethodSymbol methodSymbol)
     {
-        foreach (var attribute in attributes)
+        foreach (var attribute in methodSymbol.GetAttributes())
         {
-            var displayName = attribute.AttributeClass!.ToDisplayString();
-            if (displayName is
-                "Refit.MultipartAttribute" or
-                "Refit.QueryUriFormatAttribute")
+            if (TryReadQueryUriFormat(attribute) is { } uriFormat)
             {
-                return true;
+                return uriFormat;
             }
         }
 
-        return false;
+        return null;
     }
+
+    /// <summary>Reads the <c>UriFormat</c> value from an attribute if it is <c>[QueryUriFormat]</c>.</summary>
+    /// <param name="attribute">The candidate attribute.</param>
+    /// <returns>The <c>UriFormat</c> enum value, or null when the attribute is not <c>[QueryUriFormat]</c>.</returns>
+    /// <remarks>The single-<c>int</c>-argument guards match the attribute's only constructor and cannot fail for a
+    /// <c>[QueryUriFormat]</c> application that compiles.</remarks>
+    [ExcludeFromCodeCoverage]
+    private static int? TryReadQueryUriFormat(AttributeData attribute) =>
+        IsRefitAttribute(attribute.AttributeClass, QueryUriFormatAttributeDisplayName)
+        && attribute.ConstructorArguments.Length == 1
+        && attribute.ConstructorArguments[0].Value is int uriFormat
+            ? uriFormat
+            : null;
 
     /// <summary>Parses the static headers declared on inherited interfaces, the declaring interface, and the method.</summary>
     /// <param name="methodSymbol">The method whose header metadata should be parsed.</param>
@@ -229,7 +352,7 @@ internal static partial class Parser
     {
         foreach (var attribute in attributes)
         {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeadersAttribute")
+            if (!IsRefitAttribute(attribute.AttributeClass, HeadersAttributeDisplayName))
             {
                 continue;
             }
@@ -261,728 +384,19 @@ internal static partial class Parser
         }
     }
 
-    /// <summary>Parses request parameter bindings for the conservative initial inline path.</summary>
-    /// <param name="parameters">The method parameters.</param>
-    /// <param name="parameterLocations">The placeholder names in the URL with their locations.</param>
-    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol used to classify inline-eligible path parameter types, or null when unavailable.</param>
-    /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
-    /// <returns>The parsed request parameter models.</returns>
-    private static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
-        in ImmutableArray<IParameterSymbol> parameters,
-        in ImmutableDictionary<string, List<Range>> parameterLocations,
-        INamedTypeSymbol? formattableSymbol,
-        out bool canGenerateInline)
-    {
-        if (parameters.IsEmpty)
-        {
-            canGenerateInline = true;
-            return ImmutableEquatableArray<RequestParameterModel>.Empty;
-        }
-
-        var requestParameters = new RequestParameterModel[parameters.Length];
-        var bodyCount = 0;
-        var cancellationTokenCount = 0;
-        var headerCollectionCount = 0;
-        canGenerateInline = true;
-
-        for (var i = 0; i < parameters.Length; i++)
-        {
-            var parameter = parameters[i];
-            var aliasAttr = parameter.GetAttributes().FirstOrDefault(static a => a.AttributeClass?.ToDisplayString() == "Refit.AliasAsAttribute");
-            var name = aliasAttr is not null ? GetFirstStringArgument(aliasAttr) ?? parameter.Name : parameter.Name;
-            _ = parameterLocations.TryGetValue(name, out var location);
-            var parsedParameter = ParseRequestParameter(parameter, location?.ToImmutableEquatableArray(), formattableSymbol);
-            requestParameters[i] = parsedParameter.Parameter;
-            bodyCount += parsedParameter.BodyCount;
-            cancellationTokenCount += parsedParameter.CancellationTokenCount;
-            headerCollectionCount += parsedParameter.HeaderCollectionCount;
-            canGenerateInline &= parsedParameter.CanGenerateInline;
-        }
-
-        if (bodyCount > 1 || cancellationTokenCount > 1 || headerCollectionCount > 1)
-        {
-            canGenerateInline = false;
-        }
-
-        return ImmutableEquatableArrayFactory.FromArray(requestParameters);
-    }
-
-    /// <summary>Parses one request parameter binding.</summary>
-    /// <param name="parameter">The parameter to parse.</param>
-    /// <param name="locations">The parameter's locations in the URL template string. This is null if the parameter has no placeholder in the URL i.e. not a path parameter.</param>
-    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol used to classify inline-eligible path parameter types, or null when unavailable.</param>
-    /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, ImmutableEquatableArray<Range>? locations, INamedTypeSymbol? formattableSymbol)
-    {
-        var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var canBeNull = CanBeNull(parameter.Type, parameter.NullableAnnotation);
-        if (IsCancellationToken(parameter.Type))
-        {
-            return new(
-                new(
-                    parameter.MetadataName,
-                    parameterType,
-                    locations,
-                    BuildParameterAttributes(parameter),
-                    RequestParameterKind.CancellationToken,
-                    canBeNull,
-                    string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    BodyBufferMode.None),
-                true,
-                0,
-                1,
-                0);
-        }
-
-        if (TryParseBodyParameter(parameter, parameterType, out var bodyParameter))
-        {
-            return new(bodyParameter, true, 1, 0, 0);
-        }
-
-        if (TryParseHeaderParameter(parameter, parameterType, out var headerParameter))
-        {
-            return new(headerParameter, true, 0, 0, 0);
-        }
-
-        if (TryParseHeaderCollectionParameter(parameter, parameterType, out var headerCollectionParameter))
-        {
-            return new(
-                headerCollectionParameter,
-                headerCollectionParameter.Kind == RequestParameterKind.HeaderCollection,
-                0,
-                0,
-                1);
-        }
-
-        if (TryParsePropertyParameter(parameter, parameterType, out var propertyParameter))
-        {
-            return new(propertyParameter, true, 0, 0, 0);
-        }
-
-        return locations is {} l && IsSimpleType(parameter.Type, formattableSymbol)
-            ? new(PathRequestParameter(parameter, parameterType, l), true, 0, 0, 0)
-            : new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
-    }
-
-    /// <summary>Determines whether a parameter type renders to a URL scalar and is eligible for inline path formatting.</summary>
-    /// <param name="type">The parameter type to classify.</param>
-    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
-    /// <returns><see langword="true"/> when the type is a simple scalar type supported by inline path formatting.</returns>
-    private static bool IsSimpleType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol)
-    {
-        // A path value is emitted as UrlParameterFormatter.Format(value, provider, typeof(T)) - the same call the
-        // reflection path uses - so any type the formatter can render round-trips identically. That is exactly the
-        // set of IFormattable types (which is also what makes [Query(Format = ...)] and invariant culture work),
-        // plus string and bool, which are scalars but not IFormattable. Collections, arrays and DTOs are excluded
-        // and fall back to reflection. Matching on the resolved IFormattable symbol avoids per-parameter name-string
-        // allocations and automatically covers future BCL scalars.
-        var underlyingType = GetUnderlyingType(type);
-
-        static ITypeSymbol GetUnderlyingType(ITypeSymbol type) =>
-            type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable
-                ? nullable.TypeArguments[0]
-                : type;
-
-        // The built-in value-type scalars occupy a contiguous SpecialType block - System_Boolean (bool, char,
-        // every integer width, decimal, float, double) through System_Double - so a range check covers them all
-        // in one comparison. string and DateTime sit just outside that block.
-        static bool IsScalarSpecialType(SpecialType specialType) =>
-            (specialType >= SpecialType.System_Boolean && specialType <= SpecialType.System_Double)
-            || specialType == SpecialType.System_String
-            || specialType == SpecialType.System_DateTime;
-
-        // A null interfaceSymbol (System.IFormattable unresolved) simply matches nothing and falls back.
-        static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol? interfaceSymbol)
-        {
-            foreach (var implemented in type.AllInterfaces)
-            {
-                if (SymbolEqualityComparer.Default.Equals(implemented, interfaceSymbol))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // Built-in scalars resolve from SpecialType alone (a jump table, no interface walk); everything else that
-        // renders to a URL scalar - enums, Guid, DateTimeOffset, DateOnly, TimeOnly, TimeSpan, BigInteger,
-        // Int128/UInt128, Half - implements IFormattable.
-        return IsScalarSpecialType(underlyingType.SpecialType)
-               || ImplementsInterface(underlyingType, formattableSymbol);
-    }
-
-    /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
-    /// <param name="type">The type to inspect.</param>
-    /// <returns><see langword="true"/> when the type is a cancellation token.</returns>
-    private static bool IsCancellationToken(ITypeSymbol type) =>
-        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-        == "global::System.Threading.CancellationToken" || (type is INamedTypeSymbol
-                                                            {
-                                                                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
-                                                                TypeArguments.Length: 1
-                                                            } namedType
-                                                            && namedType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                                                            == "global::System.Threading.CancellationToken");
-
-    /// <summary>Tries to parse an explicitly attributed body parameter.</summary>
-    /// <param name="parameter">The parameter to inspect.</param>
-    /// <param name="parameterType">The parameter type display string.</param>
-    /// <param name="bodyParameter">Receives the body parameter model.</param>
-    /// <returns><see langword="true"/> when the parameter has a body attribute.</returns>
-    private static bool TryParseBodyParameter(
-        IParameterSymbol parameter,
-        string parameterType,
-        out RequestParameterModel bodyParameter)
-    {
-        foreach (var attribute in parameter.GetAttributes())
-        {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.BodyAttribute")
-            {
-                continue;
-            }
-
-            var bodyInfo = ParseBodyAttribute(attribute);
-            var formFields = bodyInfo.SerializationMethod == "UrlEncoded"
-                ? TryBuildFormFields(parameter.Type)
-                : null;
-            bodyParameter = new(
-                    parameter.MetadataName,
-                    parameterType,
-                    null,
-                    BuildParameterAttributes(parameter),
-                    RequestParameterKind.Body,
-                    CanBeNull(parameter.Type, parameter.NullableAnnotation),
-                    string.Empty,
-                    string.Empty,
-                    bodyInfo.SerializationMethod,
-                bodyInfo.BufferMode)
-            {
-                FormFields = formFields,
-            };
-            return true;
-        }
-
-        bodyParameter = new(
-            parameter.MetadataName,
-            parameterType,
-            null,
-            BuildParameterAttributes(parameter),
-            RequestParameterKind.Unsupported,
-            CanBeNull(parameter.Type, parameter.NullableAnnotation),
-            string.Empty,
-            string.Empty,
-            string.Empty,
-            BodyBufferMode.None);
-        return false;
-    }
-
-    /// <summary>Builds reflection-free form field descriptors for a URL-encoded body type.</summary>
-    /// <param name="bodyType">The declared body type.</param>
-    /// <returns>The field descriptors, or <see langword="null"/> when the type is not eligible for the descriptor path.</returns>
-    private static ImmutableEquatableArray<FormFieldModel>? TryBuildFormFields(ITypeSymbol bodyType)
-    {
-        if (!IsFormFieldEligibleType(bodyType))
-        {
-            return null;
-        }
-
-        var fields = new List<FormFieldModel>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-
-        // bodyType is a concrete class/struct/enum here (interfaces and the like are excluded upstream), so its base
-        // chain always reaches System.Object; the loop stops there and never dereferences a null BaseType.
-        for (var current = bodyType;
-            current.SpecialType != SpecialType.System_Object;
-            current = current.BaseType!)
-        {
-            foreach (var member in current.GetMembers())
-            {
-                if (member is IPropertySymbol property && IsReadableFormProperty(property) && seen.Add(property.Name))
-                {
-                    fields.Add(BuildFormFieldModel(property));
-                }
-            }
-        }
-
-        return ImmutableEquatableArrayFactory.FromList(fields);
-    }
-
-    /// <summary>Determines whether a property contributes a readable public instance form field.</summary>
-    /// <param name="property">The property to inspect.</param>
-    /// <returns><see langword="true"/> when the property is read through a public instance getter.</returns>
-    private static bool IsReadableFormProperty(IPropertySymbol property) =>
-        !property.IsStatic
-        && !property.IsIndexer
-        && property.DeclaredAccessibility == Accessibility.Public
-        && property.GetMethod is { DeclaredAccessibility: Accessibility.Public };
-
-    /// <summary>Determines whether a body type can be flattened to form fields without reflection.</summary>
-    /// <param name="type">The declared body type.</param>
-    /// <returns><see langword="true"/> when descriptor-based flattening matches the reflection path.</returns>
-    private static bool IsFormFieldEligibleType(ITypeSymbol type) =>
-        type.TypeKind != TypeKind.Interface
-        && type.TypeKind != TypeKind.TypeParameter
-        && type.TypeKind != TypeKind.Dynamic
-        && type.TypeKind != TypeKind.Array
-        && type.TypeKind != TypeKind.Pointer
-        && type.TypeKind != TypeKind.Error
-        && type.SpecialType != SpecialType.System_String
-        && type.SpecialType != SpecialType.System_Object
-        && type is not INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
-
-        // Dictionaries and other enumerables flow through the reflection path, which special-cases them.
-        && !ImplementsEnumerable(type);
-
-    /// <summary>Determines whether a type implements the non-generic <see cref="System.Collections.IEnumerable"/>.</summary>
-    /// <param name="type">The type to inspect.</param>
-    /// <returns><see langword="true"/> when the type is enumerable.</returns>
-    private static bool ImplementsEnumerable(ITypeSymbol type)
-    {
-        // The only caller (IsFormFieldEligibleType) already excludes interface types, so type is never the
-        // System.Collections.IEnumerable interface itself; a concrete enumerable always exposes it through AllInterfaces.
-        foreach (var contract in type.AllInterfaces)
-        {
-            if (contract.SpecialType == SpecialType.System_Collections_IEnumerable)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>Builds the form field descriptor for one body property.</summary>
-    /// <param name="property">The property to describe.</param>
-    /// <returns>The field descriptor.</returns>
-    private static FormFieldModel BuildFormFieldModel(IPropertySymbol property)
-    {
-        string? aliasName = null;
-        string? jsonName = null;
-        var query = default(QueryFormData);
-
-        foreach (var attribute in property.GetAttributes())
-        {
-            var attributeName = attribute.AttributeClass!.ToDisplayString();
-            if (attributeName == "Refit.AliasAsAttribute")
-            {
-                aliasName = GetFirstStringArgument(attribute);
-            }
-            else if (attributeName == "System.Text.Json.Serialization.JsonPropertyNameAttribute")
-            {
-                jsonName = GetFirstStringArgument(attribute);
-            }
-            else if (attributeName == "Refit.QueryAttribute")
-            {
-                query = ParseFormQueryAttribute(attribute);
-            }
-        }
-
-        var prefixSegment = string.IsNullOrWhiteSpace(query.Prefix) ? null : query.Prefix + query.Delimiter;
-        return new(
-            property.Name,
-            aliasName ?? jsonName,
-            prefixSegment,
-            query.Format,
-            query.CollectionFormatValue,
-            query.SerializeNull);
-    }
-
-    /// <summary>Reads the first string constructor argument from an attribute.</summary>
-    /// <param name="attribute">The attribute to inspect.</param>
-    /// <returns>The first string argument, or <see langword="null"/>.</returns>
-    private static string? GetFirstStringArgument(AttributeData attribute)
-    {
-        foreach (var argument in attribute.ConstructorArguments)
-        {
-            if (argument.Value is string value)
-            {
-                return value;
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>Parses the form-relevant members of a <c>[Query]</c> attribute applied to a property.</summary>
-    /// <param name="attribute">The query attribute data.</param>
-    /// <returns>The parsed form query data.</returns>
-    private static QueryFormData ParseFormQueryAttribute(AttributeData attribute) =>
-        ApplyQueryNamedArguments(attribute, ParseQueryConstructorArguments(attribute));
-
-    /// <summary>Parses the constructor arguments of a <c>[Query]</c> attribute.</summary>
-    /// <param name="attribute">The query attribute data.</param>
-    /// <returns>The form query data carried by the constructor arguments.</returns>
-    private static QueryFormData ParseQueryConstructorArguments(AttributeData attribute)
-    {
-        var delimiter = ".";
-        string? prefix = null;
-        string? format = null;
-        int? collectionFormatValue = null;
-        var stringArguments = 0;
-
-        foreach (var argument in attribute.ConstructorArguments)
-        {
-            // The only enum-typed constructor argument a [Query] attribute accepts is CollectionFormat.
-            if (argument.Kind == TypedConstantKind.Enum)
-            {
-                collectionFormatValue = (int)argument.Value!;
-            }
-            else if (argument.Value is string stringValue)
-            {
-                if (stringArguments == 0)
-                {
-                    delimiter = stringValue;
-                }
-                else if (stringArguments == 1)
-                {
-                    prefix = stringValue;
-                }
-                else
-                {
-                    format = stringValue;
-                }
-
-                stringArguments++;
-            }
-        }
-
-        return new(delimiter, prefix, format, collectionFormatValue, false);
-    }
-
-    /// <summary>Applies the named arguments of a <c>[Query]</c> attribute over constructor-supplied data.</summary>
-    /// <param name="attribute">The query attribute data.</param>
-    /// <param name="data">The data parsed from constructor arguments.</param>
-    /// <returns>The form query data with named arguments applied.</returns>
-    private static QueryFormData ApplyQueryNamedArguments(AttributeData attribute, QueryFormData data)
-    {
-        foreach (var named in attribute.NamedArguments)
-        {
-            if (named.Key == "Format" && named.Value.Value is string formatValue)
-            {
-                data = data with { Format = formatValue };
-            }
-            else if (named.Key == "CollectionFormat")
-            {
-                data = data with { CollectionFormatValue = (int)named.Value.Value! };
-            }
-            else if (named.Key == "SerializeNull")
-            {
-                data = data with { SerializeNull = (bool)named.Value.Value! };
-            }
-        }
-
-        return data;
-    }
-
-    /// <summary>Tries to parse a dynamic header parameter.</summary>
-    /// <param name="parameter">The parameter to inspect.</param>
-    /// <param name="parameterType">The parameter type display string.</param>
-    /// <param name="headerParameter">Receives the header parameter model.</param>
-    /// <returns><see langword="true"/> when the parameter has a supported header attribute.</returns>
-    private static bool TryParseHeaderParameter(
-        IParameterSymbol parameter,
-        string parameterType,
-        out RequestParameterModel headerParameter)
-    {
-        foreach (var attribute in parameter.GetAttributes())
-        {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeaderAttribute")
-            {
-                continue;
-            }
-
-            var arguments = attribute.ConstructorArguments;
-            if (arguments.IsEmpty || arguments[0].Value is not string headerName ||
-                string.IsNullOrWhiteSpace(headerName))
-            {
-                continue;
-            }
-
-            headerParameter = new(
-                parameter.MetadataName,
-                parameterType,
-                null,
-                BuildParameterAttributes(parameter),
-                RequestParameterKind.Header,
-                CanBeNull(parameter.Type, parameter.NullableAnnotation),
-                headerName.Trim(),
-                string.Empty,
-                string.Empty,
-                BodyBufferMode.None);
-            return true;
-        }
-
-        headerParameter = UnsupportedRequestParameter(parameter, parameterType);
-        return false;
-    }
-
-    /// <summary>Tries to parse a dynamic header collection parameter.</summary>
-    /// <param name="parameter">The parameter to inspect.</param>
-    /// <param name="parameterType">The parameter type display string.</param>
-    /// <param name="headerCollectionParameter">Receives the header collection parameter model.</param>
-    /// <returns><see langword="true"/> when the parameter has a supported header collection attribute.</returns>
-    private static bool TryParseHeaderCollectionParameter(
-        IParameterSymbol parameter,
-        string parameterType,
-        out RequestParameterModel headerCollectionParameter)
-    {
-        foreach (var attribute in parameter.GetAttributes())
-        {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeaderCollectionAttribute")
-            {
-                continue;
-            }
-
-            if (IsSupportedHeaderCollectionType(parameter.Type))
-            {
-                headerCollectionParameter = new(
-                    parameter.MetadataName,
-                    parameterType,
-                    null,
-                    BuildParameterAttributes(parameter),
-                    RequestParameterKind.HeaderCollection,
-                    CanBeNull(parameter.Type, parameter.NullableAnnotation),
-                    string.Empty,
-                    string.Empty,
-                    string.Empty,
-                    BodyBufferMode.None);
-                return true;
-            }
-
-            headerCollectionParameter = UnsupportedRequestParameter(parameter, parameterType);
-            return false;
-        }
-
-        headerCollectionParameter = UnsupportedRequestParameter(parameter, parameterType);
-        return false;
-    }
-
-    /// <summary>Tries to parse a request property parameter.</summary>
-    /// <param name="parameter">The parameter to inspect.</param>
-    /// <param name="parameterType">The parameter type display string.</param>
-    /// <param name="propertyParameter">Receives the property parameter model.</param>
-    /// <returns><see langword="true"/> when the parameter has a property attribute.</returns>
-    private static bool TryParsePropertyParameter(
-        IParameterSymbol parameter,
-        string parameterType,
-        out RequestParameterModel propertyParameter)
-    {
-        foreach (var attribute in parameter.GetAttributes())
-        {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.PropertyAttribute")
-            {
-                continue;
-            }
-
-            var arguments = attribute.ConstructorArguments;
-            var propertyKey = !arguments.IsEmpty && arguments[0].Value is string { Length: > 0 } key
-                ? key
-                : parameter.MetadataName;
-            propertyParameter = new(
-                parameter.MetadataName,
-                parameterType,
-                null,
-                BuildParameterAttributes(parameter),
-                RequestParameterKind.Property,
-                CanBeNull(parameter.Type, parameter.NullableAnnotation),
-                string.Empty,
-                propertyKey,
-                string.Empty,
-                BodyBufferMode.None);
-            return true;
-        }
-
-        propertyParameter = UnsupportedRequestParameter(parameter, parameterType);
-        return false;
-    }
-
-    /// <summary>Builds an unsupported request parameter model.</summary>
-    /// <param name="parameter">The parameter symbol.</param>
-    /// <param name="parameterType">The parameter type display string.</param>
-    /// <returns>The unsupported parameter model.</returns>
-    private static RequestParameterModel UnsupportedRequestParameter(
-        IParameterSymbol parameter,
-        string parameterType) =>
-        new(
-            parameter.MetadataName,
-            parameterType,
-            null,
-            BuildParameterAttributes(parameter),
-            RequestParameterKind.Unsupported,
-            CanBeNull(parameter.Type, parameter.NullableAnnotation),
-            string.Empty,
-            string.Empty,
-            string.Empty,
-            BodyBufferMode.None);
-
-    /// <summary>Builds a path request parameter model.</summary>
-    /// <param name="parameter">The parameter symbol.</param>
-    /// <param name="parameterType">The parameter type.</param>
-    /// <param name="locations">The parameter's location in the URL.</param>
-    /// <returns>The path request model.</returns>
-    private static RequestParameterModel PathRequestParameter(
-        IParameterSymbol parameter,
-        string parameterType,
-        ImmutableEquatableArray<Range> locations) =>
-        new(
-            parameter.MetadataName,
-            parameterType,
-            locations,
-            BuildParameterAttributes(parameter),
-            RequestParameterKind.Path,
-            CanBeNull(parameter.Type, parameter.NullableAnnotation),
-            string.Empty,
-            string.Empty,
-            string.Empty,
-            BodyBufferMode.None);
-
-    /// <summary>
-    /// Flattens a parameter's attributes into value-typed models so the incremental generator cache holds no
-    /// Roslyn symbols. Attribute type names and argument expressions are precomputed for the emitter.
-    /// </summary>
-    /// <param name="parameter">The parameter to inspect.</param>
-    /// <returns>The precomputed attribute models.</returns>
-    private static ImmutableEquatableArray<ParameterAttributeModel> BuildParameterAttributes(IParameterSymbol parameter)
-    {
-        var attributes = parameter.GetAttributes();
-        if (attributes.IsEmpty)
-        {
-            return ImmutableEquatableArray<ParameterAttributeModel>.Empty;
-        }
-
-        var models = new List<ParameterAttributeModel>(attributes.Length);
-        foreach (var attribute in attributes)
-        {
-            var constructorArguments = new List<string>(attribute.ConstructorArguments.Length);
-            foreach (var argument in attribute.ConstructorArguments)
-            {
-                constructorArguments.Add(ConstantValueToString(argument));
-            }
-
-            var namedArguments = new List<NamedAttributeArgument>(attribute.NamedArguments.Length);
-            foreach (var named in attribute.NamedArguments)
-            {
-                namedArguments.Add(new(named.Key, ConstantValueToString(named.Value)));
-            }
-
-            models.Add(new(
-                attribute.AttributeClass!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                constructorArguments.ToImmutableEquatableArray(),
-                namedArguments.ToImmutableEquatableArray()));
-        }
-
-        return models.ToImmutableEquatableArray();
-    }
-
-    /// <summary>Renders a typed constant attribute argument as the C# source expression the emitter writes.</summary>
-    /// <param name="argument">The typed constant.</param>
-    /// <returns>The source expression, or <c>"null"</c> when the value is null.</returns>
-    private static string ConstantValueToString(TypedConstant argument)
-    {
-        var result = string.Empty;
-
-        if (!argument.IsNull)
-        {
-            // A non-null attribute argument is always one of Enum, Type, Array or Primitive; the primitive rendering
-            // doubles as the fallback so no unreachable throwing arm is needed.
-            result = argument.Kind switch
-            {
-                TypedConstantKind.Enum =>
-                    $"({argument.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}){argument.Value!}",
-                TypedConstantKind.Type =>
-                    $"typeof({((ITypeSymbol)argument.Value!).ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})",
-                TypedConstantKind.Array =>
-                    $"new[] {{ {string.Join(", ", argument.Values.Select(ConstantValueToString))} }}",
-                _ => SymbolDisplay.FormatPrimitive(argument.Value!, true, false)!
-            };
-        }
-
-        return result.Length > 0 ? result : "null";
-    }
-
-    /// <summary>Determines whether generated code needs a null-safe dereference for a parameter value.</summary>
-    /// <param name="type">The parameter type.</param>
-    /// <param name="nullableAnnotation">The parameter nullable annotation.</param>
-    /// <returns><see langword="true"/> when generated code should guard the value before dereferencing it.</returns>
-    private static bool CanBeNull(ITypeSymbol type, NullableAnnotation nullableAnnotation) =>
-        type switch
-        {
-            INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
-            ITypeParameterSymbol typeParameter => !typeParameter.HasValueTypeConstraint,
-            _ => !type.IsValueType || nullableAnnotation == NullableAnnotation.Annotated
-        };
-
-    /// <summary>Determines whether a header collection parameter matches existing runtime semantics.</summary>
-    /// <param name="type">The parameter type.</param>
-    /// <returns><see langword="true"/> when the type is supported.</returns>
-    private static bool IsSupportedHeaderCollectionType(ITypeSymbol type) =>
-        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-        == "global::System.Collections.Generic.IDictionary<string, string>";
-
-    /// <summary>Parses the constructor-supplied data from a body attribute.</summary>
-    /// <param name="attribute">The attribute data.</param>
-    /// <returns>The parsed body serialization and buffering data.</returns>
-    private static BodyAttributeInfo ParseBodyAttribute(AttributeData attribute)
-    {
-        var serializationMethod = "Default";
-        bool? buffered = null;
-
-        foreach (var argument in attribute.ConstructorArguments)
-        {
-            if (TryGetBodySerializationMethodName(argument, out var methodName))
-            {
-                serializationMethod = methodName;
-                continue;
-            }
-
-            if (TryGetBodyBufferedValue(argument, out var boolValue))
-            {
-                buffered = boolValue;
-            }
-        }
-
-        var bufferMode = buffered switch
-        {
-            true => BodyBufferMode.Buffered,
-            false => BodyBufferMode.Streaming,
-            _ => BodyBufferMode.Settings
-        };
-
-        return new(serializationMethod, bufferMode);
-    }
-
-    /// <summary>Tries to parse a body serialization method constructor argument.</summary>
-    /// <param name="argument">The constructor argument.</param>
-    /// <param name="methodName">Receives the enum member name.</param>
-    /// <returns><see langword="true"/> when the argument is a body serialization method.</returns>
-    private static bool TryGetBodySerializationMethodName(in TypedConstant argument, out string methodName)
-    {
-        // The only enum-typed constructor argument a [Body] attribute accepts is BodySerializationMethod.
-        if (argument.Kind == TypedConstantKind.Enum)
-        {
-            methodName = GetBodySerializationMethodName((int)argument.Value!);
-            return true;
-        }
-
-        methodName = string.Empty;
-        return false;
-    }
-
     /// <summary>Gets return-type details required by the shared generated request runner.</summary>
-    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="returnType">The declared return type, or an adapter's wrapped result type.</param>
+    /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The parsed return type details.</returns>
-    private static RequestReturnTypes GetRequestReturnTypes(IMethodSymbol methodSymbol)
+    private static RequestReturnTypes GetRequestReturnTypes(ITypeSymbol returnType, InterfaceGenerationContext context)
     {
-        var resultType = GetReturnResultType(methodSymbol.ReturnType);
+        var resultType = GetReturnResultType(returnType);
         var isApiResponse = IsApiResponseType(resultType);
-        var deserializedResultType = GetDeserializedResultTypeName(resultType, isApiResponse);
+        var deserializedResultType = GetDeserializedResultTypeName(resultType, isApiResponse, context);
         var disposeResponse = ShouldDisposeResponse(deserializedResultType);
 
         return new(
-            resultType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            QualifyType(resultType, context),
             deserializedResultType,
             isApiResponse,
             disposeResponse);
@@ -1005,6 +419,11 @@ internal static partial class Parser
             {
                 return namedType.TypeArguments[0];
             }
+
+            if (namedType.MetadataName == "IObservable`1" && ns == "System")
+            {
+                return namedType.TypeArguments[0];
+            }
         }
 
         return returnType;
@@ -1020,39 +439,20 @@ internal static partial class Parser
     /// <summary>Gets the response-content deserialization type for a method result type.</summary>
     /// <param name="resultType">The method result type.</param>
     /// <param name="isApiResponse">Whether the result is an API response wrapper.</param>
+    /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The deserialization target type.</returns>
-    private static string GetDeserializedResultTypeName(ITypeSymbol resultType, bool isApiResponse)
+    private static string GetDeserializedResultTypeName(ITypeSymbol resultType, bool isApiResponse, InterfaceGenerationContext context)
     {
         if (!isApiResponse)
         {
-            return resultType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return QualifyType(resultType, context);
         }
 
         var namedType = (INamedTypeSymbol)resultType;
         return namedType.MetadataName == "IApiResponse"
             ? "global::System.Net.Http.HttpContent"
-            : namedType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            : QualifyType(namedType.TypeArguments[0], context);
     }
-
-    /// <summary>Parsed body attribute data.</summary>
-    /// <param name="SerializationMethod">The body serialization method name.</param>
-    /// <param name="BufferMode">The body buffering mode.</param>
-    private readonly record struct BodyAttributeInfo(
-        string SerializationMethod,
-        BodyBufferMode BufferMode);
-
-    /// <summary>Form-relevant data parsed from a <c>[Query]</c> attribute on a body property.</summary>
-    /// <param name="Delimiter">The delimiter combined with the prefix.</param>
-    /// <param name="Prefix">The field name prefix, if any.</param>
-    /// <param name="Format">The value format, if any.</param>
-    /// <param name="CollectionFormatValue">The explicit collection format value, if any.</param>
-    /// <param name="SerializeNull">Whether null values are serialized as empty fields.</param>
-    private readonly record struct QueryFormData(
-        string Delimiter,
-        string? Prefix,
-        string? Format,
-        int? CollectionFormatValue,
-        bool SerializeNull);
 
     /// <summary>Parsed return-type data for generated requests.</summary>
     /// <param name="ResultType">The method result type.</param>
@@ -1064,6 +464,25 @@ internal static partial class Parser
         string DeserializedResultType,
         bool IsApiResponse,
         bool DisposeResponse);
+
+    /// <summary>Bundles the lookup state used to classify one loosely-bound parameter.</summary>
+    /// <param name="UrlName">The resolved URL name: the <c>[AliasAs]</c> name or the declared parameter name.</param>
+    /// <param name="Locations">The parameter's placeholder locations, or null when it has no placeholder.</param>
+    /// <param name="RoundTripLocations">The parameter's round-tripping (<c>{**name}</c>) placeholder locations, if any.</param>
+    /// <param name="ParameterLocations">All placeholder names in the URL, used to detect dotted property bindings.</param>
+    /// <param name="FormattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="ImplicitBodyEligible">Whether an un-attributed complex parameter becomes the implicit request body.</param>
+    /// <param name="IsMultipart">Whether the method is multipart, so an un-attributed parameter becomes a form part.</param>
+    /// <param name="Generation">The interface generation context, carrying the extern-alias collector for type qualification.</param>
+    private readonly record struct LooseParameterContext(
+        string UrlName,
+        ImmutableEquatableArray<Range>? Locations,
+        ImmutableEquatableArray<Range>? RoundTripLocations,
+        Dictionary<string, List<Range>> ParameterLocations,
+        INamedTypeSymbol? FormattableSymbol,
+        bool ImplicitBodyEligible,
+        bool IsMultipart,
+        InterfaceGenerationContext Generation);
 
     /// <summary>Parsed request parameter data plus duplicate-detection counters.</summary>
     /// <param name="Parameter">The parsed parameter model.</param>
@@ -1077,4 +496,9 @@ internal static partial class Parser
         int BodyCount,
         int CancellationTokenCount,
         int HeaderCollectionCount);
+
+    /// <summary>The raw and normalized forms of a method's path template.</summary>
+    /// <param name="Raw">The raw path literal from the HTTP method attribute.</param>
+    /// <param name="Normalized">The path after constant-path normalization (fragment/empty-query cleanup).</param>
+    private readonly record struct RequestPathForms(string Raw, string Normalized);
 }

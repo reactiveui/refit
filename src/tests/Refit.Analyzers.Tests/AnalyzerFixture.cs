@@ -25,21 +25,40 @@ internal static class AnalyzerFixture
 
     /// <summary>Runs the Refit interface analyzer over an interface body snippet.</summary>
     /// <param name="body">The interface body source.</param>
+    /// <param name="generatedRequestBuilding">The value forced for the <c>RefitGeneratedRequestBuilding</c> option, or <see langword="null"/> to use the default.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
-    public static Task<ImmutableArray<Diagnostic>> RunForBody(string body) =>
-        Run(BuildBodySource(body));
+    public static Task<ImmutableArray<Diagnostic>> RunForBody(string body, bool? generatedRequestBuilding = null) =>
+        Run(BuildBodySource(body), generatedRequestBuilding);
 
     /// <summary>Runs the Refit interface analyzer over a complete source string.</summary>
     /// <param name="source">The source to analyze.</param>
+    /// <param name="generatedRequestBuilding">The value forced for the <c>RefitGeneratedRequestBuilding</c> option, or <see langword="null"/> to use the default.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
-    public static Task<ImmutableArray<Diagnostic>> Run(string source)
+    public static Task<ImmutableArray<Diagnostic>> Run(string source, bool? generatedRequestBuilding = null)
     {
-        var compilation = CreateLibrary(source, includeRefitReference: true);
-        var analyzer = new RefitInterfaceAnalyzer();
-        var compilationWithAnalyzers = compilation.WithAnalyzers(
-            [analyzer]);
-        return compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+        var analyzerOptions = generatedRequestBuilding is null
+            ? null
+            : new AnalyzerOptions(
+                [],
+                new TestAnalyzerConfigOptionsProvider(
+                    "build_property.RefitGeneratedRequestBuilding",
+                    generatedRequestBuilding.Value ? "true" : "false"));
+        return Analyze(source, analyzerOptions);
     }
+
+    /// <summary>Runs the Refit interface analyzer over an interface body snippet with a bare analyzer-config option.</summary>
+    /// <remarks>
+    /// The key is supplied without the <c>build_property.</c> prefix, mirroring an <c>.editorconfig</c>/<c>.globalconfig</c>
+    /// entry rather than an MSBuild property, so the analyzer reads it through the bare-name option path.
+    /// </remarks>
+    /// <param name="body">The interface body source.</param>
+    /// <param name="optionKey">The bare analyzer-config option key.</param>
+    /// <param name="optionValue">The analyzer-config option value.</param>
+    /// <returns>The diagnostics produced by the analyzer.</returns>
+    public static Task<ImmutableArray<Diagnostic>> RunForBodyWithAnalyzerConfigOption(string body, string optionKey, string optionValue) =>
+        Analyze(
+            BuildBodySource(body),
+            new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider(optionKey, optionValue)));
 
     /// <summary>Runs the Refit interface analyzer over source without referencing Refit.</summary>
     /// <param name="source">The source to analyze.</param>
@@ -51,6 +70,17 @@ internal static class AnalyzerFixture
         var compilationWithAnalyzers = compilation.WithAnalyzers(
             [analyzer]);
         return compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+    }
+
+    /// <summary>Runs the Refit interface analyzer over Refit-referencing source with the supplied analyzer options.</summary>
+    /// <param name="source">The source to analyze.</param>
+    /// <param name="analyzerOptions">The analyzer options, or <see langword="null"/> to use the defaults.</param>
+    /// <returns>The diagnostics produced by the analyzer.</returns>
+    private static Task<ImmutableArray<Diagnostic>> Analyze(string source, AnalyzerOptions? analyzerOptions)
+    {
+        var compilation = CreateLibrary(source, includeRefitReference: true);
+        var analyzer = new RefitInterfaceAnalyzer();
+        return compilation.WithAnalyzers([analyzer], analyzerOptions).GetAnalyzerDiagnosticsAsync();
     }
 
     /// <summary>Creates a compilation for analyzer tests.</summary>
@@ -153,4 +183,38 @@ internal static class AnalyzerFixture
           {{body}}
           }
           """;
+
+    /// <summary>An analyzer-config options provider that exposes a single global option.</summary>
+    /// <param name="key">The global option key.</param>
+    /// <param name="value">The global option value.</param>
+    private sealed class TestAnalyzerConfigOptionsProvider(string key, string value) : AnalyzerConfigOptionsProvider
+    {
+        /// <inheritdoc/>
+        public override AnalyzerConfigOptions GlobalOptions { get; } = new TestAnalyzerConfigOptions(key, value);
+
+        /// <inheritdoc/>
+        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => GlobalOptions;
+
+        /// <inheritdoc/>
+        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => GlobalOptions;
+    }
+
+    /// <summary>An analyzer-config options set containing a single key/value pair.</summary>
+    /// <param name="optionKey">The option key.</param>
+    /// <param name="optionValue">The option value.</param>
+    private sealed class TestAnalyzerConfigOptions(string optionKey, string optionValue) : AnalyzerConfigOptions
+    {
+        /// <inheritdoc/>
+        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
+        {
+            if (string.Equals(key, optionKey, StringComparison.Ordinal))
+            {
+                value = optionValue;
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+    }
 }

@@ -20,6 +20,12 @@ public sealed class StubHttpCoverageTests
     /// <summary>An index beyond the recorded requests, used to exercise range validation.</summary>
     private const int OutOfRangeIndex = 5;
 
+    /// <summary>A negative index, used to exercise the lower-bound range check.</summary>
+    private const int NegativeIndex = -1;
+
+    /// <summary>A route template with a placeholder segment used by the template-matcher tests.</summary>
+    private const string PlaceholderRoute = "/a/{id}";
+
     /// <summary>Verifies each verb-specific <see cref="Route"/> factory matches its method.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -95,6 +101,19 @@ public sealed class StubHttpCoverageTests
         await Assert.That(() => handler.RequestBodyAsync<NewUser>(OutOfRangeIndex)).ThrowsExactly<ArgumentOutOfRangeException>();
     }
 
+    /// <summary>Verifies a negative index into the recorded request bodies is rejected.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequestBodyAsyncRejectsNegativeIndex()
+    {
+        var handler = new StubHttp { { Route.Post("/users"), Reply.With(new User(1, "created")) } };
+        var api = handler.CreateClient<IUserApi>(BaseUrl);
+
+        _ = await api.CreateUser(new NewUser("bob"));
+
+        await Assert.That(() => handler.RequestBodyAsync<NewUser>(NegativeIndex)).ThrowsExactly<ArgumentOutOfRangeException>();
+    }
+
     /// <summary>Verifies <see cref="StubHttp.LastRequestBodyAsync{T}"/> throws when no request has been received.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -145,7 +164,7 @@ public sealed class StubHttpCoverageTests
     [Test]
     public async Task TemplatePlaceholderRejectsEmptySegment()
     {
-        var handler = new StubHttp { { Route.Get("/a/{id}"), Reply.Status(HttpStatusCode.OK) } };
+        var handler = new StubHttp { { Route.Get(PlaceholderRoute), Reply.Status(HttpStatusCode.OK) } };
 
         await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/a/"))
             .ThrowsExactly<InvalidOperationException>();
@@ -156,7 +175,7 @@ public sealed class StubHttpCoverageTests
     [Test]
     public async Task TemplateRejectsSegmentCountMismatch()
     {
-        var handler = new StubHttp { { Route.Get("/a/{id}"), Reply.Status(HttpStatusCode.OK) } };
+        var handler = new StubHttp { { Route.Get(PlaceholderRoute), Reply.Status(HttpStatusCode.OK) } };
 
         await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/a/1/extra"))
             .ThrowsExactly<InvalidOperationException>();
@@ -167,7 +186,7 @@ public sealed class StubHttpCoverageTests
     [Test]
     public async Task TemplateRejectsLiteralMismatch()
     {
-        var handler = new StubHttp { { Route.Get("/a/{id}"), Reply.Status(HttpStatusCode.OK) } };
+        var handler = new StubHttp { { Route.Get(PlaceholderRoute), Reply.Status(HttpStatusCode.OK) } };
 
         await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/b/1"))
             .ThrowsExactly<InvalidOperationException>();

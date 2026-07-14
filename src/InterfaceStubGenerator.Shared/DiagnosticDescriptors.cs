@@ -19,6 +19,18 @@ internal static class DiagnosticDescriptors
             DiagnosticSeverity.Error,
             true);
 
+    /// <summary>Diagnostic reported when a source-generation-only attribute is used on a method that cannot generate inline.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    public static readonly DiagnosticDescriptor SourceGenOnlyAttributeRequiresInlineRequest =
+        new(
+            "RF007",
+            "Attribute requires generated request building",
+            "Method '{0}' uses [{1}], which is only honored by generated request building, but its request cannot be "
+            + "generated inline. Make the method compatible with inline generation or remove the attribute.",
+            Category,
+            DiagnosticSeverity.Error,
+            true);
+
     /// <summary>The diagnostic category for Refit generator diagnostics.</summary>
     private const string Category = "Refit";
 }

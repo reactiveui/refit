@@ -222,28 +222,30 @@ public sealed class ReflectionTests
         await formatter.AssertNoOutstandingAssertions();
     }
 
-    /// <summary>Verifies a derived record's properties are formatted as query parameters with the expected metadata.</summary>
+    /// <summary>Verifies the reflection request builder flattens the runtime type's properties, not the declared type's.</summary>
     /// <returns>A task that represents the asynchronous test.</returns>
+    /// <remarks>
+    /// The reflection builder calls <c>value.GetType()</c>, so a <see cref="DerivedRecordWithProperty"/> passed through a
+    /// <see cref="BaseRecord"/> parameter contributes the derived <c>Name</c> property too. Generated request building
+    /// flattens the declared type instead, the way the <c>System.Text.Json</c> source generator does; see
+    /// <see cref="QueryObjectFlatteningTests"/>. This test drives the reflection builder directly so it keeps covering
+    /// that path even though the generated client no longer routes this method through it.
+    /// </remarks>
     [Test]
     public async Task DerivedQueryPropertyParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = BaseUrlWithSlash, ExactQueryParams = [("Name", "queryName"), ("Value", "value")] },
-                Reply.Json(nameof(IBasicApi.GetPropertyQuery))
-            },
-        };
-
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetPropertyQuery))!;
         var parameterInfo = methodInfo.GetParameters()[0];
 
         var formatter = new TestUrlFormatter(
             [parameterInfo, parameterInfo],
             [typeof(BaseRecord), typeof(BaseRecord)]);
-        var service = handler.CreateClient<IBasicApi>(BaseUrl, new RefitSettings { UrlParameterFormatter = formatter });
+        var settings = new RefitSettings { UrlParameterFormatter = formatter };
 
-        await service.GetPropertyQuery(new DerivedRecordWithProperty("queryName"));
+        var request = await new RequestBuilderImplementation<IBasicApi>(settings)
+            .BuildRequestFactoryForMethod(nameof(IBasicApi.GetPropertyQuery))([new DerivedRecordWithProperty("queryName")]);
+
+        await Assert.That(request.RequestUri!.PathAndQuery).IsEqualTo("/?Name=queryName&Value=value");
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -298,17 +300,15 @@ public sealed class ReflectionTests
 
     /// <summary>Verifies a record's enumerable property is formatted as a query parameter with the expected metadata.</summary>
     /// <returns>A task that represents the asynchronous test.</returns>
+    /// <remarks>
+    /// The reflection builder formats each element with the property's provider and declared type, then formats the
+    /// joined string again with the parameter's provider and type. Generated request building now flattens a collection
+    /// property inline (see <see cref="QueryObjectFlatteningTests"/>), so this test drives the reflection builder
+    /// directly to keep covering the two-pass contract even though the generated client no longer routes it through it.
+    /// </remarks>
     [Test]
     public async Task EnumerablePropertyQueryParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = BaseUrlWithSlash, ExactQueryParams = [("Enumerable", "0,1")] },
-                Reply.Json(nameof(IBasicApi.GetEnumerablePropertyQuery))
-            },
-        };
-
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetEnumerablePropertyQuery))!;
         var parameterInfo = methodInfo.GetParameters()[0];
         var propertyInfo = typeof(MyEnumerableParams).GetProperties()[0];
@@ -316,9 +316,11 @@ public sealed class ReflectionTests
         var formatter = new TestUrlFormatter(
             [propertyInfo, propertyInfo, parameterInfo],
             [typeof(int[]), typeof(int[]), typeof(MyEnumerableParams)]);
-        var service = handler.CreateClient<IBasicApi>(BaseUrl, new RefitSettings { UrlParameterFormatter = formatter });
+        var settings = new RefitSettings { UrlParameterFormatter = formatter };
 
-        await service.GetEnumerablePropertyQuery(new([0, 1]));
+        _ = await new RequestBuilderImplementation<IBasicApi>(settings)
+            .BuildRequestFactoryForMethod(nameof(IBasicApi.GetEnumerablePropertyQuery))([new MyEnumerableParams([0, 1])]);
+
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -348,7 +350,8 @@ public sealed class ReflectionTests
             ]);
         var service = handler.CreateClient<IBasicApi>(BaseUrl, new RefitSettings { UrlParameterFormatter = formatter });
 
-        var dict = new Dictionary<string, object> { { "key0", 1 }, { "key1", 2 } };
+        const int key1Value = 2;
+        var dict = new Dictionary<string, object> { { "key0", 1 }, { "key1", key1Value } };
         await service.GetDictionaryQuery(dict);
         await formatter.AssertNoOutstandingAssertions();
     }
@@ -427,7 +430,8 @@ public sealed class ReflectionTests
             },
         };
 
-        var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 2, [Type.MakeGenericMethodParameter(0), Type.MakeGenericMethodParameter(1)])!;
+        const int genericParameterCount = 2;
+        var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), genericParameterCount, [Type.MakeGenericMethodParameter(0), Type.MakeGenericMethodParameter(1)])!;
         methodInfo = methodInfo.MakeGenericMethod(typeof(string), typeof(long));
         var parameterInfo1 = methodInfo.GetParameters()[0];
         var parameterInfo2 = methodInfo.GetParameters()[1];

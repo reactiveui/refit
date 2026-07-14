@@ -128,3 +128,6 @@ static Refit.Testing.Route.Head(string! template) -> Refit.Testing.RouteMatcher!
 static Refit.Testing.Route.Patch(string! template) -> Refit.Testing.RouteMatcher!
 static Refit.Testing.Route.Post(string! template) -> Refit.Testing.RouteMatcher!
 static Refit.Testing.Route.Put(string! template) -> Refit.Testing.RouteMatcher!
+Refit.Testing.RouteMatcher.Fallback.get -> bool
+Refit.Testing.RouteMatcher.Fallback.init -> void
+static Refit.Testing.Route.Fallback() -> Refit.Testing.RouteMatcher!
