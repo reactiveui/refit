@@ -111,6 +111,48 @@ public sealed class RefitInterfaceAnalyzerTests
         await Assert.That(diagnosticIds).Contains("RF009");
     }
 
+    /// <summary>Verifies multiple Body parameters and multipart methods with a Body parameter are reported.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReportsBodyParameterShapeDiagnostics()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Post("/users")]
+            Task<string> TwoBodies([Body] string first, [Body] string second);
+
+            [Multipart]
+            [Post("/upload")]
+            Task<string> MultipartWithBody([Body] string payload);
+            """);
+
+        var diagnosticIds = diagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+
+        await Assert.That(diagnosticIds).Contains("RF011");
+        await Assert.That(diagnosticIds).Contains("RF012");
+    }
+
+    /// <summary>Verifies a single Body parameter and a multipart method without a Body parameter are not reported.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DoesNotReportValidBodyAndMultipartShapes()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Post("/users")]
+            Task<string> SingleBody([Body] string payload);
+
+            [Multipart]
+            [Post("/upload")]
+            Task<string> MultipartWithoutBody([AliasAs("file")] StreamPart stream);
+            """);
+
+        var diagnosticIds = diagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+
+        await Assert.That(diagnosticIds).DoesNotContain("RF011");
+        await Assert.That(diagnosticIds).DoesNotContain("RF012");
+    }
+
     /// <summary>Verifies non-Refit members on Refit interfaces are reported.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
