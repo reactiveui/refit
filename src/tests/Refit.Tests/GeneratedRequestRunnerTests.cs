@@ -93,6 +93,24 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(await result.ReadAsStringAsync()).IsEqualTo(StreamBodyText);
     }
 
+    /// <summary>Verifies that disposing the generated body content leaves the caller-supplied stream open.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task CreateBodyContentDoesNotDisposeCallerStream()
+    {
+        await using var stream = new MemoryStream(StreamBodyBytes);
+        var settings = CreateSettings();
+
+        var result = GeneratedRequestRunner.CreateBodyContent(
+            settings,
+            stream,
+            BodySerializationMethod.Default,
+            streamBody: false);
+        result.Dispose();
+
+        await Assert.That(stream.CanRead).IsTrue();
+    }
+
     /// <summary>Verifies that default string bodies are sent as literal string content.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

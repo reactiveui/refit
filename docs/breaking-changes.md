@@ -88,6 +88,14 @@ visible in three places.
   `[JsonProperty]` when `Refit.Newtonsoft.Json` is installed. To keep the pre-V14 behavior, set
   `RefitSettings.HonorContentSerializerPropertyNamesInQuery = false`; `[AliasAs]` still takes precedence in either mode.
 
+* **Refit no longer disposes a request-body stream you supply.** Refit disposes each request message after sending,
+  which disposes its content and any stream that content holds. Previously that reached a caller-owned stream: a
+  `StreamPart`, or a `Stream` passed as a `[Body]` or multipart parameter, was closed once the request completed, so a
+  second call with the same stream failed. Refit now wraps caller-supplied streams so disposal stops at the wrapper and
+  the stream you passed stays open — you own it and are responsible for disposing it. Streams Refit opens itself are
+  unchanged: a `FileInfoPart` (or a `FileInfo` multipart parameter) still has the file stream Refit opened closed for
+  you. Both request builders apply this. If you relied on Refit closing your stream, dispose it yourself after the call.
+
 ### New in V14.x
 
 * **Inline query-string generation.** Query parameters — auto-appended parameters, `[AliasAs]`, `[Query(Format = ...)]`,
