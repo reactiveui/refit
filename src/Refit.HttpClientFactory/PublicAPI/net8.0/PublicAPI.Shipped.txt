@@ -1,6 +1,7 @@
 #nullable enable
 Refit.HttpClientFactoryExtensions
 Refit.HttpClientFactoryExtensions.extension(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!)
+Refit.HttpClientFactoryExtensions.extension(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!).AddAuthorizationHeaderValueProvider(System.Func<System.IServiceProvider!, System.Net.Http.HttpRequestMessage!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<string!>>! getToken) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 Refit.HttpClientFactoryExtensions.extension(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!).AddKeyedRefitClient(System.Type! refitInterfaceType, object? serviceKey) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 Refit.HttpClientFactoryExtensions.extension(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!).AddKeyedRefitClient(System.Type! refitInterfaceType, object? serviceKey, Refit.RefitSettings? settings) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 Refit.HttpClientFactoryExtensions.extension(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!).AddKeyedRefitClient(System.Type! refitInterfaceType, object? serviceKey, System.Func<System.IServiceProvider!, Refit.RefitSettings?>? settingsAction) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
@@ -44,6 +45,7 @@ Refit.ISettingsFor.Settings.get -> Refit.RefitSettings?
 Refit.SettingsFor<T>
 Refit.SettingsFor<T>.Settings.get -> Refit.RefitSettings?
 Refit.SettingsFor<T>.SettingsFor(Refit.RefitSettings? settings) -> void
+static Refit.HttpClientFactoryExtensions.AddAuthorizationHeaderValueProvider(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, System.Net.Http.HttpRequestMessage!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<string!>>! getToken) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Refit.HttpClientFactoryExtensions.AddKeyedRefitClient(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Type! refitInterfaceType, object? serviceKey) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Refit.HttpClientFactoryExtensions.AddKeyedRefitClient(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Type! refitInterfaceType, object? serviceKey, Refit.RefitSettings? settings) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Refit.HttpClientFactoryExtensions.AddKeyedRefitClient(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Type! refitInterfaceType, object? serviceKey, System.Func<System.IServiceProvider!, Refit.RefitSettings?>? settingsAction) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
