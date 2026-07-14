@@ -4,6 +4,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
@@ -48,6 +49,12 @@ public class FormValueMultimapTests
 
     /// <summary>Scalar value shared by the cycle-guard fixture.</summary>
     private const string CycleRootValue = "root";
+
+    /// <summary>The object-graph depth beyond which the flattener drops deeper nested values; mirrors <c>FormValueMultimap.MaxNestingDepth</c>.</summary>
+    private const int MaxNestingDepth = 32;
+
+    /// <summary>Extra nodes appended past the nesting cap so the depth-cap drop path is exercised with margin.</summary>
+    private const int ExtraNodesBeyondNestingCap = 5;
 
     /// <summary>The default settings used to construct the multimap under test.</summary>
     private readonly RefitSettings _settings = new();
@@ -511,12 +518,71 @@ public class FormValueMultimapTests
         await Assert.That(actual).IsCollectionEqualTo(expected);
     }
 
+    /// <summary>Verifies an acyclic object graph deeper than the nesting cap flattens the values up to the cap and drops everything below it.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task DeeplyNestedObjectDropsValuesBeyondNestingCap()
+    {
+        var source = BuildDeepChain(MaxNestingDepth + ExtraNodesBeyondNestingCap);
+
+        var values = new FormValueMultimap(source, _settings)
+            .Select(static entry => entry.Value)
+            .ToArray();
+
+        await Assert.That(values.Length).IsEqualTo(MaxNestingDepth + 1);
+        await Assert.That(values.Contains(DeepNodeValue(MaxNestingDepth))).IsTrue();
+        await Assert.That(values.Contains(DeepNodeValue(MaxNestingDepth + 1))).IsFalse();
+    }
+
+    /// <summary>Verifies a nested object inheriting a null <see cref="QueryAttribute"/> delimiter falls back to the default delimiter when composing its own children.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task NestedObjectUnderNullQueryDelimiterFallsBackToDefaultDelimiter()
+    {
+        const int age = 42;
+        var source = new ObjectWithNullDelimiterQuery
+        {
+            Detail = new() { Email = NestedEmail, Age = age }
+        };
+        var expected = new KeyValuePair<string?, string?>[]
+        {
+            new("DetailEmail", NestedEmail),
+            new("DetailAge", "42")
+        };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
     /// <summary>Projects a sequence of non-nullable key/value pairs to nullable key/value pairs.</summary>
     /// <param name="source">The non-nullable key/value pairs to project.</param>
     /// <returns>The equivalent sequence with nullable key and value types.</returns>
     private static IEnumerable<KeyValuePair<string?, string?>> ToNullableKvps(
         IEnumerable<KeyValuePair<string, string>> source) =>
         source.Select(static pair => new KeyValuePair<string?, string?>(pair.Key, pair.Value));
+
+    /// <summary>Builds an acyclic chain of distinct <see cref="DeepNode"/> instances, each carrying a depth-tagged value.</summary>
+    /// <param name="length">The number of nodes in the chain.</param>
+    /// <returns>The head node of the chain.</returns>
+    private static DeepNode BuildDeepChain(int length)
+    {
+        var head = new DeepNode { Value = DeepNodeValue(0) };
+        var current = head;
+        for (var i = 1; i < length; i++)
+        {
+            var next = new DeepNode { Value = DeepNodeValue(i) };
+            current.Child = next;
+            current = next;
+        }
+
+        return head;
+    }
+
+    /// <summary>Formats the value carried by the <see cref="DeepNode"/> at the given depth.</summary>
+    /// <param name="depth">The zero-based depth of the node.</param>
+    /// <returns>The depth-tagged value.</returns>
+    private static string DeepNodeValue(int depth) => "v" + depth.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>Test fixture with simple string properties used to verify object property loading.</summary>
     public class ObjectTestClass
@@ -687,5 +753,23 @@ public class FormValueMultimapTests
 
         /// <summary>Gets or sets the self reference that must not cause unbounded recursion.</summary>
         public SelfReferentialForm? Self { get; set; }
+    }
+
+    /// <summary>Recursive test fixture used to build an acyclic graph deeper than the nesting cap.</summary>
+    public class DeepNode
+    {
+        /// <summary>Gets or sets the depth-tagged scalar value flattened at this level.</summary>
+        public string? Value { get; set; }
+
+        /// <summary>Gets or sets the next distinct node in the chain, or <see langword="null"/> at the tail.</summary>
+        public DeepNode? Child { get; set; }
+    }
+
+    /// <summary>Test fixture whose nested property carries a <see cref="QueryAttribute"/> with a null delimiter, exercising the default-delimiter fallback for its children.</summary>
+    public class ObjectWithNullDelimiterQuery
+    {
+        /// <summary>Gets or sets the nested detail whose children inherit the null query delimiter.</summary>
+        [Query(null!)]
+        public NestedDetail? Detail { get; set; }
     }
 }
