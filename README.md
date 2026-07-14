@@ -1960,6 +1960,30 @@ public class HomeController : Controller
 }
 ```
 
+#### Sharing one connection pool across multiple interfaces
+
+If you split one API across several interfaces (for example `ISomeSiteAuth` and `ISomeSiteData`) but want them to
+share a single underlying handler and connection pool, register them under the **same** client name. Interfaces that
+resolve the same named `HttpClient` share the same `IHttpClientFactory`-managed, lifetime-rotated handler:
+
+```csharp
+services.AddRefitClient<ISomeSiteAuth>((RefitSettings?)null, "somesite")
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+
+services.AddRefitClient<ISomeSiteData>((RefitSettings?)null, "somesite")
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+```
+
+You do not need to do this for correctness. By default each interface gets its own factory-managed named client, and
+`IHttpClientFactory` already pools and rotates the underlying handlers, so there is no socket exhaustion or DNS-staleness
+concern. Sharing a name simply collapses the interfaces onto one pool (and one shared `ConfigureHttpClient`/handler
+configuration) when they target the same host.
+
+Outside DI you can share a single `HttpClient` directly by passing the same instance to multiple
+`RestService.For<T>(client)` calls (see [Providing a custom HttpClient](#providing-a-custom-httpclient) below). Prefer
+sharing the pooled handler over caching long-lived `HttpClient` instances yourself, so handler rotation and DNS refresh
+keep working.
+
 ### Providing a custom HttpClient
 
 You can supply a custom `HttpClient` instance by simply passing it as a parameter to the `RestService.For<T>` method:
