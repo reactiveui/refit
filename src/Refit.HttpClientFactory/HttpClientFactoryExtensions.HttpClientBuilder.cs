@@ -316,5 +316,31 @@ public static partial class HttpClientFactoryExtensions
                 settingsAction,
                 builder.Name);
         }
+
+        /// <summary>Adds a message handler that resolves each request's authorization token from a fresh dependency-injection scope.</summary>
+        /// <param name="getToken">
+        /// A delegate that resolves the authorization token from a per-request <see cref="IServiceProvider"/>, the outgoing
+        /// request, and a cancellation token. Returning null, empty, or whitespace omits the <c>Authorization</c> header for
+        /// that request.
+        /// </param>
+        /// <returns>The HTTP client builder for chaining.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="getToken"/> is null.</exception>
+        /// <remarks>
+        /// <see cref="IHttpClientFactory"/> pools message handlers for their configured lifetime, so a scoped token provider
+        /// captured directly would bleed across requests. This registers a handler that creates a fresh
+        /// <see cref="IServiceScope"/> per request, resolving <paramref name="getToken"/> from that scope's provider, so a
+        /// scoped service (or ambient <c>AsyncLocal</c> state such as a host-registered <c>IHttpContextAccessor</c>) resolves
+        /// correctly per request without any ASP.NET Core dependency.
+        /// </remarks>
+        public IHttpClientBuilder AddAuthorizationHeaderValueProvider(
+            Func<IServiceProvider, HttpRequestMessage, CancellationToken, ValueTask<string>> getToken)
+        {
+            ArgumentExceptionHelper.ThrowIfNull(builder);
+
+            ArgumentExceptionHelper.ThrowIfNull(getToken);
+
+            return builder.ConfigureAdditionalHttpMessageHandlers((handlers, serviceProvider) =>
+                handlers.Add(new ScopedAuthorizationHeaderHandler(serviceProvider, getToken)));
+        }
     }
 }

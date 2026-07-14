@@ -22,7 +22,9 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         DiagnosticDescriptors.InvalidHeaderCollectionParameter,
         DiagnosticDescriptors.GeneratedRequestBuildingFallback,
         DiagnosticDescriptors.MultipleHeaderCollections,
-        DiagnosticDescriptors.MultipleAuthorizeParameters
+        DiagnosticDescriptors.MultipleAuthorizeParameters,
+        DiagnosticDescriptors.MultipleBodyParameters,
+        DiagnosticDescriptors.MultipartBodyParameter
     ];
 #else
         CreateSupportedDiagnostics();
@@ -57,7 +59,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <returns>The supported diagnostics.</returns>
     private static ImmutableArray<DiagnosticDescriptor> CreateSupportedDiagnostics()
     {
-        const int supportedDiagnosticCount = 7;
+        const int supportedDiagnosticCount = 9;
         var builder = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(supportedDiagnosticCount);
         builder.Add(DiagnosticDescriptors.InvalidRefitMember);
         builder.Add(DiagnosticDescriptors.InvalidRouteBackslash);
@@ -66,6 +68,8 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         builder.Add(DiagnosticDescriptors.GeneratedRequestBuildingFallback);
         builder.Add(DiagnosticDescriptors.MultipleHeaderCollections);
         builder.Add(DiagnosticDescriptors.MultipleAuthorizeParameters);
+        builder.Add(DiagnosticDescriptors.MultipleBodyParameters);
+        builder.Add(DiagnosticDescriptors.MultipartBodyParameter);
         return builder.MoveToImmutable();
     }
 #endif
@@ -215,6 +219,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
                 method.Name));
         }
 
+        ReportMultipartBodyDiagnostic(method, reportDiagnostic);
         ReportParameterShapeDiagnostics(method, reportDiagnostic);
 
         // The eligibility decision is the source generator's own classifier, compiled into this assembly,
@@ -411,6 +416,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         var cancellationTokenCount = 0;
         var headerCollectionCount = 0;
         var authorizeCount = 0;
+        var bodyCount = 0;
         foreach (var parameter in method.Parameters)
         {
             ReportParameterShapeDiagnostics(
@@ -419,7 +425,8 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
                 reportDiagnostic,
                 ref cancellationTokenCount,
                 ref headerCollectionCount,
-                ref authorizeCount);
+                ref authorizeCount,
+                ref bodyCount);
         }
     }
 
@@ -430,13 +437,15 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <param name="cancellationTokenCount">The running count of cancellation-token parameters seen so far.</param>
     /// <param name="headerCollectionCount">The running count of header-collection parameters seen so far.</param>
     /// <param name="authorizeCount">The running count of authorize parameters seen so far.</param>
+    /// <param name="bodyCount">The running count of body parameters seen so far.</param>
     private static void ReportParameterShapeDiagnostics(
         IMethodSymbol method,
         IParameterSymbol parameter,
         Action<Diagnostic> reportDiagnostic,
         ref int cancellationTokenCount,
         ref int headerCollectionCount,
-        ref int authorizeCount)
+        ref int authorizeCount,
+        ref int bodyCount)
     {
         if (IsCancellationToken(parameter.Type))
         {
@@ -466,6 +475,16 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
             }
 
             headerCollectionCount++;
+        }
+
+        if (HasBodyAttribute(parameter))
+        {
+            if (bodyCount > 0)
+            {
+                reportDiagnostic(MethodShapeDiagnostic(DiagnosticDescriptors.MultipleBodyParameters, method, parameter));
+            }
+
+            bodyCount++;
         }
 
         if (!HasAuthorizeAttribute(parameter))
@@ -515,6 +534,62 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         foreach (var attribute in parameter.GetAttributes())
         {
             if (attribute.AttributeClass!.ToDisplayString() == "Refit.AuthorizeAttribute")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Determines whether a parameter carries the <c>[Body]</c> attribute.</summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <returns><see langword="true"/> when the parameter has the attribute.</returns>
+    private static bool HasBodyAttribute(IParameterSymbol parameter)
+    {
+        foreach (var attribute in parameter.GetAttributes())
+        {
+            if (attribute.AttributeClass!.ToDisplayString() == "Refit.BodyAttribute")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Reports RF012 when a multipart method also declares a <c>[Body]</c> parameter.</summary>
+    /// <param name="method">The Refit method.</param>
+    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
+    private static void ReportMultipartBodyDiagnostic(IMethodSymbol method, Action<Diagnostic> reportDiagnostic)
+    {
+        if (!HasMultipartAttribute(method))
+        {
+            return;
+        }
+
+        foreach (var parameter in method.Parameters)
+        {
+            if (HasBodyAttribute(parameter))
+            {
+                reportDiagnostic(Diagnostic.Create(
+                    DiagnosticDescriptors.MultipartBodyParameter,
+                    FirstLocation(parameter),
+                    method.ContainingType.Name,
+                    method.Name));
+                return;
+            }
+        }
+    }
+
+    /// <summary>Determines whether a method carries the <c>[Multipart]</c> attribute.</summary>
+    /// <param name="method">The method to inspect.</param>
+    /// <returns><see langword="true"/> when the method has the attribute.</returns>
+    private static bool HasMultipartAttribute(IMethodSymbol method)
+    {
+        foreach (var attribute in method.GetAttributes())
+        {
+            if (attribute.AttributeClass!.ToDisplayString() == "Refit.MultipartAttribute")
             {
                 return true;
             }
