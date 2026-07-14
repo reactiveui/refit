@@ -95,6 +95,11 @@ visible in three places.
   the stream you passed stays open — you own it and are responsible for disposing it. Streams Refit opens itself are
   unchanged: a `FileInfoPart` (or a `FileInfo` multipart parameter) still has the file stream Refit opened closed for
   you. Both request builders apply this. If you relied on Refit closing your stream, dispose it yourself after the call.
+* **An empty token from `AuthorizationHeaderValueGetter` now omits the `Authorization` header instead of sending a
+  blank one** (#1688). Previously a getter that returned `null`, an empty string, or whitespace produced a blank
+  `Authorization: <scheme>` header (and could throw for some scheme/value combinations). Refit now clears the header for
+  that request, so a single client can mix authenticated and anonymous calls by returning a token or an empty string. If
+  you relied on a blank header being sent, return a non-empty value.
 
 ### New in V14.x
 
@@ -156,6 +161,12 @@ visible in three places.
   generator discovers adapters declared in your project at compile time and emits a direct `Adapt` call — no reflection,
   so adapter-backed methods stay trim and Native AOT clean; the reflection request builder resolves adapters registered
   in `RefitSettings.ReturnTypeAdapters`. See [Custom return types](../README.md#custom-return-types-ireturntypeadapter).
+* **Scoped (per-request) authorization tokens via DI (`AddAuthorizationHeaderValueProvider`).** A new
+  `IHttpClientBuilder` extension in `Refit.HttpClientFactory` resolves the `Authorization` token from dependency
+  injection per request. Because `IHttpClientFactory` pools message handlers, it creates a fresh DI scope for every
+  request and resolves your delegate `(IServiceProvider, HttpRequestMessage, CancellationToken) -> ValueTask<string>`
+  from that scope, disposing it when the request completes — no `Microsoft.AspNetCore.*` dependency required (#1679). See
+  [Scoped (per-request) authorization tokens with dependency injection](../README.md#scoped-per-request-authorization-tokens-with-dependency-injection).
 
 ## V13.x.x
 
