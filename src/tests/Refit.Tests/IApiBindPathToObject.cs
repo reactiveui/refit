@@ -37,6 +37,14 @@ public interface IApiBindPathToObject
     [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
     Task GetFooBarsGeneric<T>(T request);
 
+    /// <summary>Gets foo bars binding a constrained generic request object's properties, resolved against the constraint type.</summary>
+    /// <typeparam name="T">The request type, constrained to a type that exposes the bound properties at compile time.</typeparam>
+    /// <param name="request">The request whose properties bind to the path.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+    Task GetFooBarsGenericConstrained<T>(T request)
+        where T : PathBoundObject;
+
     /// <summary>Gets foo bars where the path tokens use different casing from the property names.</summary>
     /// <param name="requestParams">The request whose properties bind to the path.</param>
     /// <returns>A task that completes when the request finishes.</returns>
