@@ -14,6 +14,9 @@ namespace Refit.Generator;
 /// </content>
 internal static partial class Parser
 {
+    /// <summary>The <c>System.Threading.Tasks</c> namespace name, matched structurally to identify task return shapes.</summary>
+    private const string TasksNamespace = "System.Threading.Tasks";
+
     /// <summary>Determines whether generated request building can construct a method's request inline.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="httpMethodBaseAttributeSymbol">The resolved <c>Refit.HttpMethodAttribute</c> symbol.</param>
@@ -81,11 +84,29 @@ internal static partial class Parser
         var ns = namedType.ContainingNamespace.ToDisplayString();
         return namedType.MetadataName switch
         {
-            "Task" when ns == "System.Threading.Tasks" => ReturnTypeInfo.AsyncVoid,
-            "Task`1" or "ValueTask`1" when ns == "System.Threading.Tasks" => ReturnTypeInfo.AsyncResult,
+            "Task" when ns == TasksNamespace => ReturnTypeInfo.AsyncVoid,
+            "Task`1" when IsTaskOfHttpRequestMessage(namedType) => ReturnTypeInfo.RequestMessage,
+            "Task`1" or "ValueTask`1" when ns == TasksNamespace => ReturnTypeInfo.AsyncResult,
             "IAsyncEnumerable`1" when ns == "System.Collections.Generic" => ReturnTypeInfo.AsyncEnumerable,
             "IObservable`1" when ns == "System" => ReturnTypeInfo.Observable,
             _ => ReturnTypeInfo.Return
         };
     }
+
+    /// <summary>Determines whether a return type is <c>Task&lt;HttpRequestMessage&gt;</c>, the build-and-return shape.</summary>
+    /// <param name="returnType">The declared return type.</param>
+    /// <returns><see langword="true"/> when the type is <c>System.Threading.Tasks.Task&lt;System.Net.Http.HttpRequestMessage&gt;</c>.</returns>
+    /// <remarks>Only the <c>Task</c> wrapper is supported: request building is asynchronous (body serialization and the
+    /// authorization token getter), so a synchronous <c>HttpRequestMessage</c> return would force a blocking build.</remarks>
+    private static bool IsTaskOfHttpRequestMessage(ITypeSymbol returnType) =>
+        returnType is INamedTypeSymbol { MetadataName: "Task`1", TypeArguments: [{ } resultType] } named
+        && named.ContainingNamespace.ToDisplayString() == TasksNamespace
+        && IsHttpRequestMessageType(resultType);
+
+    /// <summary>Determines whether a type is <c>System.Net.Http.HttpRequestMessage</c>.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns><see langword="true"/> when the type is <c>HttpRequestMessage</c>.</returns>
+    private static bool IsHttpRequestMessageType(ITypeSymbol type) =>
+        type is INamedTypeSymbol { MetadataName: "HttpRequestMessage" } named
+        && named.ContainingNamespace.ToDisplayString() == "System.Net.Http";
 }

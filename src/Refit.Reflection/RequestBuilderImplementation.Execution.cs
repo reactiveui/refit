@@ -73,6 +73,38 @@ internal partial class RequestBuilderImplementation
         HttpRequestMessage request) =>
         (restMethod.BodyParameterInfo?.Item2 ?? false) && request.Content is not null;
 
+    /// <summary>Builds a delegate that constructs and returns the request for a <c>Task&lt;HttpRequestMessage&gt;</c> method.</summary>
+    /// <param name="restMethod">The rest method to build a delegate for.</param>
+    /// <returns>A delegate that returns a task producing the built request without sending it.</returns>
+    [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+    private Func<HttpClient, object[], object?> BuildRequestMessageFuncForMethod(
+        RestMethodInfoInternal restMethod) =>
+        (client, paramList) => BuildRequestMessageWithoutSendingAsync(client, restMethod, paramList);
+
+    /// <summary>Builds the request message for a method and returns it to the caller without sending it.</summary>
+    /// <param name="client">The HTTP client whose base address the request is built against.</param>
+    /// <param name="restMethod">The rest method being invoked.</param>
+    /// <param name="paramList">The argument values for the call.</param>
+    /// <returns>The built request; the caller owns it and is responsible for disposing it.</returns>
+    /// <remarks>The request is intentionally not disposed here: it is handed to the caller for inspection, signing,
+    /// logging, or manual dispatch. Any configured async authorization token getter runs at dispatch time and is
+    /// therefore not applied to a request obtained this way.</remarks>
+    [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+    private Task<HttpRequestMessage> BuildRequestMessageWithoutSendingAsync(
+        HttpClient client,
+        RestMethodInfoInternal restMethod,
+        object[] paramList)
+    {
+        RequestExecutionHelpers.ThrowIfBaseAddressMissing(client);
+
+        return BuildRequestMessageForMethodAsync(
+            restMethod,
+            client.BaseAddress!.AbsolutePath,
+            restMethod.CancellationToken is not null,
+            paramList,
+            applyAuthorizationHeaderGetter: false);
+    }
+
     /// <summary>Builds and sends the request for a method with no response body, throwing on error.</summary>
     /// <param name="client">The HTTP client to send with.</param>
     /// <param name="restMethod">The rest method being invoked.</param>

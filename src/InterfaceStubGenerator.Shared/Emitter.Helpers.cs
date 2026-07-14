@@ -101,6 +101,7 @@ internal static partial class Emitter
             ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.AsyncEnumerable => (false, ReturnStatementPrefix, string.Empty),
             ReturnTypeInfo.Observable => (false, ReturnStatementPrefix, string.Empty),
+            ReturnTypeInfo.RequestMessage => (false, ReturnStatementPrefix, string.Empty),
             ReturnTypeInfo.Return => (false, ReturnStatementPrefix, string.Empty),
             ReturnTypeInfo.SyncVoid => (false, string.Empty, string.Empty),
             _ => throw new ArgumentOutOfRangeException(

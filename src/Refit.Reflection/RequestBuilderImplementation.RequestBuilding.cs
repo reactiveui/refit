@@ -243,13 +243,16 @@ internal partial class RequestBuilderImplementation
     /// <param name="basePath">The base path from the client's base address.</param>
     /// <param name="paramsContainsCancellationToken">Whether the argument list contains a cancellation token.</param>
     /// <param name="paramList">The argument values for the call.</param>
+    /// <param name="applyAuthorizationHeaderGetter">Whether to run the configured async authorization token getter, a
+    /// dispatch-time step skipped when the request is built only to be handed back to the caller.</param>
     /// <returns>The constructed request message.</returns>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     private async Task<HttpRequestMessage> BuildRequestMessageForMethodAsync(
         RestMethodInfoInternal restMethod,
         string basePath,
         bool paramsContainsCancellationToken,
-        object[] paramList)
+        object[] paramList,
+        bool applyAuthorizationHeaderGetter = true)
     {
         var cancellationToken = CancellationToken.None;
 
@@ -277,8 +280,11 @@ internal partial class RequestBuilderImplementation
             MapParametersToRequest(restMethod, paramList, ret, multiPartContent, ref headersToAdd, ref queryParamsToAdd);
 
             AddHeadersToRequest(headersToAdd, ret);
-            await AddAuthorizationHeadersFromGetterAsync(ret, cancellationToken)
-                .ConfigureAwait(false);
+            if (applyAuthorizationHeaderGetter)
+            {
+                await AddAuthorizationHeadersFromGetterAsync(ret, cancellationToken)
+                    .ConfigureAwait(false);
+            }
 
             AddPropertiesToRequest(restMethod, ret, paramList);
 #if NET6_0_OR_GREATER

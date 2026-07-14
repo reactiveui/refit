@@ -232,6 +232,7 @@ internal static partial class Parser
         methodSymbol.ReturnType.MetadataName switch
         {
             "Task" => ReturnTypeInfo.AsyncVoid,
+            "Task`1" when IsTaskOfHttpRequestMessage(methodSymbol.ReturnType) => ReturnTypeInfo.RequestMessage,
             "Task`1" or "ValueTask`1" => ReturnTypeInfo.AsyncResult,
             "IAsyncEnumerable`1" => ReturnTypeInfo.AsyncEnumerable,
             "IObservable`1" => ReturnTypeInfo.Observable,

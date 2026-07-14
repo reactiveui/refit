@@ -1697,6 +1697,42 @@ so `Wrapper<User>` closes it over `User`. Adapters must have a public parameterl
 the request eagerly and captures it, so a generated deferred call is **single-use**; the reflection path rebuilds the
 request on each invocation, so it can re-run.
 
+### Obtaining the built request without sending
+
+Sometimes you want the fully built `HttpRequestMessage` — to inspect it, sign it, log it, or dispatch it yourself — without
+Refit sending it. Declare the method to return `Task<HttpRequestMessage>` and Refit runs the whole request-building path
+(URL, headers, and body/multipart content) and hands the request back instead of dispatching it. This is the equivalent of
+Retrofit's `Call.request()`, and it removes the need for the old `DelegatingHandler`-mock workaround.
+
+```csharp
+public interface IUserApi
+{
+    [Get("/users/{id}")]
+    Task<HttpRequestMessage> BuildGetUser(int id, [Query] string filter);
+
+    [Post("/users")]
+    Task<HttpRequestMessage> BuildCreateUser([Body] User user);
+}
+
+var api = RestService.For<IUserApi>("https://api.example.com");
+
+using var request = await api.BuildGetUser(42, "active");
+// request.Method        -> GET
+// request.RequestUri     -> /users/42?filter=active (relative; the HttpClient merges the base address on send)
+// request.Headers        -> the built headers
+// dispatch it yourself, or inspect/sign/log it first
+```
+
+Notes:
+
+* **The caller owns the returned request** — Refit does **not** dispose it (and does not dispose its content), so its body
+  stays readable and you can dispatch it yourself. Wrap it in `using` (or dispose it) once you are done.
+* Only `Task<HttpRequestMessage>` is supported (not a synchronous `HttpRequestMessage`), because request building is
+  asynchronous — body serialization in particular. A `CancellationToken` parameter is still allowed.
+* Both the source-generated and reflection request paths build byte-identical requests.
+* A configured async `AuthorizationHeaderValueGetter` runs at dispatch time, so it is **not** applied to a request obtained
+  this way; add its header yourself if you dispatch the request manually.
+
 ### Using generic interfaces
 
 When using something like ASP.NET Web API, it's a fairly common pattern to have a whole stack of CRUD REST services.
