@@ -26,4 +26,10 @@ internal static class DiagnosticIds
 
     /// <summary>Diagnostic reported when a Refit method declares more than one <c>[Authorize]</c> parameter.</summary>
     public const string MultipleAuthorizeParameters = "RF009";
+
+    /// <summary>Diagnostic reported when a Refit method declares more than one <c>[Body]</c> parameter.</summary>
+    public const string MultipleBodyParameters = "RF011";
+
+    /// <summary>Diagnostic reported when a multipart Refit method also declares a <c>[Body]</c> parameter.</summary>
+    public const string MultipartBodyParameter = "RF012";
 }
