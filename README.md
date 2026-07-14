@@ -286,6 +286,20 @@ class UserGroupRequest{
 
 ```
 
+When the bound object is a generic method's type parameter, the placeholders are
+resolved against a class constraint at compile time, so a constrained generic
+method is generated inline (no reflection fallback, no `RF006`):
+
+```csharp
+// Generated inline: {request.groupId}/{request.userId} bind against UserGroupRequest.
+[Get("/group/{request.groupId}/users/{request.userId}")]
+Task<List<User>> GroupList<T>(T request) where T : UserGroupRequest;
+```
+
+An *unconstrained* generic parameter (`GroupList<T>(T request)`) still falls back
+to the reflection request builder, because the concrete type - and its bound
+properties - are only known at call time.
+
 Parameters that are not specified as a URL substitution will automatically be
 used as query parameters. This is different than Retrofit, where all
 parameters must be explicitly specified.
