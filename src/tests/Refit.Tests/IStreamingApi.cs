@@ -29,11 +29,23 @@ public interface IStreamingApi
     [Get("/array")]
     IAsyncEnumerable<StreamItem> GetArrayCancellable(CancellationToken cancellationToken);
 
+    /// <summary>Streams the <c>data</c> payload of each event in a server-sent events response.</summary>
+    /// <returns>The streamed items.</returns>
+    [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Refit endpoint method fixture; must remain a method to exercise the generator.")]
+    [Get("/events")]
+    IAsyncEnumerable<StreamItem> GetEvents();
+
     /// <summary>Streams a JSON array from a dynamic route, exercising the reflection (non-inline) path.</summary>
     /// <param name="group">The route segment value.</param>
     /// <returns>The streamed items.</returns>
     [Get("/groups/{group}/array")]
     IAsyncEnumerable<StreamItem> GetGroupArray(string group);
+
+    /// <summary>Streams a server-sent events response from a dynamic route, exercising the reflection (non-inline) path.</summary>
+    /// <param name="group">The route segment value.</param>
+    /// <returns>The streamed items.</returns>
+    [Get("/groups/{group}/events")]
+    IAsyncEnumerable<StreamItem> GetGroupEvents(string group);
 
     /// <summary>Streams from a dynamic route with a cancellation token, exercising the reflection path's token linking.</summary>
     /// <param name="group">The route segment value.</param>

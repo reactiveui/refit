@@ -148,6 +148,13 @@ visible in three places.
   generator discovers adapters declared in your project at compile time and emits a direct `Adapt` call — no reflection,
   so adapter-backed methods stay trim and Native AOT clean; the reflection request builder resolves adapters registered
   in `RefitSettings.ReturnTypeAdapters`. See [Custom return types](../README.md#custom-return-types-ireturntypeadapter).
+* **Server-Sent Events as a streaming format.** A `text/event-stream` response returned to an `IAsyncEnumerable<T>`
+  method now streams one deserialized `T` per SSE `data` event, live and unbuffered, through the same seam as JSON
+  arrays and JSON Lines — no generator or reflection change, so both generated and reflection clients inherit it. This
+  adds the `StreamingContentFormat.ServerSentEvents` enum member and takes a new `System.Net.ServerSentEvents` package
+  reference on the targets that lack it in-box (net4x/netstandard2.0/net8.0/net9.0; it is a framework reference on
+  net10.0+). Each event's payload is deserialized through the configured `System.Text.Json` metadata path, so it stays
+  trim and Native AOT clean. See [Consuming Server-Sent Events](../README.md#consuming-server-sent-events).
 
 ## V13.x.x
 

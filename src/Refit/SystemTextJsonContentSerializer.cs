@@ -4,11 +4,12 @@
 
 #if !NET9_0_OR_GREATER
 using System.Buffers;
-using System.Runtime.CompilerServices;
 #endif
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
+using System.Net.ServerSentEvents;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 #if NET8_0_OR_GREATER
@@ -196,9 +197,12 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     {
         ArgumentExceptionHelper.ThrowIfNull(stream);
 
-        return format == StreamingContentFormat.JsonLines
-            ? DeserializeJsonLinesAsync<T>(stream, cancellationToken)
-            : DeserializeJsonArrayAsync<T>(stream, cancellationToken);
+        return format switch
+        {
+            StreamingContentFormat.ServerSentEvents => DeserializeServerSentEventsAsync<T>(stream, cancellationToken),
+            StreamingContentFormat.JsonLines => DeserializeJsonLinesAsync<T>(stream, cancellationToken),
+            _ => DeserializeJsonArrayAsync<T>(stream, cancellationToken),
+        };
     }
 
     /// <summary>
@@ -616,6 +620,61 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     private T? DeserializeLineReflection<T>(ReadOnlySpan<byte> utf8Json) =>
         JsonSerializer.Deserialize<T>(utf8Json, jsonSerializerOptions);
 #endif
+
+    /// <summary>Streams the JSON <c>data</c> payload of each server-sent event, yielding one deserialized value per event as it arrives.</summary>
+    /// <typeparam name="T">The element type each event's <c>data</c> payload is deserialized to.</typeparam>
+    /// <param name="stream">The unbuffered response body stream.</param>
+    /// <param name="cancellationToken">A token to cancel enumeration.</param>
+    /// <returns>An asynchronous sequence of deserialized event payloads.</returns>
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
+    private async IAsyncEnumerable<T?> DeserializeServerSentEventsAsync<T>(
+        Stream stream,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var parser = SseParser.Create(stream, DeserializeSseData<T>);
+        await foreach (var item in parser.EnumerateAsync(cancellationToken).ConfigureAwait(false))
+        {
+            yield return item.Data;
+        }
+    }
+
+    /// <summary>Deserializes a single server-sent event's UTF-8 JSON <c>data</c> payload, using source-gen metadata when a resolver is configured.</summary>
+    /// <typeparam name="T">The element type to deserialize.</typeparam>
+    /// <param name="eventType">The event's <c>event</c> field; ignored because only the <c>data</c> payload is surfaced.</param>
+    /// <param name="data">The UTF-8 encoded JSON payload bytes.</param>
+    /// <returns>The deserialized value.</returns>
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    private T? DeserializeSseData<T>(string eventType, ReadOnlySpan<byte> data)
+    {
+        _ = eventType;
+#if NET8_0_OR_GREATER
+        return jsonSerializerOptions.TypeInfoResolver is not null
+            ? JsonSerializer.Deserialize(data, GetJsonTypeInfo<T>())
+            : DeserializeSseDataReflection<T>(data);
+#else
+        return DeserializeSseDataReflection<T>(data);
+#endif
+    }
+
+    /// <summary>Deserializes a server-sent event payload using reflection-based metadata.</summary>
+    /// <typeparam name="T">The element type to deserialize.</typeparam>
+    /// <param name="utf8Json">The UTF-8 encoded JSON payload bytes.</param>
+    /// <returns>The deserialized value.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    private T? DeserializeSseDataReflection<T>(ReadOnlySpan<byte> utf8Json) =>
+        JsonSerializer.Deserialize<T>(utf8Json, jsonSerializerOptions);
 
     /// <summary>Deserializes a buffered string using reflection-based metadata.</summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>

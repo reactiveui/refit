@@ -337,6 +337,11 @@ internal static class RequestExecutionHelpers
     private static StreamingContentFormat DetectStreamingFormat(HttpContent content)
     {
         var mediaType = content.Headers.ContentType?.MediaType;
+        if (string.Equals(mediaType, "text/event-stream", StringComparison.OrdinalIgnoreCase))
+        {
+            return StreamingContentFormat.ServerSentEvents;
+        }
+
         return string.Equals(mediaType, "application/jsonl", StringComparison.OrdinalIgnoreCase)
             || string.Equals(mediaType, "application/x-ndjson", StringComparison.OrdinalIgnoreCase)
             || string.Equals(mediaType, "application/x-jsonlines", StringComparison.OrdinalIgnoreCase)

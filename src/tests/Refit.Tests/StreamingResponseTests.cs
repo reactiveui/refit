@@ -17,6 +17,12 @@ public class StreamingResponseTests
     /// <summary>The media type used for JSON array streaming responses.</summary>
     private const string JsonMediaType = "application/json";
 
+    /// <summary>The media type used for server-sent events streaming responses.</summary>
+    private const string EventStreamMediaType = "text/event-stream";
+
+    /// <summary>A two-event server-sent events body used by the streaming tests.</summary>
+    private const string TwoEventSse = "data: {\"id\":1}\n\ndata: {\"id\":2}\n\n";
+
     /// <summary>The base address used by the streaming test clients.</summary>
     private const string BaseUrl = "http://foo";
 
@@ -112,6 +118,82 @@ public class StreamingResponseTests
         }
 
         await Assert.That(ids).IsEquivalentTo([ExpectedId10, ExpectedId20]);
+    }
+
+    /// <summary>Verifies a server-sent events response yields one item per <c>data</c> event.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StreamsServerSentEvents()
+    {
+        var fixture = CreateFixture(EventStreamMediaType, TwoEventSse);
+
+        var ids = new List<int>();
+        await foreach (var item in fixture.GetEvents())
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([1, ExpectedId2]);
+    }
+
+    /// <summary>Verifies server-sent events stream through the reflection (non-inline) path for a dynamic route.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StreamsServerSentEventsViaReflectionPath()
+    {
+        var fixture = CreateFixture(EventStreamMediaType, TwoEventSse);
+
+        var ids = new List<int>();
+        await foreach (var item in fixture.GetGroupEvents("g1"))
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([1, ExpectedId2]);
+    }
+
+    /// <summary>Verifies the generated and reflection execution paths yield the same server-sent event sequence.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ServerSentEventsProduceSameSequenceAcrossExecutionPaths()
+    {
+        const string body = "data: {\"id\":1}\n\ndata: {\"id\":2}\n\ndata: {\"id\":3}\n\n";
+
+        var generatedFixture = CreateFixture(EventStreamMediaType, body);
+        var generated = new List<int>();
+        await foreach (var item in generatedFixture.GetEvents())
+        {
+            generated.Add(item!.Id);
+        }
+
+        var reflectionFixture = CreateFixture(EventStreamMediaType, body);
+        var reflection = new List<int>();
+        await foreach (var item in reflectionFixture.GetGroupEvents("g1"))
+        {
+            reflection.Add(item!.Id);
+        }
+
+        await Assert.That(generated).IsEquivalentTo([1, ExpectedId2, ExpectedId3]);
+        await Assert.That(reflection).IsEquivalentTo(generated);
+    }
+
+    /// <summary>Verifies the source-generated metadata path streams server-sent events.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StreamsServerSentEventsWithSourceGenContext()
+    {
+        var fixture = CreateFixture(
+            EventStreamMediaType,
+            TwoEventSse,
+            new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
+
+        var ids = new List<int>();
+        await foreach (var item in fixture.GetEvents())
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([1, ExpectedId2]);
     }
 
     /// <summary>Verifies an HTTP error response throws when the stream is enumerated.</summary>

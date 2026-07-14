@@ -64,6 +64,7 @@
   <ItemGroup Label="Microsoft Runtime And Extensions">
     <PackageVersion Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)"/>
     <PackageVersion Include="System.Net.Http.Json" Version="$(SystemTextJsonVersion)"/>
+    <PackageVersion Include="System.Net.ServerSentEvents" Version="$(SystemTextJsonVersion)"/>
     <PackageVersion Include="System.Text.Json" Version="$(SystemTextJsonVersion)"/>
   </ItemGroup>
 
