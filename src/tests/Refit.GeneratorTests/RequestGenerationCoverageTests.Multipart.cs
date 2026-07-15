@@ -249,4 +249,105 @@ public sealed partial class RequestGenerationCoverageTests
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
     }
+
+    /// <summary>Verifies an opt-in <c>[FormObject]</c> multipart parameter routes the whole method to the reflection
+    /// request builder for every model shape of the parameter type (the attribute, not the type, triggers the
+    /// fallback), which flattens the object's properties into individual form-data parts.</summary>
+    /// <param name="typeDeclaration">The model type declaration inserted into the generated source, if any.</param>
+    /// <param name="parameterType">The <c>[FormObject]</c> parameter's declared type.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("public sealed class FormModel { public string? Name { get; set; } }", "FormModel")]
+    [Arguments("public class FormModel { public string? Name { get; set; } }", "FormModel")]
+    [Arguments("public struct FormModel { public string? Name { get; set; } }", "FormModel")]
+    [Arguments("public interface IFormModel { string? Name { get; } }", "IFormModel")]
+    [Arguments("public record FormModel(string? Name);", "FormModel")]
+    [Arguments("", "object")]
+    [Arguments("", "System.Collections.Generic.Dictionary<string, string>")]
+    public async Task MultipartFormObjectPartFallsBackForAnyModelShape(string typeDeclaration, string parameterType)
+    {
+        var source =
+            $$"""
+              using System.Threading.Tasks;
+              using Refit;
+
+              namespace RefitGeneratorTest;
+
+              {{typeDeclaration}}
+
+              public interface IGeneratedClient
+              {
+                  [Multipart]
+                  [Post("/upload")]
+                  Task<string> Upload([FormObject] {{parameterType}} model);
+              }
+              """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies an opt-in <c>[FormObject]</c> parameter on an open generic method also falls back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartFormObjectGenericParameterFallsBack()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Multipart]
+                [Post("/upload")]
+                Task<string> Upload<TModel>([FormObject] TModel model);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies the same concrete model part without <c>[FormObject]</c> is serialized inline, confirming the
+    /// attribute is the sole trigger for the reflection fallback.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartConcreteModelPartWithoutFormObjectGeneratesInline()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class FormModel
+            {
+                public string? Name { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Multipart]
+                [Post("/upload")]
+                Task<string> Upload(FormModel model);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("MultipartFormDataContent");
+    }
 }

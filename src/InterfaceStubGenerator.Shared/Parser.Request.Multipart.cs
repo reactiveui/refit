@@ -12,12 +12,16 @@ namespace Refit.Generator;
 /// <c>AddMultiPart</c>/<c>AddMultipartItem</c> dispatch and its part name/file-name selection, resolved statically from
 /// each parameter's declared type. A part whose declared type is not statically dispatchable (an <c>object</c>, an
 /// interface, an open type parameter, or a type that would fall through to the content serializer) makes the whole
-/// method fall back to the reflection request builder.
+/// method fall back to the reflection request builder, as does an opt-in <c>[FormObject]</c> parameter whose properties
+/// the reflection builder flattens into individual form-data parts.
 /// </content>
 internal static partial class Parser
 {
     /// <summary>The metadata name of the obsolete <c>Refit.AttachmentNameAttribute</c>.</summary>
     private const string AttachmentNameAttributeDisplayName = "AttachmentNameAttribute";
+
+    /// <summary>The metadata name of <c>Refit.FormObjectAttribute</c>.</summary>
+    private const string FormObjectAttributeDisplayName = "FormObjectAttribute";
 
     /// <summary>The default multipart boundary, matching <c>new MultipartAttribute().BoundaryText</c>.</summary>
     private const string DefaultMultipartBoundary = "----MyGreatBoundary";
@@ -104,6 +108,13 @@ internal static partial class Parser
     /// <returns>The part descriptor, or <see langword="null"/> when the type is not statically dispatchable.</returns>
     private static MultipartPartModel? TryBuildMultipartPart(IParameterSymbol parameter, in LooseParameterContext context)
     {
+        // An opt-in [FormObject] parameter is flattened per-property by the reflection request builder; returning null
+        // routes the whole method to that one authoritative implementation instead of duplicating the flattening here.
+        if (HasParameterAttribute(parameter, FormObjectAttributeDisplayName))
+        {
+            return null;
+        }
+
         if (ClassifyPartType(parameter.Type) is not { } classified)
         {
             return null;

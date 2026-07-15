@@ -141,6 +141,14 @@ visible in three places.
   per-call deadline composes with `HttpClient.Timeout` and any Polly/`DelegatingHandler` timeout — whichever fires first
   wins. Methods without `[Timeout]` are unaffected. Both request paths honor it (reflection and source-generated). See
   [Per-request timeouts](../README.md#per-request-timeouts).
+* **`[FormObject]` flattens a model into individual multipart fields.** In a `[Multipart]` method, decorating a
+  complex-object parameter with `[FormObject]` sends each of its public properties as its own `multipart/form-data` text
+  field instead of the default single serialized part, so a server model bound from the form (such as an ASP.NET
+  `[FromForm]` model) binds field by field. Field names resolve with the form-encoded precedence (`[AliasAs]`, then the
+  content serializer's property name, then the key formatter), values render through the `FormUrlEncodedParameterFormatter`,
+  collections honor `CollectionFormat`, and nested objects compose `parent.child` field names. File-typed members are
+  left as separate part parameters. The default (no attribute) single-part behavior is unchanged. See
+  [Flattening a model into form fields with `[FormObject]`](../README.md#flattening-a-model-into-form-fields-with-formobject).
 * **Inline query-string generation.** Query parameters — auto-appended parameters, `[AliasAs]`, `[Query(Format = ...)]`,
   and scalar collections with every `CollectionFormat` — now generate reflection-free request construction, so the most
   common Refit method shapes work with generated-only clients (`AddRefitGeneratedClient`, `RestService.ForGenerated`)

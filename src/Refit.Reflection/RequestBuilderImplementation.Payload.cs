@@ -203,6 +203,14 @@ internal partial class RequestBuilderImplementation
         string itemName;
         string parameterName;
 
+        // An opt-in [FormObject] parameter is flattened into one text form-data part per property (resolved field name +
+        // formatted value) so server-side form model binding sees individual fields instead of a single serialized part.
+        if (restMethod.ParameterInfoArray[i].GetCustomAttribute<FormObjectAttribute>(true) is not null)
+        {
+            AddFlattenedFormObject(multiPartContent!, param);
+            return;
+        }
+
         if (!restMethod.AttachmentNameMap.TryGetValue(i, out var attachment))
         {
             itemName = restMethod.QueryParameterMap[i];
@@ -225,6 +233,27 @@ internal partial class RequestBuilderImplementation
         else
         {
             AddMultipartItem(multiPartContent!, itemName, parameterName, param);
+        }
+    }
+
+    /// <summary>Flattens a complex object's properties into one text multipart part each for a <c>[FormObject]</c> parameter.</summary>
+    /// <param name="multiPartContent">The multipart content to add to.</param>
+    /// <param name="param">The object (or dictionary) whose fields become individual form-data parts.</param>
+    /// <remarks>Reuses <see cref="FormValueMultimap"/> so field-name resolution (alias, serializer, key formatter),
+    /// value formatting, collection handling and nested <c>parent.child</c> composition match url-encoded body
+    /// flattening. Each entry is added as its own text <see cref="StringContent"/> under the resolved field name.</remarks>
+    private void AddFlattenedFormObject(MultipartFormDataContent multiPartContent, object param)
+    {
+        foreach (var field in new FormValueMultimap(param, _settings))
+        {
+            // A field with no resolvable name cannot be a valid form-data part (the framework rejects an empty
+            // content-disposition name), so it is skipped rather than allowed to throw mid-request.
+            if (string.IsNullOrWhiteSpace(field.Key))
+            {
+                continue;
+            }
+
+            multiPartContent.Add(new StringContent(field.Value ?? string.Empty), field.Key!);
         }
     }
 

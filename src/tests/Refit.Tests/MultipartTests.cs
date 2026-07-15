@@ -58,6 +58,18 @@ public partial class MultipartTests
     /// <summary>The expected integer value uploaded in the mixed-types test.</summary>
     private const int ExpectedIntValue = 42;
 
+    /// <summary>The aliased name value uploaded in the form-object flattening tests.</summary>
+    private const string FormObjectFullName = "Ada Lovelace";
+
+    /// <summary>A role value uploaded in the form-object flattening tests.</summary>
+    private const string FormObjectAdminRole = "admin";
+
+    /// <summary>The age value uploaded in the form-object flattening tests.</summary>
+    private const int FormObjectAge = 36;
+
+    /// <summary>The expected plain-text rendering of <see cref="FormObjectAge"/>.</summary>
+    private const string FormObjectAgeText = "36";
+
     /// <summary>Verifies a raw stream is uploaded as a single multipart part.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

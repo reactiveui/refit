@@ -1884,6 +1884,47 @@ someApiInstance.UploadPhoto(id, new StreamPart(myPhotoStream, "photo.jpg", "imag
 Note: The `AttachmentName` attribute that was previously described in this section has been deprecated and its use is
 not recommended.
 
+#### Flattening a model into form fields with `[FormObject]`
+
+By default a complex object passed to a multipart method is added as a **single** serialized part (for example one
+`application/json` body) named after the parameter. That single part cannot be bound field by field by a server that
+expects form fields (such as an ASP.NET `[FromForm]` model).
+
+Opt in to per-property flattening by decorating the parameter with `[FormObject]`. Each public property is then sent as
+its own `multipart/form-data` text field:
+
+```csharp
+public class SetupModel
+{
+    [AliasAs("full_name")]
+    public string Name { get; set; }
+
+    public int Age { get; set; }
+
+    public string[] Roles { get; set; }
+}
+
+public interface IUploadApi
+{
+    [Multipart]
+    [Post("/setup")]
+    Task SetupAsync([FormObject] SetupModel model, [AliasAs("recipe")] StreamPart recipe);
+}
+```
+
+The call above sends `full_name`, `Age` and `Roles` as individual form fields alongside the `recipe` file part.
+
+- **Field names** are resolved per property: `[AliasAs]` first, then the content serializer's field name (for example
+  `[JsonPropertyName]`), then the `UrlParameterKeyFormatter`.
+- **Values** are rendered as plain text through the `FormUrlEncodedParameterFormatter`, and collections are joined per
+  the `CollectionFormat` (the default joins with commas), mirroring url-encoded body flattening.
+- **Nested objects** are flattened into composed `parent.child` field names (bounded by a nesting-depth cap and a
+  reference-cycle guard).
+- **Files** (`byte[]`, `Stream`, `FileInfo` and the `ByteArrayPart` / `StreamPart` / `FileInfoPart` wrappers) are not
+  converted by `[FormObject]`; keep passing those as their own separate part parameters.
+
+Without `[FormObject]` the existing single-serialized-part behaviour is unchanged.
+
 ### Retrieving the response
 
 Note that in Refit unlike in Retrofit, there is no option for a synchronous

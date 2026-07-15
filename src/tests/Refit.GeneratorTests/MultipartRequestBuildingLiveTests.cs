@@ -19,6 +19,15 @@ public sealed class MultipartRequestBuildingLiveTests
     /// <summary>A stable score used by the serialized DTO part scenario.</summary>
     private const int ReportScore = 42;
 
+    /// <summary>The aliased name flattened by the <c>[FormObject]</c> scenario.</summary>
+    private const string ProfileName = "Ada Lovelace";
+
+    /// <summary>The age flattened by the <c>[FormObject]</c> scenario.</summary>
+    private const int ProfileAge = 36;
+
+    /// <summary>The expected plain-text rendering of <see cref="ProfileAge"/>.</summary>
+    private const string ProfileAgeText = "36";
+
     /// <summary>The bytes uploaded by the primary binary part scenarios.</summary>
     private static readonly byte[] SampleBytes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -106,6 +115,40 @@ public sealed class MultipartRequestBuildingLiveTests
             () => [harness.CreateApiValue("Refit.LiveMultipart.Report", ("Title", "Q3"), ("Score", ReportScore))]);
     }
 
+    /// <summary>Verifies the compiled generated client flattens an opt-in <c>[FormObject]</c> parameter into one text
+    /// part per property, and stays in parity with the reflection request builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task FormObjectPartFlattensThroughGeneratedClient()
+    {
+        using var harness = LiveMultipartHarness.Create();
+
+        var snapshot = await harness.InvokeGeneratedAsync(
+            "UploadProfile",
+            () => [harness.CreateApiValue("Refit.LiveMultipart.Profile", ("Name", ProfileName), ("Age", ProfileAge))]);
+
+        // The generated client routes [FormObject] through the reflection request builder, which flattens the model into
+        // one text part per property instead of a single serialized part. Asserting the parts here (not just parity)
+        // proves the generated code path actually produces the flattened form-data.
+        const int expectedPartCount = 2;
+        await Assert.That(snapshot.Parts.Count).IsEqualTo(expectedPartCount);
+
+        var namePart = snapshot.Parts.Single(static part => part.Name == "full_name");
+        await Assert.That(namePart.FileName).IsNull();
+        await Assert.That(namePart.ContentType).Contains("text/plain");
+        await Assert.That(Encoding.UTF8.GetString(namePart.Body)).IsEqualTo(ProfileName);
+
+        var agePart = snapshot.Parts.Single(static part => part.Name == "Age");
+        await Assert.That(agePart.ContentType).Contains("text/plain");
+        await Assert.That(Encoding.UTF8.GetString(agePart.Body)).IsEqualTo(ProfileAgeText);
+
+        await harness.AssertParityAsync(
+            "UploadProfile",
+            () => [harness.CreateApiValue("Refit.LiveMultipart.Profile", ("Name", ProfileName), ("Age", ProfileAge))]);
+    }
+
     /// <summary>Verifies a header, request property and path parameter never become multipart parts.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -159,8 +202,20 @@ public sealed class MultipartRequestBuildingLiveTests
                 public int Score { get; set; }
             }
 
+            public class Profile
+            {
+                [AliasAs("full_name")]
+                public string? Name { get; set; }
+
+                public int Age { get; set; }
+            }
+
             public interface ILiveMultipartApi
             {
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadProfile([FormObject] Profile profile);
+
                 [Multipart]
                 [Post("/upload")]
                 Task<string> UploadFlag([AliasAs("flag")] bool flag);
@@ -277,6 +332,18 @@ public sealed class MultipartRequestBuildingLiveTests
             File.WriteAllBytes(path, bytes);
             _tempFiles.Add(path);
             return path;
+        }
+
+        /// <summary>Invokes a method through the compiled generated client only and snapshots the multipart it built.</summary>
+        /// <param name="methodName">The interface method name.</param>
+        /// <param name="argsFactory">Produces the argument set for the generated call.</param>
+        /// <returns>The multipart snapshot the generated client produced.</returns>
+        [RequiresUnreferencedCode("Reflects over generated types and members.")]
+        public async Task<MultipartSnapshot> InvokeGeneratedAsync(string methodName, Func<object[]> argsFactory)
+        {
+            var task = (Task)interfaceType.GetMethod(methodName)!.Invoke(generatedApi, argsFactory())!;
+            await task.ConfigureAwait(false);
+            return handler.TakeSnapshot();
         }
 
         /// <summary>Invokes a method through both request paths and asserts the multipart contents are identical.</summary>
