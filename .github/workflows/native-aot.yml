@@ -1,0 +1,16 @@
+name: Native AOT
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+
+permissions:
+    contents: read
+
+jobs:
+    native-aot-smoke:
+        uses: reactiveui/actions-common/.github/workflows/workflow-common-aot-smoke.yml@main
+        with:
+            projectFile: src/Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj
