@@ -17,8 +17,11 @@ internal static partial class Emitter
     /// <summary>The fully-qualified <c>MultipartFormDataContent</c> constructor prefix.</summary>
     private const string MultipartContentNew = "new global::System.Net.Http.MultipartFormDataContent(";
 
-    /// <summary>The fully-qualified <c>StreamContent</c> constructor prefix.</summary>
+    /// <summary>The fully-qualified <c>StreamContent</c> constructor prefix, used for the Refit-owned file stream.</summary>
     private const string StreamContentNew = "new global::System.Net.Http.StreamContent(";
+
+    /// <summary>The non-disposing stream-content factory call prefix, used for caller-owned streams.</summary>
+    private const string CreateStreamContentNew = "global::Refit.GeneratedRequestRunner.CreateStreamContent(";
 
     /// <summary>The fully-qualified <c>StringContent</c> constructor prefix.</summary>
     private const string StringContentNew = "new global::System.Net.Http.StringContent(";
@@ -162,7 +165,8 @@ internal static partial class Emitter
 
             case MultipartPartKind.Stream:
             {
-                _ = sb.Append(StreamContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
+                // Caller-owned stream: wrapped in non-disposing content so disposing the request never closes it.
+                _ = sb.Append(CreateStreamContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
                     .Append(fileName).AppendLine(");");
                 break;
             }

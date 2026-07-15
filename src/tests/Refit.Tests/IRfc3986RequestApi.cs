@@ -17,4 +17,11 @@ public interface IRfc3986RequestApi
     /// <returns>The response body.</returns>
     [Get("/items")]
     Task<string> GetWithQuery(string search);
+
+    /// <summary>Gets a value from a path that begins with an optional <c>{name?}</c> segment. Under RFC 3986 the base
+    /// path is empty, so a null leading value leaves the path builder empty when the optional segment is dropped.</summary>
+    /// <param name="first">The optional leading segment; a null value drops it, leaving the trailing segment.</param>
+    /// <returns>The response body.</returns>
+    [Get("{first?}/detail")]
+    Task<string> GetLeadingOptional(string? first);
 }

@@ -12,7 +12,7 @@ namespace Refit.GeneratorTests;
 /// Compiles, loads and invokes generated query request building, asserting the final <see cref="Uri"/> and its
 /// parity with the reflection request builder for every query parameter shape that generates inline.
 /// </summary>
-public sealed class QueryRequestBuildingLiveTests
+public sealed partial class QueryRequestBuildingLiveTests
 {
     /// <summary>A sample integer query value.</summary>
     private const int SecondValue = 2;
@@ -509,6 +509,9 @@ public sealed class QueryRequestBuildingLiveTests
 
                 [Get("/cal/{**rest}")]
                 Task<string> EncodedRoundTrip([Encoded] string rest);
+
+                [Get("/push/{deviceId}/{notifMsgId?}")]
+                Task<string> TrailingOptional(string deviceId, string? notifMsgId);
             }
             """;
 

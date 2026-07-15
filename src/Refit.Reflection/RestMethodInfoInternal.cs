@@ -17,9 +17,9 @@ internal partial class RestMethodInfoInternal
     private static readonly HttpMethod _patchMethod = new("PATCH");
 
 #if !NET7_0_OR_GREATER
-    /// <summary>The compiled regular expression that matches URL path parameters.</summary>
+    /// <summary>The compiled regular expression that matches URL path parameters, including an optional <c>?</c> marker.</summary>
     private static readonly Regex _parameterRegexValue = new(
-        "{(([^/?\\r\\n])*?)}",
+        "{(([^/?\\r\\n])*?)(\\?)?}",
         RegexOptions.Compiled,
         TimeSpan.FromSeconds(1));
 #endif
@@ -560,9 +560,9 @@ internal partial class RestMethodInfoInternal
         && deserializedResultType != typeof(Stream);
 
 #if NET7_0_OR_GREATER
-    /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
+    /// <summary>Gets the compiled regular expression that matches URL path parameters, including an optional <c>?</c> marker.</summary>
     /// <returns>The parameter matching regular expression.</returns>
-    [GeneratedRegex("{(([^/?\\r\\n])*?)}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex("{(([^/?\\r\\n])*?)(\\?)?}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex ParameterRegex();
 #else
     /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
