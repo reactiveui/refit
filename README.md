@@ -73,6 +73,7 @@ lets you stub responses and verify requests with a declarative route table — s
     * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
     * [Target Interface type](#target-interface-type)
     * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
+* [Per-request timeouts](#per-request-timeouts)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -1663,6 +1664,29 @@ The captured values are **positional**. Under the source-generated request path 
 `object?[]` with no parameter names attached, so match them against your interface method's declared parameter order.
 `RestMethodInfo` (with its `MethodInfo.GetParameters()`) is only published on the reflection path today, so the
 name-recovery shown above applies there; the generated path does not currently surface `RestMethodInfo`.
+
+### Per-request timeouts
+
+Decorate a method with `[Timeout(milliseconds)]` to give that single call its own deadline, expressed in milliseconds:
+
+```csharp
+public interface IGitHubApi
+{
+    [Get("/users/{user}")]
+    [Timeout(5000)] // fail this call if it takes longer than 5 seconds
+    Task<User> GetUser(string user);
+}
+```
+
+When the deadline elapses the request is canceled and surfaces as an `OperationCanceledException` (typically a
+`TaskCanceledException`), the same way a lapsed `HttpClient.Timeout` reports. If the method also declares a
+`CancellationToken` parameter, both still work: whichever fires first — the caller's token or the timeout — cancels the
+call.
+
+The per-call timeout is independent of, and composes with, `HttpClient.Timeout` (the client-wide default) and any
+timeout enforced by Polly or a `DelegatingHandler`; whichever deadline elapses first wins. A value that is not positive
+leaves the method without a per-call deadline. Only a positive value adds one, so methods without `[Timeout]` pay no
+extra cost.
 
 ### Multipart uploads
 

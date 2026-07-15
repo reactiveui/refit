@@ -120,6 +120,13 @@ visible in three places.
 
 ### New in V14.x
 
+* **Per-method `[Timeout]` attribute.** Decorate a method with `[Timeout(milliseconds)]` to give that single call its
+  own deadline; when it elapses the request is canceled and surfaces as an `OperationCanceledException` (typically a
+  `TaskCanceledException`), the same way a lapsed `HttpClient.Timeout` reports. It is additive and layers onto the
+  request's effective cancellation token, so a caller-supplied `CancellationToken` still works alongside it and the
+  per-call deadline composes with `HttpClient.Timeout` and any Polly/`DelegatingHandler` timeout — whichever fires first
+  wins. Methods without `[Timeout]` are unaffected. Both request paths honor it (reflection and source-generated). See
+  [Per-request timeouts](../README.md#per-request-timeouts).
 * **Inline query-string generation.** Query parameters — auto-appended parameters, `[AliasAs]`, `[Query(Format = ...)]`,
   and scalar collections with every `CollectionFormat` — now generate reflection-free request construction, so the most
   common Refit method shapes work with generated-only clients (`AddRefitGeneratedClient`, `RestService.ForGenerated`)

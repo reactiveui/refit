@@ -200,17 +200,24 @@ internal static partial class Emitter
 
         var headerSource = BuildInlineHeaders(request, requestLocal);
         var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, methodModel, requestLocal, settingsLocal);
+
+        // A method that declares a positive [Timeout] stashes it on the request so the send helpers apply it; every
+        // other method emits nothing here and pays no per-call timeout cost. Emitted inside the shared construction so
+        // the cold IObservable's per-subscription request is annotated too.
+        var timeoutSource = request.TimeoutMilliseconds > 0
+            ? $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetRequestTimeout({requestLocal}, {request.TimeoutMilliseconds});\n"
+            : string.Empty;
         var methodIndent = Indent(MethodMemberIndentation);
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
         var methodPrefix = $"{plan.ParamInfoBuilder}{formFieldsSource}{httpMethodFieldSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
 
-        // The request construction shared by every shape: prologue locals, the message, content, headers, and request
-        // properties. The configured HTTP version and version policy are applied by AddConfiguredRequestOptions in the
-        // request-property source. A cold IObservable wraps this in a per-subscription local function so a second
-        // subscription rebuilds and re-sends instead of reusing a disposed request.
+        // The request construction shared by every shape: prologue locals, the message, content, headers, request
+        // properties, and an optional per-call timeout. The configured HTTP version and version policy are applied by
+        // AddConfiguredRequestOptions in the request-property source. A cold IObservable wraps this in a per-subscription
+        // local function so a second subscription rebuilds and re-sends instead of reusing a disposed request.
         var requestConstruction = $$"""
             {{requestPrologueSource}}{{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{httpMethodExpression}}, {{requestUriExpression}});
-            {{contentSource}}{{headerSource}}{{requestPropertySource}}
+            {{contentSource}}{{headerSource}}{{requestPropertySource}}{{timeoutSource}}
             """;
 
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable)
