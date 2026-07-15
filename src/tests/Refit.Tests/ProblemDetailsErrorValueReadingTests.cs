@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -25,7 +24,6 @@ public sealed class ProblemDetailsErrorValueReadingTests
     /// <summary>Verifies a non-string validation error value is preserved as its raw JSON text.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task NonStringErrorMessageIsPreservedAsRawJson()
     {
         using var response = CreateErrorResponse(
@@ -46,7 +44,6 @@ public sealed class ProblemDetailsErrorValueReadingTests
     /// <summary>Verifies a plain (non date-time) string extension member is read back as its string value.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task PlainStringExtensionIsReadAsString()
     {
         using var response = CreateErrorResponse(

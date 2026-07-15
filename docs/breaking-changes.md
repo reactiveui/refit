@@ -161,6 +161,13 @@ visible in three places.
   and is responsible for disposing it; the request is not disposed for you and its content stays readable. A configured
   async `AuthorizationHeaderValueGetter` runs at dispatch time and is therefore not applied to a request obtained this
   way. See [Obtaining the built request without sending](../README.md#obtaining-the-built-request-without-sending).
+* **Exposing the current call's arguments (`RefitSettings.CaptureMethodArguments`).** Opt in and a `DelegatingHandler`
+  can read the call's argument values from `HttpRequestMessageOptions.MethodArguments` — an `object?[]` in declared
+  parameter order (including any `CancellationToken`), the equivalent of Retrofit's `Invocation.arguments`. It is off by
+  default because it boxes and retains the arguments on every request, the same allocation/retention/PII trade-off as
+  `CaptureRequestContent`. The values are positional; the generated path supplies the bare array while the reflection
+  path also exposes `RestMethodInfo` for parameter names. See
+  [Inspecting the current call's arguments](../README.md#inspecting-the-current-calls-arguments).
 * **Scoped (per-request) authorization tokens via DI (`AddAuthorizationHeaderValueProvider`).** A new
   `IHttpClientBuilder` extension in `Refit.HttpClientFactory` resolves the `Authorization` token from dependency
   injection per request. Because `IHttpClientFactory` pools message handlers, it creates a fresh DI scope for every

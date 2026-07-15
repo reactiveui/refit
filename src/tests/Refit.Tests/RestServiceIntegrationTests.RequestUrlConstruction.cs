@@ -50,6 +50,27 @@ public partial class RestServiceIntegrationTests
         await handler.VerifyAllCalledAsync();
     }
 
+    /// <summary>Verifies a constrained generic path-bound parameter binds dotted <c>{obj.Prop}</c> placeholders against
+    /// the constraint type, producing the same URL as the reflection path while being generated inline (issue #2218).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithGenericConstrainedPathBoundObject()
+    {
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
+
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
+
+        await fixture.GetFooBarsGenericConstrained(
+            new PathBoundObject { SomeProperty = 1, SomeProperty2 = BarNoneValue });
+        await handler.VerifyAllCalledAsync();
+    }
+
     /// <summary>Verifies a long path-bound value is mapped into the path.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
