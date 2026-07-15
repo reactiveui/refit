@@ -238,6 +238,18 @@ internal partial class RequestBuilderImplementation
         return mappedParams;
     }
 
+    /// <summary>Removes the '/' separator that precedes a dropped optional segment, if one was already appended.</summary>
+    /// <param name="vsb">The path builder to trim.</param>
+    private static void DropOptionalSegmentSeparator(ref ValueStringBuilder vsb)
+    {
+        if (vsb.Length == 0 || vsb[vsb.Length - 1] != '/')
+        {
+            return;
+        }
+
+        vsb.Length--;
+    }
+
     /// <summary>Builds the full request message for a method invocation, including body, headers and query.</summary>
     /// <param name="restMethod">The rest method being invoked.</param>
     /// <param name="basePath">The base path from the client's base address.</param>
@@ -527,11 +539,21 @@ internal partial class RequestBuilderImplementation
             propertyObject = link.GetValue(propertyObject);
         }
 
-        vsb.Append(StringHelpers.EscapeDataString(GeneratedRequestRunner.FormatUrlParameter(
+        var formatted = GeneratedRequestRunner.FormatUrlParameter(
             _settings,
             propertyObject,
             property.PropertyInfo,
-            property.PropertyInfo.PropertyType) ?? string.Empty));
+            property.PropertyInfo.PropertyType);
+
+        // An optional {param.Prop?} placeholder whose bound value formats to nothing drops the segment and the '/'
+        // in front of it, so a missing value never leaves a trailing or doubled slash in the path.
+        if (fragment.IsOptional && formatted is null)
+        {
+            DropOptionalSegmentSeparator(ref vsb);
+            return;
+        }
+
+        vsb.Append(StringHelpers.EscapeDataString(formatted ?? string.Empty));
     }
 
     /// <summary>Appends a dynamic-route path fragment, round-tripping segments when required.</summary>
@@ -552,12 +574,7 @@ internal partial class RequestBuilderImplementation
 
         if (parameterMapValue.Type == ParameterType.Normal)
         {
-            vsb.Append(StringHelpers.EscapeDataString(
-                GeneratedRequestRunner.FormatUrlParameter(
-                    _settings,
-                    param,
-                    parameterInfo,
-                    parameterInfo.ParameterType) ?? string.Empty));
+            AppendNormalRouteFragment(ref vsb, param, parameterInfo, fragment.IsOptional);
             return;
         }
 
@@ -601,5 +618,29 @@ internal partial class RequestBuilderImplementation
                         parameterInfo.ParameterType) ?? string.Empty));
             sectionStart = i + 1;
         }
+    }
+
+    /// <summary>Appends a normal (non-round-tripping) dynamic route fragment, dropping an optional segment when null.</summary>
+    /// <param name="vsb">The path builder to append to.</param>
+    /// <param name="param">The bound argument value.</param>
+    /// <param name="parameterInfo">The parameter supplying the value.</param>
+    /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
+    private void AppendNormalRouteFragment(
+        ref ValueStringBuilder vsb,
+        object? param,
+        ParameterInfo parameterInfo,
+        bool isOptional)
+    {
+        var formatted = GeneratedRequestRunner.FormatUrlParameter(_settings, param, parameterInfo, parameterInfo.ParameterType);
+
+        // An optional {name?} placeholder whose bound value formats to nothing (a null argument by default) drops the
+        // segment and the '/' before it, so the URL never gains a trailing or doubled slash.
+        if (isOptional && formatted is null)
+        {
+            DropOptionalSegmentSeparator(ref vsb);
+            return;
+        }
+
+        vsb.Append(StringHelpers.EscapeDataString(formatted ?? string.Empty));
     }
 }

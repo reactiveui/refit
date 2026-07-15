@@ -391,6 +391,10 @@ internal static partial class Parser
         var names = ComputeInterfaceNames(interfaceSymbol);
         var members = interfaceSymbol.GetMembers();
 
+        // The client interface's [PathPrefix] applies to every method it exposes, including inherited ones, so it is
+        // resolved once from this interface and threaded through the parse of both its own and its derived methods.
+        context = context with { PathPrefix = ResolvePathPrefix(interfaceSymbol) };
+
         var partition = PartitionMembers(
             interfaceSymbol,
             members,
@@ -440,6 +444,24 @@ internal static partial class Parser
             nullability,
             partition.HasDispose,
             BuildSortedExternAliases(context.ExternAliases));
+    }
+
+    /// <summary>Resolves the shared route prefix declared on an interface via <c>[PathPrefix]</c>.</summary>
+    /// <param name="interfaceSymbol">The interface the client is generated for.</param>
+    /// <returns>The declared prefix, or an empty string when the interface carries no <c>[PathPrefix]</c>.</returns>
+    private static string ResolvePathPrefix(INamedTypeSymbol interfaceSymbol)
+    {
+        foreach (var attribute in interfaceSymbol.GetAttributes())
+        {
+            if (IsRefitAttribute(attribute.AttributeClass, PathPrefixAttributeDisplayName)
+                && !attribute.ConstructorArguments.IsEmpty
+                && attribute.ConstructorArguments[0].Value is string prefix)
+            {
+                return prefix;
+            }
+        }
+
+        return string.Empty;
     }
 
     /// <summary>Builds the deterministically-ordered set of extern aliases an interface's types reference.</summary>

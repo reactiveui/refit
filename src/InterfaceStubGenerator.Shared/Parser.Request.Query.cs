@@ -53,6 +53,9 @@ internal static partial class Parser
     /// <summary>The metadata name of <c>Refit.HeadersAttribute</c>.</summary>
     private const string HeadersAttributeDisplayName = "HeadersAttribute";
 
+    /// <summary>The metadata name of <c>Refit.PathPrefixAttribute</c>.</summary>
+    private const string PathPrefixAttributeDisplayName = "PathPrefixAttribute";
+
     /// <summary>The metadata name of <c>Refit.MultipartAttribute</c>.</summary>
     private const string MultipartAttributeDisplayName = "MultipartAttribute";
 

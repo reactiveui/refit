@@ -27,7 +27,8 @@ internal partial class RequestBuilderImplementation
 
         if (param is Stream streamParam)
         {
-            ret.Content = new StreamContent(streamParam);
+            // The stream is caller-owned; wrap it so disposing the request never closes it.
+            ret.Content = GeneratedRequestRunner.CreateStreamContent(streamParam);
             return;
         }
 
@@ -256,7 +257,8 @@ internal partial class RequestBuilderImplementation
 
         if (itemValue is Stream streamValue)
         {
-            var streamContent = new StreamContent(streamValue);
+            // The stream is caller-owned; wrap it so disposing the request never closes it.
+            var streamContent = GeneratedRequestRunner.CreateStreamContent(streamValue);
             multiPartContent.Add(streamContent, parameterName, fileName);
             return;
         }

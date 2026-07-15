@@ -220,6 +220,9 @@ Refit.ParameterType.Normal = 0 -> Refit.ParameterType
 Refit.ParameterType.RoundTripping = 1 -> Refit.ParameterType
 Refit.PatchAttribute
 Refit.PatchAttribute.PatchAttribute(string! path) -> void
+Refit.PathPrefixAttribute
+Refit.PathPrefixAttribute.PathPrefixAttribute(string! prefix) -> void
+Refit.PathPrefixAttribute.Prefix.get -> string!
 Refit.PostAttribute
 Refit.PostAttribute.PostAttribute(string! path) -> void
 Refit.ProblemDetails
@@ -410,6 +413,7 @@ static Refit.GeneratedRequestRunner.BuildRelativeUri(System.Net.Http.HttpClient!
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter) -> string!
 static Refit.GeneratedRequestRunner.CreateBodyContent<TBody>(Refit.RefitSettings! settings, TBody body, Refit.BodySerializationMethod serializationMethod, bool streamBody) -> System.Net.Http.HttpContent!
 static Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<TBody>(Refit.RefitSettings! settings, TBody body) -> System.Net.Http.HttpContent!
+static Refit.GeneratedRequestRunner.CreateStreamContent(System.IO.Stream! stream) -> System.Net.Http.HttpContent!
 static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings! settings, TBody body) -> System.Net.Http.HttpContent!
 static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings! settings, TBody body, Refit.FormField<TBody>![]! fields) -> System.Net.Http.HttpContent!
 static Refit.GeneratedRequestRunner.FormatInvariant<T>(T value, string? format) -> string!

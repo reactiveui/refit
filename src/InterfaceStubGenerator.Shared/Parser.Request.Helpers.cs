@@ -49,6 +49,31 @@ internal static partial class Parser
             && path.IndexOf('\n') < 0;
     }
 
+    /// <summary>Prepends the client interface's shared route prefix to a method's relative path.</summary>
+    /// <param name="prefix">The shared route prefix, or an empty/whitespace string for a no-op.</param>
+    /// <param name="path">The method's relative path template.</param>
+    /// <returns>The path with the prefix prepended, joined by exactly one slash; the path unchanged when the prefix is empty.</returns>
+    /// <remarks>Kept byte-for-byte identical to the reflection builder's <c>RestMethodInfoInternal.CombineWithPathPrefix</c>
+    /// so both request paths stay at parity.</remarks>
+    internal static string CombinePathPrefix(string prefix, string path)
+    {
+        if (string.IsNullOrWhiteSpace(prefix))
+        {
+            return path;
+        }
+
+        var trimmedPrefix = prefix.TrimEnd('/');
+        if (trimmedPrefix.Length == 0)
+        {
+            return path;
+        }
+
+        var trimmedPath = path.TrimStart('/');
+        return trimmedPath.Length == 0
+            ? trimmedPrefix
+            : trimmedPrefix + "/" + trimmedPath;
+    }
+
     /// <summary>Normalizes constant inline paths to match the reflection request builder URI cleanup.</summary>
     /// <param name="path">The source path from the HTTP method attribute.</param>
     /// <returns>The normalized path used by generated request construction.</returns>

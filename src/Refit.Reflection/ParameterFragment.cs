@@ -8,7 +8,9 @@ namespace Refit;
 /// <param name="Value">The constant value of the fragment, or null when the fragment is dynamic.</param>
 /// <param name="ArgumentIndex">The parameter index supplying the dynamic value, or a negative value when constant.</param>
 /// <param name="PropertyIndex">The property index within the parameter, or a negative value when not an object property.</param>
-internal readonly record struct ParameterFragment(string? Value, int ArgumentIndex, int PropertyIndex)
+/// <param name="IsOptional">Whether the fragment came from an optional <c>{name?}</c> placeholder, so a null value drops
+/// the segment and its preceding separator instead of formatting to an empty segment.</param>
+internal readonly record struct ParameterFragment(string? Value, int ArgumentIndex, int PropertyIndex, bool IsOptional = false)
 {
     /// <summary>Gets a value indicating whether the fragment is a constant string.</summary>
     public bool IsConstant => Value is not null;
@@ -26,12 +28,15 @@ internal readonly record struct ParameterFragment(string? Value, int ArgumentInd
 
     /// <summary>Creates a dynamic route fragment bound to a parameter.</summary>
     /// <param name="index">The parameter index supplying the value.</param>
+    /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
     /// <returns>A dynamic route fragment.</returns>
-    public static ParameterFragment Dynamic(int index) => new(null, index, -1);
+    public static ParameterFragment Dynamic(int index, bool isOptional = false) => new(null, index, -1, isOptional);
 
     /// <summary>Creates a dynamic fragment bound to a property of a parameter object.</summary>
     /// <param name="index">The parameter index supplying the object.</param>
     /// <param name="propertyIndex">The property index within the parameter object.</param>
+    /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
     /// <returns>A dynamic object property fragment.</returns>
-    public static ParameterFragment DynamicObject(int index, int propertyIndex) => new(null, index, propertyIndex);
+    public static ParameterFragment DynamicObject(int index, int propertyIndex, bool isOptional = false) =>
+        new(null, index, propertyIndex, isOptional);
 }
