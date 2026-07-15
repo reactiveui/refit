@@ -42,6 +42,11 @@
     <PackageReference Include="System.Net.Http.Json"/>
   </ItemGroup>
 
+  <!-- System.Net.ServerSentEvents is a default framework reference only on net10.0+; reference the package on the targets that lack it (net4x/netstandard2.0/net8.0/net9.0). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net462' Or '$(TargetFramework)' == 'net470' Or '$(TargetFramework)' == 'net471' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net481' Or '$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="System.Net.ServerSentEvents"/>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="$(NetFrameworkReferenceAssembliesVersion)"/>
   </ItemGroup>

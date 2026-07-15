@@ -1035,13 +1035,34 @@ await foreach (var company in api.GetDocuments())
 ```
 
 The frame format is auto-detected from the response content type: a content type of `application/jsonl`,
-`application/x-ndjson`, or `application/x-jsonlines` is read as JSON Lines (one value per line); anything else is read
-as a single streamed JSON array. To observe cancellation, add a `CancellationToken` parameter, or use
-`WithCancellation(token)` on the enumerable.
+`application/x-ndjson`, or `application/x-jsonlines` is read as JSON Lines (one value per line); `text/event-stream` is
+read as Server-Sent Events (see below); anything else is read as a single streamed JSON array. To observe cancellation,
+add a `CancellationToken` parameter, or use `WithCancellation(token)` on the enumerable.
 
 Streaming requires the configured `ContentSerializer` to implement `IStreamingContentSerializer`. The default
 `SystemTextJsonContentSerializer` does; a serializer that does not will throw `NotSupportedException` when the sequence
 is enumerated.
+
+##### Consuming Server-Sent Events
+
+When the endpoint responds with `text/event-stream`, Refit parses each Server-Sent Events (SSE) `data` event and
+deserializes its payload to `T`, yielding one item per event as it arrives (the event `type`/`id` envelope is dropped):
+
+```csharp
+public interface IChatApi
+{
+    [Get("/chat/stream")]
+    IAsyncEnumerable<ChatToken> StreamAsync();
+}
+
+await foreach (var token in api.StreamAsync())
+{
+    // one ChatToken per `data:` event, streamed live
+}
+```
+
+If you need the raw event envelope (event type or id), return `Task<Stream>` and feed the unbuffered stream to
+`System.Net.ServerSentEvents.SseParser` directly.
 
 #### XML Content
 
