@@ -177,11 +177,11 @@ internal static partial class Emitter
 
         var (httpMethodFieldSource, httpMethodExpression) = BuildHttpMethodField(request, uniqueNames);
 
-        // A [QueryUriFormat] method re-encodes the whole path and query with the attribute's UriFormat, matching the
-        // reflection builder's final GetComponents pass; every other method uses the direct relative URI.
-        var requestUriExpression = request.QueryUriFormat is { } queryUriFormat
-            ? $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution, (global::System.UriFormat){queryUriFormat})"
-            : $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
+        // A [Url] method dispatches to an absolute URI (the validated [Url] value with any query appended), bypassing
+        // the base-address merge; every other method builds a relative URI merged onto the base address.
+        var requestUriExpression = HasUrlParameter(request)
+            ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
+            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal);
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
             plan.BodyParameter,
             uniqueNames,
@@ -257,6 +257,20 @@ internal static partial class Emitter
         // Accumulate the request prologue through a pooled buffer rather than reallocating the whole string on each
         // '+=' branch below.
         var prologue = new PooledStringBuilder();
+
+        // A [Url] method dispatches to the absolute URI its [Url] parameter supplies, bypassing the base address:
+        // validate the value and use it as the base the query string is appended to, instead of the (empty) template.
+        var basePathExpression = plan.PathExpression;
+        var urlParameter = FindRequestParameter(request, RequestParameterKind.Url);
+        if (urlParameter is not null)
+        {
+            var urlLocal = plan.Locals.New("refitUrl");
+            _ = prologue.Append(bodyIndent).Append("var ").Append(urlLocal)
+                .Append(" = global::Refit.GeneratedRequestRunner.RequireAbsoluteUrl(@")
+                .Append(urlParameter.Name).AppendLine(");");
+            basePathExpression = urlLocal;
+        }
+
         if (NeedsFormattingLocal(request))
         {
             _ = prologue.Append(bodyIndent).Append("var ").Append(emission.UseDefaultFormattingLocal)
@@ -271,7 +285,7 @@ internal static partial class Emitter
                 .Append(settingsLocal).AppendLine(");");
         }
 
-        requestPathExpression = AppendInlineQueryPrologue(prologue, request, plan.ParameterInfoNames, emission, plan.PathExpression, bodyIndent);
+        requestPathExpression = AppendInlineQueryPrologue(prologue, request, plan.ParameterInfoNames, emission, basePathExpression, bodyIndent);
         return prologue.ToString();
     }
 
@@ -302,7 +316,8 @@ internal static partial class Emitter
         // The query separator (? vs &) depends on whether the built path already carries a query. Path values are
         // escaped, so only a pre-encoded ([Encoded]) segment could inject a ? the template lacks; without one the
         // answer is the compile-time presence of ? in the template, passed in so the path is not rescanned per call.
-        if (!HasPreEncodedPathParameter(request))
+        // A [Url] method's base is a runtime absolute URL whose query cannot be known at compile time, so it scans too.
+        if (!HasPreEncodedPathParameter(request) && !HasUrlParameter(request))
         {
             _ = prologue.Append(", ").Append(ToLowerInvariantString(request.Path.IndexOf('?') >= 0));
         }
@@ -625,6 +640,24 @@ internal static partial class Emitter
 
         return builder;
     }
+
+    /// <summary>Determines whether the request dispatches to an absolute URI supplied by a <c>[Url]</c> parameter.</summary>
+    /// <param name="request">The request model to inspect.</param>
+    /// <returns><see langword="true"/> when a <c>[Url]</c> parameter is present.</returns>
+    private static bool HasUrlParameter(RequestModel request) =>
+        FindRequestParameter(request, RequestParameterKind.Url) is not null;
+
+    /// <summary>Builds the relative-URI expression that merges the built path and query onto the client base address.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="requestPathExpression">The built path-and-query expression.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <returns>The generated <c>BuildRelativeUri</c> call.</returns>
+    /// <remarks>A <c>[QueryUriFormat]</c> method re-encodes the whole path and query with the attribute's UriFormat,
+    /// matching the reflection builder's final GetComponents pass; every other method uses the direct relative URI.</remarks>
+    private static string BuildRelativeUriExpression(RequestModel request, string requestPathExpression, string settingsLocal) =>
+        request.QueryUriFormat is { } queryUriFormat
+            ? $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution, (global::System.UriFormat){queryUriFormat})"
+            : $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
 
     /// <summary>Finds the first request parameter of the given kind.</summary>
     /// <param name="request">The request model to inspect.</param>

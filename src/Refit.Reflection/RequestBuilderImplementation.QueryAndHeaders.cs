@@ -106,6 +106,30 @@ internal partial class RequestBuilderImplementation
         ret.RequestUri = new(path + query, UriKind.Relative);
     }
 
+    /// <summary>Assigns the request URI directly from a <c>[Url]</c> parameter's absolute value, appending any
+    /// collected query parameters. Mirrors the generated absolute-URL path so both builders produce the same URI.</summary>
+    /// <param name="restMethod">The rest method being invoked.</param>
+    /// <param name="ret">The request message being populated.</param>
+    /// <param name="paramList">The argument values for the call.</param>
+    /// <param name="queryParamsToAdd">The query parameters collected for the request, if any.</param>
+    private static void AssignAbsoluteRequestUri(
+        RestMethodInfoInternal restMethod,
+        HttpRequestMessage ret,
+        object[] paramList,
+        List<QueryParameterEntry>? queryParamsToAdd)
+    {
+        var urlString = GeneratedRequestRunner.RequireAbsoluteUrl(paramList[restMethod.UrlParameterInfo]);
+
+        var builder = new UriBuilder(new Uri(urlString, UriKind.Absolute));
+        ParseExistingQueryString(builder, ref queryParamsToAdd);
+
+        builder.Query = queryParamsToAdd is not null && queryParamsToAdd.Count != 0
+            ? CreateQueryString(queryParamsToAdd)
+            : null;
+
+        ret.RequestUri = builder.Uri;
+    }
+
     /// <summary>Parses a raw query string into the pending query parameter list.</summary>
     /// <param name="queryString">The raw query string, with or without a leading '?'.</param>
     /// <param name="queryParamsToAdd">The pending query parameter list, created if needed.</param>

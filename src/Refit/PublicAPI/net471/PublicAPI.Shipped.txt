@@ -486,6 +486,9 @@ Refit.SystemTextJsonQueryConverter<T>.Flatten(T value, string! keyPrefix, ref Re
 Refit.IReturnTypeAdapter<TReturn, TResult>
 Refit.IReturnTypeAdapter<TReturn, TResult>.Adapt(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! invoke) -> TReturn
 Refit.RefitSettings.ReturnTypeAdapters.get -> System.Collections.Generic.IList<System.Type!>!
+Refit.UrlAttribute
+Refit.UrlAttribute.UrlAttribute() -> void
+static Refit.GeneratedRequestRunner.RequireAbsoluteUrl(object? url) -> string!
 Refit.TimeoutAttribute
 Refit.TimeoutAttribute.Milliseconds.get -> int
 Refit.TimeoutAttribute.TimeoutAttribute(int milliseconds) -> void
