@@ -290,6 +290,20 @@ class UserGroupRequest{
 
 ```
 
+When the bound object is a generic method's type parameter, the placeholders are
+resolved against a class constraint at compile time, so a constrained generic
+method is generated inline (no reflection fallback, no `RF006`):
+
+```csharp
+// Generated inline: {request.groupId}/{request.userId} bind against UserGroupRequest.
+[Get("/group/{request.groupId}/users/{request.userId}")]
+Task<List<User>> GroupList<T>(T request) where T : UserGroupRequest;
+```
+
+An *unconstrained* generic parameter (`GroupList<T>(T request)`) still falls back
+to the reflection request builder, because the concrete type - and its bound
+properties - are only known at call time.
+
 Parameters that are not specified as a URL substitution will automatically be
 used as query parameters. This is different than Retrofit, where all
 parameters must be explicitly specified.
@@ -606,6 +620,41 @@ object's `ToString()` under the parameter's own name, mark it with an explicit e
 ```csharp
 [Get("/info")]
 Task<string> GetInfo([Query(Format = "")] Size size); // => ?size=medium  (uses size.ToString())
+```
+
+**Custom query keys with `IQueryConverter<T>`**:
+
+When a parameter shape cannot be flattened from its declared type (an `object`, a polymorphic base type, a
+`Dictionary<string, object>`), or you simply need full control over the emitted keys, implement `IQueryConverter<T>`
+and attach it to the parameter with `[QueryConverter(typeof(...))]`. The converter writes query pairs straight into the
+pooled builder, so it can emit nested bracket keys such as `order[createdAt]=desc` without `[AliasAs("order[")]`-style
+hacks. This is a source-generator-only feature (the reflection request builder walks the value's runtime type instead);
+implementations must be stateless and have a public parameterless constructor.
+
+```csharp
+public sealed class SortOrderQueryConverter : IQueryConverter<IDictionary<string, string>>
+{
+    public void Flatten(
+        IDictionary<string, string> value,
+        string keyPrefix,          // the resolved [Query(Prefix)] for the parameter, or an empty string
+        ref GeneratedQueryStringBuilder builder,
+        RefitSettings settings)
+    {
+        foreach (var entry in value)
+        {
+            // AddPreEscapedKey appends the key verbatim, so the brackets stay literal while the value is
+            // still escaped. Use builder.Add(key, value, false) to percent-encode the key as well.
+            builder.AddPreEscapedKey($"{keyPrefix}order[{entry.Key}]", entry.Value, false);
+        }
+    }
+}
+
+[Get("/items")]
+Task<List<Item>> GetItems(
+    [QueryConverter(typeof(SortOrderQueryConverter))] IDictionary<string, string> order);
+
+GetItems(new Dictionary<string, string> { ["createdAt"] = "desc", ["priority"] = "asc" });
+>>> "/items?order[createdAt]=desc&order[priority]=asc"
 ```
 
 #### Formatting URL Parameter Values with the `UrlParameterFormatter`
@@ -1535,6 +1584,55 @@ into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOpt
 `HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the
 options.
 
+#### Inspecting the current call's arguments
+
+Set `RefitSettings.CaptureMethodArguments = true` to expose the current call's argument values to a `DelegatingHandler`
+via `HttpRequestMessageOptions.MethodArguments`. The stored value is an `object?[]` holding the boxed arguments in the
+method's declared parameter order, including any `CancellationToken`, so it lines up 1:1 with the reflected parameter
+list. This mirrors Retrofit's `Invocation.arguments`.
+
+[//]: # ({% raw %})
+
+```csharp
+var settings = new RefitSettings { CaptureMethodArguments = true };
+
+class ArgumentLoggingHandler : DelegatingHandler
+{
+    public ArgumentLoggingHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (request.Options.TryGetValue(new HttpRequestOptionsKey<object?[]>(HttpRequestMessageOptions.MethodArguments), out var arguments))
+        {
+            // Reflection path: pair the values with RestMethodInfo.MethodInfo.GetParameters() to recover parameter names.
+            if (request.Options.TryGetValue(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), out var restMethodInfo))
+            {
+                var parameters = restMethodInfo.MethodInfo.GetParameters();
+                for (var i = 0; i < arguments.Length; i++)
+                {
+                    Console.WriteLine($"{parameters[i].Name} = {arguments[i]}");
+                }
+            }
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+[//]: # ({% endraw %})
+
+It is **off by default**: enabling it boxes and retains the arguments on every request (and therefore on any resulting
+`ApiException`) for the lifetime of that request, so it adds a per-call allocation, keeps otherwise-collectable
+arguments alive, and the captured values frequently contain credentials or PII — the same trade-offs as
+`CaptureRequestContent`. Use `RefitSettings.ExceptionRedactor` to scrub the values before an exception reaches a logging
+or telemetry pipeline.
+
+The captured values are **positional**. Under the source-generated request path they are supplied as a bare
+`object?[]` with no parameter names attached, so match them against your interface method's declared parameter order.
+`RestMethodInfo` (with its `MethodInfo.GetParameters()`) is only published on the reflection path today, so the
+name-recovery shown above applies there; the generated path does not currently surface `RestMethodInfo`.
+
 ### Multipart uploads
 
 Methods decorated with `Multipart` attribute will be submitted with multipart content type.
@@ -1994,6 +2092,15 @@ Refit registers each client with `IHttpClientFactory` under a deterministic name
 
 ```csharp
 services.AddHttpClient(UniqueName.ForType<IWebApi>())
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+```
+
+If you would rather use a short, human-readable name, pass `httpClientName` to any `AddRefitClient` overload. That
+name becomes the `IHttpClientFactory` client name and the client's default `ILogger` logging category, so it shortens
+both without changing the assembly-qualified default that keeps registrations unique:
+
+```csharp
+services.AddRefitClient<IWebApi>(settings: null, httpClientName: "web-api")
         .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
 ```
 
