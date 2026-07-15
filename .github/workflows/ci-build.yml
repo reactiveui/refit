@@ -20,6 +20,30 @@ jobs:
         secrets:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+    # The shared build workflow only restores/builds/tests, so it never invokes ILC. This job runs a
+    # real `dotnet publish -r linux-x64` of the smoke project (PublishAot, TrimMode=full, IL codes
+    # promoted to errors in its csproj) and runs the produced native binary, so the ILC link plus a
+    # non-zero exit on mismatch gate the pipeline end-to-end. linux-x64 is the lean baseline; a
+    # win-x64 / osx-arm64 matrix is a straightforward follow-up.
+    native-aot-smoke:
+        name: Native AOT smoke (linux-x64)
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v5
+              with:
+                  dotnet-version: 8.0.x
+            - name: Publish Native AOT smoke (linux-x64)
+              run: dotnet publish src/Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj -c Release -r linux-x64
+            - name: Run published native binary
+              run: src/Refit.NativeAotSmoke/bin/Release/net8.0/linux-x64/publish/Refit.NativeAotSmoke
+
     # PR metadata consumed by the fork-PR SonarCloud flow (see sonarcloud-fork.yml).
     save-pr-metadata:
         if: github.event_name == 'pull_request'
