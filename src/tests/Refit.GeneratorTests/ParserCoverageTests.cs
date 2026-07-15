@@ -497,6 +497,39 @@ public sealed class ParserCoverageTests
         await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignObservable"), httpBase, formattable)).IsFalse();
     }
 
+    /// <summary>Verifies the inline return-shape classifier resolves a <c>Task&lt;HttpRequestMessage&gt;</c> method to the
+    /// build-and-return shape, while a <c>Task&lt;T&gt;</c> of any other result type stays a plain async result.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CanBuildRequestInlineClassifiesTaskOfHttpRequestMessage()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+            """
+            using System.Net.Http;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IApi
+            {
+                [Get("/request")] Task<HttpRequestMessage> BuildRequest();
+                [Get("/result")] Task<string> GetResult();
+            }
+            """));
+        var httpBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
+        var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
+        var api = compilation.GetTypeByMetadataName(SampleApiMetadataName)!;
+
+        static IMethodSymbol Method(INamedTypeSymbol type, string name) =>
+            type.GetMembers(name).OfType<IMethodSymbol>().First();
+
+        // Both shapes are inline-eligible; the classifier arm is exercised both when the result type is
+        // HttpRequestMessage (the build-and-return shape) and when it is any other type (a plain async result).
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "BuildRequest"), httpBase, formattable)).IsTrue();
+        await Assert.That(Parser.CanBuildRequestInline(Method(api, "GetResult"), httpBase, formattable)).IsTrue();
+    }
+
     /// <summary>Verifies the interface nullable-context flag is set from the compilation-level nullable option even when
     /// the method's own span reports a disabled context.</summary>
     /// <returns>A task representing the asynchronous test.</returns>

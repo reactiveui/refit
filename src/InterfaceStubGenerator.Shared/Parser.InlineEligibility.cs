@@ -85,7 +85,7 @@ internal static partial class Parser
         return namedType.MetadataName switch
         {
             "Task" when ns == TasksNamespace => ReturnTypeInfo.AsyncVoid,
-            "Task`1" when IsTaskOfHttpRequestMessage(namedType) => ReturnTypeInfo.RequestMessage,
+            "Task`1" when IsHttpRequestMessageType(namedType.TypeArguments[0]) => ReturnTypeInfo.RequestMessage,
             "Task`1" or "ValueTask`1" when ns == TasksNamespace => ReturnTypeInfo.AsyncResult,
             "IAsyncEnumerable`1" when ns == "System.Collections.Generic" => ReturnTypeInfo.AsyncEnumerable,
             "IObservable`1" when ns == "System" => ReturnTypeInfo.Observable,
@@ -93,19 +93,12 @@ internal static partial class Parser
         };
     }
 
-    /// <summary>Determines whether a return type is <c>Task&lt;HttpRequestMessage&gt;</c>, the build-and-return shape.</summary>
-    /// <param name="returnType">The declared return type.</param>
-    /// <returns><see langword="true"/> when the type is <c>System.Threading.Tasks.Task&lt;System.Net.Http.HttpRequestMessage&gt;</c>.</returns>
-    /// <remarks>Only the <c>Task</c> wrapper is supported: request building is asynchronous (body serialization and the
-    /// authorization token getter), so a synchronous <c>HttpRequestMessage</c> return would force a blocking build.</remarks>
-    private static bool IsTaskOfHttpRequestMessage(ITypeSymbol returnType) =>
-        returnType is INamedTypeSymbol { MetadataName: "Task`1", TypeArguments: [{ } resultType] } named
-        && named.ContainingNamespace.ToDisplayString() == TasksNamespace
-        && IsHttpRequestMessageType(resultType);
-
-    /// <summary>Determines whether a type is <c>System.Net.Http.HttpRequestMessage</c>.</summary>
+    /// <summary>Determines whether a type is <c>System.Net.Http.HttpRequestMessage</c>, the type argument of the
+    /// build-and-return <c>Task&lt;HttpRequestMessage&gt;</c> shape.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is <c>HttpRequestMessage</c>.</returns>
+    /// <remarks>Only the <c>Task</c> wrapper is supported: request building is asynchronous (body serialization and the
+    /// authorization token getter), so a synchronous <c>HttpRequestMessage</c> return would force a blocking build.</remarks>
     private static bool IsHttpRequestMessageType(ITypeSymbol type) =>
         type is INamedTypeSymbol { MetadataName: "HttpRequestMessage" } named
         && named.ContainingNamespace.ToDisplayString() == "System.Net.Http";
