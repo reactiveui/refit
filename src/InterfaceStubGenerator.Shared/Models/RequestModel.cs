@@ -54,4 +54,9 @@ internal sealed record RequestModel(
     /// absent. When set, the built path and query are re-encoded with this mode, matching the reflection builder's final
     /// <c>Uri.GetComponents(PathAndQuery, QueryUriFormat)</c> pass.</summary>
     public int? QueryUriFormat { get; init; }
+
+    /// <summary>Gets the per-call timeout in milliseconds from the method's <c>[Timeout]</c> attribute, or 0 when absent.
+    /// The value is emitted into the generated send call and layered onto the request's effective cancellation token,
+    /// mirroring the reflection builder's <c>RestMethodInfoInternal.TimeoutMilliseconds</c>.</summary>
+    public int TimeoutMilliseconds { get; init; }
 }

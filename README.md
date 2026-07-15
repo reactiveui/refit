@@ -73,6 +73,7 @@ lets you stub responses and verify requests with a declarative route table — s
     * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
     * [Target Interface type](#target-interface-type)
     * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
+* [Per-request timeouts](#per-request-timeouts)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -289,6 +290,20 @@ class UserGroupRequest{
 }
 
 ```
+
+When the bound object is a generic method's type parameter, the placeholders are
+resolved against a class constraint at compile time, so a constrained generic
+method is generated inline (no reflection fallback, no `RF006`):
+
+```csharp
+// Generated inline: {request.groupId}/{request.userId} bind against UserGroupRequest.
+[Get("/group/{request.groupId}/users/{request.userId}")]
+Task<List<User>> GroupList<T>(T request) where T : UserGroupRequest;
+```
+
+An *unconstrained* generic parameter (`GroupList<T>(T request)`) still falls back
+to the reflection request builder, because the concrete type - and its bound
+properties - are only known at call time.
 
 Parameters that are not specified as a URL substitution will automatically be
 used as query parameters. This is different than Retrofit, where all
@@ -608,6 +623,41 @@ object's `ToString()` under the parameter's own name, mark it with an explicit e
 Task<string> GetInfo([Query(Format = "")] Size size); // => ?size=medium  (uses size.ToString())
 ```
 
+**Custom query keys with `IQueryConverter<T>`**:
+
+When a parameter shape cannot be flattened from its declared type (an `object`, a polymorphic base type, a
+`Dictionary<string, object>`), or you simply need full control over the emitted keys, implement `IQueryConverter<T>`
+and attach it to the parameter with `[QueryConverter(typeof(...))]`. The converter writes query pairs straight into the
+pooled builder, so it can emit nested bracket keys such as `order[createdAt]=desc` without `[AliasAs("order[")]`-style
+hacks. This is a source-generator-only feature (the reflection request builder walks the value's runtime type instead);
+implementations must be stateless and have a public parameterless constructor.
+
+```csharp
+public sealed class SortOrderQueryConverter : IQueryConverter<IDictionary<string, string>>
+{
+    public void Flatten(
+        IDictionary<string, string> value,
+        string keyPrefix,          // the resolved [Query(Prefix)] for the parameter, or an empty string
+        ref GeneratedQueryStringBuilder builder,
+        RefitSettings settings)
+    {
+        foreach (var entry in value)
+        {
+            // AddPreEscapedKey appends the key verbatim, so the brackets stay literal while the value is
+            // still escaped. Use builder.Add(key, value, false) to percent-encode the key as well.
+            builder.AddPreEscapedKey($"{keyPrefix}order[{entry.Key}]", entry.Value, false);
+        }
+    }
+}
+
+[Get("/items")]
+Task<List<Item>> GetItems(
+    [QueryConverter(typeof(SortOrderQueryConverter))] IDictionary<string, string> order);
+
+GetItems(new Dictionary<string, string> { ["createdAt"] = "desc", ["priority"] = "asc" });
+>>> "/items?order[createdAt]=desc&order[priority]=asc"
+```
+
 #### Formatting URL Parameter Values with the `UrlParameterFormatter`
 
 In Refit, the `UrlParameterFormatter` property within `RefitSettings` allows you to customize how parameter values are
@@ -673,6 +723,29 @@ var settings = new RefitSettings
 ```
 
 In the above example, the dictionary keys will be converted to uppercase.
+
+**Registering a formatter per type with `UrlParameterFormatterMap`**:
+
+To customize how one specific type is rendered into a URL without hand-rolling a type switch inside a custom
+`IUrlParameterFormatter`, register a formatter for that type in `RefitSettings.UrlParameterFormatterMap`. When a value
+is rendered into a path or query string, its runtime type is looked up in the map first; a registered formatter wins,
+and every other type falls back to `UrlParameterFormatter`.
+
+```csharp
+public class TemperatureUrlParameterFormatter : IUrlParameterFormatter
+{
+    public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) =>
+        value is Temperature t ? $"{t.Celsius}deg" : value?.ToString();
+}
+
+var settings = new RefitSettings();
+settings.UrlParameterFormatterMap[typeof(Temperature)] = new TemperatureUrlParameterFormatter();
+```
+
+Matching is by exact runtime type only — there is no base-class or interface walking, so register the concrete type the
+value will have at runtime. The registry applies to path parameters, round-trip path segments, and query values (it does
+not affect header or body serialization), and both the reflection and source-generated request builders consult it
+identically.
 
 ### Body content
 
@@ -1512,6 +1585,109 @@ into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOpt
 `HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the
 options.
 
+Every request also carries two lightweight string options that a handler can read without touching reflection:
+`HttpRequestMessageOptions.MethodName` (the interface method's name, for example `GetUser`) and
+`HttpRequestMessageOptions.RelativePathTemplate` (the raw route template with its `{placeholders}`, for example
+`/users/{id}`). Both are populated identically whether the request was built by the source generator or by the
+reflection request builder. `RelativePathTemplate` is the stable, low-cardinality label to use for OpenTelemetry
+spans, metrics, and logs - unlike the filled `RequestUri` (`/users/123`), one template value groups every call to the
+same endpoint instead of exploding cardinality per id.
+
+[//]: # ({% raw %})
+
+```csharp
+class TelemetryHandler : DelegatingHandler
+{
+    public TelemetryHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (request.Options.TryGetValue(new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.MethodName), out var methodName) &&
+            request.Options.TryGetValue(new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.RelativePathTemplate), out var routeTemplate))
+        {
+            // routeTemplate is "/users/{id}" (low cardinality), not the filled "/users/123"
+            using var activity = ActivitySource.StartActivity($"{methodName} {routeTemplate}");
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+[//]: # ({% endraw %})
+
+#### Inspecting the current call's arguments
+
+Set `RefitSettings.CaptureMethodArguments = true` to expose the current call's argument values to a `DelegatingHandler`
+via `HttpRequestMessageOptions.MethodArguments`. The stored value is an `object?[]` holding the boxed arguments in the
+method's declared parameter order, including any `CancellationToken`, so it lines up 1:1 with the reflected parameter
+list. This mirrors Retrofit's `Invocation.arguments`.
+
+[//]: # ({% raw %})
+
+```csharp
+var settings = new RefitSettings { CaptureMethodArguments = true };
+
+class ArgumentLoggingHandler : DelegatingHandler
+{
+    public ArgumentLoggingHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (request.Options.TryGetValue(new HttpRequestOptionsKey<object?[]>(HttpRequestMessageOptions.MethodArguments), out var arguments))
+        {
+            // Reflection path: pair the values with RestMethodInfo.MethodInfo.GetParameters() to recover parameter names.
+            if (request.Options.TryGetValue(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), out var restMethodInfo))
+            {
+                var parameters = restMethodInfo.MethodInfo.GetParameters();
+                for (var i = 0; i < arguments.Length; i++)
+                {
+                    Console.WriteLine($"{parameters[i].Name} = {arguments[i]}");
+                }
+            }
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+[//]: # ({% endraw %})
+
+It is **off by default**: enabling it boxes and retains the arguments on every request (and therefore on any resulting
+`ApiException`) for the lifetime of that request, so it adds a per-call allocation, keeps otherwise-collectable
+arguments alive, and the captured values frequently contain credentials or PII - the same trade-offs as
+`CaptureRequestContent`. Use `RefitSettings.ExceptionRedactor` to scrub the values before an exception reaches a logging
+or telemetry pipeline.
+
+The captured values are **positional**. Under the source-generated request path they are supplied as a bare
+`object?[]` with no parameter names attached, so match them against your interface method's declared parameter order.
+`RestMethodInfo` (with its `MethodInfo.GetParameters()`) is only published on the reflection path today, so the
+name-recovery shown above applies there; the generated path does not currently surface `RestMethodInfo`.
+
+### Per-request timeouts
+
+Decorate a method with `[Timeout(milliseconds)]` to give that single call its own deadline, expressed in milliseconds:
+
+```csharp
+public interface IGitHubApi
+{
+    [Get("/users/{user}")]
+    [Timeout(5000)] // fail this call if it takes longer than 5 seconds
+    Task<User> GetUser(string user);
+}
+```
+
+When the deadline elapses the request is canceled and surfaces as an `OperationCanceledException` (typically a
+`TaskCanceledException`), the same way a lapsed `HttpClient.Timeout` reports. If the method also declares a
+`CancellationToken` parameter, both still work: whichever fires first — the caller's token or the timeout — cancels the
+call.
+
+The per-call timeout is independent of, and composes with, `HttpClient.Timeout` (the client-wide default) and any
+timeout enforced by Polly or a `DelegatingHandler`; whichever deadline elapses first wins. A value that is not positive
+leaves the method without a per-call deadline. Only a positive value adds one, so methods without `[Timeout]` pay no
+extra cost.
+
 ### Multipart uploads
 
 Methods decorated with `Multipart` attribute will be submitted with multipart content type.
@@ -1669,6 +1845,14 @@ successful:
 ```csharp
 IApiResponse<User> response = await gitHubApi.GetUser("octocat");
 await response.EnsureSuccessStatusCodeAsync();
+```
+
+The same two guards are available on the non-generic `IApiResponse` (for endpoints that return no deserialized body), so
+you can throw the captured error without inspecting `IsSuccessStatusCode` / `Error` by hand:
+
+```csharp
+IApiResponse response = await gitHubApi.DeleteUser("octocat");
+await response.EnsureSuccessStatusCodeAsync();   // throws ApiException / ApiRequestException on failure
 ```
 
 #### Do I need to dispose the response?
@@ -1971,6 +2155,15 @@ Refit registers each client with `IHttpClientFactory` under a deterministic name
 
 ```csharp
 services.AddHttpClient(UniqueName.ForType<IWebApi>())
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+```
+
+If you would rather use a short, human-readable name, pass `httpClientName` to any `AddRefitClient` overload. That
+name becomes the `IHttpClientFactory` client name and the client's default `ILogger` logging category, so it shortens
+both without changing the assembly-qualified default that keeps registrations unique:
+
+```csharp
+services.AddRefitClient<IWebApi>(settings: null, httpClientName: "web-api")
         .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
 ```
 

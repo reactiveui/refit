@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.Json;
@@ -132,14 +133,14 @@ public sealed class EnumHelpersTests
     [Test]
     public async Task NumericHelpersSupportAllEnumBackingTypes()
     {
-        await AssertNumericEnum(SByteEnum.Value, "-8", "-8");
-        await AssertNumericEnum(ByteEnum.Value, "250", "250");
-        await AssertNumericEnum(Int16Enum.Value, "-1234", "-1234");
-        await AssertNumericEnum(UInt16Enum.Value, "65000", "65000");
-        await AssertNumericEnum(Int32Enum.Value, "-123456", "-123456");
-        await AssertNumericEnum(UInt32Enum.Value, "4000000000", "4000000000");
-        await AssertNumericEnum(Int64Enum.Value, "-1234567890123", "-1234567890123");
-        await AssertNumericEnum(UInt64Enum.Value, "18446744073709551615", "18446744073709551615");
+        await AssertNumericEnum(SByteEnum.Value, "-8", "-8", isUnsigned: false);
+        await AssertNumericEnum(ByteEnum.Value, "250", "250", isUnsigned: true);
+        await AssertNumericEnum(Int16Enum.Value, "-1234", "-1234", isUnsigned: false);
+        await AssertNumericEnum(UInt16Enum.Value, "65000", "65000", isUnsigned: true);
+        await AssertNumericEnum(Int32Enum.Value, "-123456", "-123456", isUnsigned: false);
+        await AssertNumericEnum(UInt32Enum.Value, "4000000000", "4000000000", isUnsigned: true);
+        await AssertNumericEnum(Int64Enum.Value, "-1234567890123", "-1234567890123", isUnsigned: false);
+        await AssertNumericEnum(UInt64Enum.Value, "18446744073709551615", "18446744073709551615", isUnsigned: true);
     }
 
     /// <summary>Verifies parsing enum names uses the cached generic enum path.</summary>
@@ -148,29 +149,25 @@ public sealed class EnumHelpersTests
     public async Task ParseNameReturnsDeclaredEnumValue() =>
         await Assert.That(EnumHelpers.Info<MemberEnum>.ParseName(nameof(MemberEnum.Custom))).IsEqualTo(MemberEnum.Custom);
 
-    /// <summary>Verifies numeric enum helpers reject impossible backing-type combinations.</summary>
+    /// <summary>Verifies numeric enum reads reject an unsupported backing-type code.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task NumericHelpersRejectUnsupportedBackingTypeRequests()
-    {
-        await Assert.That(static () => EnumHelpers.Info<UInt32Enum>.ToInt64(UInt32Enum.Value))
-            .ThrowsExactly<JsonException>();
-        await Assert.That(static () => EnumHelpers.Info<Int32Enum>.ToUInt64(Int32Enum.Value))
-            .ThrowsExactly<JsonException>();
+    public async Task ReadJsonNumericValueRejectsUnsupportedBackingTypeCode() =>
         await Assert.That(ReadUnsupportedNumericValue)
             .ThrowsExactly<JsonException>();
-    }
 
     /// <summary>Verifies numeric enum read, write, and formatting helpers agree for a value.</summary>
     /// <typeparam name="TEnum">The enum type under test.</typeparam>
     /// <param name="expected">The expected enum value.</param>
     /// <param name="json">The JSON numeric literal.</param>
     /// <param name="formatted">The expected formatted value.</param>
+    /// <param name="isUnsigned">Whether the enum uses an unsigned backing type.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     private static async Task AssertNumericEnum<TEnum>(
         TEnum expected,
         string json,
-        string formatted)
+        string formatted,
+        bool isUnsigned)
         where TEnum : struct, Enum
     {
         var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
@@ -180,6 +177,20 @@ public sealed class EnumHelpersTests
 
         await Assert.That(read).IsEqualTo(expected);
         await Assert.That(EnumHelpers.Info<TEnum>.FormatNumericValue(expected)).IsEqualTo(formatted);
+
+        // The signedness-specific converters accept their own backing type and reject the other's.
+        if (isUnsigned)
+        {
+            await Assert.That(EnumHelpers.Info<TEnum>.ToUInt64(expected))
+                .IsEqualTo(ulong.Parse(formatted, CultureInfo.InvariantCulture));
+            await Assert.That(() => EnumHelpers.Info<TEnum>.ToInt64(expected)).ThrowsExactly<JsonException>();
+        }
+        else
+        {
+            await Assert.That(EnumHelpers.Info<TEnum>.ToInt64(expected))
+                .IsEqualTo(long.Parse(formatted, CultureInfo.InvariantCulture));
+            await Assert.That(() => EnumHelpers.Info<TEnum>.ToUInt64(expected)).ThrowsExactly<JsonException>();
+        }
 
         await using var stream = new MemoryStream();
         await using (var writer = new Utf8JsonWriter(stream))

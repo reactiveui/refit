@@ -136,6 +136,19 @@ public class RefitSettings
     /// <summary>Gets or sets the <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>).</summary>
     public IUrlParameterFormatter UrlParameterFormatter { get; set; }
 
+    /// <summary>Gets a registry of <see cref="IUrlParameterFormatter"/> instances keyed by the CLR type they format,
+    /// consulted before <see cref="UrlParameterFormatter"/> when rendering a value into a path or query string.</summary>
+    /// <remarks>
+    /// When a value is rendered into a URL (a path parameter, a round-trip path segment, or a query value), its runtime
+    /// type (<see cref="object.GetType"/>) is looked up here first; a registered formatter is used for that value, and
+    /// any other type falls back to <see cref="UrlParameterFormatter"/>. Matching is by exact runtime type only - no base
+    /// class or interface walking - so register the concrete type the value will have at runtime. Both the reflection and
+    /// source-generated request builders consult this registry identically. It does not affect header or body
+    /// serialization. Registering any entry opts a request out of the generator's inline formatting fast path.
+    /// </remarks>
+    public IDictionary<Type, IUrlParameterFormatter> UrlParameterFormatterMap { get; } =
+        new Dictionary<Type, IUrlParameterFormatter>();
+
     /// <summary>Gets or sets the <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>).</summary>
     public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
 
@@ -165,6 +178,20 @@ public class RefitSettings
     /// </para>
     /// </remarks>
     public bool CaptureRequestContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the current call's argument values are captured, in declared
+    /// parameter order, into the <see cref="HttpRequestMessageOptions.MethodArguments"/> request option so a
+    /// <see cref="DelegatingHandler"/> can inspect them (defaults to false).
+    /// </summary>
+    /// <remarks>
+    /// When enabled, every call boxes its arguments into an <c>object?[]</c> that is retained on the
+    /// <see cref="HttpRequestMessage"/> (and therefore on any resulting <see cref="ApiExceptionBase"/>) for the
+    /// lifetime of the request. Leave it off unless a handler needs the values: it adds a per-call allocation, keeps
+    /// otherwise-collectable arguments alive, and the captured values frequently contain credentials or PII. The array
+    /// includes any <see cref="CancellationToken"/> so it aligns 1:1 with the reflected parameter list.
+    /// </remarks>
+    public bool CaptureMethodArguments { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of characters of an error response body that are read into

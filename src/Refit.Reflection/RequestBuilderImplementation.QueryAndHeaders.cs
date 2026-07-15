@@ -228,8 +228,13 @@ internal partial class RequestBuilderImplementation
     /// <summary>Adds configured options/properties and Refit metadata to the request.</summary>
     /// <param name="restMethod">The rest method being invoked.</param>
     /// <param name="ret">The request message to populate.</param>
-    /// <param name="paramList">The argument values for the call.</param>
-    private void AddPropertiesToRequest(RestMethodInfoInternal restMethod, HttpRequestMessage ret, object[] paramList)
+    /// <param name="paramList">The argument values for the call, with cancellation tokens removed.</param>
+    /// <param name="declaredArguments">The full declared-order argument values, including any cancellation token.</param>
+    private void AddPropertiesToRequest(
+        RestMethodInfoInternal restMethod,
+        HttpRequestMessage ret,
+        object[] paramList,
+        object?[] declaredArguments)
     {
         // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
         if (_settings.HttpRequestMessageOptions is not null)
@@ -267,10 +272,33 @@ internal partial class RequestBuilderImplementation
             new(
                 HttpRequestMessageOptions.RestMethodInfo),
             restMethod.RestMethodInfo);
+        ret.Options.Set(
+            new(HttpRequestMessageOptions.MethodName),
+            restMethod.RestMethodInfo.Name);
+        ret.Options.Set(
+            new(HttpRequestMessageOptions.RelativePathTemplate),
+            restMethod.RestMethodInfo.RelativePath);
 #else
         ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
         ret.Properties[HttpRequestMessageOptions.RestMethodInfo] =
             restMethod.RestMethodInfo;
+        ret.Properties[HttpRequestMessageOptions.MethodName] =
+            restMethod.RestMethodInfo.Name;
+        ret.Properties[HttpRequestMessageOptions.RelativePathTemplate] =
+            restMethod.RestMethodInfo.RelativePath;
+#endif
+
+        if (!_settings.CaptureMethodArguments)
+        {
+            return;
+        }
+
+#if NET6_0_OR_GREATER
+        ret.Options.Set(
+            new(HttpRequestMessageOptions.MethodArguments),
+            declaredArguments);
+#else
+        ret.Properties[HttpRequestMessageOptions.MethodArguments] = declaredArguments;
 #endif
     }
 
@@ -334,7 +362,7 @@ internal partial class RequestBuilderImplementation
             }
 
             var keyType = key.GetType();
-            var formattedKey = _settings.UrlParameterFormatter.Format(key, keyType, keyType);
+            var formattedKey = GeneratedRequestRunner.FormatUrlParameter(_settings, key, keyType, keyType);
 
             if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
             {

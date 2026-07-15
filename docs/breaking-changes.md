@@ -95,6 +95,30 @@ visible in three places.
   the stream you passed stays open — you own it and are responsible for disposing it. Streams Refit opens itself are
   unchanged: a `FileInfoPart` (or a `FileInfo` multipart parameter) still has the file stream Refit opened closed for
   you. Both request builders apply this. If you relied on Refit closing your stream, dispose it yourself after the call.
+* **URL-encoded bodies flatten nested objects, dictionaries, and collections instead of emitting the type name.** A
+  `[Body(BodySerializationMethod.UrlEncoded)]` model whose property is a nested object, an `IDictionary`, or a plain
+  collection under the default collection format previously serialized the property's `ToString()` — the type name for
+  a complex object or dictionary. Those properties now flatten exactly like a flattened `[Query]` object: a nested
+  object contributes `parent.child=...` pairs, a dictionary contributes `parent.key=value` pairs, and a collection
+  joins its elements (comma-separated under the default format). Field naming keeps the existing precedence (`[AliasAs]`,
+  then the content serializer's property name, then the key formatter), and a nested property's `[Query(delimiter,
+  prefix)]` composes its keys.
+
+  ```csharp
+  public sealed class SignupForm
+  {
+      public string Name { get; set; }
+      public Address Detail { get; set; }
+      public Dictionary<string, string> Extra { get; set; }
+  }
+
+  Submit(new SignupForm { Name = "ada", Detail = new() { City = "Wien" }, Extra = new() { ["k"] = "v" } })
+  >>> "Name=ada&Detail.City=Wien&Extra.k=v"                       // V14: flattened
+  >>> "Name=ada&Detail=RefitGeneratorTest.Address&Extra=System..." // pre-V14: ToString
+  ```
+
+  This is a behavior change to previously unusable output, so it is extremely unlikely anyone depended on it. Complex
+  elements of a collection are still `ToString()`-ed per element (the same limitation as the query path).
 * **An empty token from `AuthorizationHeaderValueGetter` now omits the `Authorization` header instead of sending a
   blank one** (#1688). Previously a getter that returned `null`, an empty string, or whitespace produced a blank
   `Authorization: <scheme>` header (and could throw for some scheme/value combinations). Refit now clears the header for
@@ -103,6 +127,13 @@ visible in three places.
 
 ### New in V14.x
 
+* **Per-method `[Timeout]` attribute.** Decorate a method with `[Timeout(milliseconds)]` to give that single call its
+  own deadline; when it elapses the request is canceled and surfaces as an `OperationCanceledException` (typically a
+  `TaskCanceledException`), the same way a lapsed `HttpClient.Timeout` reports. It is additive and layers onto the
+  request's effective cancellation token, so a caller-supplied `CancellationToken` still works alongside it and the
+  per-call deadline composes with `HttpClient.Timeout` and any Polly/`DelegatingHandler` timeout — whichever fires first
+  wins. Methods without `[Timeout]` are unaffected. Both request paths honor it (reflection and source-generated). See
+  [Per-request timeouts](../README.md#per-request-timeouts).
 * **Inline query-string generation.** Query parameters — auto-appended parameters, `[AliasAs]`, `[Query(Format = ...)]`,
   and scalar collections with every `CollectionFormat` — now generate reflection-free request construction, so the most
   common Refit method shapes work with generated-only clients (`AddRefitGeneratedClient`, `RestService.ForGenerated`)
@@ -161,12 +192,34 @@ visible in three places.
   generator discovers adapters declared in your project at compile time and emits a direct `Adapt` call — no reflection,
   so adapter-backed methods stay trim and Native AOT clean; the reflection request builder resolves adapters registered
   in `RefitSettings.ReturnTypeAdapters`. See [Custom return types](../README.md#custom-return-types-ireturntypeadapter).
+* **Per-type URL parameter formatters (`RefitSettings.UrlParameterFormatterMap`).** Register an `IUrlParameterFormatter`
+  for a specific CLR type instead of hand-rolling a type switch inside a single custom formatter. When a value is
+  rendered into a path or query string, its runtime type is looked up in the map first (exact type only, no base-class or
+  interface walking); a registered formatter wins, and every other type falls back to `UrlParameterFormatter`. Both the
+  reflection and source-generated request builders consult the map identically. This is a purely additive, opt-in setting
+  — an empty map (the default) changes no behavior. See
+  [Formatting URL Parameter Values](../README.md#formatting-url-parameter-values-with-the-urlparameterformatter).
+* **Exposing the current call's arguments (`RefitSettings.CaptureMethodArguments`).** Opt in and a `DelegatingHandler`
+  can read the call's argument values from `HttpRequestMessageOptions.MethodArguments` — an `object?[]` in declared
+  parameter order (including any `CancellationToken`), the equivalent of Retrofit's `Invocation.arguments`. It is off by
+  default because it boxes and retains the arguments on every request, the same allocation/retention/PII trade-off as
+  `CaptureRequestContent`. The values are positional; the generated path supplies the bare array while the reflection
+  path also exposes `RestMethodInfo` for parameter names. See
+  [Inspecting the current call's arguments](../README.md#inspecting-the-current-calls-arguments).
 * **Scoped (per-request) authorization tokens via DI (`AddAuthorizationHeaderValueProvider`).** A new
   `IHttpClientBuilder` extension in `Refit.HttpClientFactory` resolves the `Authorization` token from dependency
   injection per request. Because `IHttpClientFactory` pools message handlers, it creates a fresh DI scope for every
   request and resolves your delegate `(IServiceProvider, HttpRequestMessage, CancellationToken) -> ValueTask<string>`
   from that scope, disposing it when the request completes — no `Microsoft.AspNetCore.*` dependency required (#1679). See
   [Scoped (per-request) authorization tokens with dependency injection](../README.md#scoped-per-request-authorization-tokens-with-dependency-injection).
+* **Method name and route template in request options.** Every request now carries two additional string options —
+  `HttpRequestMessageOptions.MethodName` (the interface method's name) and
+  `HttpRequestMessageOptions.RelativePathTemplate` (the raw route template with its `{placeholders}`, not the filled
+  URL). Both are populated identically on the source-generated path and the reflection path, with no runtime
+  reflection, so a `DelegatingHandler` can read them for logging, metrics, and tracing. `RelativePathTemplate` is the
+  stable, low-cardinality label to use for OpenTelemetry spans and metrics instead of the per-id `RequestUri`. This is
+  purely additive and does not change the existing `InterfaceType` or `RestMethodInfo` options. See
+  [Target Interface Type and method info](../README.md#target-interface-type-and-method-info).
 
 ## V13.x.x
 

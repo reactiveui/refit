@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -192,10 +191,6 @@ public partial class SerializedContentTests
     /// <summary>Verifies that the configured type info resolver is used when serializing object values.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [SuppressMessage(
-        "Performance",
-        "PSH1416:Cache the serializer options instead of building them per call",
-        Justification = "The options embed a per-test resolver instance, so they cannot be cached in a shared static field.")]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_UseResolverWhenSerializingObjectValues()
     {
         var resolver = new TrackingTypeInfoResolver(ObjectValueContainerJsonSerializerContext.Default);
@@ -295,6 +290,30 @@ public partial class SerializedContentTests
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(result).IsNull();
+    }
+
+    /// <summary>Verifies that a populated nullable enum string deserializes to its value.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeValuedNullableEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum?>(
+            "\"valueOne\"",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(result).IsEqualTo(CamelCaseEnum.ValueOne);
+    }
+
+    /// <summary>Verifies that a numeric nullable enum token deserializes to its value.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeNumericNullableEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum?>(
+            "2",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(result).IsEqualTo(CamelCaseEnum.alreadyLowercase);
     }
 
     /// <summary>Verifies that JSON null throws for a non-nullable enum.</summary>
@@ -453,10 +472,6 @@ public partial class SerializedContentTests
     /// <summary>Verifies that source-generated metadata is used when provided to the serializer.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [SuppressMessage(
-        "Performance",
-        "PSH1416:Cache the serializer options instead of building them per call",
-        Justification = "The options embed a per-test tracking resolver instance, so they cannot be cached in a shared static field.")]
     public async Task SystemTextJsonContentSerializer_UsesSourceGeneratedMetadataWhenProvided()
     {
         var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
@@ -485,10 +500,6 @@ public partial class SerializedContentTests
     /// <summary>Verifies the synchronous DeserializeFromString uses source-generated metadata when provided (#1591).</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [SuppressMessage(
-        "Performance",
-        "PSH1416:Cache the serializer options instead of building them per call",
-        Justification = "The options embed a per-test tracking resolver instance, so they cannot be cached in a shared static field.")]
     public async Task SystemTextJsonContentSerializer_DeserializeFromString_UsesSourceGeneratedMetadata()
     {
         var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
