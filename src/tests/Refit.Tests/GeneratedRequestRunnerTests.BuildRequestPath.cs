@@ -154,6 +154,22 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(result).IsEqualTo("/a");
     }
 
+    /// <summary>Verifies a placeholder whose replacement range is shorter than the two-character <c>?}</c> optional
+    /// marker drops its text without reading before the start of the template.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathSkipsOptionalTrimForPlaceholderShorterThanMarker()
+    {
+        // The placeholder occupies template[0..1); an end offset below the "?}" marker length cannot be an optional
+        // segment, so the null value drops the placeholder text without probing the template for a marker or trimming
+        // a preceding slash - and never reads before index 0.
+        ((int startIdx, int endIdx) range, string? value)[] uriParams = [((0, 1), null)];
+
+        var result = GeneratedRequestRunner.BuildRequestPath("1rest", true, uriParams);
+
+        await Assert.That(result).IsEqualTo("rest");
+    }
+
     /// <summary>Provides test data for <see cref="GeneratedRequestRunnerTests"/>.</summary>
     internal static class GeneratedRequestRunnerTestsDataSources
     {
