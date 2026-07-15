@@ -313,6 +313,7 @@ internal static class HttpClientFactoryCore
     /// <summary>Finds the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
     /// <returns>The matching method definition.</returns>
     [RequiresUnreferencedCode("Resolving RequestBuilder.ForType by reflection requires method metadata to be available at runtime.")]
+    [ExcludeFromCodeCoverage] // RequestBuilder declares exactly one single-parameter generic ForType, so the duplicate-match and no-match guards are unreachable.
     private static MethodInfo FindRequestBuilderGenericForTypeMethod()
     {
         var methods = typeof(RequestBuilder).GetMethods(BindingFlags.Public | BindingFlags.Static);
