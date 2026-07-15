@@ -73,6 +73,7 @@ lets you stub responses and verify requests with a declarative route table — s
     * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
     * [Target Interface type](#target-interface-type)
     * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
+* [Per-request timeouts](#per-request-timeouts)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -722,6 +723,29 @@ var settings = new RefitSettings
 ```
 
 In the above example, the dictionary keys will be converted to uppercase.
+
+**Registering a formatter per type with `UrlParameterFormatterMap`**:
+
+To customize how one specific type is rendered into a URL without hand-rolling a type switch inside a custom
+`IUrlParameterFormatter`, register a formatter for that type in `RefitSettings.UrlParameterFormatterMap`. When a value
+is rendered into a path or query string, its runtime type is looked up in the map first; a registered formatter wins,
+and every other type falls back to `UrlParameterFormatter`.
+
+```csharp
+public class TemperatureUrlParameterFormatter : IUrlParameterFormatter
+{
+    public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) =>
+        value is Temperature t ? $"{t.Celsius}deg" : value?.ToString();
+}
+
+var settings = new RefitSettings();
+settings.UrlParameterFormatterMap[typeof(Temperature)] = new TemperatureUrlParameterFormatter();
+```
+
+Matching is by exact runtime type only — there is no base-class or interface walking, so register the concrete type the
+value will have at runtime. The registry applies to path parameters, round-trip path segments, and query values (it does
+not affect header or body serialization), and both the reflection and source-generated request builders consult it
+identically.
 
 ### Body content
 
@@ -1561,6 +1585,37 @@ into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOpt
 `HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the
 options.
 
+Every request also carries two lightweight string options that a handler can read without touching reflection:
+`HttpRequestMessageOptions.MethodName` (the interface method's name, for example `GetUser`) and
+`HttpRequestMessageOptions.RelativePathTemplate` (the raw route template with its `{placeholders}`, for example
+`/users/{id}`). Both are populated identically whether the request was built by the source generator or by the
+reflection request builder. `RelativePathTemplate` is the stable, low-cardinality label to use for OpenTelemetry
+spans, metrics, and logs - unlike the filled `RequestUri` (`/users/123`), one template value groups every call to the
+same endpoint instead of exploding cardinality per id.
+
+[//]: # ({% raw %})
+
+```csharp
+class TelemetryHandler : DelegatingHandler
+{
+    public TelemetryHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (request.Options.TryGetValue(new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.MethodName), out var methodName) &&
+            request.Options.TryGetValue(new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.RelativePathTemplate), out var routeTemplate))
+        {
+            // routeTemplate is "/users/{id}" (low cardinality), not the filled "/users/123"
+            using var activity = ActivitySource.StartActivity($"{methodName} {routeTemplate}");
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+[//]: # ({% endraw %})
+
 #### Inspecting the current call's arguments
 
 Set `RefitSettings.CaptureMethodArguments = true` to expose the current call's argument values to a `DelegatingHandler`
@@ -1601,7 +1656,7 @@ class ArgumentLoggingHandler : DelegatingHandler
 
 It is **off by default**: enabling it boxes and retains the arguments on every request (and therefore on any resulting
 `ApiException`) for the lifetime of that request, so it adds a per-call allocation, keeps otherwise-collectable
-arguments alive, and the captured values frequently contain credentials or PII — the same trade-offs as
+arguments alive, and the captured values frequently contain credentials or PII - the same trade-offs as
 `CaptureRequestContent`. Use `RefitSettings.ExceptionRedactor` to scrub the values before an exception reaches a logging
 or telemetry pipeline.
 
@@ -1609,6 +1664,29 @@ The captured values are **positional**. Under the source-generated request path 
 `object?[]` with no parameter names attached, so match them against your interface method's declared parameter order.
 `RestMethodInfo` (with its `MethodInfo.GetParameters()`) is only published on the reflection path today, so the
 name-recovery shown above applies there; the generated path does not currently surface `RestMethodInfo`.
+
+### Per-request timeouts
+
+Decorate a method with `[Timeout(milliseconds)]` to give that single call its own deadline, expressed in milliseconds:
+
+```csharp
+public interface IGitHubApi
+{
+    [Get("/users/{user}")]
+    [Timeout(5000)] // fail this call if it takes longer than 5 seconds
+    Task<User> GetUser(string user);
+}
+```
+
+When the deadline elapses the request is canceled and surfaces as an `OperationCanceledException` (typically a
+`TaskCanceledException`), the same way a lapsed `HttpClient.Timeout` reports. If the method also declares a
+`CancellationToken` parameter, both still work: whichever fires first — the caller's token or the timeout — cancels the
+call.
+
+The per-call timeout is independent of, and composes with, `HttpClient.Timeout` (the client-wide default) and any
+timeout enforced by Polly or a `DelegatingHandler`; whichever deadline elapses first wins. A value that is not positive
+leaves the method without a per-call deadline. Only a positive value adds one, so methods without `[Timeout]` pay no
+extra cost.
 
 ### Multipart uploads
 
@@ -1767,6 +1845,14 @@ successful:
 ```csharp
 IApiResponse<User> response = await gitHubApi.GetUser("octocat");
 await response.EnsureSuccessStatusCodeAsync();
+```
+
+The same two guards are available on the non-generic `IApiResponse` (for endpoints that return no deserialized body), so
+you can throw the captured error without inspecting `IsSuccessStatusCode` / `Error` by hand:
+
+```csharp
+IApiResponse response = await gitHubApi.DeleteUser("octocat");
+await response.EnsureSuccessStatusCodeAsync();   // throws ApiException / ApiRequestException on failure
 ```
 
 #### Do I need to dispose the response?

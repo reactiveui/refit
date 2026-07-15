@@ -272,10 +272,20 @@ internal partial class RequestBuilderImplementation
             new(
                 HttpRequestMessageOptions.RestMethodInfo),
             restMethod.RestMethodInfo);
+        ret.Options.Set(
+            new(HttpRequestMessageOptions.MethodName),
+            restMethod.RestMethodInfo.Name);
+        ret.Options.Set(
+            new(HttpRequestMessageOptions.RelativePathTemplate),
+            restMethod.RestMethodInfo.RelativePath);
 #else
         ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
         ret.Properties[HttpRequestMessageOptions.RestMethodInfo] =
             restMethod.RestMethodInfo;
+        ret.Properties[HttpRequestMessageOptions.MethodName] =
+            restMethod.RestMethodInfo.Name;
+        ret.Properties[HttpRequestMessageOptions.RelativePathTemplate] =
+            restMethod.RestMethodInfo.RelativePath;
 #endif
 
         if (!_settings.CaptureMethodArguments)
@@ -352,7 +362,7 @@ internal partial class RequestBuilderImplementation
             }
 
             var keyType = key.GetType();
-            var formattedKey = _settings.UrlParameterFormatter.Format(key, keyType, keyType);
+            var formattedKey = GeneratedRequestRunner.FormatUrlParameter(_settings, key, keyType, keyType);
 
             if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
             {
