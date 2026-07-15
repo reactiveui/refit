@@ -159,6 +159,13 @@ visible in three places.
   headers with `HttpHeaders.Add` instead, validating each value against its header parser and throwing a
   `FormatException` at request-build time when a value is malformed. CR/LF stripping still applies in both modes. Both
   request builders honor the flag identically. See [Validating header values](../README.md#validating-header-values).
+* **Exposing the current call's arguments (`RefitSettings.CaptureMethodArguments`).** Opt in and a `DelegatingHandler`
+  can read the call's argument values from `HttpRequestMessageOptions.MethodArguments` — an `object?[]` in declared
+  parameter order (including any `CancellationToken`), the equivalent of Retrofit's `Invocation.arguments`. It is off by
+  default because it boxes and retains the arguments on every request, the same allocation/retention/PII trade-off as
+  `CaptureRequestContent`. The values are positional; the generated path supplies the bare array while the reflection
+  path also exposes `RestMethodInfo` for parameter names. See
+  [Inspecting the current call's arguments](../README.md#inspecting-the-current-calls-arguments).
 * **Scoped (per-request) authorization tokens via DI (`AddAuthorizationHeaderValueProvider`).** A new
   `IHttpClientBuilder` extension in `Refit.HttpClientFactory` resolves the `Authorization` token from dependency
   injection per request. Because `IHttpClientFactory` pools message handlers, it creates a fresh DI scope for every

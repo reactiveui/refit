@@ -55,6 +55,7 @@ namespace Refit.Implementation
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/todos?q={q}", refitSettings.AllowUnmatchedRouteParameters, [((9, 12), refitUseDefaultFormatting ? (@q) : refitSettings.UrlParameterFormatter.Format(@q, ______qAttributeProvider, typeof(string)))]), refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { @q }); }
                 return global::Refit.GeneratedRequestRunner.SendAsync<string[], string[]>(
                     this.Client,
                     refitRequest,

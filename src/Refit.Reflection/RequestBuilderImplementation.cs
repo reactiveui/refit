@@ -223,6 +223,10 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "Usage",
         "VSTHRD002:Avoid problematic synchronous waits",
         Justification = "Deliberate sync-over-async bridge for synchronous (void/non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
+    [SuppressMessage(
+        "Performance",
+        "PSH1315:A blocking wait on an awaitable that may not be done",
+        Justification = "Deliberate sync-over-async bridge for synchronous (void/non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
     private static void RunSynchronous(Func<Task> taskFactory) =>
         Task.Run(taskFactory).GetAwaiter().GetResult();
 
@@ -233,6 +237,10 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     [SuppressMessage(
         "Usage",
         "VSTHRD002:Avoid problematic synchronous waits",
+        Justification = "Deliberate sync-over-async bridge for synchronous (non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
+    [SuppressMessage(
+        "Performance",
+        "PSH1315:A blocking wait on an awaitable that may not be done",
         Justification = "Deliberate sync-over-async bridge for synchronous (non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
     private static T? RunSynchronous<T>(Func<Task<T?>> taskFactory) =>
         Task.Run(taskFactory).GetAwaiter().GetResult();
