@@ -92,8 +92,7 @@ internal static partial class Emitter
         var dictionary = query.Dictionary!;
         var (entryLocal, keyLocal, valueLocal, indent) = entry;
         var keyTypeOf = $"typeof({dictionary.KeyTypeName})";
-        var customKey =
-            $"{emission.SettingsLocal}.UrlParameterFormatter.Format({entryLocal}.Key, {keyTypeOf}, {keyTypeOf})";
+        var customKey = EmitFormatUrlParameter($"{entryLocal}.Key", keyTypeOf, keyTypeOf, emission);
         var fastKey = BuildFastFormatExpression(entryLocal + ".Key", dictionary.KeyFormat, emission);
         var keyExpression = fastKey is null
             ? customKey

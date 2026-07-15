@@ -41,7 +41,7 @@ internal partial class RequestBuilderImplementation
                 .ConfigureAwait(false);
 
             await foreach (var item in RequestExecutionHelpers
-                .StreamResponseAsync<T>(client, request, _settings, false, linked.Token)
+                .StreamResponseAsync<T>(client, request, _settings, false, restMethod.TimeoutMilliseconds, linked.Token)
                 .ConfigureAwait(false))
             {
                 yield return item;
@@ -103,6 +103,7 @@ internal partial class RequestBuilderImplementation
                 _settings,
                 IsBodyBuffered(restMethod, request),
                 false,
+                restMethod.TimeoutMilliseconds,
                 cancellationToken)
             .ConfigureAwait(false);
     }
@@ -235,5 +236,6 @@ internal partial class RequestBuilderImplementation
                 restMethod.ShouldDisposeResponse,
                 IsBodyBuffered(restMethod, request),
                 false),
+            restMethod.TimeoutMilliseconds,
             cancellationToken);
 }
