@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http;
 using System.Text;
 
 namespace Refit;
@@ -10,6 +11,17 @@ namespace Refit;
 /// <summary>Request body content creation for source-generated requests: JSON, JSON Lines, and URL-encoded forms.</summary>
 public static partial class GeneratedRequestRunner
 {
+    /// <summary>Wraps a caller-supplied stream in HTTP content that does not dispose it.</summary>
+    /// <param name="stream">The caller-owned request-body stream.</param>
+    /// <returns>Stream content that leaves <paramref name="stream"/> open when the request is disposed.</returns>
+    /// <remarks>
+    /// The stream belongs to the caller, so it is wrapped in a <see cref="NonDisposingStream"/>: disposing the
+    /// request (and thus its content) closes only the wrapper, never the caller's stream. Streams Refit opens
+    /// itself are sent through a plain owning <c>StreamContent</c> so Refit still closes them.
+    /// </remarks>
+    public static HttpContent CreateStreamContent(Stream stream) =>
+        new StreamContent(new NonDisposingStream(stream));
+
     /// <summary>Serializes a generated request body using Refit body rules.</summary>
     /// <typeparam name="TBody">The declared body type.</typeparam>
     /// <param name="settings">The Refit settings to use.</param>
@@ -34,7 +46,7 @@ public static partial class GeneratedRequestRunner
 
         if (body is Stream stream)
         {
-            return new StreamContent(stream);
+            return CreateStreamContent(stream);
         }
 
         if (serializationMethod == BodySerializationMethod.Default && body is string stringBody)
@@ -78,7 +90,7 @@ public static partial class GeneratedRequestRunner
 
         if (body is Stream stream)
         {
-            return new StreamContent(stream);
+            return CreateStreamContent(stream);
         }
 
         var items = body is IEnumerable enumerable and not string
@@ -110,7 +122,7 @@ public static partial class GeneratedRequestRunner
 
         if (body is Stream stream)
         {
-            return new StreamContent(stream);
+            return CreateStreamContent(stream);
         }
 
         return body is string stringBody
@@ -151,7 +163,7 @@ public static partial class GeneratedRequestRunner
 
         if (body is Stream stream)
         {
-            return new StreamContent(stream);
+            return CreateStreamContent(stream);
         }
 
         if (body is string stringBody)

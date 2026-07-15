@@ -17,9 +17,9 @@ internal partial class RestMethodInfoInternal
     private static readonly HttpMethod _patchMethod = new("PATCH");
 
 #if !NET7_0_OR_GREATER
-    /// <summary>The compiled regular expression that matches URL path parameters.</summary>
+    /// <summary>The compiled regular expression that matches URL path parameters, including an optional <c>?</c> marker.</summary>
     private static readonly Regex _parameterRegexValue = new(
-        "{(([^/?\\r\\n])*?)}",
+        "{(([^/?\\r\\n])*?)(\\?)?}",
         RegexOptions.Compiled,
         TimeSpan.FromSeconds(1));
 #endif
@@ -31,24 +31,27 @@ internal partial class RestMethodInfoInternal
     /// <param name="targetInterface">The interface type that declares the method.</param>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <param name="refitSettings">The optional Refit settings to use.</param>
+    /// <param name="clientPathPrefix">The shared route prefix declared by the client interface's <see cref="PathPrefixAttribute"/>, or null when none applies.</param>
     [RequiresUnreferencedCode("Building request metadata from reflected interface methods requires request object property metadata to be available at runtime.")]
     public RestMethodInfoInternal(
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
         Type targetInterface,
         MethodInfo methodInfo,
-        RefitSettings? refitSettings = null)
+        RefitSettings? refitSettings = null,
+        string? clientPathPrefix = null)
     {
         RefitSettings = refitSettings ?? new RefitSettings();
         ArgumentExceptionHelper.ThrowIfNull(targetInterface);
         ArgumentExceptionHelper.ThrowIfNull(methodInfo);
         Type = targetInterface;
         MethodInfo = methodInfo;
+        ClientPathPrefix = clientPathPrefix ?? string.Empty;
 
         var hma = methodInfo.GetCustomAttribute<HttpMethodAttribute>(true)
                   ?? throw new InvalidOperationException("Sequence contains no elements");
 
         HttpMethod = hma.Method;
-        RelativePath = hma.Path;
+        RelativePath = CombineWithPathPrefix(ClientPathPrefix, hma.Path);
 
         IsMultipart = methodInfo.GetCustomAttribute<MultipartAttribute>(true) is not null;
 
@@ -108,8 +111,11 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets the HTTP method used by the request.</summary>
     public HttpMethod HttpMethod { get; }
 
-    /// <summary>Gets the relative URL path template for the method.</summary>
+    /// <summary>Gets the relative URL path template for the method, including any client interface path prefix.</summary>
     public string RelativePath { get; }
+
+    /// <summary>Gets the shared route prefix declared by the client interface's <see cref="PathPrefixAttribute"/>, or an empty string when none applies.</summary>
+    public string ClientPathPrefix { get; }
 
     /// <summary>Gets a value indicating whether the request is a multipart request.</summary>
     public bool IsMultipart { get; }
@@ -546,9 +552,9 @@ internal partial class RestMethodInfoInternal
         && deserializedResultType != typeof(Stream);
 
 #if NET7_0_OR_GREATER
-    /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
+    /// <summary>Gets the compiled regular expression that matches URL path parameters, including an optional <c>?</c> marker.</summary>
     /// <returns>The parameter matching regular expression.</returns>
-    [GeneratedRegex("{(([^/?\\r\\n])*?)}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex("{(([^/?\\r\\n])*?)(\\?)?}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex ParameterRegex();
 #else
     /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>

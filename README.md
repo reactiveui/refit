@@ -337,6 +337,27 @@ Search("admin/products");
 >>> "/search/admin/products"
 ```
 
+Optional route parameters: append `?` to a placeholder name (`{name?}`, matching ASP.NET routing) to make the segment
+optional. When the bound argument is `null` the segment *and* the slash in front of it are dropped, so the URL never
+gains a trailing or doubled slash. A non-null value (including an empty string) formats exactly like a normal `{name}`
+placeholder.
+
+```csharp
+[Get("/push/notifMsg/{deviceId}/{notifMsgId?}")]
+Task<string> PushMessage(string deviceId, string? notifMsgId);
+
+PushMessage("device1", "msg42");
+>>> "/push/notifMsg/device1/msg42"
+
+PushMessage("device1", null);
+>>> "/push/notifMsg/device1"   // the trailing segment and its '/' are dropped, so it will not 404
+```
+
+Optional applies to a segment: an interior `{name?}` (for example `/a/{first?}/b`) collapses to `/a/b` when null rather
+than leaving `/a//b`, and a dotted object placeholder can be optional too (`{repo.Name?}`). In a query position
+(`?key={value?}`) there is no preceding slash to trim, so a null value simply renders an empty value like a normal null.
+The behaviour is identical on the reflection and source-generated request paths.
+
 By default Refit throws if a route template contains a placeholder with no matching method argument. If you want to
 resolve a placeholder later yourself (for example an API-versioning token rewritten inside a `DelegatingHandler`), set
 `AllowUnmatchedRouteParameters` on `RefitSettings`. The unmatched `{token}` is then left in the URL verbatim instead of
@@ -373,6 +394,55 @@ significant, exactly as with `HttpClient`:
 > **Note:** with generated request building (the default), a leading-slash-less route under the default legacy
 > resolution is validated when the request is built — so the `ArgumentException` surfaces on the first call rather than
 > from `RestService.For<T>(...)`. Under `UrlResolutionMode.Rfc3986` the route is valid and no exception is raised.
+
+#### Shared route prefix with `[PathPrefix]`
+
+When every method on an interface sits under the same route prefix, put a `[PathPrefix]` on the interface instead of
+repeating it in each route. The prefix is prepended to every method's relative path with exactly one `/` between them,
+before the base address is applied:
+
+```csharp
+[PathPrefix("/api/v2")]
+public interface IUsersApi
+{
+    [Get("/users")]           // -> /api/v2/users
+    Task<List<User>> GetAll();
+
+    [Get("/users/{id}")]      // -> /api/v2/users/{id}
+    Task<User> Get(int id);
+
+    [Get("/search")]          // -> /api/v2/search?query=...
+    Task<List<User>> Search(string query);
+}
+```
+
+Slashes are normalized so you never get a double slash: a leading or trailing slash on the prefix, and a leading slash
+on the route, are all tolerated (`[PathPrefix("/api/v2/")]` + `[Get("users")]` is still `/api/v2/users`). An empty or
+whitespace prefix is a no-op, and existing `{placeholder}` substitution and query strings are preserved.
+
+The prefix that applies is the one declared on the interface the client is generated for - the `T` in
+`RestService.For<T>` or `AddRefitClient<T>`. It applies to **every** method the client exposes, including methods
+inherited from base interfaces. Prefixes are **not** concatenated across interface inheritance; a base interface's own
+`[PathPrefix]` applies only when that base interface is itself the client type:
+
+```csharp
+[PathPrefix("/root")]
+public interface IPingApi
+{
+    [Get("/ping")]
+    Task<string> Ping();
+}
+
+[PathPrefix("/api/v2")]
+public interface IUsersApi : IPingApi
+{
+    [Get("/users")]
+    Task<List<User>> GetAll();
+}
+
+// RestService.For<IUsersApi>(...):  Ping -> /api/v2/ping,  GetAll -> /api/v2/users
+// RestService.For<IPingApi>(...):   Ping -> /root/ping
+```
 
 ### Querystrings
 

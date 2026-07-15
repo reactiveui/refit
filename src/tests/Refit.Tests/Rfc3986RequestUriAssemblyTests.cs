@@ -34,4 +34,32 @@ public sealed class Rfc3986RequestUriAssemblyTests
 
         await Assert.That(output.RequestUri!.ToString()).IsEqualTo("http://api/items?search=abc");
     }
+
+    /// <summary>A null leading optional segment drops with nothing before it, leaving only the trailing segment.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task NullLeadingOptionalSegmentDropsFromEmptyBuilder()
+    {
+        var fixture = new RequestBuilderImplementation<IRfc3986RequestApi>(
+            new RefitSettings { UrlResolution = UrlResolutionMode.Rfc3986 });
+        var factory = fixture.BuildRequestFactoryForMethod(
+            nameof(IRfc3986RequestApi.GetLeadingOptional));
+        var output = await factory([null!]);
+
+        await Assert.That(output.RequestUri!.ToString()).IsEqualTo("http://api/detail");
+    }
+
+    /// <summary>A present leading optional segment renders before the trailing segment.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task PresentLeadingOptionalSegmentRendersBeforeTrailingSegment()
+    {
+        var fixture = new RequestBuilderImplementation<IRfc3986RequestApi>(
+            new RefitSettings { UrlResolution = UrlResolutionMode.Rfc3986 });
+        var factory = fixture.BuildRequestFactoryForMethod(
+            nameof(IRfc3986RequestApi.GetLeadingOptional));
+        var output = await factory(["a"]);
+
+        await Assert.That(output.RequestUri!.ToString()).IsEqualTo("http://api/a/detail");
+    }
 }

@@ -17,6 +17,15 @@ public static partial class GeneratorComponentTests
         /// <summary>The simple path used by parser helper assertions.</summary>
         private const string SimplePath = "/path";
 
+        /// <summary>The shared prefix used by the path-prefix join assertions.</summary>
+        private const string PrefixRoute = "/api/v2";
+
+        /// <summary>A route template used by the path-prefix join assertions.</summary>
+        private const string UsersRoute = "/users";
+
+        /// <summary>The expected result of joining <see cref="PrefixRoute"/> with <see cref="UsersRoute"/>.</summary>
+        private const string PrefixedUsers = "/api/v2/users";
+
         /// <summary>The number of characters checked in whitespace assertions.</summary>
         private const int WhitespaceLength = 2;
 
@@ -52,6 +61,29 @@ public static partial class GeneratorComponentTests
             await Assert.That(Parser.IsPathSupported("/line\rbreak")).IsFalse();
             await Assert.That(Parser.IsWhiteSpace(" \t", 0, WhitespaceLength)).IsTrue();
             await Assert.That(Parser.IsWhiteSpace(" a", 0, WhitespaceLength)).IsFalse();
+        }
+
+        /// <summary>Verifies the interface path-prefix join normalizes slashes and treats an empty prefix as a no-op.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task CombinePathPrefix_NormalizesSlashesAndNoOpsEmptyPrefix()
+        {
+            // An empty or whitespace prefix is a no-op.
+            await Assert.That(Parser.CombinePathPrefix(string.Empty, UsersRoute)).IsEqualTo(UsersRoute);
+            await Assert.That(Parser.CombinePathPrefix("   ", UsersRoute)).IsEqualTo(UsersRoute);
+
+            // A prefix made only of slashes collapses to a no-op.
+            await Assert.That(Parser.CombinePathPrefix("/", UsersRoute)).IsEqualTo(UsersRoute);
+
+            // Exactly one slash joins the prefix and route regardless of the slashes either side carries.
+            await Assert.That(Parser.CombinePathPrefix(PrefixRoute, UsersRoute)).IsEqualTo(PrefixedUsers);
+            await Assert.That(Parser.CombinePathPrefix("/api/v2/", UsersRoute)).IsEqualTo(PrefixedUsers);
+            await Assert.That(Parser.CombinePathPrefix(PrefixRoute, "users")).IsEqualTo(PrefixedUsers);
+            await Assert.That(Parser.CombinePathPrefix("api/v2", "users")).IsEqualTo("api/v2/users");
+
+            // An empty route collapses to the trimmed prefix.
+            await Assert.That(Parser.CombinePathPrefix("/api/v2/", "/")).IsEqualTo(PrefixRoute);
+            await Assert.That(Parser.CombinePathPrefix(PrefixRoute, string.Empty)).IsEqualTo(PrefixRoute);
         }
 
         /// <summary>Verifies static header merging behavior.</summary>

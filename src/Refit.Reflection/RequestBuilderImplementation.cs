@@ -41,6 +41,9 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <summary>The settings controlling request building and serialization.</summary>
     private readonly RefitSettings _settings;
 
+    /// <summary>The shared route prefix declared by the client interface's <see cref="PathPrefixAttribute"/>, or an empty string when none is present.</summary>
+    private readonly string _clientPathPrefix;
+
     /// <summary>Initializes a new instance of the <see cref="RequestBuilderImplementation"/> class for the given interface type.</summary>
     /// <param name="refitInterfaceType">The Refit interface type to build requests for.</param>
     /// <param name="refitSettings">The settings to use, or null for defaults.</param>
@@ -66,6 +69,11 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
             new();
 
         TargetType = refitInterfaceType;
+
+        // The client interface's [PathPrefix] applies to every method it exposes, including methods inherited from
+        // base interfaces. A base interface's own prefix is ignored here (it applies only when that base is itself the
+        // client type), so the prefix is read once from the target interface rather than per declaring interface.
+        _clientPathPrefix = refitInterfaceType.GetCustomAttribute<PathPrefixAttribute>()?.Prefix ?? string.Empty;
 
         var dict = new Dictionary<string, List<RestMethodInfoInternal>>(StringComparer.Ordinal);
 
@@ -332,7 +340,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
             }
 #endif
 
-            var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, _settings);
+            var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, _settings, _clientPathPrefix);
             value.Add(restinfo);
         }
     }
@@ -407,7 +415,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
                     new RestMethodInfoInternal(
                         state.RestMethod.Type,
                         state.RestMethod.MethodInfo.MakeGenericMethod(state.GenericArguments),
-                        state.RestMethod.RefitSettings),
+                        state.RestMethod.RefitSettings,
+                        state.RestMethod.ClientPathPrefix),
                 (RestMethod: restMethodInfo, GenericArguments: genericArguments))
             : restMethodInfo;
 
