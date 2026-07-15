@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Refit.Tests;
 
@@ -77,5 +78,16 @@ public class UniqueNameTests
 
         await Assert.That(emptyKey).IsEqualTo(withoutKey);
         await Assert.That(withKey).Contains("ServiceKey=primary");
+    }
+
+    /// <summary>Verifies a type declared in the global namespace produces a unique name without a namespace segment.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA2263:Prefer generic overload", Justification = "Test intentionally exercises the non-generic Type overload with a namespace-less type.")]
+    public async Task GlobalNamespaceTypeProducesUniqueName()
+    {
+        var name = UniqueName.ForType(typeof(IGlobalNamespaceRefitApi));
+
+        await Assert.That(name).Contains(nameof(IGlobalNamespaceRefitApi));
     }
 }

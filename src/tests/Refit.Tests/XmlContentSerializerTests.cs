@@ -94,6 +94,20 @@ public class XmlContentSerializerTests
         await Assert.That(document[nameof(Dto)]?["Name", "https://google.com"]?.Prefix).IsEqualTo(prefix);
     }
 
+    /// <summary>Verifies the content charset follows the configured writer encoding.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ContentCharSetFollowsConfiguredWriterEncoding()
+    {
+        var dto = BuildDto();
+        var utf8Settings = new XmlContentSerializerSettings();
+        utf8Settings.XmlReaderWriterSettings.WriterSettings = new XmlWriterSettings { Encoding = Encoding.UTF8 };
+
+        var utf8Content = new XmlContentSerializer(utf8Settings).ToHttpContent(dto);
+
+        await Assert.That(utf8Content.Headers.ContentType?.CharSet).IsEqualTo(Encoding.UTF8.WebName);
+    }
+
     /// <summary>Verifies a DTO can be deserialized from XML content.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
