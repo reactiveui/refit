@@ -57,6 +57,9 @@ Refit.ApiResponse<T>.Settings.get -> Refit.RefitSettings!
 Refit.ApiResponse<T>.StatusCode.get -> System.Net.HttpStatusCode?
 Refit.ApiResponse<T>.Version.get -> System.Version?
 Refit.ApiResponseExtensions
+Refit.ApiResponseExtensions.extension(Refit.IApiResponse!)
+Refit.ApiResponseExtensions.extension(Refit.IApiResponse!).EnsureSuccessStatusCodeAsync() -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
+Refit.ApiResponseExtensions.extension(Refit.IApiResponse!).EnsureSuccessfulAsync() -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
 Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!)
 Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!).EnsureSuccessStatusCodeAsync() -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
 Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!).EnsureSuccessfulAsync() -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
@@ -393,7 +396,9 @@ static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, Sy
 static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
 static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings) -> System.Threading.Tasks.Task<Refit.ApiException!>!
 static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
+static Refit.ApiResponseExtensions.EnsureSuccessStatusCodeAsync(this Refit.IApiResponse! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
 static Refit.ApiResponseExtensions.EnsureSuccessStatusCodeAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
+static Refit.ApiResponseExtensions.EnsureSuccessfulAsync(this Refit.IApiResponse! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
 static Refit.ApiResponseExtensions.EnsureSuccessfulAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
 static Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Type! interfaceType) -> void
 static Refit.GeneratedRequestRunner.AddHeaderCollection(System.Net.Http.HttpRequestMessage! request, System.Collections.Generic.IDictionary<string!, string!>? headers) -> void

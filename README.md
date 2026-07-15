@@ -1769,6 +1769,14 @@ IApiResponse<User> response = await gitHubApi.GetUser("octocat");
 await response.EnsureSuccessStatusCodeAsync();
 ```
 
+The same two guards are available on the non-generic `IApiResponse` (for endpoints that return no deserialized body), so
+you can throw the captured error without inspecting `IsSuccessStatusCode` / `Error` by hand:
+
+```csharp
+IApiResponse response = await gitHubApi.DeleteUser("octocat");
+await response.EnsureSuccessStatusCodeAsync();   // throws ApiException / ApiRequestException on failure
+```
+
 #### Do I need to dispose the response?
 
 `ApiResponse<T>` (and `IApiResponse` / `IApiResponse<T>`) implement `IDisposable`, but for the common case you do **not**
