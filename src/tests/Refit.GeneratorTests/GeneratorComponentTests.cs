@@ -180,6 +180,55 @@ public static partial class GeneratorComponentTests
             await Assert.That(array.Equals(NullIntArray())).IsFalse();
         }
 
+        /// <summary>Verifies the object-typed equality override matches equal arrays and rejects unrelated objects.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task Equals_Object_MatchesEqualArraysAndRejectsUnrelatedObjects()
+        {
+            const int FirstValue = 1;
+            const int SecondValue = 2;
+            var array = new ImmutableEquatableArray<int>([FirstValue, SecondValue]);
+            var equal = new ImmutableEquatableArray<int>([FirstValue, SecondValue]);
+
+            await Assert.That(array.Equals((object)equal)).IsTrue();
+            await Assert.That(array.Equals((object)"not an array")).IsFalse();
+        }
+
+        /// <summary>Verifies the non-generic enumerator yields every element in order.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task NonGenericEnumerator_YieldsAllValues()
+        {
+            const int FirstValue = 7;
+            const int SecondValue = 8;
+            var array = new ImmutableEquatableArray<int>([FirstValue, SecondValue]);
+
+            var collected = new List<int>();
+            foreach (var value in (System.Collections.IEnumerable)array)
+            {
+                collected.Add((int)value);
+            }
+
+            await Assert.That(collected).IsCollectionEqualTo([FirstValue, SecondValue]);
+        }
+
+        /// <summary>Verifies the factory shares the empty instance for empty input and wraps populated input.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task FromArray_SharesEmptyInstanceAndWrapsPopulatedInput()
+        {
+            const int ExpectedPopulatedCount = 3;
+            const int FirstValue = 1;
+            const int SecondValue = 2;
+            const int ThirdValue = 3;
+
+            var empty = ImmutableEquatableArrayFactory.FromArray<int>([]);
+            var populated = ImmutableEquatableArrayFactory.FromArray([FirstValue, SecondValue, ThirdValue]);
+
+            await Assert.That(empty).IsSameReferenceAs(ImmutableEquatableArray<int>.Empty);
+            await Assert.That(populated.Count).IsEqualTo(ExpectedPopulatedCount);
+        }
+
         /// <summary>Returns a null immutable array reference without making the call site a constant condition.</summary>
         /// <returns>A null array reference.</returns>
         private static ImmutableEquatableArray<int>? NullIntArray() => null;

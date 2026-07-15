@@ -57,6 +57,9 @@ Refit.ApiResponse<T>.Settings.get -> Refit.RefitSettings!
 Refit.ApiResponse<T>.StatusCode.get -> System.Net.HttpStatusCode?
 Refit.ApiResponse<T>.Version.get -> System.Version?
 Refit.ApiResponseExtensions
+Refit.ApiResponseExtensions.extension(Refit.IApiResponse!)
+Refit.ApiResponseExtensions.extension(Refit.IApiResponse!).EnsureSuccessStatusCodeAsync() -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
+Refit.ApiResponseExtensions.extension(Refit.IApiResponse!).EnsureSuccessfulAsync() -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
 Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!)
 Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!).EnsureSuccessStatusCodeAsync() -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
 Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!).EnsureSuccessfulAsync() -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
@@ -301,6 +304,7 @@ Refit.RefitSettings.TransportExceptionFactory.get -> System.Func<System.Net.Http
 Refit.RefitSettings.TransportExceptionFactory.set -> void
 Refit.RefitSettings.UrlParameterFormatter.get -> Refit.IUrlParameterFormatter!
 Refit.RefitSettings.UrlParameterFormatter.set -> void
+Refit.RefitSettings.UrlParameterFormatterMap.get -> System.Collections.Generic.IDictionary<System.Type!, Refit.IUrlParameterFormatter!>!
 Refit.RefitSettings.UrlParameterKeyFormatter.get -> Refit.IUrlParameterKeyFormatter!
 Refit.RefitSettings.UrlParameterKeyFormatter.set -> void
 Refit.RefitSettings.UrlResolution.get -> Refit.UrlResolutionMode
@@ -393,7 +397,9 @@ static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, Sy
 static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
 static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings) -> System.Threading.Tasks.Task<Refit.ApiException!>!
 static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
+static Refit.ApiResponseExtensions.EnsureSuccessStatusCodeAsync(this Refit.IApiResponse! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
 static Refit.ApiResponseExtensions.EnsureSuccessStatusCodeAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
+static Refit.ApiResponseExtensions.EnsureSuccessfulAsync(this Refit.IApiResponse! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
 static Refit.ApiResponseExtensions.EnsureSuccessfulAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
 static Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Type! interfaceType) -> void
 static Refit.GeneratedRequestRunner.AddHeaderCollection(System.Net.Http.HttpRequestMessage! request, System.Collections.Generic.IDictionary<string!, string!>? headers) -> void
@@ -411,6 +417,8 @@ static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage
 static Refit.GeneratedRequestRunner.StreamAsync<T>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Threading.CancellationToken methodCancellationToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
 static Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(Refit.RefitSettings! settings) -> bool
 static Refit.HttpRequestMessageOptions.InterfaceType.get -> string!
+static Refit.HttpRequestMessageOptions.MethodName.get -> string!
+static Refit.HttpRequestMessageOptions.RelativePathTemplate.get -> string!
 static Refit.HttpRequestMessageOptions.RequestContent.get -> string!
 static Refit.HttpRequestMessageOptions.RestMethodInfo.get -> string!
 static Refit.JsonLinesContent.JsonLinesMediaType.get -> string!
@@ -476,6 +484,10 @@ Refit.RefitSettings.ReturnTypeAdapters.get -> System.Collections.Generic.IList<S
 Refit.UrlAttribute
 Refit.UrlAttribute.UrlAttribute() -> void
 static Refit.GeneratedRequestRunner.RequireAbsoluteUrl(object? url) -> string!
+Refit.TimeoutAttribute
+Refit.TimeoutAttribute.Milliseconds.get -> int
+Refit.TimeoutAttribute.TimeoutAttribute(int milliseconds) -> void
+static Refit.GeneratedRequestRunner.SetRequestTimeout(System.Net.Http.HttpRequestMessage! request, int timeoutMilliseconds) -> void
 static Refit.HttpRequestMessageOptions.MethodArguments.get -> string!
 Refit.RefitSettings.CaptureMethodArguments.get -> bool
 Refit.RefitSettings.CaptureMethodArguments.set -> void

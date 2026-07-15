@@ -251,19 +251,19 @@ public static partial class GeneratedRequestRunner
     /// <summary>Round-trips a catch-all <c>{**param}</c> path value: each <c>/</c>-separated section is formatted and
     /// escaped while the separators are preserved, matching the reflection request builder.</summary>
     /// <param name="value">The value's string form (from <c>ToString</c>), or null.</param>
-    /// <param name="formatter">The configured URL parameter formatter.</param>
+    /// <param name="settings">The Refit settings supplying the URL parameter formatter registry and default.</param>
     /// <param name="attributeProvider">The parameter's attribute provider passed to the formatter.</param>
     /// <param name="type">The parameter's declared type passed to the formatter.</param>
     /// <returns>The round-trip-escaped path fragment, ready to append verbatim.</returns>
     public static string RoundTripEscapePath(
         string? value,
-        IUrlParameterFormatter formatter,
+        RefitSettings settings,
         ICustomAttributeProvider attributeProvider,
         Type type)
     {
         if (value is null)
         {
-            return StringHelpers.EscapeDataString(formatter.Format(null, attributeProvider, type) ?? string.Empty);
+            return StringHelpers.EscapeDataString(FormatUrlParameter(settings, null, attributeProvider, type) ?? string.Empty);
         }
 
         var sb = new StringBuilder(value.Length);
@@ -281,19 +281,37 @@ public static partial class GeneratedRequestRunner
             }
 
             var section = value.Substring(sectionStart, i - sectionStart);
-            _ = sb.Append(StringHelpers.EscapeDataString(formatter.Format(section, attributeProvider, type) ?? string.Empty));
+            _ = sb.Append(StringHelpers.EscapeDataString(FormatUrlParameter(settings, section, attributeProvider, type) ?? string.Empty));
             sectionStart = i + 1;
         }
 
         return sb.ToString();
     }
 
+    /// <summary>Resolves the <see cref="IUrlParameterFormatter"/> for a value, consulting the per-type registry on the
+    /// settings before falling back to the configured default, then formats the value with it.</summary>
+    /// <param name="settings">The Refit settings supplying the registry and default formatter.</param>
+    /// <param name="value">The value to render into the URL, or null.</param>
+    /// <param name="attributeProvider">The attribute provider passed to the formatter.</param>
+    /// <param name="type">The declared type passed to the formatter.</param>
+    /// <returns>The formatted value, or null when <paramref name="value"/> is null.</returns>
+    /// <remarks>This is the single point both the reflection and source-generated request builders call, so a formatter
+    /// registered in <see cref="RefitSettings.UrlParameterFormatterMap"/> is applied identically by both. Lookup is by
+    /// exact runtime type; every other value uses <see cref="RefitSettings.UrlParameterFormatter"/>.</remarks>
+    public static string? FormatUrlParameter(
+        RefitSettings settings,
+        object? value,
+        ICustomAttributeProvider attributeProvider,
+        Type type) =>
+        ResolveUrlParameterFormatter(settings, value).Format(value, attributeProvider, type);
+
     /// <summary>Determines whether the settings use the pristine default URL parameter formatter, letting
     /// generated code format statically-known values inline without calling the formatter.</summary>
     /// <param name="settings">The Refit settings to inspect.</param>
     /// <returns><see langword="true"/> when generated inline formatting matches the configured formatter.</returns>
     public static bool UsesDefaultUrlParameterFormatting(RefitSettings settings) =>
-        settings.UrlParameterFormatter is DefaultUrlParameterFormatter formatter
+        settings.UrlParameterFormatterMap.Count == 0
+        && settings.UrlParameterFormatter is DefaultUrlParameterFormatter formatter
         && formatter.IsPristineDefault;
 
     /// <summary>Determines whether the settings use the pristine default form-url-encoded parameter formatter.</summary>
@@ -385,21 +403,20 @@ public static partial class GeneratedRequestRunner
             return;
         }
 
-        var formatter = settings.UrlParameterFormatter;
         var element = formatting.ElementProviderType;
         if (collectionFormat == CollectionFormat.Multi)
         {
             foreach (var value in values)
             {
-                var formatted = formatter.Format(value, element, element);
-                builder.Add(key, formatter.Format(formatted, formatting.JoinedProvider, formatting.JoinedType), preEncoded);
+                var formatted = FormatUrlParameter(settings, value, element, element);
+                builder.Add(key, FormatUrlParameter(settings, formatted, formatting.JoinedProvider, formatting.JoinedType), preEncoded);
             }
 
             return;
         }
 
-        var joined = JoinFormattedElements(values, formatter, element, CollectionDelimiter(collectionFormat));
-        builder.Add(key, formatter.Format(joined, formatting.JoinedProvider, formatting.JoinedType), preEncoded);
+        var joined = JoinFormattedElements(values, settings, element, CollectionDelimiter(collectionFormat));
+        builder.Add(key, FormatUrlParameter(settings, joined, formatting.JoinedProvider, formatting.JoinedType), preEncoded);
     }
 
     /// <summary>Sets, replaces, or removes a generated request header.</summary>
@@ -546,7 +563,7 @@ public static partial class GeneratedRequestRunner
 
     /// <summary>Formats each element with the property's provider and type and joins them with the delimiter.</summary>
     /// <param name="values">The collection value.</param>
-    /// <param name="formatter">The URL parameter formatter.</param>
+    /// <param name="settings">The Refit settings supplying the URL parameter formatter registry and default.</param>
     /// <param name="elementProviderType">The declared property type used as the attribute provider and type.</param>
     /// <param name="delimiter">The delimiter between formatted values.</param>
     /// <returns>The joined formatted values, empty when the collection has no elements.</returns>
@@ -556,7 +573,7 @@ public static partial class GeneratedRequestRunner
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
     private static string JoinFormattedElements(
         IEnumerable values,
-        IUrlParameterFormatter formatter,
+        RefitSettings settings,
         Type elementProviderType,
         char delimiter)
     {
@@ -570,11 +587,22 @@ public static partial class GeneratedRequestRunner
             }
 
             first = false;
-            builder.Append(formatter.Format(value, elementProviderType, elementProviderType));
+            builder.Append(FormatUrlParameter(settings, value, elementProviderType, elementProviderType));
         }
 
         return builder.ToString();
     }
+
+    /// <summary>Resolves the formatter for a value: its <see cref="RefitSettings.UrlParameterFormatterMap"/> entry, else <see cref="RefitSettings.UrlParameterFormatter"/>.</summary>
+    /// <param name="settings">The Refit settings supplying the registry and default formatter.</param>
+    /// <param name="value">The value about to be formatted, or null.</param>
+    /// <returns>The registered formatter for the value's exact runtime type, or the configured default formatter.</returns>
+    private static IUrlParameterFormatter ResolveUrlParameterFormatter(RefitSettings settings, object? value) =>
+        value is not null
+        && settings.UrlParameterFormatterMap.Count > 0
+        && settings.UrlParameterFormatterMap.TryGetValue(value.GetType(), out var formatter)
+            ? formatter
+            : settings.UrlParameterFormatter;
 
     /// <summary>Throws when the expanded path still contains a placeholder and unmatched parameters are not allowed.</summary>
     /// <param name="path">The expanded request path to validate.</param>

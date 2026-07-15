@@ -4,7 +4,7 @@
 namespace Refit;
 
 /// <summary>Shared send and response-processing helpers for generated and reflection-built requests.</summary>
-internal static class RequestExecutionHelpers
+internal static partial class RequestExecutionHelpers
 {
     /// <summary>The message used when content cannot be deserialized into the requested type.</summary>
     private const string DeserializationErrorMessage = "An error occured deserializing the response.";
@@ -25,12 +25,32 @@ internal static class RequestExecutionHelpers
         throw new InvalidOperationException(BaseAddressRequiredMessage);
     }
 
+    /// <summary>Builds the token a request runs against, applying a per-call timeout on top of the effective token.</summary>
+    /// <param name="timeoutMilliseconds">The per-call timeout in milliseconds; values that are not positive disable it.</param>
+    /// <param name="cancellationToken">The already-resolved effective cancellation token for the request.</param>
+    /// <returns>The token the request should run against, and the timeout source to dispose once the request completes
+    /// (null when no timeout was applied).</returns>
+    public static (CancellationToken Token, CancellationTokenSource? TimeoutSource) CreateTimeoutToken(
+        int timeoutMilliseconds,
+        CancellationToken cancellationToken)
+    {
+        if (timeoutMilliseconds <= 0)
+        {
+            return (cancellationToken, null);
+        }
+
+        var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(timeoutMilliseconds);
+        return (timeoutSource.Token, timeoutSource);
+    }
+
     /// <summary>Sends a request with no response body, throwing on HTTP errors.</summary>
     /// <param name="client">The HTTP client to send with.</param>
     /// <param name="request">The request message.</param>
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="bufferBody">Whether request content should be buffered before sending.</param>
     /// <param name="applyAuthorizationHeader">Whether to apply the configured authorization getter before sending.</param>
+    /// <param name="timeoutMilliseconds">The per-call timeout in milliseconds; values that are not positive disable it.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>A task that completes when the request finishes.</returns>
     public static async Task SendVoidAsync(
@@ -39,32 +59,41 @@ internal static class RequestExecutionHelpers
         RefitSettings settings,
         bool bufferBody,
         bool applyAuthorizationHeader,
+        int timeoutMilliseconds,
         CancellationToken cancellationToken)
     {
-        if (bufferBody && request.Content is not null)
+        var (token, timeoutSource) = CreateTimeoutToken(timeoutMilliseconds, cancellationToken);
+        try
         {
-            await request.Content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
-        }
+            if (bufferBody && request.Content is not null)
+            {
+                await request.Content.LoadIntoBufferAsync(token).ConfigureAwait(false);
+            }
 
-        await CaptureRequestContentAsync(request, settings, cancellationToken).ConfigureAwait(false);
+            await CaptureRequestContentAsync(request, settings, token).ConfigureAwait(false);
 
-        if (applyAuthorizationHeader)
-        {
-            await AddAuthorizationHeaderFromGetterAsync(request, settings, cancellationToken)
+            if (applyAuthorizationHeader)
+            {
+                await AddAuthorizationHeaderFromGetterAsync(request, settings, token)
+                    .ConfigureAwait(false);
+            }
+
+            using var response = await client
+                .SendAsync(request, token)
                 .ConfigureAwait(false);
+
+            var exception = await settings.ExceptionFactory(response).ConfigureAwait(false);
+            if (exception is null)
+            {
+                return;
+            }
+
+            throw exception;
         }
-
-        using var response = await client
-            .SendAsync(request, cancellationToken)
-            .ConfigureAwait(false);
-
-        var exception = await settings.ExceptionFactory(response).ConfigureAwait(false);
-        if (exception is null)
+        finally
         {
-            return;
+            timeoutSource?.Dispose();
         }
-
-        throw exception;
     }
 
     /// <summary>Buffers, sends, and processes the response for a request.</summary>
@@ -74,6 +103,7 @@ internal static class RequestExecutionHelpers
     /// <param name="request">The request message.</param>
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="options">The send and response-processing options.</param>
+    /// <param name="timeoutMilliseconds">The per-call timeout in milliseconds; values that are not positive disable it.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized or wrapped response.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -89,21 +119,23 @@ internal static class RequestExecutionHelpers
         HttpRequestMessage request,
         RefitSettings settings,
         RequestExecutionOptions options,
+        int timeoutMilliseconds,
         CancellationToken cancellationToken)
     {
+        var (token, timeoutSource) = CreateTimeoutToken(timeoutMilliseconds, cancellationToken);
         HttpResponseMessage? response = null;
         HttpContent? content = null;
         var disposeResponse = true;
         try
         {
-            await PrepareRequestAsync(request, settings, options, cancellationToken).ConfigureAwait(false);
+            await PrepareRequestAsync(request, settings, options, token).ConfigureAwait(false);
 
             var sendResult = await SendOrCaptureExceptionAsync<T, TBody>(
                     client,
                     request,
                     settings,
                     options.IsApiResponse,
-                    cancellationToken)
+                    token)
                 .ConfigureAwait(false);
             if (!sendResult.HasResponse)
             {
@@ -124,7 +156,7 @@ internal static class RequestExecutionHelpers
                 disposeResponse = false;
             }
 
-            return await DispatchResponseAsync<T, TBody>(request, response, content, settings, options, exception, cancellationToken)
+            return await DispatchResponseAsync<T, TBody>(request, response, content, settings, options, exception, token)
                 .ConfigureAwait(false);
         }
         finally
@@ -134,6 +166,8 @@ internal static class RequestExecutionHelpers
                 response?.Dispose();
                 content?.Dispose();
             }
+
+            timeoutSource?.Dispose();
         }
     }
 
@@ -143,6 +177,7 @@ internal static class RequestExecutionHelpers
     /// <param name="request">The request message; disposed when streaming completes.</param>
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="applyAuthorizationHeader">Whether to apply the configured authorization getter before sending.</param>
+    /// <param name="timeoutMilliseconds">The per-call timeout in milliseconds; values that are not positive disable it.</param>
     /// <param name="cancellationToken">A token to cancel streaming.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -154,6 +189,7 @@ internal static class RequestExecutionHelpers
         HttpRequestMessage request,
         RefitSettings settings,
         bool applyAuthorizationHeader,
+        int timeoutMilliseconds,
         CancellationToken cancellationToken)
     {
         if (settings.ContentSerializer is not IStreamingContentSerializer streamingSerializer)
@@ -163,13 +199,16 @@ internal static class RequestExecutionHelpers
                 $"The configured {nameof(IHttpContentSerializer)} does not support streaming responses. Implement {nameof(IStreamingContentSerializer)} to return an IAsyncEnumerable<T>.");
         }
 
+        var (token, timeoutSource) = CreateTimeoutToken(timeoutMilliseconds, cancellationToken);
+
         return StreamResponseIteratorAsync<T>(
             client,
             request,
             settings,
             streamingSerializer,
             applyAuthorizationHeader,
-            cancellationToken);
+            timeoutSource,
+            token);
     }
 
     /// <summary>Populates an empty Authorization header through the configured token getter, removing the header when the getter returns an empty token.</summary>
@@ -268,85 +307,6 @@ internal static class RequestExecutionHelpers
 
         await AddAuthorizationHeaderFromGetterAsync(request, settings, cancellationToken)
             .ConfigureAwait(false);
-    }
-
-    /// <summary>Sends the request and streams its body, throwing on HTTP errors and disposing the request when done.</summary>
-    /// <typeparam name="T">The element type yielded to the caller.</typeparam>
-    /// <param name="client">The HTTP client to send with.</param>
-    /// <param name="request">The request message; disposed when streaming completes.</param>
-    /// <param name="settings">The Refit settings to use.</param>
-    /// <param name="streamingSerializer">The streaming-capable content serializer.</param>
-    /// <param name="applyAuthorizationHeader">Whether to apply the configured authorization getter before sending.</param>
-    /// <param name="cancellationToken">A token to cancel streaming.</param>
-    /// <returns>An asynchronous sequence of deserialized elements.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
-    private static async IAsyncEnumerable<T?> StreamResponseIteratorAsync<T>(
-        HttpClient client,
-        HttpRequestMessage request,
-        RefitSettings settings,
-        IStreamingContentSerializer streamingSerializer,
-        bool applyAuthorizationHeader,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        using (request)
-        {
-            if (applyAuthorizationHeader)
-            {
-                await AddAuthorizationHeaderFromGetterAsync(request, settings, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-
-            using var response = await client
-                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                .ConfigureAwait(false);
-
-            var exception = await settings.ExceptionFactory(response).ConfigureAwait(false);
-            if (exception is not null)
-            {
-                throw exception;
-            }
-
-            var content = EnsureResponseContent(response);
-            var format = DetectStreamingFormat(content);
-
-#if NET6_0_OR_GREATER
-            var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            await using (stream.ConfigureAwait(false))
-            {
-                await foreach (var item in streamingSerializer
-                    .DeserializeStreamAsync<T>(stream, format, cancellationToken)
-                    .ConfigureAwait(false))
-                {
-                    yield return item;
-                }
-            }
-#else
-            using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
-            await foreach (var item in streamingSerializer
-                .DeserializeStreamAsync<T>(stream, format, cancellationToken)
-                .ConfigureAwait(false))
-            {
-                yield return item;
-            }
-#endif
-        }
-    }
-
-    /// <summary>Chooses the streaming frame format from the response content type.</summary>
-    /// <param name="content">The response content whose media type is inspected.</param>
-    /// <returns>The detected streaming format.</returns>
-    private static StreamingContentFormat DetectStreamingFormat(HttpContent content)
-    {
-        var mediaType = content.Headers.ContentType?.MediaType;
-        return string.Equals(mediaType, "application/jsonl", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(mediaType, "application/x-ndjson", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(mediaType, "application/x-jsonlines", StringComparison.OrdinalIgnoreCase)
-            ? StreamingContentFormat.JsonLines
-            : StreamingContentFormat.JsonArray;
     }
 
     /// <summary>Sends the request, capturing a transport failure as an API response when required.</summary>

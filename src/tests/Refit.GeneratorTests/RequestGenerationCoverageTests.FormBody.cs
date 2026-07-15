@@ -174,6 +174,50 @@ public sealed partial class RequestGenerationCoverageTests
         await Assert.That(generated).DoesNotContain("global::Refit.FormField<");
     }
 
+    /// <summary>Verifies a form body carrying a nested object, dictionary, or complex-element collection property routes
+    /// the whole body through the reflection content path (which flattens recursively) instead of emitting descriptors.</summary>
+    /// <param name="property">The complex property declaration forcing the reflection fallback.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("public Nested Detail { get; set; }")]
+    [Arguments("public System.Collections.Generic.Dictionary<string, string> Extra { get; set; }")]
+    [Arguments("public System.Collections.Generic.List<Nested> Items { get; set; }")]
+    public async Task ComplexFormBodyPropertyUsesReflectionContent(string property)
+    {
+        var source =
+            $$"""
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public class Nested
+            {
+                public string Email { get; set; }
+            }
+
+            public class ComplexForm
+            {
+                public string Name { get; set; }
+                {{property}}
+            }
+
+            public interface IGeneratedClient
+            {
+                [Post("/f")]
+                Task Submit([Body(BodySerializationMethod.UrlEncoded)] ComplexForm form);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(
+            "global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<global::RefitGeneratorTest.ComplexForm>(");
+        await Assert.That(generated).DoesNotContain("global::Refit.FormField<");
+    }
+
     /// <summary>Verifies url-encoded form bodies covering nullable collection entries and escaped field names.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

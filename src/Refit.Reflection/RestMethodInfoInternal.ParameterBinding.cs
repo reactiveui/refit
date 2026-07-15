@@ -402,4 +402,60 @@ internal partial class RestMethodInfoInternal
 
         return cancellationTokenParam;
     }
+
+    /// <summary>Finds and validates the <c>[Url]</c> parameter that supplies the absolute request URI, ensuring the
+    /// method does not also declare a path template.</summary>
+    /// <param name="parameterArray">The array of method parameters.</param>
+    /// <param name="relativePath">The method's relative path template.</param>
+    /// <returns>The index of the <c>[Url]</c> parameter, or a negative value when none is present.</returns>
+    /// <exception cref="ArgumentException">More than one parameter carries <c>[Url]</c>, the parameter is not a
+    /// <see cref="string"/> or <see cref="Uri"/>, or a <c>[Url]</c> parameter is combined with a non-empty path
+    /// template.</exception>
+    private static int ResolveUrlParameter(ParameterInfo[] parameterArray, string relativePath)
+    {
+        var urlIndex = FindUrlParameter(parameterArray);
+        if (urlIndex >= 0
+            && !string.IsNullOrEmpty(relativePath)
+            && relativePath != "/")
+        {
+            throw new ArgumentException(
+                $"A [Url] method must not also declare a path template; [Url] provides the full absolute URI, but the template was \"{relativePath}\".");
+        }
+
+        return urlIndex;
+    }
+
+    /// <summary>Finds the index of the <c>[Url]</c> parameter that supplies the absolute request URI.</summary>
+    /// <param name="parameterArray">The array of method parameters.</param>
+    /// <returns>The index of the <c>[Url]</c> parameter, or a negative value when none is present.</returns>
+    /// <exception cref="ArgumentException">More than one parameter carries <c>[Url]</c>, or the parameter is not a
+    /// <see cref="string"/> or <see cref="Uri"/>.</exception>
+    private static int FindUrlParameter(ParameterInfo[] parameterArray)
+    {
+        var urlIndex = -1;
+
+        for (var i = 0; i < parameterArray.Length; i++)
+        {
+            var param = parameterArray[i];
+            if (param.GetCustomAttribute<UrlAttribute>(true) is null)
+            {
+                continue;
+            }
+
+            if (urlIndex >= 0)
+            {
+                throw new ArgumentException("Only one parameter can be a [Url] parameter");
+            }
+
+            if (param.ParameterType != typeof(string) && param.ParameterType != typeof(Uri))
+            {
+                throw new ArgumentException(
+                    $"[Url] parameter \"{param.Name}\" must be of type string or System.Uri");
+            }
+
+            urlIndex = i;
+        }
+
+        return urlIndex;
+    }
 }

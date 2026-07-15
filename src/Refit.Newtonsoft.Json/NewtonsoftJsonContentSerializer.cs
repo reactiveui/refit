@@ -89,6 +89,7 @@ public sealed class NewtonsoftJsonContentSerializer(
         await content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
         var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 
+        T? result;
 #if NET6_0_OR_GREATER
         await using (stream.ConfigureAwait(false))
 #else
@@ -104,9 +105,11 @@ public sealed class NewtonsoftJsonContentSerializer(
             using (jsonTextReader)
 #endif
             {
-                return serializer.Deserialize<T>(jsonTextReader);
+                result = serializer.Deserialize<T>(jsonTextReader);
             }
         }
+
+        return result;
     }
 
     /// <inheritdoc/>

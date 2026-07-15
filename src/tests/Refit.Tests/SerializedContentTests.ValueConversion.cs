@@ -292,6 +292,30 @@ public partial class SerializedContentTests
         await Assert.That(result).IsNull();
     }
 
+    /// <summary>Verifies that a populated nullable enum string deserializes to its value.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeValuedNullableEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum?>(
+            "\"valueOne\"",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(result).IsEqualTo(CamelCaseEnum.ValueOne);
+    }
+
+    /// <summary>Verifies that a numeric nullable enum token deserializes to its value.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeNumericNullableEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum?>(
+            "2",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(result).IsEqualTo(CamelCaseEnum.alreadyLowercase);
+    }
+
     /// <summary>Verifies that JSON null throws for a non-nullable enum.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]

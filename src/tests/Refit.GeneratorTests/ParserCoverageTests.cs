@@ -130,6 +130,9 @@ public sealed class ParserCoverageTests
         await Assert.That(missingSecond).IsNull();
         await Assert.That(() => wellKnownTypes.Get(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => wellKnownTypes.Get(openGenericParameter)).ThrowsExactly<InvalidOperationException>();
+
+        // A constructed generic type's FullName is not resolvable by metadata name, so Get reports the missing type.
+        await Assert.That(() => wellKnownTypes.Get(typeof(List<int>))).ThrowsExactly<InvalidOperationException>();
     }
 
     /// <summary>Verifies parser and generator helper fallback paths that are easier to exercise directly.</summary>

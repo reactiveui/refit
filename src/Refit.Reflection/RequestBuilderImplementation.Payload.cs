@@ -362,7 +362,8 @@ internal partial class RequestBuilderImplementation
         queryParamsToAdd.Add(
             new(
                 queryPath,
-                _settings.UrlParameterFormatter.Format(
+                GeneratedRequestRunner.FormatUrlParameter(
+                    _settings,
                     param,
                     parameterInfo,
                     parameterInfo.ParameterType)));
@@ -394,7 +395,8 @@ internal partial class RequestBuilderImplementation
         {
             foreach (var paramValue in paramValues)
             {
-                yield return _settings.UrlParameterFormatter.Format(
+                yield return GeneratedRequestRunner.FormatUrlParameter(
+                    _settings,
                     paramValue,
                     customAttributeProvider,
                     type);
@@ -442,7 +444,8 @@ internal partial class RequestBuilderImplementation
 
             var builder = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
             builder.Append(
-                _settings.UrlParameterFormatter.Format(
+                GeneratedRequestRunner.FormatUrlParameter(
+                    _settings,
                     enumerator.Current,
                     customAttributeProvider,
                     type));
@@ -451,7 +454,8 @@ internal partial class RequestBuilderImplementation
             {
                 builder.Append(delimiter);
                 builder.Append(
-                    _settings.UrlParameterFormatter.Format(
+                    GeneratedRequestRunner.FormatUrlParameter(
+                        _settings,
                         enumerator.Current,
                         customAttributeProvider,
                         type));
