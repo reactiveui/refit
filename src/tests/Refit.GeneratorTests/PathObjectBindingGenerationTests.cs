@@ -281,6 +281,138 @@ public sealed class PathObjectBindingGenerationTests
         await Assert.That(generated).Contains("pfx-");
     }
 
+    /// <summary>Verifies a dotted placeholder on a constrained generic parameter binds against the constraint type and
+    /// is generated inline, without falling back to the reflection request builder (issue #2218).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ConstrainedGenericDottedPathBindsInline()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public class PathBoundObject
+            {
+                public int SomeProperty { get; init; }
+
+                public string? SomeProperty2 { get; init; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+                Task Sample<T>(T request)
+                    where T : PathBoundObject;
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("@request.SomeProperty");
+        await Assert.That(generated).Contains("@request.SomeProperty2");
+    }
+
+    /// <summary>Verifies a constrained generic parameter whose constraint carries an unbound property flattens it into
+    /// the query inline, matching the reflection builder's split of a path-bound object.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ConstrainedGenericDottedPathFlattensResidualQueryInline()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public class PathBoundObject
+            {
+                public int SomeProperty { get; init; }
+
+                public string? Note { get; init; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/foos/{request.someProperty}")]
+                Task Sample<T>(T request)
+                    where T : PathBoundObject;
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("@request.SomeProperty");
+        await Assert.That(generated).Contains("@request.Note");
+    }
+
+    /// <summary>Verifies an unconstrained generic parameter keeps falling back to the reflection request builder, because
+    /// the concrete argument type - and its bound properties - are unknown at compile time (issue #2218).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UnconstrainedGenericDottedPathFallsBack()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+                Task Sample<T>(T request);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a generic parameter constrained only to an interface keeps falling back, because an interface has
+    /// no class shape to flatten the path-bound object's residual properties against.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task InterfaceConstrainedGenericDottedPathFallsBack()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IPathBound
+            {
+                int SomeProperty { get; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/foos/{request.someProperty}")]
+                Task Sample<T>(T request)
+                    where T : IPathBound;
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
     /// <summary>Verifies a dotted placeholder on an interface-typed parameter whose property chain cannot resolve walks
     /// the type's (empty) base chain to its end and falls the parameter back.</summary>
     /// <returns>A task representing the asynchronous test.</returns>

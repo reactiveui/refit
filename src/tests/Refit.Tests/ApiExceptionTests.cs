@@ -162,7 +162,6 @@ public sealed partial class ApiExceptionTests
     /// <summary>Verifies the synchronous ValidationApiException factory deserializes problem details.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateDeserializesProblemDetails()
     {
         using var response = CreateErrorResponse(
@@ -185,7 +184,6 @@ public sealed partial class ApiExceptionTests
     /// <summary>Verifies the synchronous ValidationApiException factory hydrates problem detail extensions and scalar errors.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateReadsExtensionsAndScalarErrors()
     {
         using var response = CreateErrorResponse(
@@ -236,7 +234,6 @@ public sealed partial class ApiExceptionTests
     /// <summary>Verifies the synchronous ValidationApiException factory ignores malformed validation error bags.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateIgnoresNonObjectErrors()
     {
         using var response = CreateErrorResponse(
@@ -257,7 +254,6 @@ public sealed partial class ApiExceptionTests
     /// <summary>Verifies the synchronous ValidationApiException factory rejects non-object problem details.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [SuppressMessage("Concurrency", "PSH1313:Call the async overload from an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateRejectsNonObjectProblemDetails()
     {
         using var response = CreateErrorResponse("[1,2,3]", ProblemJsonMediaType);

@@ -480,3 +480,6 @@ Refit.RefitSettings.ReturnTypeAdapters.get -> System.Collections.Generic.IList<S
 Refit.UrlAttribute
 Refit.UrlAttribute.UrlAttribute() -> void
 static Refit.GeneratedRequestRunner.RequireAbsoluteUrl(object? url) -> string!
+static Refit.HttpRequestMessageOptions.MethodArguments.get -> string!
+Refit.RefitSettings.CaptureMethodArguments.get -> bool
+Refit.RefitSettings.CaptureMethodArguments.set -> void
