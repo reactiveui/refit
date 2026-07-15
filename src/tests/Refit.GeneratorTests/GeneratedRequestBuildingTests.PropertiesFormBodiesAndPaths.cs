@@ -387,4 +387,55 @@ public partial class GeneratedRequestBuildingTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
         await Assert.That(generated).Contains("RoundTripEscapePath");
     }
+
+    /// <summary>Verifies an interface-level <c>[PathPrefix]</c> is baked into each method's emitted route template.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsInterfacePathPrefixInRoute()
+    {
+        var generated = Fixture.GenerateForDeclaration(
+            """
+            [PathPrefix("/api/v2")]
+            public interface IGeneratedClient
+            {
+                [Get("/users/{id}")]
+                Task<string> GetUser(int id);
+            }
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("/api/v2/users/");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies the client interface's <c>[PathPrefix]</c> is applied to a method inherited from a base interface.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsPathPrefixOnInheritedMethod()
+    {
+        var generated = Fixture.GenerateForDeclaration(
+            """
+            public interface IBaseApi
+            {
+                [Get("/ping")]
+                Task<string> Ping();
+            }
+
+            [PathPrefix("/api/v2")]
+            public interface IGeneratedClient : IBaseApi
+            {
+                [Get("/own")]
+                Task<string> Own();
+            }
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        // The derived prefix applies to both the derived method and the inherited base method, and the two prefixes
+        // are never concatenated.
+        await Assert.That(generated).Contains("/api/v2/ping");
+        await Assert.That(generated).Contains("/api/v2/own");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
 }

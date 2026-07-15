@@ -102,7 +102,7 @@ internal static partial class Parser
             context.HttpMethodBaseAttributeSymbol)!;
 
         var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass!);
-        var path = GetHttpPath(httpMethodAttribute);
+        var path = CombinePathPrefix(context.PathPrefix, GetHttpPath(httpMethodAttribute));
         var normalizedPath = NormalizeConstantPathForInline(path);
         var pathParameters = ExtractPathParameterPlaceholderNames(normalizedPath);
         return (httpMethod, path, normalizedPath, pathParameters);
