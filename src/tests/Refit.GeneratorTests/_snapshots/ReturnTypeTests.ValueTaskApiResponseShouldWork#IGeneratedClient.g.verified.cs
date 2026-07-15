@@ -51,6 +51,7 @@ namespace Refit.Implementation
                 var refitSettings = _settings;
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/users", refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
                 return new global::System.Threading.Tasks.ValueTask<global::Refit.ApiResponse<string>>(global::Refit.GeneratedRequestRunner.SendAsync<global::Refit.ApiResponse<string>, string>(
                     this.Client,
                     refitRequest,

@@ -161,6 +161,13 @@ visible in three places.
   reference on the targets that lack it in-box (net4x/netstandard2.0/net8.0/net9.0; it is a framework reference on
   net10.0+). Each event's payload is deserialized through the configured `System.Text.Json` metadata path, so it stays
   trim and Native AOT clean. See [Consuming Server-Sent Events](../README.md#consuming-server-sent-events).
+* **Exposing the current call's arguments (`RefitSettings.CaptureMethodArguments`).** Opt in and a `DelegatingHandler`
+  can read the call's argument values from `HttpRequestMessageOptions.MethodArguments` — an `object?[]` in declared
+  parameter order (including any `CancellationToken`), the equivalent of Retrofit's `Invocation.arguments`. It is off by
+  default because it boxes and retains the arguments on every request, the same allocation/retention/PII trade-off as
+  `CaptureRequestContent`. The values are positional; the generated path supplies the bare array while the reflection
+  path also exposes `RestMethodInfo` for parameter names. See
+  [Inspecting the current call's arguments](../README.md#inspecting-the-current-calls-arguments).
 * **Scoped (per-request) authorization tokens via DI (`AddAuthorizationHeaderValueProvider`).** A new
   `IHttpClientBuilder` extension in `Refit.HttpClientFactory` resolves the `Authorization` token from dependency
   injection per request. Because `IHttpClientFactory` pools message handlers, it creates a fresh DI scope for every

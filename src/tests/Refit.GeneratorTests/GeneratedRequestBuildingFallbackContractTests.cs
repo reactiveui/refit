@@ -50,18 +50,73 @@ public sealed class GeneratedRequestBuildingFallbackContractTests
     public Task FallbackMethodsAreFlagged(string body, string methodName) =>
         AssertGeneratorAndAnalyzerAgree(body, methodName, expectedFallback: true);
 
+    /// <summary>Verifies a constrained generic path-bound method is generated inline and is not flagged by RF006, while an
+    /// otherwise-identical unconstrained method still falls back to reflection and is flagged (issue #2218).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ConstrainedGenericPathBoundMethodIsNotFlaggedWhileUnconstrainedIs()
+    {
+        const string constrainedSource =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public class PathBoundObject
+            {
+                public int SomeProperty { get; init; }
+
+                public string? SomeProperty2 { get; init; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+                Task Sample<T>(T request)
+                    where T : PathBoundObject;
+            }
+            """;
+
+        const string unconstrainedSource =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+                Task Sample<T>(T request);
+            }
+            """;
+
+        await AssertGeneratorAndAnalyzerAgree(Fixture.RunGenerator(constrainedSource, null), "Sample", expectedFallback: false);
+        await AssertGeneratorAndAnalyzerAgree(Fixture.RunGenerator(unconstrainedSource, null), "Sample", expectedFallback: true);
+    }
+
     /// <summary>Asserts the generator and analyzer produce the same reflection-fallback verdict for a method.</summary>
     /// <param name="body">The interface member body source.</param>
     /// <param name="methodName">The method whose fallback state is checked.</param>
     /// <param name="expectedFallback">The expected fallback verdict.</param>
     /// <returns>A task representing the asynchronous test.</returns>
-    private static async Task AssertGeneratorAndAnalyzerAgree(
+    private static Task AssertGeneratorAndAnalyzerAgree(
         string body,
+        string methodName,
+        bool expectedFallback) =>
+        AssertGeneratorAndAnalyzerAgree(Fixture.RunGeneratorForBody(body, null), methodName, expectedFallback);
+
+    /// <summary>Asserts the generator and analyzer agree on the reflection-fallback verdict for a generated result.</summary>
+    /// <param name="result">The generator result to inspect.</param>
+    /// <param name="methodName">The method whose fallback state is checked.</param>
+    /// <param name="expectedFallback">The expected fallback verdict.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    private static async Task AssertGeneratorAndAnalyzerAgree(
+        GeneratorTestResult result,
         string methodName,
         bool expectedFallback)
     {
-        var result = Fixture.RunGeneratorForBody(body, null);
-
         var generatedText = string.Concat(result.GeneratedSources.Values);
         var generatorFallsBack = generatedText.Contains(
             $"BuildRestResultFuncForMethod(\"{methodName}\"",
