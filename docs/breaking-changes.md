@@ -88,6 +88,13 @@ visible in three places.
   `[JsonProperty]` when `Refit.Newtonsoft.Json` is installed. To keep the pre-V14 behavior, set
   `RefitSettings.HonorContentSerializerPropertyNamesInQuery = false`; `[AliasAs]` still takes precedence in either mode.
 
+* **Refit no longer disposes a request-body stream you supply.** Refit disposes each request message after sending,
+  which disposes its content and any stream that content holds. Previously that reached a caller-owned stream: a
+  `StreamPart`, or a `Stream` passed as a `[Body]` or multipart parameter, was closed once the request completed, so a
+  second call with the same stream failed. Refit now wraps caller-supplied streams so disposal stops at the wrapper and
+  the stream you passed stays open — you own it and are responsible for disposing it. Streams Refit opens itself are
+  unchanged: a `FileInfoPart` (or a `FileInfo` multipart parameter) still has the file stream Refit opened closed for
+  you. Both request builders apply this. If you relied on Refit closing your stream, dispose it yourself after the call.
 * **URL-encoded bodies flatten nested objects, dictionaries, and collections instead of emitting the type name.** A
   `[Body(BodySerializationMethod.UrlEncoded)]` model whose property is a nested object, an `IDictionary`, or a plain
   collection under the default collection format previously serialized the property's `ToString()` — the type name for
@@ -120,6 +127,13 @@ visible in three places.
 
 ### New in V14.x
 
+* **`[PathPrefix]` shared route prefix.** Put `[PathPrefix("/api/v2")]` on an interface to prepend a common prefix to
+  every method's relative path, instead of repeating it in each route or baking it into `HttpClient.BaseAddress`. The
+  join uses exactly one slash (leading/trailing slashes are normalized, an empty prefix is a no-op) and runs before the
+  base-address merge, preserving placeholders and query strings. The prefix declared on the client interface (the `T` in
+  `RestService.For<T>`/`AddRefitClient<T>`) applies to every method it exposes, including inherited ones; prefixes are
+  not concatenated across interface inheritance. Both the source generator and the reflection request builder honor it.
+  See [Shared route prefix with `[PathPrefix]`](../README.md#shared-route-prefix-with-pathprefix).
 * **Per-method `[Timeout]` attribute.** Decorate a method with `[Timeout(milliseconds)]` to give that single call its
   own deadline; when it elapses the request is canceled and surfaces as an `OperationCanceledException` (typically a
   `TaskCanceledException`), the same way a lapsed `HttpClient.Timeout` reports. It is additive and layers onto the
@@ -192,6 +206,12 @@ visible in three places.
   and is responsible for disposing it; the request is not disposed for you and its content stays readable. A configured
   async `AuthorizationHeaderValueGetter` runs at dispatch time and is therefore not applied to a request obtained this
   way. See [Obtaining the built request without sending](../README.md#obtaining-the-built-request-without-sending).
+* **Optional URL path segments (`{name?}`).** Append `?` to a placeholder name (matching ASP.NET routing) to make the
+  segment optional. When the bound argument is `null` the segment and its preceding `/` are dropped, so a route such as
+  `[Get("/push/notifMsg/{deviceId}/{notifMsgId?}")]` produces `/push/notifMsg/device1` (not a 404-prone
+  `/push/notifMsg/device1/`) when `notifMsgId` is null. This is additive syntax: existing `{name}` placeholders are
+  unchanged, a non-null (or empty-string) value formats exactly as before, and the behaviour is identical on the
+  reflection and source-generated request paths. See [API Attributes](../README.md#api-attributes).
 * **Per-type URL parameter formatters (`RefitSettings.UrlParameterFormatterMap`).** Register an `IUrlParameterFormatter`
   for a specific CLR type instead of hand-rolling a type switch inside a single custom formatter. When a value is
   rendered into a path or query string, its runtime type is looked up in the map first (exact type only, no base-class or

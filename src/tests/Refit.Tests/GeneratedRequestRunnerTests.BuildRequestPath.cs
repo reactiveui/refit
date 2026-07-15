@@ -139,6 +139,37 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(result).IsEqualTo("/n/a%20b/c d");
     }
 
+    /// <summary>Verifies the pre-encoded overload drops a null optional segment and its preceding slash.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathDropsNullOptionalSegmentForPreEncodedOverload()
+    {
+        // "/a/{v?}" places {v?} at [3, 7); a null pre-encoded value drops the segment and the '/' in front of it.
+        const int start = 3;
+        const int end = 7;
+        ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams = [((start, end), null, true)];
+
+        var result = GeneratedRequestRunner.BuildRequestPath("/a/{v?}", false, uriParams);
+
+        await Assert.That(result).IsEqualTo("/a");
+    }
+
+    /// <summary>Verifies a placeholder whose replacement range is shorter than the two-character <c>?}</c> optional
+    /// marker drops its text without reading before the start of the template.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathSkipsOptionalTrimForPlaceholderShorterThanMarker()
+    {
+        // The placeholder occupies template[0..1); an end offset below the "?}" marker length cannot be an optional
+        // segment, so the null value drops the placeholder text without probing the template for a marker or trimming
+        // a preceding slash - and never reads before index 0.
+        ((int startIdx, int endIdx) range, string? value)[] uriParams = [((0, 1), null)];
+
+        var result = GeneratedRequestRunner.BuildRequestPath("1rest", true, uriParams);
+
+        await Assert.That(result).IsEqualTo("rest");
+    }
+
     /// <summary>Provides test data for <see cref="GeneratedRequestRunnerTests"/>.</summary>
     internal static class GeneratedRequestRunnerTestsDataSources
     {
@@ -152,6 +183,10 @@ public partial class GeneratedRequestRunnerTests
             const string usersId = "/users/{id}";
             const string usersIdOrders = "/users/{id}/orders";
             const string rowCol = "/foo/row_{idx}/col_{idx}";
+            const string trailingOptional = "/push/{deviceId}/{notifMsgId?}";
+            const string interiorOptional = "/a/{first?}/b";
+            const string adjacentOptional = "/foo/{first}{second?}";
+            const string queryOptional = "/foo?bar={value?}";
 
             yield return new(("/users/20", usersId, false, Bind(usersId, "20")));
             yield return new(("/users/20", usersId, true, Bind(usersId, "20")));
@@ -163,6 +198,20 @@ public partial class GeneratedRequestRunnerTests
             yield return new(("/foo/row_2/col_2", rowCol, false, Bind(rowCol, "2", "2")));
             yield return new(("/users/{id}", usersId, true, []));
             yield return new(("/users/%7B20%7D", usersId, true, Bind(usersId, "{20}")));
+
+            // An optional {name?} segment: a present value renders normally; a null value drops the segment and its
+            // preceding slash; an empty string is kept as an empty segment (a trailing slash).
+            yield return new(("/push/dev/msg", trailingOptional, false, Bind(trailingOptional, "dev", "msg")));
+            yield return new(("/push/dev", trailingOptional, false, Bind(trailingOptional, "dev", null)));
+            yield return new(("/push/dev/", trailingOptional, false, Bind(trailingOptional, "dev", string.Empty)));
+            yield return new(("/a/x/b", interiorOptional, false, Bind(interiorOptional, "x")));
+            yield return new(("/a/b", interiorOptional, false, Bind(interiorOptional, (string?)null)));
+
+            // The optional placeholder's preceding character is not a slash, so only the placeholder is dropped.
+            yield return new(("/foo/x", adjacentOptional, false, Bind(adjacentOptional, "x", null)));
+
+            // In a query position there is no preceding slash to trim, so a null value collapses to an empty value.
+            yield return new(("/foo?bar=", queryOptional, false, Bind(queryOptional, (string?)null)));
         }
 
         /// <summary>Builds parameter locations by scanning the template for <c>{placeholder}</c> spans.</summary>
