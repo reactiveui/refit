@@ -11,5 +11,8 @@ public enum StreamingContentFormat
     JsonArray,
 
     /// <summary>The body is newline-delimited JSON (JSON Lines): one JSON value per line. See <see href="https://jsonlines.org"/>.</summary>
-    JsonLines
+    JsonLines,
+
+    /// <summary>The body is a server-sent events (SSE) stream: each event's <c>data</c> payload is a JSON value, yielded live as it arrives.</summary>
+    ServerSentEvents
 }

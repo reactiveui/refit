@@ -367,6 +367,7 @@ Refit.StreamPart.Value.get -> System.IO.Stream!
 Refit.StreamingContentFormat
 Refit.StreamingContentFormat.JsonArray = 0 -> Refit.StreamingContentFormat
 Refit.StreamingContentFormat.JsonLines = 1 -> Refit.StreamingContentFormat
+Refit.StreamingContentFormat.ServerSentEvents = 2 -> Refit.StreamingContentFormat
 Refit.SystemTextJsonContentSerializer
 Refit.SystemTextJsonContentSerializer.DeserializeFromString<T>(string! content) -> T?
 Refit.SystemTextJsonContentSerializer.DeserializeStreamAsync<T>(System.IO.Stream! stream, Refit.StreamingContentFormat format, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
