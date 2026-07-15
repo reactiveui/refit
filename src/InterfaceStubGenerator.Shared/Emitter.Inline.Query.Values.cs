@@ -31,7 +31,7 @@ internal static partial class Emitter
         // TreatAsString stringifies the raw value before the formatter runs, mirroring the reflection builder.
         var customValue = query.TreatAsString ? valueExpression + ToStringCall : valueExpression;
         var customExpression =
-            $"{emission.SettingsLocal}.UrlParameterFormatter.Format({customValue}, {providerField}, typeof({parameterTypeName}))";
+            EmitFormatUrlParameter(customValue, providerField, $"typeof({parameterTypeName})", emission);
 
         var fastExpression = query.TreatAsString
             ? valueExpression + ToStringCall
@@ -64,7 +64,7 @@ internal static partial class Emitter
         {
             // A {**param} catch-all: split the value on '/', format and escape each segment, keep the separators.
             var roundTripValue = parameter.CanBeNull ? $"@{parameter.Name}?.ToString()" : $"@{parameter.Name}.ToString()";
-            return $"global::Refit.GeneratedRequestRunner.RoundTripEscapePath({roundTripValue}, {emission.SettingsLocal}.UrlParameterFormatter, {providerField}, typeof({parameter.Type}))";
+            return $"global::Refit.GeneratedRequestRunner.RoundTripEscapePath({roundTripValue}, {emission.SettingsLocal}, {providerField}, typeof({parameter.Type}))";
         }
 
         return BuildPathValueExpressionCore(
@@ -93,7 +93,7 @@ internal static partial class Emitter
         in InlineValueEmission emission)
     {
         var customExpression =
-            $"{emission.SettingsLocal}.UrlParameterFormatter.Format({valueAccessor}, {providerField}, typeof({typeName}))";
+            EmitFormatUrlParameter(valueAccessor, providerField, $"typeof({typeName})", emission);
         var fastExpression = ComputeFastPathExpression(valueAccessor, valueFormat, emission);
         if (fastExpression is null)
         {

@@ -39,6 +39,7 @@ internal static partial class Parser
 
         var returnTypes = GetRequestReturnTypes(resultTypeSource, context);
         var queryUriFormat = ResolveQueryUriFormat(methodSymbol);
+        var timeoutMilliseconds = ResolveTimeout(methodSymbol);
 
         // A multipart method builds its parts inline; each part parameter is classified into a
         // MultipartFormDataContent entry instead of feeding the query string or an implicit body.
@@ -86,6 +87,7 @@ internal static partial class Parser
             IsMultipart = isMultipart,
             MultipartBoundary = multipartBoundary,
             QueryUriFormat = queryUriFormat,
+            TimeoutMilliseconds = timeoutMilliseconds,
         };
     }
 
@@ -331,6 +333,35 @@ internal static partial class Parser
         && attribute.ConstructorArguments.Length == 1
         && attribute.ConstructorArguments[0].Value is int uriFormat
             ? uriFormat
+            : null;
+
+    /// <summary>Reads the per-call timeout in milliseconds from a method's <c>[Timeout]</c> attribute.</summary>
+    /// <param name="methodSymbol">The method to inspect.</param>
+    /// <returns>The timeout in milliseconds, or 0 when the method has no <c>[Timeout]</c>.</returns>
+    private static int ResolveTimeout(IMethodSymbol methodSymbol)
+    {
+        foreach (var attribute in methodSymbol.GetAttributes())
+        {
+            if (TryReadTimeout(attribute) is { } timeoutMilliseconds)
+            {
+                return timeoutMilliseconds;
+            }
+        }
+
+        return 0;
+    }
+
+    /// <summary>Reads the milliseconds value from an attribute if it is <c>[Timeout]</c>.</summary>
+    /// <param name="attribute">The candidate attribute.</param>
+    /// <returns>The timeout in milliseconds, or null when the attribute is not <c>[Timeout]</c>.</returns>
+    /// <remarks>The single-<c>int</c>-argument guards match the attribute's only constructor and cannot fail for a
+    /// <c>[Timeout]</c> application that compiles.</remarks>
+    [ExcludeFromCodeCoverage]
+    private static int? TryReadTimeout(AttributeData attribute) =>
+        IsRefitAttribute(attribute.AttributeClass, TimeoutAttributeDisplayName)
+        && attribute.ConstructorArguments.Length == 1
+        && attribute.ConstructorArguments[0].Value is int milliseconds
+            ? milliseconds
             : null;
 
     /// <summary>Parses the static headers declared on inherited interfaces, the declaring interface, and the method.</summary>
