@@ -11,6 +11,17 @@ on:
                     - patch
                     - minor
                     - major
+
+            channel:
+                description: 'Release channel. none = stable RTM; alpha/beta/rc cut a pre-release (e.g. bump=minor + channel=beta -> X.Y.0-beta.1, then X.Y.0-beta.2). Finalise by re-running with the same bump and channel=none.'
+                required: true
+                default: none
+                type: choice
+                options:
+                    - none
+                    - alpha
+                    - beta
+                    - rc
             
             sourceRef:
                 description: 'Optional git ref (tag/branch/SHA) to release from. Leave blank to release from this branch (normally main).'
@@ -30,6 +41,7 @@ jobs:
             srcFolder: "./src"
             minverMinimumMajorMinor: '10.2'
             bump: ${{ inputs.bump }}
+            preRelease: ${{ inputs.channel != 'none' && inputs.channel || '' }}
             ref: ${{ inputs.sourceRef }}
         secrets:
             CERTUM_USER_ID: ${{ secrets.CERTUM_USER_ID }}
@@ -71,3 +83,4 @@ jobs:
             version: ${{ needs.release.outputs.semver2 }}
             tag: ${{ needs.release.outputs.tag }}
             target: ${{ needs.release.outputs.sourceSha }}
+            prerelease: ${{ needs.release.outputs.prerelease == 'true' }}
