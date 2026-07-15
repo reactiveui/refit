@@ -148,6 +148,32 @@ public sealed partial class RequestGenerationCoverageTests
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
     }
 
+    /// <summary>Verifies an empty <c>{}</c> path placeholder is parsed without stripping an optional marker and leaves a
+    /// buildable stub, exercising the placeholder-name extraction's empty-name guard.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EmptyPathPlaceholderIsParsedWithoutOptionalMarkerStrip()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/x/{}/y")]
+                Task<string> Get();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources.ContainsKey(GeneratedClientHintName)).IsTrue();
+    }
+
     /// <summary>Verifies an <c>[Authorize(null)]</c> parameter falls back to the default authorization scheme.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

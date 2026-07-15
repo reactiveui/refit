@@ -135,6 +135,9 @@ internal partial class RestMethodInfoInternal
         bool allowUnmatchedRouteParameters)
     {
         const string roundTripPrefix = "**";
+
+        // A trailing '?' marks the placeholder optional: a null bound value drops the segment and its preceding '/'.
+        var isOptional = match.Groups[3].Success;
         var rawName = match.Groups[1].Value.ToLowerInvariant();
         var isRoundTripping = rawName.StartsWith(roundTripPrefix, StringComparison.Ordinal);
         var name = isRoundTripping ? rawName[roundTripPrefix.Length..] : rawName;
@@ -146,17 +149,18 @@ internal partial class RestMethodInfoInternal
                 ret,
                 fragmentList,
                 new(rawName, name, isRoundTripping),
-                value);
+                value,
+                isOptional);
         }
         else if (validation.Object.TryGetValue(name, out var value1) && !isRoundTripping)
         {
-            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1.Item1, [value1.Item2]);
+            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1.Item1, [value1.Item2], isOptional);
         }
         else if (TryResolveNestedPropertyChain(parameterInfo, name) is { } nested)
         {
             // A round-trip placeholder only ever matches a direct parameter above, so it never reaches a nested chain
             // (which requires a dotted name); no isRoundTripping guard is needed here.
-            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, nested.Parameter, nested.Chain);
+            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, nested.Parameter, nested.Chain, isOptional);
         }
         else if (allowUnmatchedRouteParameters)
         {
@@ -177,12 +181,14 @@ internal partial class RestMethodInfoInternal
     /// <param name="fragmentList">The fragment list being built.</param>
     /// <param name="parsedName">The parsed parameter name details from the URL template.</param>
     /// <param name="value">The matched method parameter.</param>
+    /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
     private static void AddStandardParameter(
         ParameterInfo[] parameterInfo,
         Dictionary<int, RestMethodParameterInfo> ret,
         List<ParameterFragment> fragmentList,
         ParsedParameterName parsedName,
-        ParameterInfo value)
+        ParameterInfo value,
+        bool isOptional)
     {
         // A round-tripping parameter may be any type: its value is formatted through the URL parameter formatter
         // (ToString by default) and each '/'-delimited segment is escaped independently, preserving the separators.
@@ -192,7 +198,7 @@ internal partial class RestMethodInfoInternal
         var restMethodParameterInfo = new RestMethodParameterInfo(parsedName.Name, value) { Type = parameterType };
 
         var parameterIndex = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
-        fragmentList.Add(ParameterFragment.Dynamic(parameterIndex));
+        fragmentList.Add(ParameterFragment.Dynamic(parameterIndex, isOptional));
 #if NET6_0_OR_GREATER
         _ = ret.TryAdd(parameterIndex, restMethodParameterInfo);
 #else
@@ -212,13 +218,15 @@ internal partial class RestMethodInfoInternal
     /// <param name="name">The normalized parameter name.</param>
     /// <param name="owner">The parameter whose property chain binds the placeholder.</param>
     /// <param name="propertyChain">The ordered property navigation from the parameter to the bound value.</param>
+    /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
     private static void AddObjectPropertyParameter(
         ParameterInfo[] parameterInfo,
         Dictionary<int, RestMethodParameterInfo> ret,
         List<ParameterFragment> fragmentList,
         string name,
         ParameterInfo owner,
-        IReadOnlyList<PropertyInfo> propertyChain)
+        IReadOnlyList<PropertyInfo> propertyChain,
+        bool isOptional)
     {
         var parameterIndex = Array.IndexOf(parameterInfo, owner);
 
@@ -233,7 +241,7 @@ internal partial class RestMethodInfoInternal
 
             value2.ParameterProperties.Add(new(name, propertyChain));
             fragmentList.Add(
-                ParameterFragment.DynamicObject(parameterIndex, value2.ParameterProperties.Count - 1));
+                ParameterFragment.DynamicObject(parameterIndex, value2.ParameterProperties.Count - 1, isOptional));
             return;
         }
 
@@ -241,7 +249,7 @@ internal partial class RestMethodInfoInternal
         restMethodParameterInfo.ParameterProperties.Add(new(name, propertyChain));
 
         var idx = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
-        fragmentList.Add(ParameterFragment.DynamicObject(idx, 0));
+        fragmentList.Add(ParameterFragment.DynamicObject(idx, 0, isOptional));
 #if NET6_0_OR_GREATER
         _ = ret.TryAdd(idx, restMethodParameterInfo);
 #else

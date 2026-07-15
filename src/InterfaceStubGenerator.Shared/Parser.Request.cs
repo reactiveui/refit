@@ -218,7 +218,16 @@ internal static partial class Parser
         {
             if (pathSpan[j] == '}')
             {
-                var paramName = pathSpan[(i + 1)..j].ToString();
+                // A trailing '?' marks the placeholder optional ({name?}); strip it from the bound name so the
+                // parameter still matches, while the location range keeps covering the whole {name?} so the runtime
+                // path builder can detect and drop the segment when the bound value is null.
+                var placeholder = pathSpan[(i + 1)..j];
+                if (!placeholder.IsEmpty && placeholder[placeholder.Length - 1] == '?')
+                {
+                    placeholder = placeholder[..^1];
+                }
+
+                var paramName = placeholder.ToString();
                 var location = new Range(i, j + 1);
                 if (paramNames.TryGetValue(paramName, out var values))
                 {
