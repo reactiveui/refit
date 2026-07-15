@@ -374,6 +374,55 @@ significant, exactly as with `HttpClient`:
 > resolution is validated when the request is built — so the `ArgumentException` surfaces on the first call rather than
 > from `RestService.For<T>(...)`. Under `UrlResolutionMode.Rfc3986` the route is valid and no exception is raised.
 
+#### Shared route prefix with `[PathPrefix]`
+
+When every method on an interface sits under the same route prefix, put a `[PathPrefix]` on the interface instead of
+repeating it in each route. The prefix is prepended to every method's relative path with exactly one `/` between them,
+before the base address is applied:
+
+```csharp
+[PathPrefix("/api/v2")]
+public interface IUsersApi
+{
+    [Get("/users")]           // -> /api/v2/users
+    Task<List<User>> GetAll();
+
+    [Get("/users/{id}")]      // -> /api/v2/users/{id}
+    Task<User> Get(int id);
+
+    [Get("/search")]          // -> /api/v2/search?query=...
+    Task<List<User>> Search(string query);
+}
+```
+
+Slashes are normalized so you never get a double slash: a leading or trailing slash on the prefix, and a leading slash
+on the route, are all tolerated (`[PathPrefix("/api/v2/")]` + `[Get("users")]` is still `/api/v2/users`). An empty or
+whitespace prefix is a no-op, and existing `{placeholder}` substitution and query strings are preserved.
+
+The prefix that applies is the one declared on the interface the client is generated for - the `T` in
+`RestService.For<T>` or `AddRefitClient<T>`. It applies to **every** method the client exposes, including methods
+inherited from base interfaces. Prefixes are **not** concatenated across interface inheritance; a base interface's own
+`[PathPrefix]` applies only when that base interface is itself the client type:
+
+```csharp
+[PathPrefix("/root")]
+public interface IPingApi
+{
+    [Get("/ping")]
+    Task<string> Ping();
+}
+
+[PathPrefix("/api/v2")]
+public interface IUsersApi : IPingApi
+{
+    [Get("/users")]
+    Task<List<User>> GetAll();
+}
+
+// RestService.For<IUsersApi>(...):  Ping -> /api/v2/ping,  GetAll -> /api/v2/users
+// RestService.For<IPingApi>(...):   Ping -> /root/ping
+```
+
 ### Querystrings
 
 #### Dynamic Querystring Parameters

@@ -220,6 +220,9 @@ Refit.ParameterType.Normal = 0 -> Refit.ParameterType
 Refit.ParameterType.RoundTripping = 1 -> Refit.ParameterType
 Refit.PatchAttribute
 Refit.PatchAttribute.PatchAttribute(string! path) -> void
+Refit.PathPrefixAttribute
+Refit.PathPrefixAttribute.PathPrefixAttribute(string! prefix) -> void
+Refit.PathPrefixAttribute.Prefix.get -> string!
 Refit.PostAttribute
 Refit.PostAttribute.PostAttribute(string! path) -> void
 Refit.ProblemDetails
