@@ -267,6 +267,21 @@ public partial class RequestBuilderTests
         await Assert.That(request.Content).IsTypeOf<StreamContent>();
     }
 
+    /// <summary>A caller-supplied stream body is not disposed when the reflection-built request is disposed.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ReflectionStreamRequestBodyDoesNotDisposeCallerStream()
+    {
+        var fixture = new RequestBuilderImplementation<IStreamApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IStreamApi.PostStream));
+
+        await using var stream = new MemoryStream(_byteArray123);
+        var request = await factory([stream]);
+        request.Dispose();
+
+        await Assert.That(stream.CanRead).IsTrue();
+    }
+
     /// <summary>A JSON Lines body parameter is routed to JSON Lines content via the reflection path.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

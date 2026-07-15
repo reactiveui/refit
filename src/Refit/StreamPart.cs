@@ -25,5 +25,10 @@ public class StreamPart(
     public Stream Value { get; } = value ?? throw new ArgumentNullException(nameof(value));
 
     /// <inheritdoc/>
-    protected override HttpContent CreateContent() => new StreamContent(Value);
+    /// <remarks>
+    /// The stream is supplied by the caller, so it is wrapped in non-disposing content: disposing the request
+    /// (and its content) never closes the caller's stream. Contrast <see cref="FileInfoPart"/>, whose stream
+    /// Refit opens and therefore owns and disposes.
+    /// </remarks>
+    protected override HttpContent CreateContent() => GeneratedRequestRunner.CreateStreamContent(Value);
 }
