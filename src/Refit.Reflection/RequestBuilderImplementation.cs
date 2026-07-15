@@ -111,6 +111,13 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
             return BuildVoidTaskFuncForMethod(restMethod);
         }
 
+        // Task<HttpRequestMessage>: build the request and hand it back to the caller without sending it. Runs before the
+        // Task<T> shape so the request is not dispatched and its response deserialized.
+        if (IsRequestMessageReturnType(restMethod))
+        {
+            return BuildRequestMessageFuncForMethod(restMethod);
+        }
+
         // Task<T>
         if (IsGenericReturnType(restMethod, typeof(Task<>)))
         {
@@ -183,6 +190,13 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     private static bool IsGenericReturnType(RestMethodInfoInternal restMethod, Type openGenericType) =>
         restMethod.ReturnType.GetTypeInfo().IsGenericType
         && restMethod.ReturnType.GetGenericTypeDefinition() == openGenericType;
+
+    /// <summary>Determines whether the method returns <see cref="Task{TResult}"/> of <see cref="HttpRequestMessage"/>.</summary>
+    /// <param name="restMethod">The rest method to inspect.</param>
+    /// <returns><see langword="true"/> when the method builds and returns its request without sending it.</returns>
+    private static bool IsRequestMessageReturnType(RestMethodInfoInternal restMethod) =>
+        IsGenericReturnType(restMethod, typeof(Task<>))
+        && restMethod.ReturnResultType == typeof(HttpRequestMessage);
 
     /// <summary>Filters the candidate methods by parameter count and generic arity.</summary>
     /// <param name="httpMethods">The candidate methods.</param>

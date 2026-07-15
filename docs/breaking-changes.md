@@ -206,6 +206,13 @@ visible in three places.
   reference on the targets that lack it in-box (net4x/netstandard2.0/net8.0/net9.0; it is a framework reference on
   net10.0+). Each event's payload is deserialized through the configured `System.Text.Json` metadata path, so it stays
   trim and Native AOT clean. See [Consuming Server-Sent Events](../README.md#consuming-server-sent-events).
+* **Obtain the built request without sending it.** A method declared to return `Task<HttpRequestMessage>` builds the
+  full request (method, URL, headers, and body/multipart content) and hands it back to the caller instead of dispatching
+  it — the equivalent of Retrofit's `Call.request()`, useful for inspection, signing, logging, or manual dispatch. Both
+  the generated and reflection paths build byte-identical requests. The caller owns the returned request and its content
+  and is responsible for disposing it; the request is not disposed for you and its content stays readable. A configured
+  async `AuthorizationHeaderValueGetter` runs at dispatch time and is therefore not applied to a request obtained this
+  way. See [Obtaining the built request without sending](../README.md#obtaining-the-built-request-without-sending).
 * **Optional URL path segments (`{name?}`).** Append `?` to a placeholder name (matching ASP.NET routing) to make the
   segment optional. When the bound argument is `null` the segment and its preceding `/` are dropped, so a route such as
   `[Get("/push/notifMsg/{deviceId}/{notifMsgId?}")]` produces `/push/notifMsg/device1` (not a 404-prone
