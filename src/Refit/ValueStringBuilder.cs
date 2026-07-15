@@ -277,7 +277,7 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Appends the characters of a span to the builder.</summary>
     /// <param name="value">The characters to append.</param>
-    public void Append(ReadOnlySpan<char> value)
+    public void Append(scoped ReadOnlySpan<char> value)
     {
         var pos = _pos;
         if (pos > _chars.Length - value.Length)
