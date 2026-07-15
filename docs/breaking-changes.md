@@ -205,6 +205,13 @@ visible in three places.
   or invalid value throws an `ArgumentException`), and `[Query]` parameters are still appended to the URL's query string.
   It generates inline (reflection-free, Native AOT clean) and behaves identically through the reflection request
   builder. See [Absolute URLs per call with `[Url]`](../README.md#absolute-urls-per-call-with-url).
+* **Server-Sent Events as a streaming format.** A `text/event-stream` response returned to an `IAsyncEnumerable<T>`
+  method now streams one deserialized `T` per SSE `data` event, live and unbuffered, through the same seam as JSON
+  arrays and JSON Lines — no generator or reflection change, so both generated and reflection clients inherit it. This
+  adds the `StreamingContentFormat.ServerSentEvents` enum member and takes a new `System.Net.ServerSentEvents` package
+  reference on the targets that lack it in-box (net4x/netstandard2.0/net8.0/net9.0; it is a framework reference on
+  net10.0+). Each event's payload is deserialized through the configured `System.Text.Json` metadata path, so it stays
+  trim and Native AOT clean. See [Consuming Server-Sent Events](../README.md#consuming-server-sent-events).
 * **Obtain the built request without sending it.** A method declared to return `Task<HttpRequestMessage>` builds the
   full request (method, URL, headers, and body/multipart content) and hands it back to the caller instead of dispatching
   it — the equivalent of Retrofit's `Call.request()`, useful for inspection, signing, logging, or manual dispatch. Both
