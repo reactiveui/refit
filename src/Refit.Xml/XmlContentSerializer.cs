@@ -65,8 +65,9 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
         using var writer = XmlWriter.Create(
             stream,
             _settings.XmlReaderWriterSettings.WriterSettings);
-        var encoding =
-            _settings.XmlReaderWriterSettings.WriterSettings?.Encoding ?? Encoding.Unicode;
+
+        // XmlWriter.Create above rejects a writer whose Encoding is null, so by this point the encoding is always set.
+        var encoding = _settings.XmlReaderWriterSettings.WriterSettings.Encoding;
         xmlSerializer.Serialize(writer, item, _settings.XmlNamespaces);
         writer.Flush();
 
