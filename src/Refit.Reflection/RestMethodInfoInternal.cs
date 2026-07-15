@@ -73,6 +73,10 @@ internal partial class RestMethodInfoInternal
         // Exclude cancellation token parameters from this list
         ParameterInfoArray = GetNonCancellationTokenParameters(methodInfo.GetParameters());
 
+        // A [Url] parameter supplies the complete absolute request URI, bypassing the base address. It provides the
+        // full URL, so the method's path template must be empty; a non-empty template is an invalid combination.
+        UrlParameterInfo = ResolveUrlParameter(ParameterInfoArray, RelativePath);
+
         // An open generic method definition cannot resolve dotted {obj.Prop} placeholders yet — the generic parameter
         // has no properties until the method is closed over a concrete type. This RestMethodInfo is only used for
         // method selection; the closed instantiation (built on first call) resolves the placeholders, so leave any
@@ -149,6 +153,10 @@ internal partial class RestMethodInfoInternal
 
     /// <summary>Gets the authorization parameter information, or null when there is no authorize parameter.</summary>
     public Tuple<string, int>? AuthorizeParameterInfo { get; }
+
+    /// <summary>Gets the index of the <c>[Url]</c> parameter that supplies the absolute request URI, or a negative
+    /// value when the method dispatches relative to the client base address.</summary>
+    public int UrlParameterInfo { get; }
 
     /// <summary>Gets the map of parameter indexes to query string names.</summary>
     public Dictionary<int, string> QueryParameterMap { get; }
@@ -657,7 +665,10 @@ internal partial class RestMethodInfoInternal
             && ParameterInfoArray[index].GetCustomAttribute<QueryAttribute>() is null)
         || HeaderCollectionAt(index)
         || (BodyParameterInfo is not null && BodyParameterInfo.Item3 == index)
-        || (AuthorizeParameterInfo is not null && AuthorizeParameterInfo.Item2 == index);
+        || (AuthorizeParameterInfo is not null && AuthorizeParameterInfo.Item2 == index)
+
+        // A [Url] parameter supplies the request URI itself, not a query value.
+        || index == UrlParameterInfo;
 
     /// <summary>Finds the parameter that carries the request body.</summary>
     /// <param name="parameterArray">The array of method parameters.</param>
@@ -725,7 +736,10 @@ internal partial class RestMethodInfoInternal
                 || parameter.ParameterType == typeof(string)
                 || parameter.GetCustomAttribute<QueryAttribute>() is not null
                 || parameter.GetCustomAttribute<HeaderCollectionAttribute>() is not null
-                || parameter.GetCustomAttribute<PropertyAttribute>() is not null)
+                || parameter.GetCustomAttribute<PropertyAttribute>() is not null
+
+                // A [Url] Uri parameter supplies the request URI, never the implicit body.
+                || parameter.GetCustomAttribute<UrlAttribute>() is not null)
             {
                 continue;
             }

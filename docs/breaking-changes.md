@@ -204,6 +204,12 @@ visible in three places.
   headers with `HttpHeaders.Add` instead, validating each value against its header parser and throwing a
   `FormatException` at request-build time when a value is malformed. CR/LF stripping still applies in both modes. Both
   request builders honor the flag identically. See [Validating header values](../README.md#validating-header-values).
+* **`[Url]` for absolute per-call URLs.** The equivalent of Retrofit's `@Url`: mark a `string` or `System.Uri`
+  parameter with `[Url]` to dispatch the call to that absolute URL — often a different host — bypassing the client's
+  base address. The route template must be empty (`[Url]` provides the full URL), the value must be absolute (a relative
+  or invalid value throws an `ArgumentException`), and `[Query]` parameters are still appended to the URL's query string.
+  It generates inline (reflection-free, Native AOT clean) and behaves identically through the reflection request
+  builder. See [Absolute URLs per call with `[Url]`](../README.md#absolute-urls-per-call-with-url).
 * **Server-Sent Events as a streaming format.** A `text/event-stream` response returned to an `IAsyncEnumerable<T>`
   method now streams one deserialized `T` per SSE `data` event, live and unbuffered, through the same seam as JSON
   arrays and JSON Lines — no generator or reflection change, so both generated and reflection clients inherit it. This

@@ -158,6 +158,13 @@ internal static partial class Parser
             return CancellationTokenParameter(parameter, parameterType, context.Locations, context.Generation);
         }
 
+        // A [Url] parameter supplies the absolute request URI. Only a string or Uri can be emitted inline; any other
+        // type falls back to the reflection builder (eligibility false), whose validation throws for an invalid value.
+        if (TryParseUrlParameter(parameter, parameterType, context.Generation, out var urlParameter))
+        {
+            return new(urlParameter, IsInlineUrlType(parameter.Type), 0, 0, 0);
+        }
+
         if (TryParseBodyParameter(parameter, parameterType, context.Generation, out var bodyParameter))
         {
             // A form-url-encoded body of a type that references a type parameter would emit

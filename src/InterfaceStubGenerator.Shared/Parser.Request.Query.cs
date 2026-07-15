@@ -47,6 +47,9 @@ internal static partial class Parser
     /// <summary>The metadata name of <c>Refit.PropertyAttribute</c>.</summary>
     private const string PropertyAttributeDisplayName = "PropertyAttribute";
 
+    /// <summary>The metadata name of <c>Refit.UrlAttribute</c>.</summary>
+    private const string UrlAttributeDisplayName = "UrlAttribute";
+
     /// <summary>The metadata name of <c>Refit.AliasAsAttribute</c>.</summary>
     private const string AliasAsAttributeDisplayName = "AliasAsAttribute";
 

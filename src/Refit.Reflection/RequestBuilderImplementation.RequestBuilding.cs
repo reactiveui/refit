@@ -394,6 +394,13 @@ internal partial class RequestBuilderImplementation
         var isMapped = restMethod.ParameterMap.TryGetValue(i, out var parameterMapValue)
             && !parameterMapValue.IsObjectPropertyParameter;
 
+        // A [Url] parameter supplies the request URI itself (consumed by AssignRequestUri), so it must not also be
+        // mapped into the body, a header, or the query string.
+        if (i == restMethod.UrlParameterInfo)
+        {
+            isMapped = true;
+        }
+
         if (restMethod.BodyParameterInfo?.Item3 == i)
         {
             AddBodyToRequest(restMethod, param!, ret);
@@ -428,6 +435,13 @@ internal partial class RequestBuilderImplementation
         object[] paramList,
         List<QueryParameterEntry>? queryParamsToAdd)
     {
+        // A [Url] parameter supplies the complete absolute request URI, bypassing the base-address merge entirely.
+        if (restMethod.UrlParameterInfo >= 0)
+        {
+            AssignAbsoluteRequestUri(restMethod, ret, paramList, queryParamsToAdd);
+            return;
+        }
+
         var urlTarget = BuildRelativePath(basePath, restMethod, paramList);
 
         if (restMethod.RefitSettings.UrlResolution == UrlResolutionMode.Rfc3986)

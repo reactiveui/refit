@@ -191,10 +191,50 @@ internal static partial class Parser
         && IsPathSupported(path.Raw)
         && IsPathSupported(path.Normalized)
         && IsSupportedInlineBody(parameters)
+        && IsUrlBindingSupported(path, parameters)
 
         // A multipart method with an explicit [Body] is an invalid combination the reflection builder rejects; fall
         // back so its validation still throws instead of emitting a non-multipart body request.
         && (!isMultipart || !HasBodyParameter(parameters));
+
+    /// <summary>Determines whether a method's <c>[Url]</c> binding, if any, can be emitted inline.</summary>
+    /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
+    /// <param name="parameters">The parsed request parameter models.</param>
+    /// <returns><see langword="true"/> when the method has no <c>[Url]</c> parameter, or has exactly one alongside an
+    /// empty path template and no path placeholders. Other shapes fall back to the reflection builder, whose
+    /// validation throws for the invalid combination.</returns>
+    private static bool IsUrlBindingSupported(
+        in RequestPathForms path,
+        ImmutableEquatableArray<RequestParameterModel> parameters)
+    {
+        var urlCount = 0;
+        var hasPathParameter = false;
+        foreach (var parameter in parameters)
+        {
+            if (parameter.Kind == RequestParameterKind.Url)
+            {
+                urlCount++;
+            }
+            else if (parameter.Kind == RequestParameterKind.Path)
+            {
+                hasPathParameter = true;
+            }
+        }
+
+        // A method with no [Url] parameter is unconstrained here. Otherwise the [Url] parameter provides the full
+        // absolute URI, so the path template must be empty and carry no placeholders, and only one may supply the URL.
+        return urlCount == 0
+            || (urlCount == 1
+                && !hasPathParameter
+                && IsEmptyOrRootPath(path.Raw)
+                && IsEmptyOrRootPath(path.Normalized));
+    }
+
+    /// <summary>Determines whether a path template is empty or the bare root, so a <c>[Url]</c> parameter may supply the URI.</summary>
+    /// <param name="path">The path template.</param>
+    /// <returns><see langword="true"/> when the template is empty or <c>"/"</c>.</returns>
+    private static bool IsEmptyOrRootPath(string path) =>
+        string.IsNullOrEmpty(path) || path == "/";
 
     /// <summary>Extracts the path parameter placeholder names and their locations from a URL template.</summary>
     /// <param name="path">The normalized path template.</param>
