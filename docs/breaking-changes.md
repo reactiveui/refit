@@ -198,6 +198,14 @@ visible in three places.
   request and resolves your delegate `(IServiceProvider, HttpRequestMessage, CancellationToken) -> ValueTask<string>`
   from that scope, disposing it when the request completes — no `Microsoft.AspNetCore.*` dependency required (#1679). See
   [Scoped (per-request) authorization tokens with dependency injection](../README.md#scoped-per-request-authorization-tokens-with-dependency-injection).
+* **Method name and route template in request options.** Every request now carries two additional string options —
+  `HttpRequestMessageOptions.MethodName` (the interface method's name) and
+  `HttpRequestMessageOptions.RelativePathTemplate` (the raw route template with its `{placeholders}`, not the filled
+  URL). Both are populated identically on the source-generated path and the reflection path, with no runtime
+  reflection, so a `DelegatingHandler` can read them for logging, metrics, and tracing. `RelativePathTemplate` is the
+  stable, low-cardinality label to use for OpenTelemetry spans and metrics instead of the per-id `RequestUri`. This is
+  purely additive and does not change the existing `InterfaceType` or `RestMethodInfo` options. See
+  [Target Interface Type and method info](../README.md#target-interface-type-and-method-info).
 
 ## V13.x.x
 

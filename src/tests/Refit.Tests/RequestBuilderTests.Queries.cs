@@ -248,6 +248,41 @@ public partial class RequestBuilderTests
         await Assert.That(restMethodInfo!.Name).IsEqualTo(nameof(IContainAandB.Ping));
     }
 
+    /// <summary>The method name and the raw relative-path template appear in the reflection-built request properties,
+    /// with the template keeping its <c>{placeholder}</c> rather than the filled URL.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task MethodNameAndRelativePathTemplateShouldBeInProperties()
+    {
+        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuff));
+        var output = await factory([SampleId]);
+
+#if NET6_0_OR_GREATER
+        await Assert.That(
+            output.Options.TryGetValue(
+                new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.MethodName),
+                out var methodName)).IsTrue();
+        await Assert.That(
+            output.Options.TryGetValue(
+                new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.RelativePathTemplate),
+                out var relativePathTemplate)).IsTrue();
+#else
+        await Assert.That(
+            output.Properties.TryGetValue(HttpRequestMessageOptions.MethodName, out var methodNameObj)).IsTrue();
+        await Assert.That(
+            output.Properties.TryGetValue(HttpRequestMessageOptions.RelativePathTemplate, out var templateObj)).IsTrue();
+        var methodName = methodNameObj as string;
+        var relativePathTemplate = templateObj as string;
+#endif
+        await Assert.That(methodName).IsEqualTo(nameof(IDummyHttpApi.FetchSomeStuff));
+        await Assert.That(relativePathTemplate).IsEqualTo("/foo/bar/{id}");
+
+        // The template is the low-cardinality label; the filled request URI resolves the placeholder to the argument.
+        var uri = new Uri(new("http://api/"), output.RequestUri!);
+        await Assert.That(uri.PathAndQuery).IsEqualTo($"/foo/bar/{SampleId}");
+    }
+
     /// <summary>The declared call arguments, including the cancellation token, appear in order when capture is enabled.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -313,7 +348,9 @@ public partial class RequestBuilderTests
             nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey));
         var output = await factory([SampleId, someProperty, someOtherProperty]);
 
-        const int expectedPropertyCount = 3;
+        // The reflection builder stores the interface type, the RestMethodInfo, the method name, the raw route template,
+        // and the single (deduplicated) dynamic property.
+        const int expectedPropertyCount = 5;
 
 #if NET6_0_OR_GREATER
         await Assert.That(output.Options.Count()).IsEqualTo(expectedPropertyCount);

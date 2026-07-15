@@ -1584,6 +1584,37 @@ into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOpt
 `HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the
 options.
 
+Every request also carries two lightweight string options that a handler can read without touching reflection:
+`HttpRequestMessageOptions.MethodName` (the interface method's name, for example `GetUser`) and
+`HttpRequestMessageOptions.RelativePathTemplate` (the raw route template with its `{placeholders}`, for example
+`/users/{id}`). Both are populated identically whether the request was built by the source generator or by the
+reflection request builder. `RelativePathTemplate` is the stable, low-cardinality label to use for OpenTelemetry
+spans, metrics, and logs - unlike the filled `RequestUri` (`/users/123`), one template value groups every call to the
+same endpoint instead of exploding cardinality per id.
+
+[//]: # ({% raw %})
+
+```csharp
+class TelemetryHandler : DelegatingHandler
+{
+    public TelemetryHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (request.Options.TryGetValue(new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.MethodName), out var methodName) &&
+            request.Options.TryGetValue(new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.RelativePathTemplate), out var routeTemplate))
+        {
+            // routeTemplate is "/users/{id}" (low cardinality), not the filled "/users/123"
+            using var activity = ActivitySource.StartActivity($"{methodName} {routeTemplate}");
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+[//]: # ({% endraw %})
+
 #### Inspecting the current call's arguments
 
 Set `RefitSettings.CaptureMethodArguments = true` to expose the current call's argument values to a `DelegatingHandler`
@@ -1624,7 +1655,7 @@ class ArgumentLoggingHandler : DelegatingHandler
 
 It is **off by default**: enabling it boxes and retains the arguments on every request (and therefore on any resulting
 `ApiException`) for the lifetime of that request, so it adds a per-call allocation, keeps otherwise-collectable
-arguments alive, and the captured values frequently contain credentials or PII — the same trade-offs as
+arguments alive, and the captured values frequently contain credentials or PII - the same trade-offs as
 `CaptureRequestContent`. Use `RefitSettings.ExceptionRedactor` to scrub the values before an exception reaches a logging
 or telemetry pipeline.
 

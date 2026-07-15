@@ -29,8 +29,8 @@ internal static partial class Emitter
     private const string CollectionFormatCast = "(global::Refit.CollectionFormat)";
 
     /// <summary>The count of request-property statements every inline method emits unconditionally: the configured-options
-    /// call and the method-argument capture block.</summary>
-    private const int UnconditionalRequestPropertyCount = 2;
+    /// call, the method name, the raw route template, and the method-argument capture block.</summary>
+    private const int UnconditionalRequestPropertyCount = 4;
 
     /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
@@ -538,6 +538,18 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
         parts[count] =
             $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions({requestLocal}, {settingsLocal}, typeof({interfaceModel.InterfaceDisplayName}));\n";
+        count++;
+
+        // The method name (stripped of any explicit-interface prefix, matching reflection's MethodInfo.Name) and the
+        // raw route template are compile-time literals, so a source-gen handler can read the same low-cardinality
+        // metadata the reflection path publishes without any runtime reflection.
+        parts[count] =
+            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<string>({requestLocal}, "
+            + $"global::Refit.HttpRequestMessageOptions.MethodName, {ToCSharpStringLiteral(StripExplicitInterfacePrefix(methodModel.Name))});\n";
+        count++;
+        parts[count] =
+            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<string>({requestLocal}, "
+            + $"global::Refit.HttpRequestMessageOptions.RelativePathTemplate, {ToCSharpStringLiteral(request.Path)});\n";
         count++;
 
         // Capture the declared-order argument values only when RefitSettings.CaptureMethodArguments opts in, so the
