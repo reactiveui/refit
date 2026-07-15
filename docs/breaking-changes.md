@@ -120,6 +120,13 @@ visible in three places.
 
 ### New in V14.x
 
+* **`[PathPrefix]` shared route prefix.** Put `[PathPrefix("/api/v2")]` on an interface to prepend a common prefix to
+  every method's relative path, instead of repeating it in each route or baking it into `HttpClient.BaseAddress`. The
+  join uses exactly one slash (leading/trailing slashes are normalized, an empty prefix is a no-op) and runs before the
+  base-address merge, preserving placeholders and query strings. The prefix declared on the client interface (the `T` in
+  `RestService.For<T>`/`AddRefitClient<T>`) applies to every method it exposes, including inherited ones; prefixes are
+  not concatenated across interface inheritance. Both the source generator and the reflection request builder honor it.
+  See [Shared route prefix with `[PathPrefix]`](../README.md#shared-route-prefix-with-pathprefix).
 * **Per-method `[Timeout]` attribute.** Decorate a method with `[Timeout(milliseconds)]` to give that single call its
   own deadline; when it elapses the request is canceled and surfaces as an `OperationCanceledException` (typically a
   `TaskCanceledException`), the same way a lapsed `HttpClient.Timeout` reports. It is additive and layers onto the
