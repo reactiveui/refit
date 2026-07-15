@@ -28,6 +28,10 @@ internal static partial class Emitter
     /// <summary>The cast prefix for an explicit collection format value.</summary>
     private const string CollectionFormatCast = "(global::Refit.CollectionFormat)";
 
+    /// <summary>The count of request-property statements every inline method emits unconditionally: the configured-options
+    /// call and the method-argument capture block.</summary>
+    private const int UnconditionalRequestPropertyCount = 2;
+
     /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
@@ -195,7 +199,7 @@ internal static partial class Emitter
         }
 
         var headerSource = BuildInlineHeaders(request, requestLocal);
-        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
+        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, methodModel, requestLocal, settingsLocal);
 
         // A method that declares a positive [Timeout] stashes it on the request so the send helpers apply it; every
         // other method emits nothing here and pays no per-call timeout cost. Emitted inside the shared construction so
@@ -525,20 +529,31 @@ internal static partial class Emitter
     /// <summary>Builds request-option/property application for an inline generated method.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
+    /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated request option/property statements.</returns>
     private static string BuildInlineRequestProperties(
         RequestModel request,
         InterfaceModel interfaceModel,
+        MethodModel methodModel,
         string requestLocal,
         string settingsLocal)
     {
-        var parts = new string[1 + interfaceModel.Properties.Count + request.Parameters.Count];
+        var parts = new string[UnconditionalRequestPropertyCount + interfaceModel.Properties.Count + request.Parameters.Count];
         var count = 0;
         var bodyIndent = Indent(MethodBodyIndentation);
         parts[count] =
             $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions({requestLocal}, {settingsLocal}, typeof({interfaceModel.InterfaceDisplayName}));\n";
+        count++;
+
+        // Capture the declared-order argument values only when RefitSettings.CaptureMethodArguments opts in, so the
+        // object[] allocation is paid per call solely when a handler needs the values. The nullable annotation is
+        // gated on the target language version so the C# 7.3 baseline still compiles.
+        var argumentsArrayType = interfaceModel.SupportsNullable ? "object?[]" : "object[]";
+        parts[count] =
+            $"{bodyIndent}if ({settingsLocal}.CaptureMethodArguments) {{ global::Refit.GeneratedRequestRunner.AddRequestProperty<{argumentsArrayType}>"
+            + $"({requestLocal}, global::Refit.HttpRequestMessageOptions.MethodArguments, {BuildMethodArgumentsCaptureLiteral(methodModel, interfaceModel.SupportsNullable)}); }}\n";
         count++;
 
         foreach (var property in interfaceModel.Properties)

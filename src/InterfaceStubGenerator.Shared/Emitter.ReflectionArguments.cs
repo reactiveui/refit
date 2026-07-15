@@ -49,6 +49,50 @@ internal static partial class Emitter
             });
     }
 
+    /// <summary>Builds the <c>new object[] { ... }</c> literal that captures the method's declared argument values in order.</summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="supportsNullable">Whether the target language version supports nullable reference type annotations.</param>
+    /// <returns>The generated argument-capture array literal, including any cancellation token parameter.</returns>
+    private static string BuildMethodArgumentsCaptureLiteral(MethodModel methodModel, bool supportsNullable)
+    {
+        var parameters = methodModel.Parameters.AsArray();
+        var prefix = supportsNullable ? "new object?[] { " : "new object[] { ";
+        const string suffix = " }";
+        if (parameters.Length == 0)
+        {
+            return prefix + "}";
+        }
+
+        var length = prefix.Length + suffix.Length + ((parameters.Length - 1) * ListSeparatorLength);
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            length += 1 + parameters[i].MetadataName.Length;
+        }
+
+        return CreateGeneratedString(
+            length,
+            (Parameters: parameters, Prefix: prefix),
+            static (destination, state) =>
+            {
+                var position = 0;
+                AppendText(destination, state.Prefix, ref position);
+                var values = state.Parameters;
+                for (var i = 0; i < values.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        AppendText(destination, ", ", ref position);
+                    }
+
+                    destination[position] = '@';
+                    position++;
+                    AppendText(destination, values[i].MetadataName, ref position);
+                }
+
+                AppendText(destination, suffix, ref position);
+            });
+    }
+
     /// <summary>Builds the optional generic <c>Type[]</c> argument for the request builder call.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <returns>The generated generic type argument, or an empty string.</returns>

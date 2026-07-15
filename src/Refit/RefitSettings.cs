@@ -167,6 +167,20 @@ public class RefitSettings
     public bool CaptureRequestContent { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the current call's argument values are captured, in declared
+    /// parameter order, into the <see cref="HttpRequestMessageOptions.MethodArguments"/> request option so a
+    /// <see cref="DelegatingHandler"/> can inspect them (defaults to false).
+    /// </summary>
+    /// <remarks>
+    /// When enabled, every call boxes its arguments into an <c>object?[]</c> that is retained on the
+    /// <see cref="HttpRequestMessage"/> (and therefore on any resulting <see cref="ApiExceptionBase"/>) for the
+    /// lifetime of the request. Leave it off unless a handler needs the values: it adds a per-call allocation, keeps
+    /// otherwise-collectable arguments alive, and the captured values frequently contain credentials or PII. The array
+    /// includes any <see cref="CancellationToken"/> so it aligns 1:1 with the reflected parameter list.
+    /// </remarks>
+    public bool CaptureMethodArguments { get; set; }
+
+    /// <summary>
     /// Gets or sets the maximum number of characters of an error response body that are read into
     /// <see cref="ApiException.Content"/> (defaults to <see langword="null"/>, meaning unbounded).
     /// </summary>

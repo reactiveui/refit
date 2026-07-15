@@ -477,3 +477,6 @@ Refit.TimeoutAttribute
 Refit.TimeoutAttribute.Milliseconds.get -> int
 Refit.TimeoutAttribute.TimeoutAttribute(int milliseconds) -> void
 static Refit.GeneratedRequestRunner.SetRequestTimeout(System.Net.Http.HttpRequestMessage! request, int timeoutMilliseconds) -> void
+static Refit.HttpRequestMessageOptions.MethodArguments.get -> string!
+Refit.RefitSettings.CaptureMethodArguments.get -> bool
+Refit.RefitSettings.CaptureMethodArguments.set -> void
