@@ -312,6 +312,8 @@ Refit.RefitSettings.UrlParameterKeyFormatter.get -> Refit.IUrlParameterKeyFormat
 Refit.RefitSettings.UrlParameterKeyFormatter.set -> void
 Refit.RefitSettings.UrlResolution.get -> Refit.UrlResolutionMode
 Refit.RefitSettings.UrlResolution.set -> void
+Refit.RefitSettings.ValidateHeaders.get -> bool
+Refit.RefitSettings.ValidateHeaders.set -> void
 Refit.RefitSettings.Version.get -> System.Version!
 Refit.RefitSettings.Version.set -> void
 Refit.RefitSettings.VersionPolicy.get -> System.Net.Http.HttpVersionPolicy
@@ -410,7 +412,7 @@ static Refit.ApiResponseExtensions.EnsureSuccessStatusCodeAsync<T>(this Refit.IA
 static Refit.ApiResponseExtensions.EnsureSuccessfulAsync(this Refit.IApiResponse! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse!>
 static Refit.ApiResponseExtensions.EnsureSuccessfulAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
 static Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Type! interfaceType) -> void
-static Refit.GeneratedRequestRunner.AddHeaderCollection(System.Net.Http.HttpRequestMessage! request, System.Collections.Generic.IDictionary<string!, string!>? headers) -> void
+static Refit.GeneratedRequestRunner.AddHeaderCollection(System.Net.Http.HttpRequestMessage! request, System.Collections.Generic.IDictionary<string!, string!>? headers, bool validateHeaders) -> void
 static Refit.GeneratedRequestRunner.AddRequestProperty<TValue>(System.Net.Http.HttpRequestMessage! request, string! key, TValue value) -> void
 static Refit.GeneratedRequestRunner.BuildRelativeUri(System.Net.Http.HttpClient! client, string! relativePath, Refit.UrlResolutionMode urlResolution) -> System.Uri!
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter) -> string!
@@ -422,7 +424,7 @@ static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.Ref
 static Refit.GeneratedRequestRunner.FormatInvariant<T>(T value, string? format) -> string!
 static Refit.GeneratedRequestRunner.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!
 static Refit.GeneratedRequestRunner.SendVoidAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
-static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage! request, string! name, string? value) -> void
+static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage! request, string! name, string? value, bool validateHeaders) -> void
 static Refit.GeneratedRequestRunner.StreamAsync<T>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Threading.CancellationToken methodCancellationToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
 static Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(Refit.RefitSettings! settings) -> bool
 static Refit.HttpRequestMessageOptions.InterfaceType.get -> string!

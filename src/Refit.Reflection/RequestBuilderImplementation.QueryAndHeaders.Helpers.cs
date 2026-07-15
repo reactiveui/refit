@@ -64,7 +64,12 @@ internal partial class RequestBuilderImplementation
     /// <param name="request">The request to modify.</param>
     /// <param name="name">The header name.</param>
     /// <param name="value">The header value, or null to only remove the header.</param>
-    internal static void SetHeader(HttpRequestMessage request, string name, string? value)
+    /// <param name="validateHeaders">
+    /// When <see langword="true"/> the value is added with <see cref="System.Net.Http.Headers.HttpHeaders.Add(string, string?)"/>
+    /// so a malformed value throws <see cref="FormatException"/>; when <see langword="false"/> it is added verbatim with
+    /// <c>TryAddWithoutValidation</c>. CR/LF stripping applies in both modes.
+    /// </param>
+    internal static void SetHeader(HttpRequestMessage request, string name, string? value, bool validateHeaders)
     {
         // Clear any existing version of this header that might be set, because
         // we want to allow removal/redefinition of headers.
@@ -93,17 +98,7 @@ internal partial class RequestBuilderImplementation
         // CRLF injection protection
         name = EnsureSafe(name);
         value = EnsureSafe(value);
-
-        var added = request.Headers.TryAddWithoutValidation(name, value);
-
-        // Don't even bother trying to add the header as a content header
-        // if we just added it to the other collection.
-        if (added || request.Content is null)
-        {
-            return;
-        }
-
-        _ = request.Content.Headers.TryAddWithoutValidation(name, value);
+        HttpHeaderApplier.Apply(request, name, value, validateHeaders);
     }
 
     /// <summary>Determines whether a type is a simple string or <see cref="IFormattable"/> type.</summary>

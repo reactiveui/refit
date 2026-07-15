@@ -270,8 +270,8 @@ public partial class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Value\", @value?.ToString())");
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Name\", @name?.ToString())");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Value\", @value?.ToString(), refitSettings.ValidateHeaders)");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Name\", @name?.ToString(), refitSettings.ValidateHeaders)");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 

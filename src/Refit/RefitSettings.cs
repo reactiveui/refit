@@ -232,6 +232,21 @@ public class RefitSettings
     public bool AllowUnmatchedRouteParameters { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether header values are validated against the framework's header parsers
+    /// when they are applied to a request (defaults to <see langword="false"/>).
+    /// </summary>
+    /// <remarks>
+    /// When <see langword="true"/>, header values are added with <see cref="System.Net.Http.Headers.HttpHeaders.Add(string, string?)"/>,
+    /// so a value the framework parser rejects (for example an invalid <c>User-Agent</c>, malformed date, or a
+    /// disallowed character) throws <see cref="FormatException"/> while the request is being built. When
+    /// <see langword="false"/> (the default) values are added verbatim with
+    /// <see cref="System.Net.Http.Headers.HttpHeaders.TryAddWithoutValidation(string, string?)"/>, preserving Refit's
+    /// long-standing behaviour of sending header values as supplied. Carriage-return and line-feed characters are
+    /// stripped from header names and values in both modes to guard against header injection.
+    /// </remarks>
+    public bool ValidateHeaders { get; set; }
+
+    /// <summary>
     /// Gets or sets how the client's base address is combined with a method's relative URL
     /// (defaults to <see cref="UrlResolutionMode.RefitLegacy"/>). Set to <see cref="UrlResolutionMode.Rfc3986"/>
     /// to opt in to RFC 3986 / <see cref="System.Net.Http.HttpClient"/> style resolution.

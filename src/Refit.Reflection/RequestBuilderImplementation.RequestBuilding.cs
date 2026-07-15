@@ -295,7 +295,7 @@ internal partial class RequestBuilderImplementation
 
             MapParametersToRequest(restMethod, paramList, ret, multiPartContent, ref headersToAdd, ref queryParamsToAdd);
 
-            AddHeadersToRequest(headersToAdd, ret);
+            AddHeadersToRequest(headersToAdd, ret, _settings.ValidateHeaders);
             if (applyAuthorizationHeaderGetter)
             {
                 await AddAuthorizationHeadersFromGetterAsync(ret, cancellationToken)

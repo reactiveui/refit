@@ -445,7 +445,12 @@ public static partial class GeneratedRequestRunner
     /// <param name="request">The request to modify.</param>
     /// <param name="name">The header name.</param>
     /// <param name="value">The header value, or null to remove the header.</param>
-    public static void SetHeader(HttpRequestMessage request, string name, string? value)
+    /// <param name="validateHeaders">
+    /// When <see langword="true"/> the value is added with <see cref="System.Net.Http.Headers.HttpHeaders.Add(string, string?)"/>
+    /// so a malformed value throws <see cref="FormatException"/>; when <see langword="false"/> it is added verbatim with
+    /// <c>TryAddWithoutValidation</c>. CR/LF stripping applies in both modes.
+    /// </param>
+    public static void SetHeader(HttpRequestMessage request, string name, string? value, bool validateHeaders)
     {
         if (ContainsHeader(request.Headers, name))
         {
@@ -469,22 +474,17 @@ public static partial class GeneratedRequestRunner
 
         name = EnsureSafeHeaderValue(name);
         value = EnsureSafeHeaderValue(value);
-
-        var added = request.Headers.TryAddWithoutValidation(name, value);
-        if (added || request.Content is null)
-        {
-            return;
-        }
-
-        _ = request.Content.Headers.TryAddWithoutValidation(name, value);
+        HttpHeaderApplier.Apply(request, name, value, validateHeaders);
     }
 
     /// <summary>Adds a generated request header collection, replacing earlier values by key.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="headers">The header collection argument.</param>
+    /// <param name="validateHeaders">Whether header values are validated as they are applied; see <see cref="SetHeader"/>.</param>
     public static void AddHeaderCollection(
         HttpRequestMessage request,
-        IDictionary<string, string>? headers)
+        IDictionary<string, string>? headers,
+        bool validateHeaders)
     {
         if (headers is null)
         {
@@ -493,7 +493,7 @@ public static partial class GeneratedRequestRunner
 
         foreach (var header in headers)
         {
-            SetHeader(request, header.Key, header.Value);
+            SetHeader(request, header.Key, header.Value, validateHeaders);
         }
     }
 

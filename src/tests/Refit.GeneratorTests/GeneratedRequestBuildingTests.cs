@@ -193,7 +193,7 @@ public partial class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Test\", \"test\")");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Test\", \"test\", refitSettings.ValidateHeaders)");
         await Assert.That(generated).Contains(GeneratedRequestRunnerSendAsync);
     }
 
@@ -281,7 +281,7 @@ public partial class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Test\", @id.ToString())");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Test\", @id.ToString(), refitSettings.ValidateHeaders)");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
@@ -298,7 +298,7 @@ public partial class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.AddHeaderCollection(refitRequest, @headers)");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.AddHeaderCollection(refitRequest, @headers, refitSettings.ValidateHeaders)");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
