@@ -22,5 +22,8 @@ internal enum ReturnTypeInfo
     Observable,
 
     /// <summary>The method returns void synchronously.</summary>
-    SyncVoid
+    SyncVoid,
+
+    /// <summary>The method returns the built <c>Task&lt;HttpRequestMessage&gt;</c> without sending it.</summary>
+    RequestMessage
 }

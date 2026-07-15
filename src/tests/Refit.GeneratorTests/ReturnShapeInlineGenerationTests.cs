@@ -22,6 +22,12 @@ public class ReturnShapeInlineGenerationTests
     /// <summary>The inline cold-observable send call emitted for an <c>IObservable</c> return.</summary>
     private const string SendObservableCall = "GeneratedRequestRunner.SendObservable<";
 
+    /// <summary>The inline build-and-return statement emitted for a <c>Task&lt;HttpRequestMessage&gt;</c> return.</summary>
+    private const string TaskFromResultCall = "global::System.Threading.Tasks.Task.FromResult";
+
+    /// <summary>The inline request-processing send call emitted for a response-returning method.</summary>
+    private const string SendAsyncCall = "GeneratedRequestRunner.SendAsync<";
+
     /// <summary>Verifies an IAsyncEnumerable method is generated inline through StreamAsync, not the reflective builder.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -90,5 +96,41 @@ public class ReturnShapeInlineGenerationTests
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
         await Assert.That(generated).DoesNotContain(SendObservableCall);
+    }
+
+    /// <summary>Verifies a Task&lt;HttpRequestMessage&gt; method builds the request inline and returns it without sending.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequestMessageReturnBuildsRequestInlineWithoutSending()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Get("/items/{id}")]
+            Task<HttpRequestMessage> BuildRequest(int id);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains(NewHttpRequestMessage);
+        await Assert.That(generated).Contains(TaskFromResultCall);
+        await Assert.That(generated).DoesNotContain(SendAsyncCall);
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a Task&lt;HttpRequestMessage&gt; method falls back to the reflective builder when inline generation is off.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequestMessageReturnSwitchOffUsesReflectiveRequestBuilder()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Get("/items/{id}")]
+            Task<HttpRequestMessage> BuildRequest(int id);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: false);
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).DoesNotContain(TaskFromResultCall);
     }
 }

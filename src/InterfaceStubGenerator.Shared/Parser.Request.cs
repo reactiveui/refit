@@ -127,7 +127,7 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the return shape can be generated inline.</returns>
     private static bool IsInlineReturnShape(ReturnTypeInfo returnTypeInfo, string? adapterTypeExpression) =>
         returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
-            or ReturnTypeInfo.Observable
+            or ReturnTypeInfo.Observable or ReturnTypeInfo.RequestMessage
         || adapterTypeExpression is not null;
 
     /// <summary>Reports an error when a method uses a source-generation-only attribute but cannot generate inline.</summary>
