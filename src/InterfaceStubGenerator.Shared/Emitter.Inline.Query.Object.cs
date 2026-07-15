@@ -213,7 +213,7 @@ internal static partial class Emitter
         in InlineValueEmission emission)
     {
         var keyTypeOf = $"typeof({dictionary.KeyTypeName})";
-        var customKey = $"{emission.SettingsLocal}.UrlParameterFormatter.Format({entryLocal}.Key, {keyTypeOf}, {keyTypeOf})";
+        var customKey = EmitFormatUrlParameter($"{entryLocal}.Key", keyTypeOf, keyTypeOf, emission);
         var fastKey = BuildFastFormatExpression(entryLocal + ".Key", dictionary.KeyFormat, emission);
         var entryKeyExpression = fastKey is null
             ? customKey
@@ -439,7 +439,8 @@ internal static partial class Emitter
         {
             // An element with no reflection-free rendering (e.g. an enum with duplicate constants) still uses the
             // formatter, which under the pristine default renders it correctly; the type doubles as the provider.
-            return $"{emission.SettingsLocal}.UrlParameterFormatter.Format({elementLocal}, typeof({collection.PropertyTypeName}), typeof({collection.PropertyTypeName}))";
+            var elementTypeOf = $"typeof({collection.PropertyTypeName})";
+            return EmitFormatUrlParameter(elementLocal, elementTypeOf, elementTypeOf, emission);
         }
 
         // A string element renders itself, so a null element already renders as null; other formats guard first.
@@ -590,7 +591,21 @@ internal static partial class Emitter
         string parameterTypeName,
         string providerField,
         in InlineValueEmission emission) =>
-        $"{emission.SettingsLocal}.UrlParameterFormatter.Format({valueExpression}, {providerField}, typeof({parameterTypeName}))";
+        EmitFormatUrlParameter(valueExpression, providerField, $"typeof({parameterTypeName})", emission);
+
+    /// <summary>Emits a call to the shared runtime helper that renders a URL parameter value, consulting the per-type
+    /// formatter registry on the settings before the configured <c>IUrlParameterFormatter</c>.</summary>
+    /// <param name="valueExpression">The value expression to format.</param>
+    /// <param name="providerExpression">The attribute-provider expression passed to the formatter.</param>
+    /// <param name="typeExpression">The declared-type expression passed to the formatter.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <returns>The formatter call expression, keeping the reflection and generated paths in parity.</returns>
+    private static string EmitFormatUrlParameter(
+        string valueExpression,
+        string providerExpression,
+        string typeExpression,
+        in InlineValueEmission emission) =>
+        $"global::Refit.GeneratedRequestRunner.FormatUrlParameter({emission.SettingsLocal}, {valueExpression}, {providerExpression}, {typeExpression})";
 
     /// <summary>Builds the query key expression for one flattened property.</summary>
     /// <param name="property">The flattened property descriptor.</param>

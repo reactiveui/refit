@@ -97,6 +97,8 @@ internal partial class RestMethodInfoInternal
         QueryUriFormat = methodInfo.GetCustomAttribute<QueryUriFormatAttribute>()?.UriFormat
                          ?? UriFormat.UriEscaped;
 
+        TimeoutMilliseconds = methodInfo.GetCustomAttribute<TimeoutAttribute>(true)?.Milliseconds ?? 0;
+
         IsApiResponse = DetermineIsApiResponse(ReturnResultType);
     }
 
@@ -129,6 +131,9 @@ internal partial class RestMethodInfoInternal
 
     /// <summary>Gets the URI escaping format used for query parameters.</summary>
     public UriFormat QueryUriFormat { get; }
+
+    /// <summary>Gets the per-call timeout in milliseconds from the method's <see cref="TimeoutAttribute"/>, or 0 when absent.</summary>
+    public int TimeoutMilliseconds { get; }
 
     /// <summary>Gets the static headers associated with the method.</summary>
     public Dictionary<string, string?> Headers { get; }

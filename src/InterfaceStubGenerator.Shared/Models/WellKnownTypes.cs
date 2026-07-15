@@ -20,7 +20,18 @@ public class WellKnownTypes(Compilation compilation)
     public INamedTypeSymbol Get(Type type)
     {
         ArgumentExceptionHelper.ThrowIfNull(type);
-        return Get(type.FullName ?? throw new InvalidOperationException("Could not get name of type " + type));
+        var typeFullName = GetTypeFullName(type.FullName, type);
+        return Get(typeFullName);
+
+        static string GetTypeFullName(string? fullName, Type candidate)
+        {
+            if (fullName is not null)
+            {
+                return fullName;
+            }
+
+            throw new InvalidOperationException("Could not get name of type " + candidate.Name);
+        }
     }
 
     /// <summary>Tries to resolve the named type symbol for the given full type name.</summary>

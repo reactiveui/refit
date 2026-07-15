@@ -7,6 +7,9 @@ namespace Refit.Tests;
 /// <summary>Tests for simple public attribute types.</summary>
 public class AttributeTests
 {
+    /// <summary>The headers expected from the populated headers-attribute fixture.</summary>
+    private static readonly string[] ExpectedHeaders = ["Accept: application/json", "X-Trace: 1"];
+
     /// <summary>Verifies body attribute constructors preserve serialization method and buffering values.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -37,5 +40,28 @@ public class AttributeTests
 #pragma warning restore CS0618
 
         await Assert.That(attribute.Name).IsEqualTo("payload");
+    }
+
+    /// <summary>Verifies the HEAD method attribute exposes the HEAD verb and its supplied path.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task HeadAttributeExposesHeadMethodAndPath()
+    {
+        var attribute = new HeadAttribute("/resource");
+
+        await Assert.That(attribute.Method).IsEqualTo(System.Net.Http.HttpMethod.Head);
+        await Assert.That(attribute.Path).IsEqualTo("/resource");
+    }
+
+    /// <summary>Verifies the headers attribute stores supplied headers and substitutes an empty array for null.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task HeadersAttributeStoresHeadersAndDefaultsNullToEmpty()
+    {
+        var withHeaders = new HeadersAttribute("Accept: application/json", "X-Trace: 1");
+        var withNull = new HeadersAttribute(null!);
+
+        await Assert.That(withHeaders.Headers).IsEquivalentTo(ExpectedHeaders);
+        await Assert.That(withNull.Headers).IsEmpty();
     }
 }

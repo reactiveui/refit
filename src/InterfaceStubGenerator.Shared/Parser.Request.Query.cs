@@ -62,6 +62,9 @@ internal static partial class Parser
     /// <summary>The metadata name of <c>Refit.QueryUriFormatAttribute</c>.</summary>
     private const string QueryUriFormatAttributeDisplayName = "QueryUriFormatAttribute";
 
+    /// <summary>The metadata name of <c>Refit.TimeoutAttribute</c>.</summary>
+    private const string TimeoutAttributeDisplayName = "TimeoutAttribute";
+
     /// <summary>The fully-qualified display name of the <c>EnumMember</c> attribute honored by the default formatter.</summary>
     private const string EnumMemberAttributeDisplayName = "System.Runtime.Serialization.EnumMemberAttribute";
 
