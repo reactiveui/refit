@@ -205,6 +205,13 @@ visible in three places.
   or invalid value throws an `ArgumentException`), and `[Query]` parameters are still appended to the URL's query string.
   It generates inline (reflection-free, Native AOT clean) and behaves identically through the reflection request
   builder. See [Absolute URLs per call with `[Url]`](../README.md#absolute-urls-per-call-with-url).
+* **Obtain the built request without sending it.** A method declared to return `Task<HttpRequestMessage>` builds the
+  full request (method, URL, headers, and body/multipart content) and hands it back to the caller instead of dispatching
+  it — the equivalent of Retrofit's `Call.request()`, useful for inspection, signing, logging, or manual dispatch. Both
+  the generated and reflection paths build byte-identical requests. The caller owns the returned request and its content
+  and is responsible for disposing it; the request is not disposed for you and its content stays readable. A configured
+  async `AuthorizationHeaderValueGetter` runs at dispatch time and is therefore not applied to a request obtained this
+  way. See [Obtaining the built request without sending](../README.md#obtaining-the-built-request-without-sending).
 * **Optional URL path segments (`{name?}`).** Append `?` to a placeholder name (matching ASP.NET routing) to make the
   segment optional. When the bound argument is `null` the segment and its preceding `/` are dropped, so a route such as
   `[Get("/push/notifMsg/{deviceId}/{notifMsgId?}")]` produces `/push/notifMsg/device1` (not a 404-prone

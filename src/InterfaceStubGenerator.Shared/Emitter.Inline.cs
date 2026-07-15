@@ -227,7 +227,12 @@ internal static partial class Emitter
             return BuildInlineObservableMethodSource(methodPrefix, requestConstruction, buildRequestLocal, requestLocal, observableReturn, bodyIndent, methodIndent);
         }
 
-        var returnSource = BuildInlineReturn(methodModel, request, plan.BufferBodyExpression, plan.CancellationTokenExpression, requestLocal, settingsLocal, plan.AdapterTokenLocal);
+        // A Task<HttpRequestMessage> method hands the fully built request back to the caller without dispatching it. The
+        // caller owns the returned request and its content, so it is neither sent nor disposed here; every other shape
+        // emits its normal send-and-deserialize return.
+        var returnSource = methodModel.ReturnTypeMetadata == ReturnTypeInfo.RequestMessage
+            ? BuildInlineRequestMessageReturn(requestLocal)
+            : BuildInlineReturn(methodModel, request, plan.BufferBodyExpression, plan.CancellationTokenExpression, requestLocal, settingsLocal, plan.AdapterTokenLocal);
         return $$"""
             {{methodPrefix}}{{requestConstruction}}{{returnSource}}{{methodIndent}}}
 
@@ -372,6 +377,18 @@ internal static partial class Emitter
             {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
             {{bodyIndent}}    {{bufferBodyExpression}},
             {{bodyIndent}}    {{cancellationTokenExpression}});
+
+            """;
+    }
+
+    /// <summary>Builds the return statement for a <c>Task&lt;HttpRequestMessage&gt;</c> method that returns the built request.</summary>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <returns>The generated return statement handing the built request back without sending it.</returns>
+    private static string BuildInlineRequestMessageReturn(string requestLocal)
+    {
+        var bodyIndent = Indent(MethodBodyIndentation);
+        return $$"""
+            {{bodyIndent}}return global::System.Threading.Tasks.Task.FromResult({{requestLocal}});
 
             """;
     }
