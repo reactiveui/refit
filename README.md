@@ -723,6 +723,29 @@ var settings = new RefitSettings
 
 In the above example, the dictionary keys will be converted to uppercase.
 
+**Registering a formatter per type with `UrlParameterFormatterMap`**:
+
+To customize how one specific type is rendered into a URL without hand-rolling a type switch inside a custom
+`IUrlParameterFormatter`, register a formatter for that type in `RefitSettings.UrlParameterFormatterMap`. When a value
+is rendered into a path or query string, its runtime type is looked up in the map first; a registered formatter wins,
+and every other type falls back to `UrlParameterFormatter`.
+
+```csharp
+public class TemperatureUrlParameterFormatter : IUrlParameterFormatter
+{
+    public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) =>
+        value is Temperature t ? $"{t.Celsius}deg" : value?.ToString();
+}
+
+var settings = new RefitSettings();
+settings.UrlParameterFormatterMap[typeof(Temperature)] = new TemperatureUrlParameterFormatter();
+```
+
+Matching is by exact runtime type only — there is no base-class or interface walking, so register the concrete type the
+value will have at runtime. The registry applies to path parameters, round-trip path segments, and query values (it does
+not affect header or body serialization), and both the reflection and source-generated request builders consult it
+identically.
+
 ### Body content
 
 One of the parameters in your method can be used as the body, by using the

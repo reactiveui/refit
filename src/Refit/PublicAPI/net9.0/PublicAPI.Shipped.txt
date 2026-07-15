@@ -301,6 +301,7 @@ Refit.RefitSettings.TransportExceptionFactory.get -> System.Func<System.Net.Http
 Refit.RefitSettings.TransportExceptionFactory.set -> void
 Refit.RefitSettings.UrlParameterFormatter.get -> Refit.IUrlParameterFormatter!
 Refit.RefitSettings.UrlParameterFormatter.set -> void
+Refit.RefitSettings.UrlParameterFormatterMap.get -> System.Collections.Generic.IDictionary<System.Type!, Refit.IUrlParameterFormatter!>!
 Refit.RefitSettings.UrlParameterKeyFormatter.get -> Refit.IUrlParameterKeyFormatter!
 Refit.RefitSettings.UrlParameterKeyFormatter.set -> void
 Refit.RefitSettings.UrlResolution.get -> Refit.UrlResolutionMode
