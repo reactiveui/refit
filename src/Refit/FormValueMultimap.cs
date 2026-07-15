@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -14,6 +15,12 @@ namespace Refit;
 /// same or different values.</remarks>
 internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, string?>>
 {
+    /// <summary>The maximum object-graph depth flattened before deeper nested values are dropped, guarding against runaway recursion.</summary>
+    private const int MaxNestingDepth = 32;
+
+    /// <summary>The default delimiter composing a nested field key from its parent key, matching the query-flattening default.</summary>
+    private const string DefaultNestingDelimiter = ".";
+
     /// <summary>Caches the readable public properties for each source type without keeping collectible types alive.</summary>
     private static readonly ConditionalWeakTable<Type, PropertyInfo[]> _propertyCache = new();
 
@@ -25,6 +32,9 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
 
     /// <summary>The formatter applied to property names that are not explicitly aliased.</summary>
     private readonly IUrlParameterKeyFormatter _urlParameterKeyFormatter;
+
+    /// <summary>The complex values currently being flattened on the recursion path, guarding against reference cycles.</summary>
+    private List<object>? _ancestors;
 
     /// <summary>Initializes a new instance of the <see cref="FormValueMultimap"/> class from a source object.</summary>
     /// <param name="source">The source object or dictionary to convert into form entries.</param>
@@ -55,11 +65,11 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
 
         if (source is IDictionary dictionary)
         {
-            AddDictionary(dictionary, settings);
+            AddDictionary(dictionary, settings, null, DefaultNestingDelimiter, 0);
             return;
         }
 
-        AddObject(source, declaredProperties ?? GetCachedProperties(source.GetType()), settings);
+        AddObject(source, declaredProperties ?? GetCachedProperties(source.GetType()), settings, null, DefaultNestingDelimiter, 0);
     }
 
     /// <summary>Gets a key for each entry. If multiple entries share the same key, the key is returned multiple times.</summary>
@@ -117,7 +127,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
                 continue;
             }
 
-            map.AppendValue(fieldName, value, field.Format, field.CollectionFormat, settings);
+            map.AppendValue(fieldName, value, field.Format, field.CollectionFormat, settings, DefaultNestingDelimiter, 0);
         }
 
         return map;
@@ -151,14 +161,32 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Gets the delimiter string for a delimited collection format.</summary>
     /// <param name="collectionFormat">The delimited collection format.</param>
     /// <returns>The delimiter string.</returns>
+    /// <remarks>Mirrors the query-flattening delimiter map: the default <see cref="CollectionFormat.RefitParameterFormatter"/>
+    /// and <see cref="CollectionFormat.Csv"/> both join with a comma.</remarks>
     private static string GetDelimiter(CollectionFormat collectionFormat) =>
         collectionFormat switch
         {
-            CollectionFormat.Csv => ",",
             CollectionFormat.Ssv => " ",
             CollectionFormat.Tsv => "\t",
-            _ => "|"
+            CollectionFormat.Pipes => "|",
+            _ => ","
         };
+
+    /// <summary>Determines whether a value renders directly through the form formatter instead of being flattened.</summary>
+    /// <param name="value">The non-null value to inspect.</param>
+    /// <returns><see langword="true"/> for the simple string/formattable types the query-flattening path emits directly.</returns>
+    /// <remarks>Mirrors the query path's simple-type predicate: string, bool, char, <see cref="IFormattable"/> (enums,
+    /// numbers, dates, <see cref="Guid"/>, ...), <see cref="Uri"/>, and <see cref="CultureInfo"/>.</remarks>
+    private static bool IsSimpleFormValue(object value) =>
+        value is string or bool or char or IFormattable or Uri or CultureInfo;
+
+    /// <summary>Composes a form field key from an optional parent prefix and a child name.</summary>
+    /// <param name="keyPrefix">The parent key prefix, or <see langword="null"/> at the top level.</param>
+    /// <param name="name">The child field name or dictionary key.</param>
+    /// <param name="delimiter">The delimiter placed between the prefix and the name.</param>
+    /// <returns>The composed key.</returns>
+    private static string? ComposeKey(string? keyPrefix, string? name, string? delimiter) =>
+        keyPrefix is null ? name : keyPrefix + delimiter + name;
 
     /// <summary>Formats and joins a collection-valued form field without LINQ adapters.</summary>
     /// <param name="enumerable">The collection to format.</param>
@@ -200,31 +228,52 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         }
     }
 
-    /// <summary>Adds the entries from an <see cref="IDictionary"/> source.</summary>
+    /// <summary>Adds the entries from an <see cref="IDictionary"/> source, flattening complex entry values.</summary>
     /// <param name="dictionary">The dictionary source.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    private void AddDictionary(IDictionary dictionary, RefitSettings settings)
+    /// <param name="keyPrefix">The parent key prefix, or <see langword="null"/> for a top-level dictionary.</param>
+    /// <param name="delimiter">The delimiter composing an entry key under the prefix.</param>
+    /// <param name="depth">The current nesting depth.</param>
+    private void AddDictionary(
+        IDictionary dictionary,
+        RefitSettings settings,
+        string? keyPrefix,
+        string? delimiter,
+        int depth)
     {
         foreach (var key in dictionary.Keys)
         {
             var value = dictionary[key];
-            if (value is not null)
+            if (value is null)
             {
-                Add(
-                    key.ToString(),
-                    settings.FormUrlEncodedParameterFormatter.Format(value, null));
+                continue;
             }
+
+            AppendValue(
+                ComposeKey(keyPrefix, key.ToString(), delimiter),
+                value,
+                null,
+                null,
+                settings,
+                delimiter,
+                depth);
         }
     }
 
-    /// <summary>Adds the entries reflected from an object source.</summary>
+    /// <summary>Adds the entries reflected from an object source, composing nested keys under the given prefix.</summary>
     /// <param name="source">The object source.</param>
     /// <param name="properties">The properties to read from the source.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
+    /// <param name="keyPrefix">The parent key prefix, or <see langword="null"/> for a top-level object.</param>
+    /// <param name="delimiter">The delimiter composing each property key under the prefix.</param>
+    /// <param name="depth">The current nesting depth.</param>
     private void AddObject(
         object source,
         PropertyInfo[] properties,
-        RefitSettings settings)
+        RefitSettings settings,
+        string? keyPrefix,
+        string? delimiter,
+        int depth)
     {
         for (var i = 0; i < properties.Length; i++)
         {
@@ -234,40 +283,49 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             // see if there's a query attribute
             var attrib = property.GetCustomAttribute<QueryAttribute>(true);
 
+            var fieldName = ComposeKey(keyPrefix, GetFieldNameForProperty(property), delimiter);
+
             if (value is null)
             {
                 if (attrib?.SerializeNull == true)
                 {
-                    Add(GetFieldNameForProperty(property), string.Empty);
+                    Add(fieldName, string.Empty);
                 }
 
                 continue;
             }
 
-            var fieldName = GetFieldNameForProperty(property);
             var collectionFormat = attrib?.IsCollectionFormatSpecified == true
                 ? attrib.CollectionFormat
                 : (CollectionFormat?)null;
 
-            AppendValue(fieldName, value, attrib?.Format, collectionFormat, settings);
+            // A nested object/dictionary composes its children under this property's key using this property's own
+            // [Query] delimiter when present, otherwise the inherited delimiter (matching the query-flattening path).
+            var nestedDelimiter = attrib is not null ? attrib.Delimiter : (delimiter ?? DefaultNestingDelimiter);
+
+            AppendValue(fieldName, value, attrib?.Format, collectionFormat, settings, nestedDelimiter, depth);
         }
     }
 
-    /// <summary>Adds a non-null property or descriptor value, choosing scalar or collection handling.</summary>
+    /// <summary>Adds a non-null property or descriptor value, choosing scalar, collection, dictionary, or nested-object handling.</summary>
     /// <param name="fieldName">The resolved form field name.</param>
     /// <param name="value">The non-null value to add.</param>
     /// <param name="format">The value format string, if any.</param>
     /// <param name="explicitCollectionFormat">The explicit collection format, or <see langword="null"/> to use the settings default.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
+    /// <param name="delimiter">The delimiter composing nested keys under this field.</param>
+    /// <param name="depth">The current nesting depth.</param>
     private void AppendValue(
         string? fieldName,
         object value,
         string? format,
         CollectionFormat? explicitCollectionFormat,
-        RefitSettings settings)
+        RefitSettings settings,
+        string? delimiter,
+        int depth)
     {
-        // add strings/non enumerable properties
-        if (value is not IEnumerable enumerable || value is string)
+        // Simple scalar and formattable values (including strings) render directly through the form formatter.
+        if (IsSimpleFormValue(value))
         {
             Add(
                 fieldName,
@@ -275,9 +333,66 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             return;
         }
 
-        var collectionFormat = explicitCollectionFormat ?? settings.CollectionFormat;
-        AddCollection(fieldName, enumerable, value, format, collectionFormat, settings);
+        // A dictionary flattens to "field<delimiter>key" entries, recursing into complex entry values.
+        if (value is IDictionary dictionary)
+        {
+            if (TryEnterComplex(value, depth))
+            {
+                AddDictionary(dictionary, settings, fieldName, delimiter, depth + 1);
+                ExitComplex();
+            }
+
+            return;
+        }
+
+        // A collection formats and joins (or repeats) its elements per the resolved collection format.
+        if (value is IEnumerable enumerable)
+        {
+            var collectionFormat = explicitCollectionFormat ?? settings.CollectionFormat;
+            AddCollection(fieldName, enumerable, value, format, collectionFormat, settings);
+            return;
+        }
+
+        // A nested complex object flattens its public properties under "field<delimiter>child".
+        if (!TryEnterComplex(value, depth))
+        {
+            return;
+        }
+
+        AddObject(value, GetCachedProperties(value.GetType()), settings, fieldName, delimiter, depth + 1);
+        ExitComplex();
     }
+
+    /// <summary>Enters a complex value on the recursion path, enforcing the depth cap and reference-cycle guard.</summary>
+    /// <param name="value">The complex value about to be flattened.</param>
+    /// <param name="depth">The current nesting depth.</param>
+    /// <returns><see langword="true"/> when flattening may proceed; <see langword="false"/> when the value is too deep
+    /// or already being flattened on this path, in which case it is dropped.</returns>
+    private bool TryEnterComplex(object value, int depth)
+    {
+        if (depth >= MaxNestingDepth)
+        {
+            return false;
+        }
+
+        _ancestors ??= [];
+        for (var i = 0; i < _ancestors.Count; i++)
+        {
+            if (ReferenceEquals(_ancestors[i], value))
+            {
+                return false;
+            }
+        }
+
+        _ancestors.Add(value);
+        return true;
+    }
+
+    /// <summary>Leaves the most recently entered complex value, restoring the recursion path for the next sibling.</summary>
+    private void ExitComplex() =>
+
+        // _ancestors is non-null here: TryEnterComplex allocated it and pushed the matching value.
+        _ancestors!.RemoveAt(_ancestors.Count - 1);
 
     /// <summary>Adds a collection-valued property using the resolved collection format.</summary>
     /// <param name="fieldName">The resolved form field name.</param>
@@ -310,7 +425,8 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
                 break;
             }
 
-            case CollectionFormat.Csv
+            case CollectionFormat.RefitParameterFormatter
+                or CollectionFormat.Csv
                 or CollectionFormat.Ssv
                 or CollectionFormat.Tsv
                 or CollectionFormat.Pipes:
@@ -323,6 +439,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
 
             default:
             {
+                // A genuinely out-of-range CollectionFormat value falls back to formatting the collection object itself.
                 Add(
                     fieldName,
                     settings.FormUrlEncodedParameterFormatter.Format(

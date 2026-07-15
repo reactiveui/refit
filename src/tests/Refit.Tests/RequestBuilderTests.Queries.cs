@@ -55,6 +55,12 @@ public partial class RequestBuilderTests
     /// <summary>The numeric value assigned to the <c>Bar</c> field of the URL-encoded body samples.</summary>
     private const int SampleBarValue = 100;
 
+    /// <summary>The numeric value assigned to the nested <c>Age</c> field of the nested URL-encoded body sample.</summary>
+    private const int SampleNestedAge = 42;
+
+    /// <summary>The value assigned to the <c>Foo</c> field of the URL-encoded body samples.</summary>
+    private const string SampleFooValue = "Something";
+
     /// <summary>Reads string content with metadata.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -383,13 +389,13 @@ public partial class RequestBuilderTests
     public async Task BodyContentGetsUrlEncoded()
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var factory = fixture.RunRequest("PostSomeUrlEncodedStuff");
+        var factory = fixture.RunRequest(nameof(IDummyHttpApi.PostSomeUrlEncodedStuff));
         var output = await factory(
             [
                 SampleId,
 
                 // Baz is intentionally blank to verify empty values are preserved rather than stripped.
-                new UrlEncodedBody(Foo: "Something", Bar: SampleBarValue, Baz: string.Empty)
+                new UrlEncodedBody(Foo: SampleFooValue, Bar: SampleBarValue, Baz: string.Empty)
             ]);
 
         await Assert.That(output.SendContent).IsEqualTo("Foo=Something&Bar=100&Baz=");
@@ -402,16 +408,36 @@ public partial class RequestBuilderTests
     {
         var settings = new RefitSettings { CollectionFormat = CollectionFormat.Csv };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
-        var factory = fixture.RunRequest("PostSomeUrlEncodedStuff");
+        var factory = fixture.RunRequest(nameof(IDummyHttpApi.PostSomeUrlEncodedStuff));
         var output = await factory(
             [
                 SampleId,
 
                 // Baz is intentionally blank to verify empty values are preserved rather than stripped.
-                new UrlEncodedBodyWithCollection(Foo: "Something", Bar: SampleBarValue, FooBar: _intArray57, Baz: string.Empty)
+                new UrlEncodedBodyWithCollection(Foo: SampleFooValue, Bar: SampleBarValue, FooBar: _intArray57, Baz: string.Empty)
             ]);
 
         await Assert.That(output.SendContent).IsEqualTo("Foo=Something&Bar=100&FooBar=5%2C7&Baz=");
+    }
+
+    /// <summary>A nested object and dictionary in a URL-encoded body flatten to dotted field names.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BodyContentGetsUrlEncodedWithNestedObjectFlattened()
+    {
+        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+        var factory = fixture.RunRequest(nameof(IDummyHttpApi.PostSomeUrlEncodedStuff));
+        var output = await factory(
+            [
+                SampleId,
+                new UrlEncodedBodyWithNestedObject(
+                    Foo: SampleFooValue,
+                    Detail: new(Email: "a@b.com", Age: SampleNestedAge),
+                    Extra: new Dictionary<string, string> { { "k", "v" } })
+            ]);
+
+        await Assert.That(output.SendContent)
+            .IsEqualTo("Foo=Something&Detail.Email=a%40b.com&Detail.Age=42&Extra.k=v");
     }
 
     /// <summary>A form field gets aliased.</summary>
@@ -498,4 +524,18 @@ public partial class RequestBuilderTests
     /// <param name="FooBar">The collection value.</param>
     /// <param name="Baz">A blank value used to verify empty fields are preserved rather than stripped.</param>
     private sealed record UrlEncodedBodyWithCollection(string Foo, int Bar, int[] FooBar, string Baz);
+
+    /// <summary>Body payload with a nested object and dictionary for the URL-encoded flattening test.</summary>
+    /// <param name="Foo">The scalar value.</param>
+    /// <param name="Detail">The nested object flattened under its property name.</param>
+    /// <param name="Extra">The dictionary flattened under its property name.</param>
+    private sealed record UrlEncodedBodyWithNestedObject(
+        string Foo,
+        NestedFormDetail Detail,
+        Dictionary<string, string> Extra);
+
+    /// <summary>Nested detail object for the URL-encoded flattening test.</summary>
+    /// <param name="Email">The email value.</param>
+    /// <param name="Age">The numeric age value.</param>
+    private sealed record NestedFormDetail(string Email, int Age);
 }

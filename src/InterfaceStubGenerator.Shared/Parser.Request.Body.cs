@@ -36,6 +36,15 @@ internal static partial class Parser
             {
                 if (member is IPropertySymbol property && IsReadableFormProperty(property) && seen.Add(property.Name))
                 {
+                    // A nested complex object, dictionary, or collection of non-simple elements needs the reflection
+                    // path's recursive flattening (FormValueMultimap). Keep descriptors to the flat scalar and
+                    // collection-of-simple shapes and route the whole body through reflection otherwise, matching the
+                    // existing dictionary-body precedent.
+                    if (!IsDescriptorSafeFormProperty(property, context.FormattableSymbol))
+                    {
+                        return null;
+                    }
+
                     fields.Add(BuildFormFieldModel(property, context));
                 }
             }
@@ -43,6 +52,15 @@ internal static partial class Parser
 
         return ImmutableEquatableArrayFactory.FromList(fields);
     }
+
+    /// <summary>Determines whether a form property flattens straight-line without the reflection path's recursion.</summary>
+    /// <param name="property">The property to classify.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <returns><see langword="true"/> for a simple scalar or a collection of simple elements; <see langword="false"/> for
+    /// a dictionary, a nested complex object, or a collection of non-simple elements, all of which reflect at runtime.</returns>
+    private static bool IsDescriptorSafeFormProperty(IPropertySymbol property, INamedTypeSymbol? formattableSymbol) =>
+        IsSimpleType(property.Type, formattableSymbol)
+        || (TryGetEnumerableElementType(property.Type, out var elementType) && IsSimpleType(elementType!, formattableSymbol));
 
     /// <summary>Determines whether a property contributes a readable public instance form field.</summary>
     /// <param name="property">The property to inspect.</param>
