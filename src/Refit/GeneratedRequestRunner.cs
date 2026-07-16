@@ -655,8 +655,13 @@ public static partial class GeneratedRequestRunner
     /// <returns>The validated path, returned unchanged.</returns>
     private static string ThrowIfUnmatchedParameter(string path, string relativePathTemplate, bool allowUnmatchedParameter)
     {
+        if (allowUnmatchedParameter)
+        {
+            return path;
+        }
+
         var i = path.IndexOf('{');
-        if (i < 0 || allowUnmatchedParameter)
+        if (i < 0)
         {
             return path;
         }
