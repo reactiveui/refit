@@ -62,7 +62,7 @@ internal static partial class Parser
             isDerived || (HasGeneratedMemberNameCollision(property) && !isSatisfiedByGeneratedMember);
 
         return new(
-            property.MetadataName,
+            EscapeIdentifier(property.MetadataName),
             propertyType,
             annotation,
             containingType,

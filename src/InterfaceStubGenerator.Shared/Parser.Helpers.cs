@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Refit.Generator;
 
@@ -27,6 +28,10 @@ internal static partial class Parser
         {
             declaredBaseName = declaredBaseName[(lastDot + 1)..];
         }
+
+        // A method named after a C# keyword (e.g. @class) must be emitted verbatim, otherwise the generated
+        // signature is invalid C#. Escape the name before any generic type-parameter list is appended.
+        declaredBaseName = EscapeIdentifier(declaredBaseName);
 
         if (methodSymbol.TypeParameters.IsEmpty)
         {
@@ -53,6 +58,14 @@ internal static partial class Parser
         _ = builder.Append('>');
         return builder.ToString();
     }
+
+    /// <summary>Prefixes an identifier with <c>@</c> when it is a reserved C# keyword, so it can be emitted verbatim
+    /// as a declaration name. Non-keyword identifiers (including contextual keywords, which are valid as identifiers)
+    /// are returned unchanged so the generated output for ordinary members is unaffected.</summary>
+    /// <param name="identifier">The simple identifier to escape.</param>
+    /// <returns>The identifier, prefixed with <c>@</c> when it is a reserved keyword; otherwise the identifier itself.</returns>
+    internal static string EscapeIdentifier(string identifier) =>
+        SyntaxFacts.GetKeywordKind(identifier) != SyntaxKind.None ? "@" + identifier : identifier;
 
     /// <summary>Determines whether a method is decorated with a Refit HTTP method attribute.</summary>
     /// <param name="methodSymbol">The method symbol to inspect.</param>
