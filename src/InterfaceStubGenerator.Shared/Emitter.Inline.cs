@@ -28,10 +28,6 @@ internal static partial class Emitter
     /// <summary>The cast prefix for an explicit collection format value.</summary>
     private const string CollectionFormatCast = "(global::Refit.CollectionFormat)";
 
-    /// <summary>The count of request-property statements every inline method emits unconditionally: the configured-options
-    /// call, the method name, the raw route template, and the method-argument capture block.</summary>
-    private const int UnconditionalRequestPropertyCount = 4;
-
     /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
@@ -560,75 +556,6 @@ internal static partial class Emitter
         return parameter.CanBeNull
             ? $"{parameterExpression}?.ToString()"
             : $"{parameterExpression}.ToString()";
-    }
-
-    /// <summary>Builds request-option/property application for an inline generated method.</summary>
-    /// <param name="request">The parsed request model.</param>
-    /// <param name="interfaceModel">The interface model being emitted.</param>
-    /// <param name="methodModel">The method model being emitted.</param>
-    /// <param name="requestLocal">The generated request message local name.</param>
-    /// <param name="settingsLocal">The generated settings local name.</param>
-    /// <returns>The generated request option/property statements.</returns>
-    internal static string BuildInlineRequestProperties(
-        RequestModel request,
-        InterfaceModel interfaceModel,
-        MethodModel methodModel,
-        string requestLocal,
-        string settingsLocal)
-    {
-        var parts = new string[UnconditionalRequestPropertyCount + interfaceModel.Properties.Count + request.Parameters.Count];
-        var count = 0;
-        var bodyIndent = Indent(MethodBodyIndentation);
-        parts[count] =
-            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions({requestLocal}, {settingsLocal}, typeof({interfaceModel.InterfaceDisplayName}));\n";
-        count++;
-
-        // The method name (stripped of any explicit-interface prefix, matching reflection's MethodInfo.Name) and the
-        // raw route template are compile-time literals, so a source-gen handler can read the same low-cardinality
-        // metadata the reflection path publishes without any runtime reflection.
-        parts[count] =
-            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<string>({requestLocal}, "
-            + $"global::Refit.HttpRequestMessageOptions.MethodName, {ToCSharpStringLiteral(StripExplicitInterfacePrefix(methodModel.Name))});\n";
-        count++;
-        parts[count] =
-            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<string>({requestLocal}, "
-            + $"global::Refit.HttpRequestMessageOptions.RelativePathTemplate, {ToCSharpStringLiteral(request.Path)});\n";
-        count++;
-
-        // Capture the declared-order argument values only when RefitSettings.CaptureMethodArguments opts in, so the
-        // object[] allocation is paid per call solely when a handler needs the values. The nullable annotation is
-        // gated on the target language version so the C# 7.3 baseline still compiles.
-        var argumentsArrayType = interfaceModel.SupportsNullable ? "object?[]" : "object[]";
-        parts[count] =
-            $"{bodyIndent}if ({settingsLocal}.CaptureMethodArguments) {{ global::Refit.GeneratedRequestRunner.AddRequestProperty<{argumentsArrayType}>"
-            + $"({requestLocal}, global::Refit.HttpRequestMessageOptions.MethodArguments, {BuildMethodArgumentsCaptureLiteral(methodModel, interfaceModel.SupportsNullable)}); }}\n";
-        count++;
-
-        foreach (var property in interfaceModel.Properties)
-        {
-            if (property.RequestPropertyKey.Length == 0 || !property.HasGetter)
-            {
-                continue;
-            }
-
-            parts[count] =
-                $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{property.Type}>"
-                + $"({requestLocal}, {ToCSharpStringLiteral(property.RequestPropertyKey)}, "
-                + $"{BuildPropertyAccessExpression(property)});\n";
-            count++;
-        }
-
-        foreach (var parameter in request.Parameters)
-        {
-            if (parameter.Kind == RequestParameterKind.Property)
-            {
-                parts[count] =
-                    $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{parameter.Type}>({requestLocal}, {ToCSharpStringLiteral(parameter.PropertyKey)}, @{parameter.Name});\n";
-                count++;
-            }
-        }
-
-        return ConcatParts(parts, count);
     }
 
     /// <summary>Creates a name builder reserved with a method's parameter names so generated locals never collide with them.</summary>

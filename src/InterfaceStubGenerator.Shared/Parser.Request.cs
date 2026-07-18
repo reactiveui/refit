@@ -15,6 +15,12 @@ internal static partial class Parser
     /// <summary>The <c>System</c> namespace name, matched structurally to identify well-known BCL types.</summary>
     private const string SystemNamespace = "System";
 
+    /// <summary>The shared, permanently empty placeholder map returned for paths that declare no path parameters.</summary>
+    /// <remarks>Most parsed paths carry no <c>{placeholder}</c>, and this map is only ever read (never mutated) by the
+    /// parameter parser, so a single shared instance avoids allocating a throwaway dictionary on every such parse - a
+    /// cost paid on every keystroke because the parser re-runs for the whole compilation on each edit.</remarks>
+    private static readonly Dictionary<string, List<Range>> EmptyPathParameters = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
@@ -246,7 +252,7 @@ internal static partial class Parser
         var i = pathSpan.IndexOf('{');
         if (i < 0)
         {
-            return [];
+            return EmptyPathParameters;
         }
 
         var paramNames = new Dictionary<string, List<Range>>(StringComparer.OrdinalIgnoreCase);
