@@ -153,37 +153,17 @@ internal static partial class Emitter
         string settingsFieldName)
     {
         var enumFormatterScope = new EnumFormatterScope(uniqueNames);
-        var propertySource = BuildInterfaceProperties(model.Properties, model.SupportsNullable);
-        var refitMethodSource = BuildRefitMethods(
-            model.RefitMethods,
-            true,
-            model,
-            uniqueNames,
-            requestBuilderFieldName,
-            settingsFieldName,
-            enumFormatterScope);
-        var derivedRefitMethodSource = BuildRefitMethods(
-            model.DerivedRefitMethods,
-            false,
-            model,
-            uniqueNames,
-            requestBuilderFieldName,
-            settingsFieldName,
-            enumFormatterScope);
-        var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods, model.SupportsNullable);
-        var disposableSource = BuildDisposableMethod(model.DisposeMethod);
+        var fieldNames = new GeneratedFieldNames(requestBuilderFieldName, settingsFieldName);
 
-        // Concatenate the five member blocks through a pooled buffer instead of a five-operand '+', which would
-        // allocate a params string[] for the String.Concat overload.
-        return new PooledStringBuilder(
-                propertySource.Length + refitMethodSource.Length + derivedRefitMethodSource.Length
-                + nonRefitMethodSource.Length + disposableSource.Length)
-            .Append(propertySource)
-            .Append(refitMethodSource)
-            .Append(derivedRefitMethodSource)
-            .Append(nonRefitMethodSource)
-            .Append(disposableSource)
-            .ToString();
+        // Append the five member blocks (properties, top-level and derived Refit methods, non-Refit stubs, and dispose)
+        // straight into one pooled buffer so none of the block strings materialize before the interface source is built.
+        var builder = new PooledStringBuilder();
+        AppendInterfaceProperties(builder, model.Properties, model.SupportsNullable);
+        AppendRefitMethods(builder, model.RefitMethods, true, model, uniqueNames, fieldNames, enumFormatterScope);
+        AppendRefitMethods(builder, model.DerivedRefitMethods, false, model, uniqueNames, fieldNames, enumFormatterScope);
+        AppendNonRefitMethods(builder, model.NonRefitMethods, model.SupportsNullable);
+        AppendDisposableMethod(builder, model.DisposeMethod);
+        return builder.ToString();
     }
 
     /// <summary>Creates source text from generated source.</summary>
@@ -432,56 +412,39 @@ internal static partial class Emitter
         return ConcatParts(parts, parts.Length);
     }
 
-    /// <summary>Builds generated interface property implementations.</summary>
+    /// <summary>Appends the generated interface property implementations into the member buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated member source.</param>
     /// <param name="properties">The property models to emit.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
-    /// <returns>The generated property implementations.</returns>
-    internal static string BuildInterfaceProperties(
+    internal static void AppendInterfaceProperties(
+        PooledStringBuilder builder,
         ImmutableEquatableArray<InterfacePropertyModel> properties,
         bool supportsNullable)
     {
-        var parts = new string[properties.Count];
-        var count = 0;
         for (var i = 0; i < properties.Count; i++)
         {
-            var source = BuildInterfaceProperty(properties[i], supportsNullable);
-            if (source.Length != 0)
-            {
-                parts[count] = source;
-                count++;
-            }
+            // A satisfied member emits an empty string, which appends as a no-op.
+            _ = builder.Append(BuildInterfaceProperty(properties[i], supportsNullable));
         }
-
-        return count == 0 ? string.Empty : ConcatParts(parts, count);
     }
 
-    /// <summary>Builds generated Refit method implementations.</summary>
+    /// <summary>Appends the generated Refit method implementations into the member buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated member source.</param>
     /// <param name="methods">The method models to emit.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
-    /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
-    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <param name="fieldNames">The generated request-builder and settings backing-field names.</param>
     /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
-    /// <returns>The generated method implementations.</returns>
-    internal static string BuildRefitMethods(
+    internal static void AppendRefitMethods(
+        PooledStringBuilder builder,
         ImmutableEquatableArray<MethodModel> methods,
         bool isTopLevel,
         InterfaceModel interfaceModel,
         UniqueNameBuilder uniqueNames,
-        string requestBuilderFieldName,
-        string settingsFieldName,
+        GeneratedFieldNames fieldNames,
         EnumFormatterScope enumFormatterScope)
     {
-        if (methods.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        // Append every method body into one pooled buffer rather than building a per-method string and a parts array
-        // for ConcatParts: the individual method strings and the trimmed array never materialize.
-        var fieldNames = new GeneratedFieldNames(requestBuilderFieldName, settingsFieldName);
-        var builder = new PooledStringBuilder();
         for (var i = 0; i < methods.Count; i++)
         {
             BuildRefitMethod(
@@ -493,30 +456,21 @@ internal static partial class Emitter
                 fieldNames,
                 enumFormatterScope);
         }
-
-        return builder.ToString();
     }
 
-    /// <summary>Builds generated non-Refit method stubs.</summary>
+    /// <summary>Appends the generated non-Refit method stubs into the member buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated member source.</param>
     /// <param name="methods">The non-Refit method models to emit.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
-    /// <returns>The generated method stubs.</returns>
-    internal static string BuildNonRefitMethods(
+    internal static void AppendNonRefitMethods(
+        PooledStringBuilder builder,
         ImmutableEquatableArray<MethodModel> methods,
         bool supportsNullable)
     {
-        if (methods.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        var parts = new string[methods.Count];
         for (var i = 0; i < methods.Count; i++)
         {
-            parts[i] = BuildNonRefitMethod(methods[i], supportsNullable);
+            _ = builder.Append(BuildNonRefitMethod(methods[i], supportsNullable));
         }
-
-        return ConcatParts(parts, parts.Length);
     }
 
     /// <summary>Converts a bool to a lowercase C# literal.</summary>
@@ -611,19 +565,19 @@ internal static partial class Emitter
             """;
     }
 
-    /// <summary>Builds the explicit IDisposable.Dispose implementation.</summary>
+    /// <summary>Appends the explicit IDisposable.Dispose implementation into the member buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated member source.</param>
     /// <param name="shouldEmit">True when the dispose method should be emitted.</param>
-    /// <returns>The generated dispose method, or an empty string.</returns>
-    internal static string BuildDisposableMethod(bool shouldEmit)
+    internal static void AppendDisposableMethod(PooledStringBuilder builder, bool shouldEmit)
     {
         if (!shouldEmit)
         {
-            return string.Empty;
+            return;
         }
 
         var methodIndent = Indent(MethodMemberIndentation);
         var bodyIndent = Indent(MethodBodyIndentation);
-        return $$"""
+        _ = builder.Append($$"""
 
             {{methodIndent}}/// <inheritdoc />
             {{methodIndent}}void global::System.IDisposable.Dispose()
@@ -631,6 +585,6 @@ internal static partial class Emitter
             {{bodyIndent}}Client?.Dispose();
             {{methodIndent}}}
 
-            """;
+            """);
     }
 }
