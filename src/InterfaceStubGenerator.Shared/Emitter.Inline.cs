@@ -34,27 +34,27 @@ internal static partial class Emitter
     /// <summary>The settings member read for the header validation flag, plus the call terminator that follows it.</summary>
     private const string ValidateHeadersMember = ".ValidateHeaders";
 
-    /// <summary>Builds the body of the Refit method.</summary>
+    /// <summary>Builds the body of the Refit method, appending it to the interface's method buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
-    /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
-    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <param name="fieldNames">The generated request-builder and settings backing-field names.</param>
     /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
-    /// <returns>The generated method implementation.</returns>
-    internal static string BuildRefitMethod(
+    internal static void BuildRefitMethod(
+        PooledStringBuilder builder,
         MethodModel methodModel,
         bool isTopLevel,
         InterfaceModel interfaceModel,
         UniqueNameBuilder uniqueNames,
-        string requestBuilderFieldName,
-        string settingsFieldName,
+        GeneratedFieldNames fieldNames,
         EnumFormatterScope enumFormatterScope)
     {
         if (interfaceModel.GeneratedRequestBuilding && methodModel.Request.CanGenerateInline)
         {
-            return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel, settingsFieldName, uniqueNames, enumFormatterScope);
+            BuildInlineRefitMethod(builder, methodModel, interfaceModel, isTopLevel, fieldNames.Settings, uniqueNames, enumFormatterScope);
+            return;
         }
 
         var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
@@ -75,10 +75,11 @@ internal static partial class Emitter
         var methodIndent = Indent(MethodMemberIndentation);
         var bodyIndent = Indent(MethodBodyIndentation);
         var requestBuilderInit =
-            $"{requestBuilderFieldName} ?? throw new global::System.InvalidOperationException(\"This generated Refit method requires a request builder.\")";
+            $"{fieldNames.RequestBuilder} ?? throw new global::System.InvalidOperationException(\"This generated Refit method requires a request builder.\")";
 
-        return typeParameterFieldSource
-            + BuildMethodOpening(
+        _ = builder
+            .Append(typeParameterFieldSource)
+            .Append(BuildMethodOpening(
                 methodModel,
                 isExplicit,
                 isExplicit,
@@ -86,26 +87,27 @@ internal static partial class Emitter
                 isAsync,
                 BuildReflectionFallbackSuppressions(
                     methodModel.RequiresUnreferencedCode,
-                    methodModel.RequiresDynamicCode))
-            + $$"""
+                    methodModel.RequiresDynamicCode)))
+            .Append($$"""
                 {{bodyIndent}}var {{argumentsLocal}} = {{BuildArgumentsArrayLiteral(methodModel)}};
                 {{bodyIndent}}var {{requestBuilderLocal}} = {{requestBuilderInit}};
                 {{bodyIndent}}var {{funcLocal}} = {{requestBuilderLocal}}.BuildRestResultFuncForMethod("{{lookupName}}", {{typeParameterExpression}}{{genericTypesArgument}} );
 
                 {{returnStatement}}{{methodIndent}}}
 
-                """;
+                """);
     }
 
     /// <summary>Builds a Refit method that constructs the request directly in generated code.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
-    /// <returns>The generated inline method implementation.</returns>
-    internal static string BuildInlineRefitMethod(
+    internal static void BuildInlineRefitMethod(
+        PooledStringBuilder builder,
         MethodModel methodModel,
         InterfaceModel interfaceModel,
         bool isTopLevel,
@@ -150,18 +152,20 @@ internal static partial class Emitter
             paramInfoSb,
             emission,
             locals);
-        return BuildInlineRefitMethodBody(methodModel, interfaceModel, isExplicit, settingsFieldName, uniqueNames, plan);
+        BuildInlineRefitMethodBody(builder, methodModel, interfaceModel, isExplicit, settingsFieldName, uniqueNames, plan);
     }
 
-    /// <summary>Assembles the generated inline method from its request-message construction and return statement.</summary>
+    /// <summary>Assembles the generated inline method from its request-message construction and return statement,
+    /// appending it to the interface's method buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="isExplicit">Whether the method is emitted as an explicit interface implementation.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
-    /// <returns>The generated inline method implementation.</returns>
-    internal static string BuildInlineRefitMethodBody(
+    internal static void BuildInlineRefitMethodBody(
+        PooledStringBuilder builder,
         MethodModel methodModel,
         InterfaceModel interfaceModel,
         bool isExplicit,
@@ -169,76 +173,19 @@ internal static partial class Emitter
         UniqueNameBuilder uniqueNames,
         in InlineMethodPlan plan)
     {
-        var request = methodModel.Request;
-        var settingsLocal = plan.SettingsLocal;
-        var requestLocal = plan.RequestLocal;
-        var emission = plan.Emission;
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var fragments = BuildInlineMethodFragments(methodModel, interfaceModel, isExplicit, uniqueNames, plan);
 
-        var requestPrologueSource = BuildInlineRequestPrologue(request, plan, bodyIndent, out var requestPathExpression);
-
-        var (httpMethodFieldSource, httpMethodExpression) = BuildHttpMethodField(request, uniqueNames);
-
-        // A [Url] method dispatches to an absolute URI (the validated [Url] value with any query appended), bypassing
-        // the base-address merge; every other method builds a relative URI merged onto the base address.
-        var requestUriExpression = HasUrlParameter(request)
-            ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
-            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal);
-        var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
-            plan.BodyParameter,
-            uniqueNames,
-            interfaceModel.SupportsNullable,
-            interfaceModel.SupportsStaticLambdas);
-
-        // A multipart method builds a MultipartFormDataContent from its parts; every other method has at most one body
-        // parameter (a multipart method never carries one), so the two paths never both apply.
-        var contentSource = plan.BodyParameter is null
-            ? string.Empty
-            : BuildInlineContent(plan.BodyParameter, requestLocal, settingsLocal, formFieldsFieldName, interfaceModel.SupportsNullable, emission, plan.Locals);
-        if (request.IsMultipart)
-        {
-            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, plan.Locals);
-        }
-
-        var headerSource = BuildInlineHeaders(request, requestLocal, settingsLocal);
-        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, methodModel, requestLocal, settingsLocal);
-
-        // A method that declares a positive [Timeout] stashes it on the request so the send helpers apply it; every
-        // other method emits nothing here and pays no per-call timeout cost. Emitted inside the shared construction so
-        // the cold IObservable's per-subscription request is annotated too.
-        var timeoutSource = request.TimeoutMilliseconds > 0
-            ? $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetRequestTimeout({requestLocal}, {request.TimeoutMilliseconds});\n"
-            : string.Empty;
-        var methodIndent = Indent(MethodMemberIndentation);
-        var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
-        var methodPrefix = $"{plan.ParamInfoBuilder}{formFieldsSource}{httpMethodFieldSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
-
-        // The request construction shared by every shape: prologue locals, the message, content, headers, request
-        // properties, and an optional per-call timeout. The configured HTTP version and version policy are applied by
-        // AddConfiguredRequestOptions in the request-property source. A cold IObservable wraps this in a per-subscription
-        // local function so a second subscription rebuilds and re-sends instead of reusing a disposed request.
-        var requestConstruction = $$"""
-            {{requestPrologueSource}}{{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{httpMethodExpression}}, {{requestUriExpression}});
-            {{contentSource}}{{headerSource}}{{requestPropertySource}}{{timeoutSource}}
-            """;
-
+        // A cold IObservable wraps the shared request construction in a per-subscription local function so a second
+        // subscription rebuilds and re-sends instead of reusing a disposed request. That shape reuses both the method
+        // prefix and the construction block, so it materializes them as strings; every other shape appends its fragments
+        // straight into the buffer, so the prefix and construction strings never allocate.
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable)
         {
-            var buildRequestLocal = plan.Locals.New("BuildRefitRequest");
-            var observableReturn = BuildInlineObservableReturn(request, plan.BufferBodyExpression, plan.CancellationTokenExpression, buildRequestLocal, settingsLocal);
-            return BuildInlineObservableMethodSource(methodPrefix, requestConstruction, buildRequestLocal, requestLocal, observableReturn, bodyIndent, methodIndent);
+            AppendInlineObservableRefitMethod(builder, methodModel, settingsFieldName, plan, fragments);
+            return;
         }
 
-        // A Task<HttpRequestMessage> method hands the fully built request back to the caller without dispatching it. The
-        // caller owns the returned request and its content, so it is neither sent nor disposed here; every other shape
-        // emits its normal send-and-deserialize return.
-        var returnSource = methodModel.ReturnTypeMetadata == ReturnTypeInfo.RequestMessage
-            ? BuildInlineRequestMessageReturn(requestLocal)
-            : BuildInlineReturn(methodModel, request, plan.BufferBodyExpression, plan.CancellationTokenExpression, requestLocal, settingsLocal, plan.AdapterTokenLocal);
-        return $$"""
-            {{methodPrefix}}{{requestConstruction}}{{returnSource}}{{methodIndent}}}
-
-            """;
+        AppendInlineStandardRefitMethod(builder, methodModel, settingsFieldName, plan, fragments);
     }
 
     /// <summary>Emits the request-prologue formatting locals and resolves the request-path expression to use.</summary>

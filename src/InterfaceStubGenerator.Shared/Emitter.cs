@@ -478,20 +478,23 @@ internal static partial class Emitter
             return string.Empty;
         }
 
-        var parts = new string[methods.Count];
+        // Append every method body into one pooled buffer rather than building a per-method string and a parts array
+        // for ConcatParts: the individual method strings and the trimmed array never materialize.
+        var fieldNames = new GeneratedFieldNames(requestBuilderFieldName, settingsFieldName);
+        var builder = new PooledStringBuilder();
         for (var i = 0; i < methods.Count; i++)
         {
-            parts[i] = BuildRefitMethod(
+            BuildRefitMethod(
+                builder,
                 methods[i],
                 isTopLevel,
                 interfaceModel,
                 uniqueNames,
-                requestBuilderFieldName,
-                settingsFieldName,
+                fieldNames,
                 enumFormatterScope);
         }
 
-        return ConcatParts(parts, parts.Length);
+        return builder.ToString();
     }
 
     /// <summary>Builds generated non-Refit method stubs.</summary>

@@ -60,13 +60,17 @@ internal static partial class Emitter
         InterfaceModel interfaceModel,
         UniqueNameBuilder uniqueNames,
         string requestBuilderFieldName,
-        string settingsFieldName) =>
+        string settingsFieldName)
+    {
+        var builder = new PooledStringBuilder();
         BuildRefitMethod(
+            builder,
             methodModel,
             isTopLevel,
             interfaceModel,
             uniqueNames,
-            requestBuilderFieldName,
-            settingsFieldName,
+            new GeneratedFieldNames(requestBuilderFieldName, settingsFieldName),
             new(uniqueNames));
+        return builder.ToString();
+    }
 }
