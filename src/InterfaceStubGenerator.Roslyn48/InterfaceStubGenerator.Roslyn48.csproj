@@ -24,6 +24,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The generator deliberately avoids LINQ on its per-keystroke hot paths (iterator/closure allocations).
+         ImplicitUsings would otherwise import System.Linq, so remove it to make accidental LINQ a compile error. -->
+    <Using Remove="System.Linq"/>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\InterfaceStubGenerator.Shared\**\*.cs" LinkBase="InterfaceStubGenerator.Shared"/>
   </ItemGroup>
 
