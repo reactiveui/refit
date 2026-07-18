@@ -285,8 +285,8 @@ internal static partial class Emitter
             _ = prologue.Append(", ").Append(ToLowerInvariantString(request.Path.IndexOf('?') >= 0));
         }
 
-        _ = prologue.AppendLine(");")
-            .Append(BuildInlineQueryStatements(request, parameterInfoNames, emission));
+        _ = prologue.AppendLine(");");
+        AppendInlineQueryStatements(prologue, request, parameterInfoNames, emission);
         return emission.QueryBuilderLocal + ".Build()";
     }
 

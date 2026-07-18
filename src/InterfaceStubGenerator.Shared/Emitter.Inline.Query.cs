@@ -214,17 +214,17 @@ internal static partial class Emitter
         return false;
     }
 
-    /// <summary>Builds the query-appending statements for an inline generated method.</summary>
+    /// <summary>Appends the query-appending statements for an inline generated method straight into the prologue buffer.</summary>
+    /// <param name="sb">The buffer accumulating the request-prologue source.</param>
     /// <param name="request">The parsed request model.</param>
     /// <param name="parameterInfoNames">The map of parameter name to cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <returns>The generated query statements.</returns>
-    internal static string BuildInlineQueryStatements(
+    internal static void AppendInlineQueryStatements(
+        PooledStringBuilder sb,
         RequestModel request,
         Dictionary<string, string> parameterInfoNames,
         in InlineValueEmission emission)
     {
-        var sb = new PooledStringBuilder();
         foreach (var parameter in request.Parameters)
         {
             if (parameter.Query is not { } query)
@@ -236,8 +236,6 @@ internal static partial class Emitter
             _ = parameterInfoNames.TryGetValue(parameter.Name, out var providerField);
             AppendInlineQueryStatement(sb, parameter, query, providerField, emission);
         }
-
-        return sb.ToString();
     }
 
     /// <summary>Appends the query-building statements for one parameter, dispatched on its query shape.</summary>
