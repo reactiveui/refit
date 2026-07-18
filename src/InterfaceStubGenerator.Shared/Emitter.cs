@@ -40,10 +40,6 @@ internal static partial class Emitter
     /// <summary>The generated prefix for type expressions.</summary>
     private const string TypeOfPrefix = "typeof(";
 
-    /// <summary>The closing braces that terminate a generated interface source: the implementation class, the
-    /// <c>Generated</c> partial class, and the <c>Refit.Implementation</c> namespace.</summary>
-    private const string InterfaceSourceClosingBraces = "        }\n    }\n}\n";
-
     /// <summary>The fully qualified prefix of a generated implementation type, before its namespace mangling and suffix.</summary>
     private const string GeneratedTypePrefix = "global::Refit.Implementation.Generated.";
 
@@ -101,7 +97,9 @@ internal static partial class Emitter
         var builder = new PooledStringBuilder();
         AppendInterfacePrefix(builder, model, requestBuilderFieldName, settingsFieldName);
         AppendInterfaceMemberSource(builder, model, uniqueNames, requestBuilderFieldName, settingsFieldName);
-        _ = builder.Append(InterfaceSourceClosingBraces);
+
+        // Close the implementation class, the Generated partial class, and the Refit.Implementation namespace.
+        _ = builder.AppendLine("        }").AppendLine("    }").AppendLine("}");
         return ToSourceText(builder.ToString());
     }
 
@@ -124,40 +122,40 @@ internal static partial class Emitter
 
         _ = builder
             .Append(BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers))
-            .Append(BuildExternAliasDirectives(model.ExternAliases)).Append("\n")
-            .Append("namespace Refit.Implementation\n")
-            .Append("{\n")
-            .Append("    /// <summary>Contains generated Refit implementation types.</summary>\n")
-            .Append("    internal partial class Generated\n")
-            .Append("    {\n")
-            .Append("        /// <summary>Generated Refit implementation for ").Append(ToXmlDocumentationText(model.InterfaceDisplayName)).Append(".</summary>\n")
-            .Append(typeParameterDocs).Append("        ").Append(GeneratedCodeAttribute).Append("\n")
-            .Append("        [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]\n")
-            .Append("        [global::System.Diagnostics.DebuggerNonUserCode]\n")
-            .Append("        [").Append(model.PreserveAttributeDisplayName).Append("]\n")
-            .Append("        [global::System.Reflection.Obfuscation(Exclude=true)]\n")
-            .Append("        [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]\n")
-            .Append("        private sealed class ").Append(model.Ns).Append(model.ClassDeclaration).Append("\n")
-            .Append("            : ").Append(model.InterfaceDisplayName).Append("\n")
-            .Append(BuildConstraints(model.Constraints, false, ClassMemberIndentation)).Append("        {\n")
-            .Append("            /// <summary>The request builder used to create Refit method delegates.</summary>\n")
-            .Append("            private readonly ").Append(requestBuilderFieldType).Append(" ").Append(requestBuilderFieldName).Append(";\n")
-            .Append("\n")
-            .Append("            /// <summary>The settings used by this generated Refit implementation.</summary>\n")
-            .Append("            private readonly global::Refit.RefitSettings ").Append(settingsFieldName).Append(";\n")
-            .Append("\n")
-            .Append("            /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>\n")
-            .Append("            public global::System.Net.Http.HttpClient Client { get; }\n")
-            .Append("\n")
-            .Append("            /// <summary>Initializes a new instance of the ").Append(model.Ns).Append(model.ClassSuffix).Append(" class.</summary>\n")
-            .Append("            /// <param name=\"client\">The HTTP client used by the generated implementation.</param>\n")
-            .Append("            /// <param name=\"requestBuilder\">The request builder used to create Refit method delegates.</param>\n")
-            .Append("            public ").Append(model.Ns).Append(model.ClassSuffix).Append("(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)\n")
-            .Append("            {\n")
-            .Append("                Client = client;\n")
-            .Append("                ").Append(requestBuilderFieldName).Append(" = requestBuilder;\n")
-            .Append("                ").Append(settingsFieldName).Append(" = requestBuilder.Settings;\n")
-            .Append("            }\n")
+            .Append(BuildExternAliasDirectives(model.ExternAliases)).AppendLine()
+            .AppendLine("namespace Refit.Implementation")
+            .AppendLine("{")
+            .AppendLine("    /// <summary>Contains generated Refit implementation types.</summary>")
+            .AppendLine("    internal partial class Generated")
+            .AppendLine("    {")
+            .Append("        /// <summary>Generated Refit implementation for ").Append(ToXmlDocumentationText(model.InterfaceDisplayName)).AppendLine(".</summary>")
+            .Append(typeParameterDocs).Append("        ").Append(GeneratedCodeAttribute).AppendLine()
+            .AppendLine("        [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]")
+            .AppendLine("        [global::System.Diagnostics.DebuggerNonUserCode]")
+            .Append("        [").Append(model.PreserveAttributeDisplayName).AppendLine("]")
+            .AppendLine("        [global::System.Reflection.Obfuscation(Exclude=true)]")
+            .AppendLine("        [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]")
+            .Append("        private sealed class ").Append(model.Ns).Append(model.ClassDeclaration).AppendLine()
+            .Append("            : ").Append(model.InterfaceDisplayName).AppendLine()
+            .Append(BuildConstraints(model.Constraints, false, ClassMemberIndentation)).AppendLine("        {")
+            .AppendLine("            /// <summary>The request builder used to create Refit method delegates.</summary>")
+            .Append("            private readonly ").Append(requestBuilderFieldType).Append(" ").Append(requestBuilderFieldName).AppendLine(";")
+            .AppendLine()
+            .AppendLine("            /// <summary>The settings used by this generated Refit implementation.</summary>")
+            .Append("            private readonly global::Refit.RefitSettings ").Append(settingsFieldName).AppendLine(";")
+            .AppendLine()
+            .AppendLine("            /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>")
+            .AppendLine("            public global::System.Net.Http.HttpClient Client { get; }")
+            .AppendLine()
+            .Append("            /// <summary>Initializes a new instance of the ").Append(model.Ns).Append(model.ClassSuffix).AppendLine(" class.</summary>")
+            .AppendLine("            /// <param name=\"client\">The HTTP client used by the generated implementation.</param>")
+            .AppendLine("            /// <param name=\"requestBuilder\">The request builder used to create Refit method delegates.</param>")
+            .Append("            public ").Append(model.Ns).Append(model.ClassSuffix).AppendLine("(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)")
+            .AppendLine("            {")
+            .AppendLine("                Client = client;")
+            .Append("                ").Append(requestBuilderFieldName).AppendLine(" = requestBuilder;")
+            .Append("                ").Append(settingsFieldName).AppendLine(" = requestBuilder.Settings;")
+            .AppendLine("            }")
             .Append(settingsConstructorSource);
     }
 
@@ -345,16 +343,16 @@ internal static partial class Emitter
             // The static modifier on a lambda is C# 9; older consumers must not see it.
             var lambdaModifier = interfaceModel.SupportsStaticLambdas ? "static " : string.Empty;
             _ = builder
-                .Append("            global::Refit.RestService.RegisterGeneratedFactory<").Append(interfaceModel.InterfaceDisplayName).Append(">(\n")
+                .Append("            global::Refit.RestService.RegisterGeneratedFactory<").Append(interfaceModel.InterfaceDisplayName).AppendLine(">(")
                 .Append("                ").Append(lambdaModifier).Append("(client, requestBuilder) => new ").Append(GeneratedTypePrefix)
-                .Append(interfaceModel.Ns).Append(interfaceModel.ClassSuffix).Append("(client, requestBuilder));\n");
+                .Append(interfaceModel.Ns).Append(interfaceModel.ClassSuffix).AppendLine("(client, requestBuilder));");
 
             if (CanUseGeneratedSettingsFactory(interfaceModel))
             {
                 _ = builder
-                    .Append("            global::Refit.RestService.RegisterGeneratedSettingsFactory<").Append(interfaceModel.InterfaceDisplayName).Append(">(\n")
+                    .Append("            global::Refit.RestService.RegisterGeneratedSettingsFactory<").Append(interfaceModel.InterfaceDisplayName).AppendLine(">(")
                     .Append("                ").Append(lambdaModifier).Append("(client, settings) => new ").Append(GeneratedTypePrefix)
-                    .Append(interfaceModel.Ns).Append(interfaceModel.ClassSuffix).Append("(client, settings));\n");
+                    .Append(interfaceModel.Ns).Append(interfaceModel.ClassSuffix).AppendLine("(client, settings));");
             }
         }
 

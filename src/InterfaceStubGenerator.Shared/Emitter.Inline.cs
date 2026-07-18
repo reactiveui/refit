@@ -34,8 +34,9 @@ internal static partial class Emitter
     /// <summary>The settings member read for the header validation flag, plus the call terminator that follows it.</summary>
     private const string ValidateHeadersMember = ".ValidateHeaders";
 
-    /// <summary>The indented <c>this.Client</c> argument line shared by every generated send-helper return statement.</summary>
-    private const string ClientArgumentLine = "    this.Client,\n";
+    /// <summary>The indented <c>this.Client</c> argument shared by every generated send-helper return statement; the
+    /// caller terminates it with <see cref="PooledStringBuilder.AppendLine(string)"/>.</summary>
+    private const string ClientArgument = "    this.Client,";
 
     /// <summary>Builds the body of the Refit method, appending it to the interface's method buffer.</summary>
     /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
@@ -352,7 +353,7 @@ internal static partial class Emitter
     /// <param name="requestLocal">The generated request message local name.</param>
     internal static void AppendInlineRequestMessageReturn(PooledStringBuilder builder, string requestLocal) =>
         builder.Append(Indent(MethodBodyIndentation))
-            .Append("return global::System.Threading.Tasks.Task.FromResult(").Append(requestLocal).Append(");\n");
+            .Append("return global::System.Threading.Tasks.Task.FromResult(").Append(requestLocal).AppendLine(");");
 
     /// <summary>Appends the return statement for an inline generated Refit method straight into the method buffer.</summary>
     /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
@@ -383,23 +384,23 @@ internal static partial class Emitter
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
         {
             _ = builder
-                .Append(bodyIndent).Append("return global::Refit.GeneratedRequestRunner.SendVoidAsync(\n")
-                .Append(bodyIndent).Append(ClientArgumentLine)
-                .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).Append(",\n")
-                .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).Append(",\n")
-                .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).Append(",\n")
-                .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).Append(");\n");
+                .Append(bodyIndent).AppendLine("return global::Refit.GeneratedRequestRunner.SendVoidAsync(")
+                .Append(bodyIndent).AppendLine(ClientArgument)
+                .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).AppendLine(",")
+                .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).AppendLine(",")
+                .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).AppendLine(",")
+                .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).AppendLine(");");
             return;
         }
 
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncEnumerable)
         {
             _ = builder
-                .Append(bodyIndent).Append("return global::Refit.GeneratedRequestRunner.StreamAsync<").Append(request.ResultType).Append(">(\n")
-                .Append(bodyIndent).Append(ClientArgumentLine)
-                .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).Append(",\n")
-                .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).Append(",\n")
-                .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).Append(");\n");
+                .Append(bodyIndent).Append("return global::Refit.GeneratedRequestRunner.StreamAsync<").Append(request.ResultType).AppendLine(">(")
+                .Append(bodyIndent).AppendLine(ClientArgument)
+                .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).AppendLine(",")
+                .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).AppendLine(",")
+                .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).AppendLine(");");
             return;
         }
 
@@ -423,14 +424,14 @@ internal static partial class Emitter
         builder
             .Append(bodyIndent).Append("return new ").Append(adapterType).Append("().Adapt((").Append(plan.AdapterTokenLocal)
             .Append(") => global::Refit.GeneratedRequestRunner.SendAsync<").Append(request.ResultType).Append(", ")
-            .Append(request.DeserializedResultType).Append(">(\n")
-            .Append(bodyIndent).Append(ClientArgumentLine)
-            .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.IsApiResponse)).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.ShouldDisposeResponse)).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(plan.AdapterTokenLocal).Append("));\n");
+            .Append(request.DeserializedResultType).AppendLine(">(")
+            .Append(bodyIndent).AppendLine(ClientArgument)
+            .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.IsApiResponse)).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.ShouldDisposeResponse)).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(plan.AdapterTokenLocal).AppendLine("));");
 
     /// <summary>Appends the awaited <c>SendAsync</c> return statement for the standard async-result inline path.</summary>
     /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
@@ -459,14 +460,14 @@ internal static partial class Emitter
         }
 
         _ = builder
-            .Append(request.ResultType).Append(", ").Append(request.DeserializedResultType).Append(">(\n")
-            .Append(bodyIndent).Append(ClientArgumentLine)
-            .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.IsApiResponse)).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.ShouldDisposeResponse)).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).Append(",\n")
-            .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).Append(isValueTask ? "));\n" : ");\n");
+            .Append(request.ResultType).Append(", ").Append(request.DeserializedResultType).AppendLine(">(")
+            .Append(bodyIndent).AppendLine(ClientArgument)
+            .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.IsApiResponse)).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.ShouldDisposeResponse)).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).AppendLine(",")
+            .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).AppendLine(isValueTask ? "));" : ");");
     }
 
     /// <summary>Builds static and dynamic header application for an inline generated method.</summary>
@@ -510,7 +511,7 @@ internal static partial class Emitter
                         sb ??= new PooledStringBuilder();
                         _ = sb.Append(bodyIndent).Append("global::Refit.GeneratedRequestRunner.AddHeaderCollection(")
                             .Append(requestLocal).Append(ArgumentSeparator).Append("@").Append(parameter.Name)
-                            .Append(ArgumentSeparator).Append(settingsLocal).Append(ValidateHeadersMember).Append(");\n");
+                            .Append(ArgumentSeparator).Append(settingsLocal).Append(ValidateHeadersMember).AppendLine(");");
                         break;
                     }
 
@@ -542,7 +543,7 @@ internal static partial class Emitter
         string settingsLocal) =>
         sb.Append(bodyIndent).Append(RunnerSetHeader).Append(requestLocal).Append(ArgumentSeparator)
             .Append(nameExpression).Append(ArgumentSeparator).Append(valueExpression).Append(ArgumentSeparator)
-            .Append(settingsLocal).Append(ValidateHeadersMember).Append(");\n");
+            .Append(settingsLocal).Append(ValidateHeadersMember).AppendLine(");");
 
     /// <summary>Builds a header value expression without null-conditionals on non-nullable value types.</summary>
     /// <param name="parameter">The header parameter to format.</param>

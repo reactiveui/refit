@@ -60,7 +60,7 @@ internal static partial class Emitter
         _ = sb.Append(bodyIndent)
             .Append("global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(")
             .Append(requestLocal).Append(ArgumentSeparator).Append(settingsLocal)
-            .Append(", typeof(").Append(interfaceModel.InterfaceDisplayName).Append("));\n");
+            .Append(", typeof(").Append(interfaceModel.InterfaceDisplayName).AppendLine("));");
 
         // The method name (stripped of any explicit-interface prefix, matching reflection's MethodInfo.Name) and the
         // raw route template are compile-time literals a source-gen handler reads without any runtime reflection.
@@ -78,7 +78,7 @@ internal static partial class Emitter
             .Append(argumentsArrayType).Append(">(").Append(requestLocal).Append(", ").Append(MethodArgumentsOption)
             .Append(ArgumentSeparator)
             .Append(BuildMethodArgumentsCaptureLiteral(methodModel, interfaceModel.SupportsNullable))
-            .Append("); }\n");
+            .AppendLine("); }");
 
         foreach (var property in interfaceModel.Properties)
         {
@@ -116,5 +116,5 @@ internal static partial class Emitter
         sb.Append(bodyIndent).Append(RunnerAddRequestProperty).Append(typeArgument)
             .Append(">(").Append(requestLocal).Append(ArgumentSeparator)
             .Append(keyExpression).Append(ArgumentSeparator).Append(valueExpression)
-            .Append(");\n");
+            .AppendLine(");");
 }

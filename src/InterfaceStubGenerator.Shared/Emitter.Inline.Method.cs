@@ -146,11 +146,11 @@ internal static partial class Emitter
             .Append(formFieldsSource)
             .Append(httpMethodFieldSource)
             .Append(opening)
-            .Append(bodyIndent).Append("var ").Append(settingsLocal).Append(" = ").Append(settingsFieldName).Append(";\n")
+            .Append(bodyIndent).Append("var ").Append(settingsLocal).Append(" = ").Append(settingsFieldName).AppendLine(";")
             .Append(prologue)
             .Append(bodyIndent).Append("var ").Append(requestLocal)
             .Append(" = new global::System.Net.Http.HttpRequestMessage(").Append(httpMethodExpression)
-            .Append(", ").Append(requestUriExpression).Append(");\n")
+            .Append(", ").Append(requestUriExpression).AppendLine(");")
             .Append(contentSource)
             .Append(headerSource);
         AppendInlineRequestProperties(builder, request, interfaceModel, methodModel, requestLocal, settingsLocal);
@@ -159,7 +159,7 @@ internal static partial class Emitter
         // dispatching on the return shape), then the method's closing brace.
         _ = builder.Append(timeoutSource);
         AppendInlineReturn(builder, methodModel, request, plan);
-        _ = builder.Append(methodIndent).Append("}\n");
+        _ = builder.Append(methodIndent).AppendLine("}");
     }
 
     /// <summary>Appends a cold-observable inline generated Refit method: a per-subscription request factory and its send.</summary>
