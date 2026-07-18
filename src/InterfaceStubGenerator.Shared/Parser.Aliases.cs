@@ -103,12 +103,26 @@ internal static partial class Parser
     /// <param name="type">The type to qualify.</param>
     /// <param name="context">The generation context, whose extern-alias collector records the aliases used.</param>
     /// <returns>The fully-qualified type name.</returns>
-    internal static string QualifyType(ITypeSymbol type, InterfaceGenerationContext context) =>
+    internal static string QualifyType(ITypeSymbol type, InterfaceGenerationContext context)
+    {
+        // The common case is no aliased type at all: Roslyn's own fully-qualified rendering is exactly right. That
+        // rendering depends only on the type symbol, so it is memoized per pass and reused across every occurrence.
+        // The aliased path is never cached: it records the aliases it uses into the per-interface collector.
+        if (ContainsAliasedType(type, context))
+        {
+            return AliasedDisplay(type, context);
+        }
 
-        // The common case is no aliased type at all: Roslyn's own fully-qualified rendering is exactly right.
-        ContainsAliasedType(type, context)
-            ? AliasedDisplay(type, context)
-            : type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var cache = context.QualifiedTypeCache;
+        if (cache.TryGetValue(type, out var cached))
+        {
+            return cached;
+        }
+
+        var qualified = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        cache[type] = qualified;
+        return qualified;
+    }
 
     /// <summary>Renders a type's fully-qualified name with <c>alias::</c> for extern-aliased assemblies, recursively.</summary>
     /// <param name="type">The type to render.</param>

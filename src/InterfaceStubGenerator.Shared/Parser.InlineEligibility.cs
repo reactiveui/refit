@@ -66,7 +66,8 @@ internal static partial class Parser
             returnTypeAdapterInterface,
             returnTypeAdapters,
             ExternAliases: [],
-            AssemblyAliasCache: new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default));
+            AssemblyAliasCache: new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default),
+            QualifiedTypeCache: new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default));
         return ParseRequest(methodSymbol, ClassifyInlineReturnShape(methodSymbol.ReturnType), context)
             .CanGenerateInline;
     }

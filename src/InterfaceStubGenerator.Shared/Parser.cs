@@ -172,7 +172,8 @@ internal static partial class Parser
             returnTypeAdapterInterface,
             returnTypeAdapters,
             [],
-            new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default));
+            new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default),
+            new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default));
     }
 
     /// <summary>Builds the internal generated namespace from a consumer-provided namespace prefix.</summary>
