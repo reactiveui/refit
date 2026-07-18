@@ -22,7 +22,7 @@ internal static partial class Parser
     /// <param name="symbol">The symbol whose containing assembly is inspected.</param>
     /// <param name="context">The generation context supplying the compilation and the pass-wide alias cache.</param>
     /// <returns>The extern alias, or null.</returns>
-    private static string? GetExternAlias(ISymbol symbol, InterfaceGenerationContext context)
+    internal static string? GetExternAlias(ISymbol symbol, InterfaceGenerationContext context)
     {
         var assembly = symbol.ContainingAssembly;
         if (context.Compilation is not { } compilation || assembly is null)
@@ -47,7 +47,7 @@ internal static partial class Parser
     /// <param name="assembly">The assembly to resolve.</param>
     /// <param name="compilation">The compilation supplying the assembly's metadata reference.</param>
     /// <returns>The extern alias, or null when the assembly is reachable via <c>global::</c>.</returns>
-    private static string? ResolveExternAlias(IAssemblySymbol assembly, CSharpCompilation compilation)
+    internal static string? ResolveExternAlias(IAssemblySymbol assembly, CSharpCompilation compilation)
     {
         var aliases = compilation.GetMetadataReference(assembly)?.Properties.Aliases ?? default;
         if (aliases.IsDefaultOrEmpty)
@@ -71,7 +71,7 @@ internal static partial class Parser
     /// <param name="type">The type to inspect.</param>
     /// <param name="context">The generation context supplying the compilation and the pass-wide alias cache.</param>
     /// <returns><see langword="true"/> when the type involves an extern-aliased assembly.</returns>
-    private static bool ContainsAliasedType(ITypeSymbol type, InterfaceGenerationContext context)
+    internal static bool ContainsAliasedType(ITypeSymbol type, InterfaceGenerationContext context)
     {
         if (type is IArrayTypeSymbol array)
         {
@@ -103,7 +103,7 @@ internal static partial class Parser
     /// <param name="type">The type to qualify.</param>
     /// <param name="context">The generation context, whose extern-alias collector records the aliases used.</param>
     /// <returns>The fully-qualified type name.</returns>
-    private static string QualifyType(ITypeSymbol type, InterfaceGenerationContext context) =>
+    internal static string QualifyType(ITypeSymbol type, InterfaceGenerationContext context) =>
 
         // The common case is no aliased type at all: Roslyn's own fully-qualified rendering is exactly right.
         ContainsAliasedType(type, context)
@@ -114,7 +114,7 @@ internal static partial class Parser
     /// <param name="type">The type to render.</param>
     /// <param name="context">The generation context, whose extern-alias collector records the aliases used.</param>
     /// <returns>The rendered type name.</returns>
-    private static string AliasedDisplay(ITypeSymbol type, InterfaceGenerationContext context) =>
+    internal static string AliasedDisplay(ITypeSymbol type, InterfaceGenerationContext context) =>
         type switch
         {
             IArrayTypeSymbol array => AliasedDisplay(array.ElementType, context) + "[]",
@@ -128,7 +128,7 @@ internal static partial class Parser
     /// <param name="named">The named type to render.</param>
     /// <param name="context">The generation context, whose extern-alias collector records the aliases used.</param>
     /// <returns>The rendered type name.</returns>
-    private static string AliasedNamedDisplay(INamedTypeSymbol named, InterfaceGenerationContext context)
+    internal static string AliasedNamedDisplay(INamedTypeSymbol named, InterfaceGenerationContext context)
     {
         var alias = GetExternAlias(named, context);
         if (alias is not null)

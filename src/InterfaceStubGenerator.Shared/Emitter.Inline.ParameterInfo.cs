@@ -11,7 +11,7 @@ internal static partial class Emitter
     /// <param name="parameterName">The source parameter name.</param>
     /// <param name="uniqueNames">The unique member name builder for the interface scope.</param>
     /// <returns>The unique generated field name.</returns>
-    private static string GetParameterInfoFieldName(string parameterName, UniqueNameBuilder uniqueNames) =>
+    internal static string GetParameterInfoFieldName(string parameterName, UniqueNameBuilder uniqueNames) =>
         uniqueNames.New($"______{parameterName}AttributeProvider");
 
     /// <summary>Appends a separator before all but the first element.</summary>
@@ -19,7 +19,7 @@ internal static partial class Emitter
     /// <param name="sb">The target builder.</param>
     /// <param name="separator">The separator to append.</param>
     /// <returns>The same builder for chaining.</returns>
-    private static PooledStringBuilder AppendSeparator(int i, PooledStringBuilder sb, string separator = ", ")
+    internal static PooledStringBuilder AppendSeparator(int i, PooledStringBuilder sb, string separator = ", ")
     {
         return i <= 0 ? sb : sb.Append(separator);
     }
@@ -30,7 +30,7 @@ internal static partial class Emitter
     /// <param name="sb">The target builder.</param>
     /// <param name="separator">The separator to append before the value.</param>
     /// <returns>The same builder for chaining.</returns>
-    private static PooledStringBuilder AppendJoining(string value, int i, PooledStringBuilder sb, string separator = ", ")
+    internal static PooledStringBuilder AppendJoining(string value, int i, PooledStringBuilder sb, string separator = ", ")
     {
         return AppendSeparator(i, sb, separator).Append(value);
     }
@@ -38,7 +38,7 @@ internal static partial class Emitter
     /// <summary>Appends a C# attribute construction expression to the builder.</summary>
     /// <param name="attribute">The attribute model to render.</param>
     /// <param name="sb0">The target builder.</param>
-    private static void AppendAttributeValue(ParameterAttributeModel attribute, PooledStringBuilder sb0)
+    internal static void AppendAttributeValue(ParameterAttributeModel attribute, PooledStringBuilder sb0)
     {
         _ = sb0.Append("new ").Append(attribute.TypeExpression).Append('(');
         var i = 0;
@@ -72,7 +72,7 @@ internal static partial class Emitter
     /// <param name="method">The declaring method name, used for the generated documentation.</param>
     /// <param name="paramInfoFieldName">The unique generated field name.</param>
     /// <param name="sb">The target builder.</param>
-    private static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, PooledStringBuilder sb)
+    internal static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, PooledStringBuilder sb)
     {
         // Build the initializer.
         var memberIndent = Indent(MethodMemberIndentation);
@@ -130,7 +130,7 @@ internal static partial class Emitter
     /// <param name="declaredMethod">The declared method name the emitted fields are scoped to.</param>
     /// <param name="paramInfoSb">The builder receiving the emitted attribute-provider fields.</param>
     /// <returns>A map of parameter name to its cached attribute-provider field name.</returns>
-    private static Dictionary<string, string> BuildParameterInfoFields(
+    internal static Dictionary<string, string> BuildParameterInfoFields(
         RequestModel request,
         UniqueNameBuilder uniqueNames,
         string declaredMethod,
@@ -157,7 +157,7 @@ internal static partial class Emitter
     /// <param name="uniqueNameLookup">The map of parameter name to cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The generated argument list fragment.</returns>
-    private static string GetParametersArg(
+    internal static string GetParametersArg(
         RequestModel request,
         Dictionary<string, string> uniqueNameLookup,
         in InlineValueEmission emission)
@@ -204,7 +204,7 @@ internal static partial class Emitter
     /// <param name="uniqueNameLookup">The map of parameter name to cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The unordered path-template replacements.</returns>
-    private static List<PathReplacement> CollectPathReplacements(
+    internal static List<PathReplacement> CollectPathReplacements(
         RequestModel request,
         Dictionary<string, string> uniqueNameLookup,
         in InlineValueEmission emission)

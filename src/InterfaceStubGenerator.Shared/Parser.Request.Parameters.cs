@@ -20,7 +20,7 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
     /// <returns>The parsed request parameter models.</returns>
-    private static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
+    internal static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
         in ImmutableArray<IParameterSymbol> parameters,
         Dictionary<string, List<Range>> parameterLocations,
         INamedTypeSymbol? formattableSymbol,
@@ -90,7 +90,7 @@ internal static partial class Parser
     /// <param name="headerCollectionCount">The number of header collection parameters.</param>
     /// <param name="parameters">The parsed request parameters, scanned for <c>[Authorize]</c> parameters.</param>
     /// <returns><see langword="true"/> when no single-instance binding appears more than once.</returns>
-    private static bool HasInlineableParameterCounts(
+    internal static bool HasInlineableParameterCounts(
         int bodyCount,
         int cancellationTokenCount,
         int headerCollectionCount,
@@ -103,7 +103,7 @@ internal static partial class Parser
     /// <summary>Counts the <c>[Authorize]</c> parameters (Authorization headers carrying a scheme prefix).</summary>
     /// <param name="parameters">The parsed request parameters.</param>
     /// <returns>The number of <c>[Authorize]</c> parameters.</returns>
-    private static int CountAuthorizeParameters(RequestParameterModel[] parameters)
+    internal static int CountAuthorizeParameters(RequestParameterModel[] parameters)
     {
         var count = 0;
         foreach (var parameter in parameters)
@@ -120,7 +120,7 @@ internal static partial class Parser
     /// <summary>Resolves a parameter's URL name, honoring an <c>[AliasAs]</c> attribute.</summary>
     /// <param name="parameter">The parameter symbol.</param>
     /// <returns>The alias name or the declared parameter name.</returns>
-    private static string ResolveUrlName(IParameterSymbol parameter)
+    internal static string ResolveUrlName(IParameterSymbol parameter)
     {
         var aliasAttr = FindParameterAttribute(parameter, AliasAsAttributeDisplayName);
         return aliasAttr is not null ? GetFirstStringArgument(aliasAttr) ?? parameter.Name : parameter.Name;
@@ -129,7 +129,7 @@ internal static partial class Parser
     /// <summary>Determines whether any parameter carries an explicit <c>[Body]</c> attribute.</summary>
     /// <param name="parameters">The method parameters.</param>
     /// <returns><see langword="true"/> when an explicit body parameter exists.</returns>
-    private static bool HasExplicitBodyParameter(in ImmutableArray<IParameterSymbol> parameters)
+    internal static bool HasExplicitBodyParameter(in ImmutableArray<IParameterSymbol> parameters)
     {
         foreach (var parameter in parameters)
         {
@@ -147,7 +147,7 @@ internal static partial class Parser
     /// <param name="context">The lookup state used to classify the parameter.</param>
     /// <param name="implicitBodyAssigned">Tracks whether an earlier parameter already claimed the implicit body.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(
+    internal static ParsedRequestParameter ParseRequestParameter(
         IParameterSymbol parameter,
         in LooseParameterContext context,
         ref bool implicitBodyAssigned)
@@ -202,7 +202,7 @@ internal static partial class Parser
     /// <param name="locations">The parameter's placeholder locations, if any.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter CancellationTokenParameter(
+    internal static ParsedRequestParameter CancellationTokenParameter(
         IParameterSymbol parameter,
         string parameterType,
         ImmutableEquatableArray<Range>? locations,
@@ -229,7 +229,7 @@ internal static partial class Parser
     /// <param name="parameterType">The parameter type display string.</param>
     /// <param name="context">The lookup state used to classify the parameter.</param>
     /// <returns>The parsed path binding, or <see langword="null"/> when the parameter has no placeholder.</returns>
-    private static ParsedRequestParameter? ParseBoundPathParameter(
+    internal static ParsedRequestParameter? ParseBoundPathParameter(
         IParameterSymbol parameter,
         string parameterType,
         in LooseParameterContext context) =>
@@ -246,7 +246,7 @@ internal static partial class Parser
     /// <param name="locations">The placeholder locations.</param>
     /// <param name="context">The lookup state used to classify the parameter.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseDirectPathParameter(
+    internal static ParsedRequestParameter ParseDirectPathParameter(
         IParameterSymbol parameter,
         string parameterType,
         ImmutableEquatableArray<Range> locations,
@@ -278,7 +278,7 @@ internal static partial class Parser
     /// parameterless <c>ToString()</c>.) An <c>object</c>, interface, or open generic type stays on the reflection path -
     /// it has no usable declared shape.
     /// </remarks>
-    private static bool CanInlinePathParameterType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol) =>
+    internal static bool CanInlinePathParameterType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol) =>
         IsSimpleType(type, formattableSymbol)
         || (type.SpecialType != SpecialType.System_Object
             && type.TypeKind is TypeKind.Class or TypeKind.Struct or TypeKind.Array);
@@ -291,7 +291,7 @@ internal static partial class Parser
     /// <param name="roundTripLocations">The placeholder locations.</param>
     /// <param name="context">The lookup state used to classify the parameter.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRoundTripPathParameter(
+    internal static ParsedRequestParameter ParseRoundTripPathParameter(
         IParameterSymbol parameter,
         string parameterType,
         ImmutableEquatableArray<Range> roundTripLocations,
@@ -323,7 +323,7 @@ internal static partial class Parser
     /// <param name="context">The lookup state used to classify the parameter.</param>
     /// <param name="implicitBodyAssigned">Tracks whether an earlier parameter already claimed the implicit body.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ClassifyLooseParameter(
+    internal static ParsedRequestParameter ClassifyLooseParameter(
         IParameterSymbol parameter,
         string parameterType,
         in LooseParameterContext context,
@@ -377,7 +377,7 @@ internal static partial class Parser
     /// <summary>Determines whether a parameter matches the reflection builder's implicit body candidacy rules.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
     /// <returns><see langword="true"/> for un-attributed non-string reference-type parameters.</returns>
-    private static bool IsImplicitBodyCandidate(IParameterSymbol parameter) =>
+    internal static bool IsImplicitBodyCandidate(IParameterSymbol parameter) =>
         !parameter.Type.IsValueType
         && parameter.Type.SpecialType != SpecialType.System_String
         && !HasParameterAttribute(parameter, QueryAttributeDisplayName)
@@ -389,7 +389,7 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="implicitBodyAssigned">Tracks whether an earlier parameter already claimed the implicit body.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ClaimImplicitBody(
+    internal static ParsedRequestParameter ClaimImplicitBody(
         IParameterSymbol parameter,
         string parameterType,
         InterfaceGenerationContext context,
@@ -412,7 +412,7 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="propertyParameter">The parsed property parameter model.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParsePropertyQueryBinding(
+    internal static ParsedRequestParameter ParsePropertyQueryBinding(
         IParameterSymbol parameter,
         string parameterType,
         string urlName,
@@ -437,7 +437,7 @@ internal static partial class Parser
     /// <param name="query">The query-binding metadata.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The query request parameter model.</returns>
-    private static RequestParameterModel QueryRequestParameter(
+    internal static RequestParameterModel QueryRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
         QueryParameterModel query,
@@ -462,7 +462,7 @@ internal static partial class Parser
     /// <param name="parameterType">The parameter type display string.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The implicit body parameter model.</returns>
-    private static RequestParameterModel ImplicitBodyRequestParameter(
+    internal static RequestParameterModel ImplicitBodyRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
         InterfaceGenerationContext context) =>

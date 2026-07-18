@@ -14,7 +14,7 @@ internal static partial class Parser
     /// <param name="bodyType">The declared body type.</param>
     /// <param name="context">The interface generation context, used to classify the scalar fast path.</param>
     /// <returns>The field descriptors, or <see langword="null"/> when the type is not eligible for the descriptor path.</returns>
-    private static ImmutableEquatableArray<FormFieldModel>? TryBuildFormFields(
+    internal static ImmutableEquatableArray<FormFieldModel>? TryBuildFormFields(
         ITypeSymbol bodyType,
         InterfaceGenerationContext context)
     {
@@ -58,14 +58,14 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <returns><see langword="true"/> for a simple scalar or a collection of simple elements; <see langword="false"/> for
     /// a dictionary, a nested complex object, or a collection of non-simple elements, all of which reflect at runtime.</returns>
-    private static bool IsDescriptorSafeFormProperty(IPropertySymbol property, INamedTypeSymbol? formattableSymbol) =>
+    internal static bool IsDescriptorSafeFormProperty(IPropertySymbol property, INamedTypeSymbol? formattableSymbol) =>
         IsSimpleType(property.Type, formattableSymbol)
         || (TryGetEnumerableElementType(property.Type, out var elementType) && IsSimpleType(elementType!, formattableSymbol));
 
     /// <summary>Determines whether a property contributes a readable public instance form field.</summary>
     /// <param name="property">The property to inspect.</param>
     /// <returns><see langword="true"/> when the property is read through a public instance getter.</returns>
-    private static bool IsReadableFormProperty(IPropertySymbol property) =>
+    internal static bool IsReadableFormProperty(IPropertySymbol property) =>
         !property.IsStatic
         && !property.IsIndexer
         && property.DeclaredAccessibility == Accessibility.Public
@@ -74,7 +74,7 @@ internal static partial class Parser
     /// <summary>Determines whether a body type can be flattened to form fields without reflection.</summary>
     /// <param name="type">The declared body type.</param>
     /// <returns><see langword="true"/> when descriptor-based flattening matches the reflection path.</returns>
-    private static bool IsFormFieldEligibleType(ITypeSymbol type) =>
+    internal static bool IsFormFieldEligibleType(ITypeSymbol type) =>
         type.TypeKind != TypeKind.Interface
         && type.TypeKind != TypeKind.TypeParameter
         && type.TypeKind != TypeKind.Dynamic
@@ -91,7 +91,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type implements the non-generic <see cref="System.Collections.IEnumerable"/>.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is enumerable.</returns>
-    private static bool ImplementsEnumerable(ITypeSymbol type)
+    internal static bool ImplementsEnumerable(ITypeSymbol type)
     {
         // The only caller (IsFormFieldEligibleType) already excludes interface types, so type is never the
         // System.Collections.IEnumerable interface itself; a concrete enumerable always exposes it through AllInterfaces.
@@ -110,7 +110,7 @@ internal static partial class Parser
     /// <param name="property">The property to describe.</param>
     /// <param name="context">The interface generation context, used to classify the scalar fast path.</param>
     /// <returns>The field descriptor.</returns>
-    private static FormFieldModel BuildFormFieldModel(IPropertySymbol property, InterfaceGenerationContext context)
+    internal static FormFieldModel BuildFormFieldModel(IPropertySymbol property, InterfaceGenerationContext context)
     {
         string? aliasName = null;
         string? jsonName = null;
@@ -155,7 +155,7 @@ internal static partial class Parser
     /// <summary>Reads the first string constructor argument from an attribute.</summary>
     /// <param name="attribute">The attribute to inspect.</param>
     /// <returns>The first string argument, or <see langword="null"/>.</returns>
-    private static string? GetFirstStringArgument(AttributeData attribute)
+    internal static string? GetFirstStringArgument(AttributeData attribute)
     {
         foreach (var argument in attribute.ConstructorArguments)
         {
@@ -171,13 +171,13 @@ internal static partial class Parser
     /// <summary>Parses the form-relevant members of a <c>[Query]</c> attribute applied to a property.</summary>
     /// <param name="attribute">The query attribute data.</param>
     /// <returns>The parsed form query data.</returns>
-    private static QueryFormData ParseFormQueryAttribute(AttributeData attribute) =>
+    internal static QueryFormData ParseFormQueryAttribute(AttributeData attribute) =>
         ApplyQueryNamedArguments(attribute, ParseQueryConstructorArguments(attribute));
 
     /// <summary>Parses the constructor arguments of a <c>[Query]</c> attribute.</summary>
     /// <param name="attribute">The query attribute data.</param>
     /// <returns>The form query data carried by the constructor arguments.</returns>
-    private static QueryFormData ParseQueryConstructorArguments(AttributeData attribute)
+    internal static QueryFormData ParseQueryConstructorArguments(AttributeData attribute)
     {
         var delimiter = ".";
         string? prefix = null;
@@ -218,7 +218,7 @@ internal static partial class Parser
     /// <param name="attribute">The query attribute data.</param>
     /// <param name="data">The data parsed from constructor arguments.</param>
     /// <returns>The form query data with named arguments applied.</returns>
-    private static QueryFormData ApplyQueryNamedArguments(AttributeData attribute, QueryFormData data)
+    internal static QueryFormData ApplyQueryNamedArguments(AttributeData attribute, QueryFormData data)
     {
         foreach (var named in attribute.NamedArguments)
         {
@@ -246,7 +246,7 @@ internal static partial class Parser
     /// <summary>Parses the constructor-supplied data from a body attribute.</summary>
     /// <param name="attribute">The attribute data.</param>
     /// <returns>The parsed body serialization and buffering data.</returns>
-    private static BodyAttributeInfo ParseBodyAttribute(AttributeData attribute)
+    internal static BodyAttributeInfo ParseBodyAttribute(AttributeData attribute)
     {
         var serializationMethod = "Default";
         bool? buffered = null;
@@ -279,7 +279,7 @@ internal static partial class Parser
     /// <param name="argument">The constructor argument.</param>
     /// <param name="methodName">Receives the enum member name.</param>
     /// <returns><see langword="true"/> when the argument is a body serialization method.</returns>
-    private static bool TryGetBodySerializationMethodName(in TypedConstant argument, out string methodName)
+    internal static bool TryGetBodySerializationMethodName(in TypedConstant argument, out string methodName)
     {
         // The only enum-typed constructor argument a [Body] attribute accepts is BodySerializationMethod.
         if (argument.Kind == TypedConstantKind.Enum)
@@ -295,7 +295,7 @@ internal static partial class Parser
     /// <summary>Parsed body attribute data.</summary>
     /// <param name="SerializationMethod">The body serialization method name.</param>
     /// <param name="BufferMode">The body buffering mode.</param>
-    private readonly record struct BodyAttributeInfo(
+    internal readonly record struct BodyAttributeInfo(
         string SerializationMethod,
         BodyBufferMode BufferMode);
 
@@ -306,7 +306,7 @@ internal static partial class Parser
     /// <param name="CollectionFormatValue">The explicit collection format value, if any.</param>
     /// <param name="SerializeNull">Whether null values are serialized as empty fields.</param>
     /// <param name="TreatAsString">Whether the raw value is stringified via <c>ToString()</c> before formatting.</param>
-    private readonly record struct QueryFormData(
+    internal readonly record struct QueryFormData(
         string Delimiter,
         string? Prefix,
         string? Format,

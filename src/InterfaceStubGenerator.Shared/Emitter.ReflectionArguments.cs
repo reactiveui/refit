@@ -10,7 +10,7 @@ internal static partial class Emitter
     /// <summary>Builds the <c>object[]</c> literal that holds the method's argument values.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <returns>The generated argument array literal.</returns>
-    private static string BuildArgumentsArrayLiteral(MethodModel methodModel)
+    internal static string BuildArgumentsArrayLiteral(MethodModel methodModel)
     {
         var parameters = methodModel.Parameters.AsArray();
         if (parameters.Length == 0)
@@ -53,7 +53,7 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="supportsNullable">Whether the target language version supports nullable reference type annotations.</param>
     /// <returns>The generated argument-capture array literal, including any cancellation token parameter.</returns>
-    private static string BuildMethodArgumentsCaptureLiteral(MethodModel methodModel, bool supportsNullable)
+    internal static string BuildMethodArgumentsCaptureLiteral(MethodModel methodModel, bool supportsNullable)
     {
         var parameters = methodModel.Parameters.AsArray();
         var prefix = supportsNullable ? "new object?[] { " : "new object[] { ";
@@ -96,7 +96,7 @@ internal static partial class Emitter
     /// <summary>Builds the optional generic <c>Type[]</c> argument for the request builder call.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <returns>The generated generic type argument, or an empty string.</returns>
-    private static string BuildGenericTypesArgument(MethodModel methodModel)
+    internal static string BuildGenericTypesArgument(MethodModel methodModel)
     {
         var constraints = methodModel.Constraints.AsArray();
         if (constraints.Length == 0)
@@ -140,7 +140,7 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <returns>The generated field source and field name, if one was generated.</returns>
-    private static (string Source, string? FieldName) BuildTypeParameterField(
+    internal static (string Source, string? FieldName) BuildTypeParameterField(
         MethodModel methodModel,
         UniqueNameBuilder uniqueNames)
     {
@@ -164,7 +164,7 @@ internal static partial class Emitter
     /// <summary>Determines whether any parameter type depends on a method type parameter.</summary>
     /// <param name="parameters">The parameter models to inspect.</param>
     /// <returns>True when at least one parameter is generic.</returns>
-    private static bool ContainsGenericParameter(ImmutableEquatableArray<ParameterModel> parameters)
+    internal static bool ContainsGenericParameter(ImmutableEquatableArray<ParameterModel> parameters)
     {
         for (var i = 0; i < parameters.Count; i++)
         {
@@ -181,7 +181,7 @@ internal static partial class Emitter
     /// <param name="parameters">The parameter models to emit.</param>
     /// <param name="cachedTypeParameterFieldName">The cached field name, if one was generated.</param>
     /// <returns>The generated type parameter expression.</returns>
-    private static string BuildTypeParameterExpression(
+    internal static string BuildTypeParameterExpression(
         ImmutableEquatableArray<ParameterModel> parameters,
         string? cachedTypeParameterFieldName) =>
         parameters.Count == 0
@@ -191,7 +191,7 @@ internal static partial class Emitter
     /// <summary>Builds the generated <c>typeof(...)</c> argument list for method parameters.</summary>
     /// <param name="parameters">The parameter models to emit.</param>
     /// <returns>The generated parameter type list.</returns>
-    private static string BuildParameterTypeList(ImmutableEquatableArray<ParameterModel> parameters)
+    internal static string BuildParameterTypeList(ImmutableEquatableArray<ParameterModel> parameters)
     {
         if (parameters.Count == 0)
         {
@@ -233,7 +233,7 @@ internal static partial class Emitter
     /// <param name="funcLocal">The generated request-func local name.</param>
     /// <param name="argumentsLocal">The generated arguments-array local name.</param>
     /// <returns>The generated return statement.</returns>
-    private static string BuildRefitReturnStatement(
+    internal static string BuildRefitReturnStatement(
         MethodModel methodModel,
         string returnPrefix,
         string returnType,

@@ -14,7 +14,7 @@ internal static partial class Parser
     /// <param name="isOverrideOrExplicitImplementation">Whether the member is an override or explicit implementation.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased constraint types.</param>
     /// <returns>The constraint models for the type parameters.</returns>
-    private static ImmutableEquatableArray<TypeConstraint> GenerateConstraints(
+    internal static ImmutableEquatableArray<TypeConstraint> GenerateConstraints(
         in ImmutableArray<ITypeParameterSymbol> typeParameters,
         bool isOverrideOrExplicitImplementation,
         InterfaceGenerationContext context)
@@ -41,7 +41,7 @@ internal static partial class Parser
     /// <param name="isOverrideOrExplicitImplementation">Whether the member is an override or explicit implementation.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased constraint types.</param>
     /// <returns>The constraint model for the type parameter.</returns>
-    private static TypeConstraint ParseConstraintsForTypeParameter(
+    internal static TypeConstraint ParseConstraintsForTypeParameter(
         ITypeParameterSymbol typeParameter,
         bool isOverrideOrExplicitImplementation,
         InterfaceGenerationContext context)
@@ -62,7 +62,7 @@ internal static partial class Parser
     /// <param name="typeParameter">The type parameter to inspect.</param>
     /// <param name="isOverrideOrExplicitImplementation">Whether the member is an override or explicit implementation.</param>
     /// <returns>The combined well-known constraint flags.</returns>
-    private static KnownTypeConstraint ComputeKnownConstraints(
+    internal static KnownTypeConstraint ComputeKnownConstraints(
         ITypeParameterSymbol typeParameter,
         bool isOverrideOrExplicitImplementation)
     {
@@ -104,7 +104,7 @@ internal static partial class Parser
     /// <param name="param">The parameter symbol to parse.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The model describing the parameter.</returns>
-    private static ParameterModel ParseParameter(IParameterSymbol param, InterfaceGenerationContext context)
+    internal static ParameterModel ParseParameter(IParameterSymbol param, InterfaceGenerationContext context)
     {
         var annotation =
             !param.Type.IsValueType && param.NullableAnnotation == NullableAnnotation.Annotated;
@@ -119,7 +119,7 @@ internal static partial class Parser
     /// <param name="parameters">The parameters to parse.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The parsed parameter models.</returns>
-    private static ImmutableEquatableArray<ParameterModel> ParseParameters(
+    internal static ImmutableEquatableArray<ParameterModel> ParseParameters(
         in ImmutableArray<IParameterSymbol> parameters,
         InterfaceGenerationContext context)
     {
@@ -141,7 +141,7 @@ internal static partial class Parser
     /// <param name="constraintTypes">The constraint types to parse.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased constraint types.</param>
     /// <returns>The parsed constraint type display names.</returns>
-    private static ImmutableEquatableArray<string> ParseConstraintTypes(
+    internal static ImmutableEquatableArray<string> ParseConstraintTypes(
         in ImmutableArray<ITypeSymbol> constraintTypes,
         InterfaceGenerationContext context)
     {
@@ -162,7 +162,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type or any of its type arguments is a type parameter.</summary>
     /// <param name="symbol">The type symbol to inspect.</param>
     /// <returns><see langword="true"/> if the type involves a type parameter; otherwise, <see langword="false"/>.</returns>
-    private static bool ContainsTypeParameter(ITypeSymbol symbol)
+    internal static bool ContainsTypeParameter(ITypeSymbol symbol)
     {
         if (symbol is ITypeParameterSymbol)
         {
@@ -190,7 +190,7 @@ internal static partial class Parser
     /// <param name="isImplicitInterface">Whether the method belongs to the implicitly implemented interface.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The model describing the Refit method.</returns>
-    private static MethodModel ParseMethod(
+    internal static MethodModel ParseMethod(
         IMethodSymbol methodSymbol,
         bool isImplicitInterface,
         InterfaceGenerationContext context)
@@ -229,7 +229,7 @@ internal static partial class Parser
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="attributeName">The attribute type name, for example <c>RequiresUnreferencedCodeAttribute</c>.</param>
     /// <returns><see langword="true"/> when the method carries the attribute.</returns>
-    private static bool HasTrimAnnotation(IMethodSymbol methodSymbol, string attributeName)
+    internal static bool HasTrimAnnotation(IMethodSymbol methodSymbol, string attributeName)
     {
         foreach (var attribute in methodSymbol.GetAttributes())
         {

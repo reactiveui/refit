@@ -20,7 +20,7 @@ internal static partial class Parser
     /// <param name="returnTypeInfo">The classified return type shape.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The parsed request metadata.</returns>
-    private static RequestModel ParseRequest(
+    internal static RequestModel ParseRequest(
         IMethodSymbol methodSymbol,
         ReturnTypeInfo returnTypeInfo,
         InterfaceGenerationContext context)
@@ -95,7 +95,7 @@ internal static partial class Parser
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The HTTP method, raw path, normalized path, and path parameter placeholders.</returns>
-    private static (string HttpMethod, string Path, string NormalizedPath, Dictionary<string, List<Range>> PathParameters) ResolveRequestTarget(
+    internal static (string HttpMethod, string Path, string NormalizedPath, Dictionary<string, List<Range>> PathParameters) ResolveRequestTarget(
         IMethodSymbol methodSymbol,
         InterfaceGenerationContext context)
     {
@@ -114,7 +114,7 @@ internal static partial class Parser
     /// <param name="returnType">The method's declared return type.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The adapter type expression (or null) and the result type to classify the request against.</returns>
-    private static (string? AdapterTypeExpression, ITypeSymbol ResultTypeSource) ResolveReturnTypeAdapter(
+    internal static (string? AdapterTypeExpression, ITypeSymbol ResultTypeSource) ResolveReturnTypeAdapter(
         ITypeSymbol returnType,
         InterfaceGenerationContext context) =>
         TryMatchReturnTypeAdapter(returnType, context, out var closedAdapter, out var adapterResultType)
@@ -125,7 +125,7 @@ internal static partial class Parser
     /// <param name="returnTypeInfo">The classified return type shape.</param>
     /// <param name="adapterTypeExpression">The registered adapter expression, or null.</param>
     /// <returns><see langword="true"/> when the return shape can be generated inline.</returns>
-    private static bool IsInlineReturnShape(ReturnTypeInfo returnTypeInfo, string? adapterTypeExpression) =>
+    internal static bool IsInlineReturnShape(ReturnTypeInfo returnTypeInfo, string? adapterTypeExpression) =>
         returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
             or ReturnTypeInfo.Observable or ReturnTypeInfo.RequestMessage
         || adapterTypeExpression is not null;
@@ -133,7 +133,7 @@ internal static partial class Parser
     /// <summary>Reports an error when a method uses a source-generation-only attribute but cannot generate inline.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="context">The shared generation context.</param>
-    private static void ReportSourceGenOnlyAttributeMisuse(
+    internal static void ReportSourceGenOnlyAttributeMisuse(
         IMethodSymbol methodSymbol,
         InterfaceGenerationContext context)
     {
@@ -161,7 +161,7 @@ internal static partial class Parser
     /// <summary>Determines whether an HTTP method may carry an implicit request body.</summary>
     /// <param name="httpMethod">The HTTP method name.</param>
     /// <returns><see langword="true"/> for POST, PUT and PATCH.</returns>
-    private static bool IsBodyCapableHttpMethod(string httpMethod) =>
+    internal static bool IsBodyCapableHttpMethod(string httpMethod) =>
         httpMethod is "POST" or "PUT" or "PATCH";
 
     /// <summary>Determines whether a method's request can be constructed by generated inline code.</summary>
@@ -178,7 +178,7 @@ internal static partial class Parser
     /// correctly or trim-safely — a complex query object (its properties are only known per value) or a form-url-encoded
     /// body (<c>[DynamicallyAccessedMembers]</c>) — are excluded upstream through <paramref name="parameterEligibility"/>.
     /// </remarks>
-    private static bool CanGenerateInlineRequest(
+    internal static bool CanGenerateInlineRequest(
         bool parameterEligibility,
         bool returnShapeEligible,
         string httpMethod,
@@ -203,7 +203,7 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the method has no <c>[Url]</c> parameter, or has exactly one alongside an
     /// empty path template and no path placeholders. Other shapes fall back to the reflection builder, whose
     /// validation throws for the invalid combination.</returns>
-    private static bool IsUrlBindingSupported(
+    internal static bool IsUrlBindingSupported(
         in RequestPathForms path,
         ImmutableEquatableArray<RequestParameterModel> parameters)
     {
@@ -233,13 +233,13 @@ internal static partial class Parser
     /// <summary>Determines whether a path template is empty or the bare root, so a <c>[Url]</c> parameter may supply the URI.</summary>
     /// <param name="path">The path template.</param>
     /// <returns><see langword="true"/> when the template is empty or <c>"/"</c>.</returns>
-    private static bool IsEmptyOrRootPath(string path) =>
+    internal static bool IsEmptyOrRootPath(string path) =>
         string.IsNullOrEmpty(path) || path == "/";
 
     /// <summary>Extracts the path parameter placeholder names and their locations from a URL template.</summary>
     /// <param name="path">The normalized path template.</param>
     /// <returns>A map of placeholder name to the ranges where each placeholder occurs in the template.</returns>
-    private static Dictionary<string, List<Range>> ExtractPathParameterPlaceholderNames(string path)
+    internal static Dictionary<string, List<Range>> ExtractPathParameterPlaceholderNames(string path)
     {
         var pathSpan = path.AsSpan();
 
@@ -296,7 +296,7 @@ internal static partial class Parser
     /// <summary>Gets the literal path from a Refit HTTP method attribute.</summary>
     /// <param name="attributeData">The attribute data.</param>
     /// <returns>The path literal.</returns>
-    private static string GetHttpPath(AttributeData attributeData)
+    internal static string GetHttpPath(AttributeData attributeData)
     {
         var arguments = attributeData.ConstructorArguments;
         return !arguments.IsEmpty && arguments[0].Value is string path
@@ -311,7 +311,7 @@ internal static partial class Parser
     /// <param name="partLength">The query segment length.</param>
     /// <param name="queryBuffer">The query buffer, allocated only when a segment is retained.</param>
     /// <param name="queryLength">The number of characters currently written to the query buffer.</param>
-    private static void AppendNonEmptyQueryPart(
+    internal static void AppendNonEmptyQueryPart(
         string path,
         int queryStart,
         int partStart,
@@ -349,7 +349,7 @@ internal static partial class Parser
     /// <returns>The <c>UriFormat</c> enum value, or null when the method has no <c>[QueryUriFormat]</c>.</returns>
     /// <remarks>The value re-encodes the whole built path and query, matching the reflection builder's final
     /// <c>Uri.GetComponents(PathAndQuery, QueryUriFormat)</c> pass, so the attribute no longer forces the runtime builder.</remarks>
-    private static int? ResolveQueryUriFormat(IMethodSymbol methodSymbol)
+    internal static int? ResolveQueryUriFormat(IMethodSymbol methodSymbol)
     {
         foreach (var attribute in methodSymbol.GetAttributes())
         {
@@ -368,7 +368,7 @@ internal static partial class Parser
     /// <remarks>The single-<c>int</c>-argument guards match the attribute's only constructor and cannot fail for a
     /// <c>[QueryUriFormat]</c> application that compiles.</remarks>
     [ExcludeFromCodeCoverage]
-    private static int? TryReadQueryUriFormat(AttributeData attribute) =>
+    internal static int? TryReadQueryUriFormat(AttributeData attribute) =>
         IsRefitAttribute(attribute.AttributeClass, QueryUriFormatAttributeDisplayName)
         && attribute.ConstructorArguments.Length == 1
         && attribute.ConstructorArguments[0].Value is int uriFormat
@@ -378,7 +378,7 @@ internal static partial class Parser
     /// <summary>Reads the per-call timeout in milliseconds from a method's <c>[Timeout]</c> attribute.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>
     /// <returns>The timeout in milliseconds, or 0 when the method has no <c>[Timeout]</c>.</returns>
-    private static int ResolveTimeout(IMethodSymbol methodSymbol)
+    internal static int ResolveTimeout(IMethodSymbol methodSymbol)
     {
         foreach (var attribute in methodSymbol.GetAttributes())
         {
@@ -397,7 +397,7 @@ internal static partial class Parser
     /// <remarks>The single-<c>int</c>-argument guards match the attribute's only constructor and cannot fail for a
     /// <c>[Timeout]</c> application that compiles.</remarks>
     [ExcludeFromCodeCoverage]
-    private static int? TryReadTimeout(AttributeData attribute) =>
+    internal static int? TryReadTimeout(AttributeData attribute) =>
         IsRefitAttribute(attribute.AttributeClass, TimeoutAttributeDisplayName)
         && attribute.ConstructorArguments.Length == 1
         && attribute.ConstructorArguments[0].Value is int milliseconds
@@ -407,7 +407,7 @@ internal static partial class Parser
     /// <summary>Parses the static headers declared on inherited interfaces, the declaring interface, and the method.</summary>
     /// <param name="methodSymbol">The method whose header metadata should be parsed.</param>
     /// <returns>The final static header set.</returns>
-    private static ImmutableEquatableArray<HeaderModel> ParseStaticHeaders(IMethodSymbol methodSymbol)
+    internal static ImmutableEquatableArray<HeaderModel> ParseStaticHeaders(IMethodSymbol methodSymbol)
     {
         var headers = new List<HeaderModel>();
 
@@ -426,7 +426,7 @@ internal static partial class Parser
     /// <summary>Adds headers from a collection of attributes, replacing earlier values for the same header name.</summary>
     /// <param name="headers">The mutable header list.</param>
     /// <param name="attributes">The attributes to inspect.</param>
-    private static void AddStaticHeaders(
+    internal static void AddStaticHeaders(
         List<HeaderModel> headers,
         in ImmutableArray<AttributeData> attributes)
     {
@@ -444,7 +444,7 @@ internal static partial class Parser
     /// <summary>Adds the string values from a <c>HeadersAttribute</c> to the static header list.</summary>
     /// <param name="headers">The mutable header list.</param>
     /// <param name="attribute">The attribute data.</param>
-    private static void AddHeadersAttributeValues(List<HeaderModel> headers, AttributeData attribute)
+    internal static void AddHeadersAttributeValues(List<HeaderModel> headers, AttributeData attribute)
     {
         foreach (var argument in attribute.ConstructorArguments)
         {
@@ -468,7 +468,7 @@ internal static partial class Parser
     /// <param name="returnType">The declared return type, or an adapter's wrapped result type.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The parsed return type details.</returns>
-    private static RequestReturnTypes GetRequestReturnTypes(ITypeSymbol returnType, InterfaceGenerationContext context)
+    internal static RequestReturnTypes GetRequestReturnTypes(ITypeSymbol returnType, InterfaceGenerationContext context)
     {
         var resultType = GetReturnResultType(returnType);
         var isApiResponse = IsApiResponseType(resultType);
@@ -485,7 +485,7 @@ internal static partial class Parser
     /// <summary>Gets the result type wrapped by Task or ValueTask.</summary>
     /// <param name="returnType">The declared return type.</param>
     /// <returns>The result type.</returns>
-    private static ITypeSymbol GetReturnResultType(ITypeSymbol returnType)
+    internal static ITypeSymbol GetReturnResultType(ITypeSymbol returnType)
     {
         if (returnType is INamedTypeSymbol { TypeArguments.Length: 1 } namedType)
         {
@@ -512,7 +512,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type is one of Refit's API response wrappers.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> for API response wrappers.</returns>
-    private static bool IsApiResponseType(ITypeSymbol type) =>
+    internal static bool IsApiResponseType(ITypeSymbol type) =>
         type is INamedTypeSymbol namedType
         && namedType.ContainingNamespace.ToDisplayString() == "Refit" && namedType.MetadataName is "IApiResponse" or "ApiResponse`1" or "IApiResponse`1";
 
@@ -521,7 +521,7 @@ internal static partial class Parser
     /// <param name="isApiResponse">Whether the result is an API response wrapper.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The deserialization target type.</returns>
-    private static string GetDeserializedResultTypeName(ITypeSymbol resultType, bool isApiResponse, InterfaceGenerationContext context)
+    internal static string GetDeserializedResultTypeName(ITypeSymbol resultType, bool isApiResponse, InterfaceGenerationContext context)
     {
         if (!isApiResponse)
         {
@@ -539,7 +539,7 @@ internal static partial class Parser
     /// <param name="DeserializedResultType">The response-body deserialization type.</param>
     /// <param name="IsApiResponse">Whether the result type is an API response wrapper.</param>
     /// <param name="DisposeResponse">Whether the runner should dispose the response.</param>
-    private readonly record struct RequestReturnTypes(
+    internal readonly record struct RequestReturnTypes(
         string ResultType,
         string DeserializedResultType,
         bool IsApiResponse,
@@ -554,7 +554,7 @@ internal static partial class Parser
     /// <param name="ImplicitBodyEligible">Whether an un-attributed complex parameter becomes the implicit request body.</param>
     /// <param name="IsMultipart">Whether the method is multipart, so an un-attributed parameter becomes a form part.</param>
     /// <param name="Generation">The interface generation context, carrying the extern-alias collector for type qualification.</param>
-    private readonly record struct LooseParameterContext(
+    internal readonly record struct LooseParameterContext(
         string UrlName,
         ImmutableEquatableArray<Range>? Locations,
         ImmutableEquatableArray<Range>? RoundTripLocations,
@@ -570,7 +570,7 @@ internal static partial class Parser
     /// <param name="BodyCount">The number of body parameters represented by this parameter.</param>
     /// <param name="CancellationTokenCount">The number of cancellation tokens represented by this parameter.</param>
     /// <param name="HeaderCollectionCount">The number of header collections represented by this parameter.</param>
-    private readonly record struct ParsedRequestParameter(
+    internal readonly record struct ParsedRequestParameter(
         RequestParameterModel Parameter,
         bool CanGenerateInline,
         int BodyCount,
@@ -580,5 +580,5 @@ internal static partial class Parser
     /// <summary>The raw and normalized forms of a method's path template.</summary>
     /// <param name="Raw">The raw path literal from the HTTP method attribute.</param>
     /// <param name="Normalized">The path after constant-path normalization (fragment/empty-query cleanup).</param>
-    private readonly record struct RequestPathForms(string Raw, string Normalized);
+    internal readonly record struct RequestPathForms(string Raw, string Normalized);
 }

@@ -295,7 +295,7 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isExplicitInterface">Whether the method is emitted explicitly.</param>
     /// <returns>The explicit interface prefix, or an empty string.</returns>
-    private static string BuildExplicitInterfacePrefix(MethodModel methodModel, bool isExplicitInterface)
+    internal static string BuildExplicitInterfacePrefix(MethodModel methodModel, bool isExplicitInterface)
     {
         if (!isExplicitInterface)
         {
@@ -312,7 +312,7 @@ internal static partial class Emitter
     /// <param name="parameters">The parameter models.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated method parameter list.</returns>
-    private static string BuildParameterList(
+    internal static string BuildParameterList(
         ImmutableEquatableArray<ParameterModel> parameters,
         bool supportsNullable)
     {

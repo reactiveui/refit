@@ -94,7 +94,7 @@ internal sealed class PooledStringBuilder
 
     /// <summary>Ensures the backing buffer can hold at least the requested number of characters.</summary>
     /// <param name="required">The required total capacity.</param>
-    private void EnsureCapacity(int required)
+    internal void EnsureCapacity(int required)
     {
         if (required <= _buffer.Length)
         {

@@ -20,7 +20,7 @@ internal static partial class Emitter
     /// attribute provider and the declared type, a blank key drops the pair, and the value is rendered using the
     /// enclosing parameter's attributes and declared type.
     /// </remarks>
-    private static void AppendDictionaryQueryStatements(
+    internal static void AppendDictionaryQueryStatements(
         PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
@@ -81,7 +81,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="entry">The generated locals and indentation for the current entry.</param>
-    private static void AppendDictionaryEntryStatements(
+    internal static void AppendDictionaryEntryStatements(
         PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
@@ -135,7 +135,7 @@ internal static partial class Emitter
     /// <param name="valueProperties">The flattened property descriptors of the value type.</param>
     /// <remarks>Reuses the query-object flattening walk with the entry key as the runtime parent key, so each value
     /// property emits an <c>entryKey.property=value</c> pair, matching the reflection builder's nested <c>BuildQueryMap</c>.</remarks>
-    private static void AppendDictionaryValueFlatten(
+    internal static void AppendDictionaryValueFlatten(
         PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,

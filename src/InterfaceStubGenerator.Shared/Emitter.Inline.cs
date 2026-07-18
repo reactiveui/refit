@@ -41,7 +41,7 @@ internal static partial class Emitter
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
     /// <returns>The generated method implementation.</returns>
-    private static string BuildRefitMethod(
+    internal static string BuildRefitMethod(
         MethodModel methodModel,
         bool isTopLevel,
         InterfaceModel interfaceModel,
@@ -103,7 +103,7 @@ internal static partial class Emitter
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
     /// <returns>The generated inline method implementation.</returns>
-    private static string BuildInlineRefitMethod(
+    internal static string BuildInlineRefitMethod(
         MethodModel methodModel,
         InterfaceModel interfaceModel,
         bool isTopLevel,
@@ -159,7 +159,7 @@ internal static partial class Emitter
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
     /// <returns>The generated inline method implementation.</returns>
-    private static string BuildInlineRefitMethodBody(
+    internal static string BuildInlineRefitMethodBody(
         MethodModel methodModel,
         InterfaceModel interfaceModel,
         bool isExplicit,
@@ -245,7 +245,7 @@ internal static partial class Emitter
     /// <param name="bodyIndent">The method-body indentation.</param>
     /// <param name="requestPathExpression">The request-path expression: the query builder's <c>Build()</c> call, or the path when no query binds.</param>
     /// <returns>The generated request-prologue source.</returns>
-    private static string BuildInlineRequestPrologue(
+    internal static string BuildInlineRequestPrologue(
         RequestModel request,
         in InlineMethodPlan plan,
         string bodyIndent,
@@ -297,7 +297,7 @@ internal static partial class Emitter
     /// <param name="pathExpression">The generated relative-path expression.</param>
     /// <param name="bodyIndent">The method-body indentation.</param>
     /// <returns>The request-path expression: the query builder's <c>Build()</c> call, or the path when no query binds.</returns>
-    private static string AppendInlineQueryPrologue(
+    internal static string AppendInlineQueryPrologue(
         PooledStringBuilder prologue,
         RequestModel request,
         Dictionary<string, string> parameterInfoNames,
@@ -336,7 +336,7 @@ internal static partial class Emitter
     /// <param name="bodyIndent">The method-body indentation.</param>
     /// <param name="methodIndent">The method-member indentation.</param>
     /// <returns>The generated method source.</returns>
-    private static string BuildInlineObservableMethodSource(
+    internal static string BuildInlineObservableMethodSource(
         string methodPrefix,
         string requestConstruction,
         string buildRequestLocal,
@@ -360,7 +360,7 @@ internal static partial class Emitter
     /// <param name="buildRequestLocal">The per-subscription request-building local function name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated <c>return SendObservable(...)</c> statement.</returns>
-    private static string BuildInlineObservableReturn(
+    internal static string BuildInlineObservableReturn(
         RequestModel request,
         string bufferBodyExpression,
         string cancellationTokenExpression,
@@ -384,7 +384,7 @@ internal static partial class Emitter
     /// <summary>Builds the return statement for a <c>Task&lt;HttpRequestMessage&gt;</c> method that returns the built request.</summary>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <returns>The generated return statement handing the built request back without sending it.</returns>
-    private static string BuildInlineRequestMessageReturn(string requestLocal)
+    internal static string BuildInlineRequestMessageReturn(string requestLocal)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         return $$"""
@@ -402,7 +402,7 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="adapterTokenLocal">The lambda parameter name for the return-type adapter's cancellation token.</param>
     /// <returns>The generated return statement.</returns>
-    private static string BuildInlineReturn(
+    internal static string BuildInlineReturn(
         MethodModel methodModel,
         RequestModel request,
         string bufferBodyExpression,
@@ -463,7 +463,7 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="bodyIndent">The method-body indentation.</param>
     /// <returns>The generated return statement.</returns>
-    private static string BuildInlineSendAsyncReturn(
+    internal static string BuildInlineSendAsyncReturn(
         MethodModel methodModel,
         RequestModel request,
         string bufferBodyExpression,
@@ -500,7 +500,7 @@ internal static partial class Emitter
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name, read for the header validation flag.</param>
     /// <returns>The generated header statements.</returns>
-    private static string BuildInlineHeaders(RequestModel request, string requestLocal, string settingsLocal)
+    internal static string BuildInlineHeaders(RequestModel request, string requestLocal, string settingsLocal)
     {
         var parts = new string[request.StaticHeaders.Count + request.Parameters.Count];
         var count = 0;
@@ -554,7 +554,7 @@ internal static partial class Emitter
     /// <summary>Builds a header value expression without null-conditionals on non-nullable value types.</summary>
     /// <param name="parameter">The header parameter to format.</param>
     /// <returns>The generated header value expression.</returns>
-    private static string BuildHeaderValueExpression(RequestParameterModel parameter)
+    internal static string BuildHeaderValueExpression(RequestParameterModel parameter)
     {
         var parameterExpression = $"@{parameter.Name}";
         return parameter.CanBeNull
@@ -569,7 +569,7 @@ internal static partial class Emitter
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated request option/property statements.</returns>
-    private static string BuildInlineRequestProperties(
+    internal static string BuildInlineRequestProperties(
         RequestModel request,
         InterfaceModel interfaceModel,
         MethodModel methodModel,
@@ -634,7 +634,7 @@ internal static partial class Emitter
     /// <summary>Creates a name builder reserved with a method's parameter names so generated locals never collide with them.</summary>
     /// <param name="parameters">The method parameters whose names must be avoided.</param>
     /// <returns>A <see cref="UniqueNameBuilder"/> seeded with the parameter names.</returns>
-    private static UniqueNameBuilder CreateMethodLocalNameBuilder(ImmutableEquatableArray<ParameterModel> parameters)
+    internal static UniqueNameBuilder CreateMethodLocalNameBuilder(ImmutableEquatableArray<ParameterModel> parameters)
     {
         var builder = new UniqueNameBuilder();
         foreach (var parameter in parameters)
@@ -648,7 +648,7 @@ internal static partial class Emitter
     /// <summary>Determines whether the request dispatches to an absolute URI supplied by a <c>[Url]</c> parameter.</summary>
     /// <param name="request">The request model to inspect.</param>
     /// <returns><see langword="true"/> when a <c>[Url]</c> parameter is present.</returns>
-    private static bool HasUrlParameter(RequestModel request) =>
+    internal static bool HasUrlParameter(RequestModel request) =>
         FindRequestParameter(request, RequestParameterKind.Url) is not null;
 
     /// <summary>Builds the relative-URI expression that merges the built path and query onto the client base address.</summary>
@@ -658,7 +658,7 @@ internal static partial class Emitter
     /// <returns>The generated <c>BuildRelativeUri</c> call.</returns>
     /// <remarks>A <c>[QueryUriFormat]</c> method re-encodes the whole path and query with the attribute's UriFormat,
     /// matching the reflection builder's final GetComponents pass; every other method uses the direct relative URI.</remarks>
-    private static string BuildRelativeUriExpression(RequestModel request, string requestPathExpression, string settingsLocal) =>
+    internal static string BuildRelativeUriExpression(RequestModel request, string requestPathExpression, string settingsLocal) =>
         request.QueryUriFormat is { } queryUriFormat
             ? $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution, (global::System.UriFormat){queryUriFormat})"
             : $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
@@ -667,7 +667,7 @@ internal static partial class Emitter
     /// <param name="request">The request model to inspect.</param>
     /// <param name="kind">The parameter kind to find.</param>
     /// <returns>The parameter model, if present.</returns>
-    private static RequestParameterModel? FindRequestParameter(RequestModel request, RequestParameterKind kind)
+    internal static RequestParameterModel? FindRequestParameter(RequestModel request, RequestParameterKind kind)
     {
         foreach (var parameter in request.Parameters)
         {
@@ -683,7 +683,7 @@ internal static partial class Emitter
     /// <summary>Builds the cancellation token expression for an inline generated method.</summary>
     /// <param name="request">The request model to inspect.</param>
     /// <returns>The cancellation token expression.</returns>
-    private static string BuildCancellationTokenExpression(RequestModel request)
+    internal static string BuildCancellationTokenExpression(RequestModel request)
     {
         var cancellationToken = FindRequestParameter(request, RequestParameterKind.CancellationToken);
         if (cancellationToken is null)
@@ -699,7 +699,7 @@ internal static partial class Emitter
     /// <summary>Builds the body serialization enum expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter.</param>
     /// <returns>The serialization method expression.</returns>
-    private static string BuildBodySerializationMethodExpression(RequestParameterModel bodyParameter)
+    internal static string BuildBodySerializationMethodExpression(RequestParameterModel bodyParameter)
     {
         var serializationMethod = bodyParameter.BodySerializationMethod == "Json"
             ? "Serialized"
@@ -713,7 +713,7 @@ internal static partial class Emitter
     /// <param name="Indentation">The statement indentation.</param>
     /// <param name="KvpNew">The <c>new KeyValuePair&lt;...&gt;</c> constructor prefix, nullable-annotated per language version.</param>
     /// <param name="Locals">The method-scope unique local name builder.</param>
-    private readonly record struct FormUnrollSite(
+    internal readonly record struct FormUnrollSite(
         string BodyExpr,
         string EntriesLocal,
         string Indentation,
@@ -725,7 +725,7 @@ internal static partial class Emitter
     /// <param name="End">The placeholder end offset in the template.</param>
     /// <param name="Value">The generated replacement value expression.</param>
     /// <param name="PreEncoded">Whether the value passes through pre-encoded.</param>
-    private readonly record struct PathReplacement(int Start, int End, string Value, bool PreEncoded);
+    internal readonly record struct PathReplacement(int Start, int End, string Value, bool PreEncoded);
 
     /// <summary>The method-scope locals and pre-built request fragments threaded through inline method assembly.</summary>
     /// <param name="BodyParameter">The request body parameter, or null.</param>
@@ -739,7 +739,7 @@ internal static partial class Emitter
     /// <param name="ParamInfoBuilder">The builder holding the emitted attribute-provider fields.</param>
     /// <param name="Emission">The inline value-emission context.</param>
     /// <param name="Locals">The method-scope unique local name builder.</param>
-    private readonly record struct InlineMethodPlan(
+    internal readonly record struct InlineMethodPlan(
         RequestParameterModel? BodyParameter,
         string SettingsLocal,
         string RequestLocal,

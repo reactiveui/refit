@@ -16,7 +16,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type is, or is constructed over, a generic type parameter.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type references a type parameter.</returns>
-    private static bool ReferencesTypeParameter(ITypeSymbol type)
+    internal static bool ReferencesTypeParameter(ITypeSymbol type)
     {
         switch (type)
         {
@@ -46,7 +46,7 @@ internal static partial class Parser
     /// <param name="type">The parameter type to classify.</param>
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <returns><see langword="true"/> when the type is a simple scalar type supported by inline path formatting.</returns>
-    private static bool IsSimpleType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol)
+    internal static bool IsSimpleType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol)
     {
         // A path value is emitted as UrlParameterFormatter.Format(value, provider, typeof(T)) - the same call the
         // reflection path uses - so any type the formatter can render round-trips identically. That is exactly the
@@ -104,7 +104,7 @@ internal static partial class Parser
     /// <remarks>The nested <c>System.Uri</c> namespace pattern's inner segments are only reached for a type literally
     /// named <c>Uri</c>, a shape the shared scalar fixtures never present, so the walk cannot be exercised end to end.</remarks>
     [ExcludeFromCodeCoverage]
-    private static bool IsUri(ITypeSymbol type) =>
+    internal static bool IsUri(ITypeSymbol type) =>
         type is
         {
             Name: "Uri",
@@ -119,7 +119,7 @@ internal static partial class Parser
     /// Mirrors the reflection builder's <c>typeof(CultureInfo).IsAssignableFrom(type)</c>, so derived cultures are
     /// scalars too rather than objects whose public properties get flattened into the query string.
     /// </remarks>
-    private static bool IsCultureInfo(ITypeSymbol type)
+    internal static bool IsCultureInfo(ITypeSymbol type)
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
@@ -141,7 +141,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is a cancellation token.</returns>
-    private static bool IsCancellationToken(ITypeSymbol type)
+    internal static bool IsCancellationToken(ITypeSymbol type)
     {
         // Structural match instead of allocating a fully-qualified display string for every parameter.
         if (type is INamedTypeSymbol
@@ -168,7 +168,7 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="bodyParameter">Receives the body parameter model.</param>
     /// <returns><see langword="true"/> when the parameter has a body attribute.</returns>
-    private static bool TryParseBodyParameter(
+    internal static bool TryParseBodyParameter(
         IParameterSymbol parameter,
         string parameterType,
         InterfaceGenerationContext context,
@@ -214,7 +214,7 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="headerParameter">Receives the header parameter model.</param>
     /// <returns><see langword="true"/> when the parameter has a supported header attribute.</returns>
-    private static bool TryParseHeaderParameter(
+    internal static bool TryParseHeaderParameter(
         IParameterSymbol parameter,
         string parameterType,
         InterfaceGenerationContext context,
@@ -258,7 +258,7 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="headerCollectionParameter">Receives the header collection parameter model.</param>
     /// <returns><see langword="true"/> when the parameter has a supported header collection attribute.</returns>
-    private static bool TryParseHeaderCollectionParameter(
+    internal static bool TryParseHeaderCollectionParameter(
         IParameterSymbol parameter,
         string parameterType,
         InterfaceGenerationContext context,
@@ -301,7 +301,7 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="urlParameter">Receives the url parameter model.</param>
     /// <returns><see langword="true"/> when the parameter carries <c>[Url]</c>.</returns>
-    private static bool TryParseUrlParameter(
+    internal static bool TryParseUrlParameter(
         IParameterSymbol parameter,
         string parameterType,
         InterfaceGenerationContext context,
@@ -335,7 +335,7 @@ internal static partial class Parser
     /// <summary>Determines whether a <c>[Url]</c> parameter type can be emitted inline.</summary>
     /// <param name="type">The parameter type.</param>
     /// <returns><see langword="true"/> for <see cref="string"/> or <see cref="Uri"/>; other types fall back to reflection.</returns>
-    private static bool IsInlineUrlType(ITypeSymbol type) =>
+    internal static bool IsInlineUrlType(ITypeSymbol type) =>
         type.SpecialType == SpecialType.System_String || IsUri(type);
 
     /// <summary>Tries to parse a request property parameter.</summary>
@@ -344,7 +344,7 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="propertyParameter">Receives the property parameter model.</param>
     /// <returns><see langword="true"/> when the parameter has a property attribute.</returns>
-    private static bool TryParsePropertyParameter(
+    internal static bool TryParsePropertyParameter(
         IParameterSymbol parameter,
         string parameterType,
         InterfaceGenerationContext context,
@@ -385,7 +385,7 @@ internal static partial class Parser
     /// <param name="scheme">The authorization scheme, prepended to the value as <c>"{scheme} "</c>.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The header parameter model that emits <c>Authorization: {scheme} {value}</c>.</returns>
-    private static RequestParameterModel BuildAuthorizeHeaderParameter(
+    internal static RequestParameterModel BuildAuthorizeHeaderParameter(
         IParameterSymbol parameter,
         string parameterType,
         string scheme,
@@ -410,7 +410,7 @@ internal static partial class Parser
     /// <param name="parameterType">The parameter type display string.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The unsupported parameter model.</returns>
-    private static RequestParameterModel UnsupportedRequestParameter(
+    internal static RequestParameterModel UnsupportedRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
         InterfaceGenerationContext context) =>
@@ -432,7 +432,7 @@ internal static partial class Parser
     /// <param name="locations">The parameter's location in the URL.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The path request model.</returns>
-    private static RequestParameterModel PathRequestParameter(
+    internal static RequestParameterModel PathRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
         ImmutableEquatableArray<Range> locations,
@@ -456,7 +456,7 @@ internal static partial class Parser
     /// <param name="parameter">The parameter to inspect.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The precomputed attribute models.</returns>
-    private static ImmutableEquatableArray<ParameterAttributeModel> BuildParameterAttributes(IParameterSymbol parameter, InterfaceGenerationContext context)
+    internal static ImmutableEquatableArray<ParameterAttributeModel> BuildParameterAttributes(IParameterSymbol parameter, InterfaceGenerationContext context)
     {
         var attributes = parameter.GetAttributes();
         if (attributes.IsEmpty)
@@ -492,7 +492,7 @@ internal static partial class Parser
     /// <param name="argument">The typed constant.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The source expression, or <c>"null"</c> when the value is null.</returns>
-    private static string ConstantValueToString(TypedConstant argument, InterfaceGenerationContext context)
+    internal static string ConstantValueToString(TypedConstant argument, InterfaceGenerationContext context)
     {
         var result = string.Empty;
 
@@ -516,7 +516,7 @@ internal static partial class Parser
     /// <param name="argument">The array typed constant.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The <c>new[] { ... }</c> source expression.</returns>
-    private static string RenderConstantArray(TypedConstant argument, InterfaceGenerationContext context)
+    internal static string RenderConstantArray(TypedConstant argument, InterfaceGenerationContext context)
     {
         var parts = new List<string>(argument.Values.Length);
         foreach (var value in argument.Values)
@@ -531,7 +531,7 @@ internal static partial class Parser
     /// <param name="type">The parameter type.</param>
     /// <param name="nullableAnnotation">The parameter nullable annotation.</param>
     /// <returns><see langword="true"/> when generated code should guard the value before dereferencing it.</returns>
-    private static bool CanBeNull(ITypeSymbol type, NullableAnnotation nullableAnnotation) =>
+    internal static bool CanBeNull(ITypeSymbol type, NullableAnnotation nullableAnnotation) =>
         type switch
         {
             INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
@@ -542,7 +542,7 @@ internal static partial class Parser
     /// <summary>Determines whether a header collection parameter matches existing runtime semantics.</summary>
     /// <param name="type">The parameter type.</param>
     /// <returns><see langword="true"/> when the type is supported.</returns>
-    private static bool IsSupportedHeaderCollectionType(ITypeSymbol type) =>
+    internal static bool IsSupportedHeaderCollectionType(ITypeSymbol type) =>
         type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
         == "global::System.Collections.Generic.IDictionary<string, string>";
 }

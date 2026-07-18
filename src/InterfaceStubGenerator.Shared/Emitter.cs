@@ -146,7 +146,7 @@ internal static partial class Emitter
     /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <returns>The concatenated member source.</returns>
-    private static string BuildInterfaceMemberSource(
+    internal static string BuildInterfaceMemberSource(
         InterfaceModel model,
         UniqueNameBuilder uniqueNames,
         string requestBuilderFieldName,
@@ -189,11 +189,11 @@ internal static partial class Emitter
     /// <summary>Creates source text from generated source.</summary>
     /// <param name="source">The generated source.</param>
     /// <returns>The generated source text.</returns>
-    private static SourceText ToSourceText(string source) => SourceText.From(source, Encoding.UTF8);
+    internal static SourceText ToSourceText(string source) => SourceText.From(source, Encoding.UTF8);
 
     /// <summary>Builds the generated code attribute using this generator assembly identity.</summary>
     /// <returns>The generated attribute source.</returns>
-    private static string BuildGeneratedCodeAttribute()
+    internal static string BuildGeneratedCodeAttribute()
     {
         // This generator assembly always carries a name and version, so no placeholder fallback is reachable.
         var assemblyName = typeof(Emitter).Assembly.GetName();
@@ -208,7 +208,7 @@ internal static partial class Emitter
     /// <summary>Escapes text for generated XML documentation comments.</summary>
     /// <param name="value">The text to escape.</param>
     /// <returns>The escaped XML documentation text.</returns>
-    private static string ToXmlDocumentationText(string value)
+    internal static string ToXmlDocumentationText(string value)
     {
         // Most identifiers and type names contain none of the XML metacharacters, so return them untouched
         // instead of allocating a builder and copying character by character.
@@ -254,7 +254,7 @@ internal static partial class Emitter
     /// <summary>Builds the <c>extern alias</c> directives an interface's types require, if any.</summary>
     /// <param name="aliases">The extern aliases the interface's types reference.</param>
     /// <returns>The directives, or an empty string when none are needed.</returns>
-    private static string BuildExternAliasDirectives(ImmutableEquatableArray<string> aliases)
+    internal static string BuildExternAliasDirectives(ImmutableEquatableArray<string> aliases)
     {
         if (aliases.Count == 0)
         {
@@ -274,7 +274,7 @@ internal static partial class Emitter
     /// <param name="nullability">The nullable context for the generated source.</param>
     /// <param name="emitGeneratedCodeMarkers">Whether generated-code markers should be emitted.</param>
     /// <returns>The generated file header.</returns>
-    private static string BuildGeneratedFileHeader(Nullability nullability, bool emitGeneratedCodeMarkers)
+    internal static string BuildGeneratedFileHeader(Nullability nullability, bool emitGeneratedCodeMarkers)
     {
         if (!emitGeneratedCodeMarkers)
         {
@@ -311,7 +311,7 @@ internal static partial class Emitter
     /// <param name="interfaces">The parsed interface models.</param>
     /// <param name="emitGeneratedCodeMarkers">Whether generated-code markers should be emitted.</param>
     /// <returns>The generated file header.</returns>
-    private static string BuildSharedGeneratedFileHeader(
+    internal static string BuildSharedGeneratedFileHeader(
         ImmutableEquatableArray<InterfaceModel> interfaces,
         bool emitGeneratedCodeMarkers)
     {
@@ -329,7 +329,7 @@ internal static partial class Emitter
     /// <summary>Builds the generated factory registrations for non-generic interfaces.</summary>
     /// <param name="interfaces">The parsed interface models.</param>
     /// <returns>The generated factory registrations.</returns>
-    private static string BuildGeneratedFactoryRegistrations(ImmutableEquatableArray<InterfaceModel> interfaces)
+    internal static string BuildGeneratedFactoryRegistrations(ImmutableEquatableArray<InterfaceModel> interfaces)
     {
         var registrations = new string[interfaces.Count * RegistrationsPerInterface];
         var count = 0;
@@ -370,7 +370,7 @@ internal static partial class Emitter
     /// <param name="model">The interface model being emitted.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <returns>The generated constructor source, or an empty string.</returns>
-    private static string BuildSettingsConstructor(InterfaceModel model, string settingsFieldName) =>
+    internal static string BuildSettingsConstructor(InterfaceModel model, string settingsFieldName) =>
         !CanUseGeneratedSettingsFactory(model)
             ? string.Empty
             : $$"""
@@ -388,7 +388,7 @@ internal static partial class Emitter
     /// <summary>Determines whether an interface can be constructed without a reflection request builder.</summary>
     /// <param name="model">The interface model being emitted.</param>
     /// <returns><see langword="true"/> when all Refit methods use generated request construction.</returns>
-    private static bool CanUseGeneratedSettingsFactory(InterfaceModel model) =>
+    internal static bool CanUseGeneratedSettingsFactory(InterfaceModel model) =>
         (model.RefitMethods.Count != 0 || model.DerivedRefitMethods.Count != 0)
         && AllRequestsCanGenerateInline(model.RefitMethods)
         && AllRequestsCanGenerateInline(model.DerivedRefitMethods);
@@ -396,7 +396,7 @@ internal static partial class Emitter
     /// <summary>Determines whether all methods in a collection use generated request construction.</summary>
     /// <param name="methods">The methods to inspect.</param>
     /// <returns><see langword="true"/> when each method can be emitted inline.</returns>
-    private static bool AllRequestsCanGenerateInline(ImmutableEquatableArray<MethodModel> methods)
+    internal static bool AllRequestsCanGenerateInline(ImmutableEquatableArray<MethodModel> methods)
     {
         for (var i = 0; i < methods.Count; i++)
         {
@@ -413,7 +413,7 @@ internal static partial class Emitter
     /// <param name="typeParameters">The parsed type parameter constraints.</param>
     /// <param name="indentationLevel">The generated indentation level.</param>
     /// <returns>The generated type parameter documentation.</returns>
-    private static string BuildTypeParameterDocumentation(
+    internal static string BuildTypeParameterDocumentation(
         ImmutableEquatableArray<TypeConstraint> typeParameters,
         int indentationLevel)
     {
@@ -436,7 +436,7 @@ internal static partial class Emitter
     /// <param name="properties">The property models to emit.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated property implementations.</returns>
-    private static string BuildInterfaceProperties(
+    internal static string BuildInterfaceProperties(
         ImmutableEquatableArray<InterfacePropertyModel> properties,
         bool supportsNullable)
     {
@@ -464,7 +464,7 @@ internal static partial class Emitter
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
     /// <returns>The generated method implementations.</returns>
-    private static string BuildRefitMethods(
+    internal static string BuildRefitMethods(
         ImmutableEquatableArray<MethodModel> methods,
         bool isTopLevel,
         InterfaceModel interfaceModel,
@@ -498,7 +498,7 @@ internal static partial class Emitter
     /// <param name="methods">The non-Refit method models to emit.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated method stubs.</returns>
-    private static string BuildNonRefitMethods(
+    internal static string BuildNonRefitMethods(
         ImmutableEquatableArray<MethodModel> methods,
         bool supportsNullable)
     {
@@ -519,12 +519,12 @@ internal static partial class Emitter
     /// <summary>Converts a bool to a lowercase C# literal.</summary>
     /// <param name="value">The value to convert.</param>
     /// <returns>The lowercase bool literal.</returns>
-    private static string ToLowerInvariantString(bool value) => value ? TrueLiteral : FalseLiteral;
+    internal static string ToLowerInvariantString(bool value) => value ? TrueLiteral : FalseLiteral;
 
     /// <summary>Converts a string into a C# string literal.</summary>
     /// <param name="value">The value to quote.</param>
     /// <returns>The escaped C# string literal.</returns>
-    private static string ToCSharpStringLiteral(string value)
+    internal static string ToCSharpStringLiteral(string value)
     {
         // The vast majority of emitted literals (query keys, header names, paths) need no escaping, so wrap them in
         // quotes with a single concat instead of allocating a builder and appending each character.
@@ -547,7 +547,7 @@ internal static partial class Emitter
     /// <summary>Determines whether any character in a value requires C# string-literal escaping.</summary>
     /// <param name="value">The value to inspect.</param>
     /// <returns><see langword="true"/> when at least one character needs an escape sequence.</returns>
-    private static bool NeedsCSharpEscaping(string value)
+    internal static bool NeedsCSharpEscaping(string value)
     {
         foreach (var c in value)
         {
@@ -564,7 +564,7 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated method stub.</returns>
-    private static string BuildNonRefitMethod(MethodModel methodModel, bool supportsNullable)
+    internal static string BuildNonRefitMethod(MethodModel methodModel, bool supportsNullable)
     {
         var isExplicit = methodModel.IsExplicitInterface;
         var messageLiteral = ToCSharpStringLiteral(NonRefitMethodExceptionMessage);
@@ -582,7 +582,7 @@ internal static partial class Emitter
     /// <param name="property">The property model being emitted.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated property implementation, or an empty string.</returns>
-    private static string BuildInterfaceProperty(
+    internal static string BuildInterfaceProperty(
         InterfacePropertyModel property,
         bool supportsNullable)
     {
@@ -611,7 +611,7 @@ internal static partial class Emitter
     /// <summary>Builds the explicit IDisposable.Dispose implementation.</summary>
     /// <param name="shouldEmit">True when the dispose method should be emitted.</param>
     /// <returns>The generated dispose method, or an empty string.</returns>
-    private static string BuildDisposableMethod(bool shouldEmit)
+    internal static string BuildDisposableMethod(bool shouldEmit)
     {
         if (!shouldEmit)
         {

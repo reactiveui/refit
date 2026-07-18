@@ -15,13 +15,13 @@ internal static partial class Emitter
     /// stack (net8.0+ inline arrays) so no array is allocated; an older consumer receives an inferred array that the same
     /// <c>ReadOnlySpan</c> overload accepts via the array-to-span conversion. The array element type is inferred from the
     /// tuple values rather than stated, so no nullable reference annotation is emitted into a pre-C# 8 consumer.</remarks>
-    private static string WrapPathReplacements(string tuples, bool supportsCollectionExpressions) =>
+    internal static string WrapPathReplacements(string tuples, bool supportsCollectionExpressions) =>
         supportsCollectionExpressions ? ", [" + tuples + "]" : ", new[] { " + tuples + " }";
 
     /// <summary>Determines whether any path parameter passes its value through pre-encoded.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <returns><see langword="true"/> when a path parameter carries <c>[Encoded]</c>.</returns>
-    private static bool HasPreEncodedPathParameter(RequestModel request)
+    internal static bool HasPreEncodedPathParameter(RequestModel request)
     {
         foreach (var parameter in request.Parameters)
         {
@@ -41,7 +41,7 @@ internal static partial class Emitter
     /// <param name="valueExpression">The replacement value expression.</param>
     /// <param name="includePreEncoded">Whether the tuple carries the per-value pre-encoded flag.</param>
     /// <param name="preEncoded">The pre-encoded flag value, emitted only when <paramref name="includePreEncoded"/> is set.</param>
-    private static void AppendPathTuple(
+    internal static void AppendPathTuple(
         PooledStringBuilder sb,
         int start,
         int end,
@@ -65,7 +65,7 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="parameters">The default path builder argument fragment.</param>
     /// <returns>The generated path expression.</returns>
-    private static string BuildInlinePathExpression(
+    internal static string BuildInlinePathExpression(
         RequestModel request,
         Dictionary<string, string> parameterInfoNames,
         in InlineValueEmission emission,
@@ -87,7 +87,7 @@ internal static partial class Emitter
     /// <returns>The path expression using the span-formattable fast overload, or null to use the default path building.</returns>
     /// <remarks>The default-formatting branch formats the value straight into the path buffer (net6+ integers with no
     /// escaping, net10+ span-escaped values); a customized <c>IUrlParameterFormatter</c> falls back to the string overload.</remarks>
-    private static string? TryBuildInlinePathFastExpression(
+    internal static string? TryBuildInlinePathFastExpression(
         RequestModel request,
         Dictionary<string, string> parameterInfoNames,
         in InlineValueEmission emission)

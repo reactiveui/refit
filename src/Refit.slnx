@@ -25,6 +25,7 @@
     </Folder>
     <Folder Name="/Benchmarks/">
         <Project Path="benchmarks/Refit.Benchmarks/Refit.Benchmarks.csproj" />
+        <Project Path="benchmarks/Refit.Generator.Benchmarks/Refit.Generator.Benchmarks.csproj" />
     </Folder>
     <Folder Name="/Solution Items/workflows/">
         <File Path="../.github/workflows/ci-build.yml" />

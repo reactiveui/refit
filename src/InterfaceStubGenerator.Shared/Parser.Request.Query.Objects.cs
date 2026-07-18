@@ -24,7 +24,7 @@ internal static partial class Parser
     /// recursion; because the declared type is the runtime type there is no divergence. An <c>object</c>, interface, open,
     /// or collection value keeps falling back, since the runtime value could recurse differently than the declared type.
     /// </remarks>
-    private static ImmutableEquatableArray<QueryObjectPropertyModel>? ResolveDictionaryValueProperties(
+    internal static ImmutableEquatableArray<QueryObjectPropertyModel>? ResolveDictionaryValueProperties(
         ITypeSymbol valueType,
         string? format,
         INamedTypeSymbol? formattableSymbol,
@@ -59,7 +59,7 @@ internal static partial class Parser
     /// type instead of its runtime type. An <c>object</c>, interface, or open generic type has no usable declared shape
     /// and stays on the reflection path.
     /// </remarks>
-    private static bool IsConcreteComplexType(ITypeSymbol type) =>
+    internal static bool IsConcreteComplexType(ITypeSymbol type) =>
         type.TypeKind is TypeKind.Class or TypeKind.Struct
         && type.SpecialType != SpecialType.System_Object
         && !TryGetEnumerableElementType(type, out _);
@@ -69,7 +69,7 @@ internal static partial class Parser
     /// <param name="keyType">Receives the dictionary key type.</param>
     /// <param name="valueType">Receives the dictionary value type.</param>
     /// <returns><see langword="true"/> when the type closes <c>IDictionary&lt;TKey, TValue&gt;</c> exactly once.</returns>
-    private static bool TryGetDictionaryTypes(ITypeSymbol type, out ITypeSymbol? keyType, out ITypeSymbol? valueType)
+    internal static bool TryGetDictionaryTypes(ITypeSymbol type, out ITypeSymbol? keyType, out ITypeSymbol? valueType)
     {
         keyType = null;
         valueType = null;
@@ -107,7 +107,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type is a closed <c>System.Collections.Generic.IDictionary&lt;TKey, TValue&gt;</c>.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is the generic dictionary interface.</returns>
-    private static bool IsGenericDictionaryInterface(ITypeSymbol type) =>
+    internal static bool IsGenericDictionaryInterface(ITypeSymbol type) =>
         type is INamedTypeSymbol
         {
             TypeKind: TypeKind.Interface,
@@ -129,7 +129,7 @@ internal static partial class Parser
     /// declared type. The reflection request builder instead walks the value's <em>runtime</em> type, so passing a
     /// derived instance through a base-typed parameter no longer contributes the derived type's extra properties.
     /// </remarks>
-    private static ImmutableEquatableArray<QueryObjectPropertyModel>? TryBuildQueryObjectProperties(
+    internal static ImmutableEquatableArray<QueryObjectPropertyModel>? TryBuildQueryObjectProperties(
         ITypeSymbol type,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
@@ -150,7 +150,7 @@ internal static partial class Parser
     /// <param name="ancestors">The types already being flattened on this path, guarding against reference cycles.</param>
     /// <param name="depth">The current nesting depth.</param>
     /// <returns>The property descriptors, or null when the type must fall back to the reflection request builder.</returns>
-    private static ImmutableEquatableArray<QueryObjectPropertyModel>? TryBuildQueryObjectProperties(
+    internal static ImmutableEquatableArray<QueryObjectPropertyModel>? TryBuildQueryObjectProperties(
         ITypeSymbol type,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
@@ -198,7 +198,7 @@ internal static partial class Parser
     /// <param name="seen">The set of property names already flattened, updated when this one is accepted.</param>
     /// <param name="property">Receives the property when the member qualifies.</param>
     /// <returns><see langword="true"/> when the member is a flattenable property.</returns>
-    private static bool IsFlattenableProperty(ISymbol member, HashSet<string> seen, out IPropertySymbol property)
+    internal static bool IsFlattenableProperty(ISymbol member, HashSet<string> seen, out IPropertySymbol property)
     {
         if (member is IPropertySymbol candidate
             && IsReadableFormProperty(candidate)
@@ -221,7 +221,7 @@ internal static partial class Parser
     /// exists; those keep using the reflection request builder. Enumerables (including dictionaries) are excluded
     /// because the reflection builder special-cases them rather than flattening their properties.
     /// </remarks>
-    private static bool IsInlineFlattenableQueryObject(ITypeSymbol type) =>
+    internal static bool IsInlineFlattenableQueryObject(ITypeSymbol type) =>
         type.TypeKind is TypeKind.Class or TypeKind.Struct
         && type.SpecialType != SpecialType.System_Object
         && type.SpecialType != SpecialType.System_String
@@ -232,7 +232,7 @@ internal static partial class Parser
     /// <param name="property">The property to inspect.</param>
     /// <returns><see langword="true"/> when the property carries a recognized ignore attribute.</returns>
     /// <remarks>Matches the reflection builder, which compares attribute full names so any assembly's copy counts.</remarks>
-    private static bool IsIgnoredQueryProperty(IPropertySymbol property)
+    internal static bool IsIgnoredQueryProperty(IPropertySymbol property)
     {
         foreach (var attribute in property.GetAttributes())
         {
@@ -251,7 +251,7 @@ internal static partial class Parser
     /// <summary>Reads the <c>[AliasAs]</c>, <c>[JsonPropertyName]</c> and <c>[Query]</c> data from a property.</summary>
     /// <param name="property">The property to inspect.</param>
     /// <returns>The alias name, the System.Text.Json name, and the parsed query data.</returns>
-    private static (string? Alias, string? Json, QueryFormData Query) ReadQueryPropertyAttributes(IPropertySymbol property)
+    internal static (string? Alias, string? Json, QueryFormData Query) ReadQueryPropertyAttributes(IPropertySymbol property)
     {
         string? aliasName = null;
         string? jsonName = null;
@@ -285,7 +285,7 @@ internal static partial class Parser
     /// <param name="ancestors">The types already being flattened on this path, guarding against reference cycles.</param>
     /// <param name="depth">The current nesting depth.</param>
     /// <returns>The property descriptor, or null when the property's shape must fall back to reflection.</returns>
-    private static QueryObjectPropertyModel? BuildQueryObjectPropertyModel(
+    internal static QueryObjectPropertyModel? BuildQueryObjectPropertyModel(
         IPropertySymbol property,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
@@ -372,7 +372,7 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The dictionary property descriptor, or null when the property is not a simple-keyed and -valued dictionary.</returns>
-    private static QueryObjectPropertyModel? TryBuildDictionaryPropertyModel(
+    internal static QueryObjectPropertyModel? TryBuildDictionaryPropertyModel(
         IPropertySymbol property,
         string? aliasName,
         string? serializerName,
@@ -408,7 +408,7 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The collection property descriptor, or null when the property is not a collection of simple elements.</returns>
-    private static QueryObjectPropertyModel? TryBuildCollectionPropertyModel(
+    internal static QueryObjectPropertyModel? TryBuildCollectionPropertyModel(
         IPropertySymbol property,
         string? aliasName,
         string? serializerName,

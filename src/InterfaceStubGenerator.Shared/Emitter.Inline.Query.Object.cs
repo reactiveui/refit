@@ -20,7 +20,7 @@ internal static partial class Emitter
     /// form-url-encoded formatter first and omits the pair when it yields null; and the surviving value is rendered by
     /// the URL parameter formatter, which receives the enclosing <em>parameter's</em> attributes and declared type.
     /// </remarks>
-    private static void AppendObjectQueryStatements(
+    internal static void AppendObjectQueryStatements(
         PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
@@ -59,7 +59,7 @@ internal static partial class Emitter
     /// <param name="properties">The flattened property descriptors at this nesting level.</param>
     /// <param name="scope">The access expression, parent key, delimiter, local suffix and indentation.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendObjectPropertyList(
+    internal static void AppendObjectPropertyList(
         PooledStringBuilder sb,
         in QueryObjectContext context,
         ImmutableEquatableArray<QueryObjectPropertyModel> properties,
@@ -92,7 +92,7 @@ internal static partial class Emitter
     /// <param name="site">The generated locals and indentation for this property.</param>
     /// <param name="scope">The access expression and indentation for this nesting level.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendObjectLeafProperty(
+    internal static void AppendObjectLeafProperty(
         PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
@@ -132,7 +132,7 @@ internal static partial class Emitter
     /// <param name="site">The generated value local, composed key expression, and indentation for this property.</param>
     /// <param name="scope">The nesting scope, supplying the key delimiter.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendObjectDictionaryProperty(
+    internal static void AppendObjectDictionaryProperty(
         PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
@@ -204,7 +204,7 @@ internal static partial class Emitter
     /// <param name="context">The enclosing parameter and provider-field context.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The generated entry-key and value formatting expressions.</returns>
-    private static (string EntryKeyExpression, string ValueExpression) BuildDictionaryEntryExpressions(
+    internal static (string EntryKeyExpression, string ValueExpression) BuildDictionaryEntryExpressions(
         string entryLocal,
         string entryValueLocal,
         QueryDictionaryModel dictionary,
@@ -235,7 +235,7 @@ internal static partial class Emitter
     /// <param name="site">The generated value local and composed key expression for this property.</param>
     /// <param name="scope">The access expression, delimiter, local suffix and indentation for this level.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendNestedObjectProperty(
+    internal static void AppendNestedObjectProperty(
         PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
@@ -292,7 +292,7 @@ internal static partial class Emitter
     /// <param name="delimiter">The nesting delimiter.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The composed key expression: parent key, delimiter, this property's own prefix, then its name.</returns>
-    private static string BuildNestedKeyExpression(
+    internal static string BuildNestedKeyExpression(
         QueryObjectPropertyModel property,
         string parentKeyExpr,
         string delimiter,
@@ -328,7 +328,7 @@ internal static partial class Emitter
     /// which reproduces both passes. A null collection is omitted unless <c>[Query(SerializeNull = true)]</c> emits a
     /// bare <c>key=</c>, matching the reflection builder.
     /// </remarks>
-    private static void AppendObjectQueryCollectionProperty(
+    internal static void AppendObjectQueryCollectionProperty(
         PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
@@ -375,7 +375,7 @@ internal static partial class Emitter
     /// <param name="site">The generated locals and indentation, with <c>KeyExpression</c> set to the key local and
     /// <c>Indentation</c> set to the body indentation.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendCollectionPropertyBody(
+    internal static void AppendCollectionPropertyBody(
         PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
@@ -414,7 +414,7 @@ internal static partial class Emitter
     /// <param name="parameterCollectionFormat">The enclosing parameter's <c>[Query(CollectionFormat)]</c>, or null.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>A compile-time cast literal, or the runtime settings default.</returns>
-    private static string BuildCollectionFormatExpression(
+    internal static string BuildCollectionFormatExpression(
         int? propertyCollectionFormat,
         int? parameterCollectionFormat,
         in InlineValueEmission emission) =>
@@ -428,7 +428,7 @@ internal static partial class Emitter
     /// <param name="collection">The collection descriptor.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The reflection-free element expression, or a formatter call for an element with no inline rendering.</returns>
-    private static string BuildFastCollectionElementExpression(
+    internal static string BuildFastCollectionElementExpression(
         string elementLocal,
         InlineValueFormatModel elementFormat,
         QueryObjectCollectionModel collection,
@@ -456,7 +456,7 @@ internal static partial class Emitter
     /// <param name="site">The generated locals and indentation for this property.</param>
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendNullableObjectQueryProperty(
+    internal static void AppendNullableObjectQueryProperty(
         PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryObjectPropertyModel property,
@@ -497,7 +497,7 @@ internal static partial class Emitter
     /// <param name="site">The generated locals and indentation for this property.</param>
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendObjectQueryPropertyValue(
+    internal static void AppendObjectQueryPropertyValue(
         PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryObjectPropertyModel property,
@@ -522,7 +522,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="fastExpression">The reflection-free expression, or null when the formatter must always run.</param>
-    private static void AppendUnformattedObjectQueryProperty(
+    internal static void AppendUnformattedObjectQueryProperty(
         PooledStringBuilder sb,
         RequestParameterModel parameter,
         in QueryPropertySite site,
@@ -548,7 +548,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="fastExpression">The reflection-free expression, or null when the formatter must always run.</param>
-    private static void AppendFormattedObjectQueryProperty(
+    internal static void AppendFormattedObjectQueryProperty(
         PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryObjectPropertyModel property,
@@ -586,7 +586,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The formatter call expression.</returns>
-    private static string BuildUrlFormatterCall(
+    internal static string BuildUrlFormatterCall(
         string valueExpression,
         string parameterTypeName,
         string providerField,
@@ -600,7 +600,7 @@ internal static partial class Emitter
     /// <param name="typeExpression">The declared-type expression passed to the formatter.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The formatter call expression, keeping the reflection and generated paths in parity.</returns>
-    private static string EmitFormatUrlParameter(
+    internal static string EmitFormatUrlParameter(
         string valueExpression,
         string providerExpression,
         string typeExpression,
@@ -611,7 +611,7 @@ internal static partial class Emitter
     /// <param name="property">The flattened property descriptor.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>A constant literal when the key is fully known, otherwise a helper call or a settings-gated choice.</returns>
-    private static string BuildQueryObjectKeyExpression(QueryObjectPropertyModel property, in InlineValueEmission emission)
+    internal static string BuildQueryObjectKeyExpression(QueryObjectPropertyModel property, in InlineValueEmission emission)
     {
         // An [AliasAs] name always wins and bypasses the key formatter, so prefix + alias is fully known at compile time.
         if (property.ExplicitName is { } explicitName)
@@ -634,7 +634,7 @@ internal static partial class Emitter
     /// <param name="property">The flattened property descriptor.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The <c>BuildQueryKey</c> call expression.</returns>
-    private static string BuildQueryKeyHelperCall(QueryObjectPropertyModel property, in InlineValueEmission emission)
+    internal static string BuildQueryKeyHelperCall(QueryObjectPropertyModel property, in InlineValueEmission emission)
     {
         var clrName = ToCSharpStringLiteral(property.ClrName);
         var prefix = ToNullableCSharpStringLiteral(property.PrefixSegment);

@@ -52,6 +52,6 @@ public class UniqueNameBuilder
     /// <summary>Determines whether the name is used in this or any parent scope.</summary>
     /// <param name="name">The name to check.</param>
     /// <returns>True if the name is already used; otherwise, false.</returns>
-    private bool Contains(string name) =>
+    internal bool Contains(string name) =>
         _usedNames.Contains(name);
 }

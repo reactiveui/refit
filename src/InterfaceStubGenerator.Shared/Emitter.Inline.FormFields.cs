@@ -14,7 +14,7 @@ internal static partial class Emitter
     /// <remarks>A known verb resolves to a framework-cached <see cref="System.Net.Http.HttpMethod"/> singleton. A custom
     /// verb otherwise constructs a new instance on every call; caching it in a static field matches the reflection
     /// builder, which reads the verb from the attribute once per method.</remarks>
-    private static (string Source, string Expression) BuildHttpMethodField(RequestModel request, UniqueNameBuilder uniqueNames)
+    internal static (string Source, string Expression) BuildHttpMethodField(RequestModel request, UniqueNameBuilder uniqueNames)
     {
         var expression = ToHttpMethodExpression(request.HttpMethod);
         if (!expression.StartsWith("new ", StringComparison.Ordinal))
@@ -39,7 +39,7 @@ internal static partial class Emitter
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <param name="supportsStaticLambdas">Whether the consumer compilation supports static lambda syntax.</param>
     /// <returns>The generated field declaration and its name, or empty values when the reflection path is used.</returns>
-    private static (string Source, string? FieldName) BuildFormFieldsField(
+    internal static (string Source, string? FieldName) BuildFormFieldsField(
         RequestParameterModel? bodyParameter,
         UniqueNameBuilder uniqueNames,
         bool supportsNullable,
@@ -86,7 +86,7 @@ internal static partial class Emitter
     /// <param name="elementIndent">The element indentation.</param>
     /// <param name="getterOpen">The language-version-specific getter lambda opening.</param>
     /// <returns>The rendered descriptor array element source.</returns>
-    private static string BuildFormFieldElements(FormFieldModel[] fields, string bodyType, string elementIndent, string getterOpen)
+    internal static string BuildFormFieldElements(FormFieldModel[] fields, string bodyType, string elementIndent, string getterOpen)
     {
         var elementsLength = 0;
         for (var i = 0; i < fields.Length; i++)
@@ -141,7 +141,7 @@ internal static partial class Emitter
     /// <param name="getterOpenLength">The length of the language-version-specific getter lambda opening.</param>
     /// <param name="indentLength">The element indentation length.</param>
     /// <returns>The number of characters the rendered element occupies.</returns>
-    private static int MeasureFormFieldElement(FormFieldModel field, string bodyType, int getterOpenLength, int indentLength) =>
+    internal static int MeasureFormFieldElement(FormFieldModel field, string bodyType, int getterOpenLength, int indentLength) =>
         indentLength
         + FormFieldNew.Length
         + bodyType.Length

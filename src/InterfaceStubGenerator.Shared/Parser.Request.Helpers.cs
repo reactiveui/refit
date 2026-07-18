@@ -242,7 +242,7 @@ internal static partial class Parser
     /// <summary>Determines whether the braces in a path template are balanced within each segment.</summary>
     /// <param name="path">The path template to validate.</param>
     /// <returns><see langword="true"/> when every segment has balanced braces.</returns>
-    private static bool IsPathTemplateValid(in ReadOnlySpan<char> path)
+    internal static bool IsPathTemplateValid(in ReadOnlySpan<char> path)
     {
         var openingBraces = 0;
         var closingBraces = 0;

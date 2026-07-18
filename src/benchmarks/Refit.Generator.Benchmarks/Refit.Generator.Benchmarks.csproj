@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>$(RefitBenchmarkTargets)</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
+    <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <!-- Referenced as a normal assembly (not an analyzer): the benchmarks drive the generator
+         directly through CSharpGeneratorDriver and call its internal parser/emitter components. -->
+    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+    <!-- Kept on the same Roslyn version BenchmarkDotNet pulls in so the benchmark's
+         Microsoft.CodeAnalysis.* assemblies stay on a single consistent version. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+  </ItemGroup>
+</Project>

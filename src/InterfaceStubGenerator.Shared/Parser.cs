@@ -96,7 +96,7 @@ internal static partial class Parser
     /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
     /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <returns>The diagnostics paired with an empty context model.</returns>
-    private static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec) CreateEmptyResult(
+    internal static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec) CreateEmptyResult(
         List<Diagnostic> diagnostics,
         string refitInternalNamespace,
         bool generatedRequestBuilding,
@@ -120,7 +120,7 @@ internal static partial class Parser
     /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The generation context for the pass.</returns>
-    private static InterfaceGenerationContext CreateGenerationContext(
+    internal static InterfaceGenerationContext CreateGenerationContext(
         CSharpCompilation compilation,
         List<Diagnostic> diagnostics,
         string refitInternalNamespace,
@@ -178,7 +178,7 @@ internal static partial class Parser
     /// <summary>Builds the internal generated namespace from a consumer-provided namespace prefix.</summary>
     /// <param name="refitInternalNamespace">The optional user or MSBuild-supplied namespace prefix.</param>
     /// <returns>A valid C# namespace for generated Refit internals.</returns>
-    private static string BuildRefitInternalNamespace(string? refitInternalNamespace)
+    internal static string BuildRefitInternalNamespace(string? refitInternalNamespace)
     {
         var rawNamespace = string.IsNullOrWhiteSpace(refitInternalNamespace)
             ? RefitInternalGeneratedSuffix
@@ -210,7 +210,7 @@ internal static partial class Parser
     /// <summary>Normalizes one namespace segment into a valid identifier.</summary>
     /// <param name="part">The namespace segment.</param>
     /// <returns>The normalized segment, or an empty string when the segment is blank.</returns>
-    private static string NormalizeNamespacePart(string part)
+    internal static string NormalizeNamespacePart(string part)
     {
         if (string.IsNullOrWhiteSpace(part))
         {
@@ -256,7 +256,7 @@ internal static partial class Parser
     /// <param name="interfaceToNullableEnabledMap">Receives the nullable-context flag per interface.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A map of interface symbol to its directly declared Refit methods.</returns>
-    private static Dictionary<INamedTypeSymbol, List<IMethodSymbol>> CollectRefitInterfaces(
+    internal static Dictionary<INamedTypeSymbol, List<IMethodSymbol>> CollectRefitInterfaces(
         CSharpCompilation compilation,
         in ImmutableArray<MethodDeclarationSyntax> candidateMethods,
         in ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -333,7 +333,7 @@ internal static partial class Parser
     /// <param name="context">The shared generation context.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The interface models, one per collected interface.</returns>
-    private static ImmutableEquatableArray<InterfaceModel> BuildInterfaceModels(
+    internal static ImmutableEquatableArray<InterfaceModel> BuildInterfaceModels(
         Dictionary<INamedTypeSymbol, List<IMethodSymbol>> interfaces,
         Dictionary<INamedTypeSymbol, bool> interfaceToNullableEnabledMap,
         InterfaceGenerationContext context,
@@ -381,7 +381,7 @@ internal static partial class Parser
     /// <param name="nullableEnabled">Whether nullable reference types are enabled for the interface.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The model describing the interface.</returns>
-    private static InterfaceModel ProcessInterface(
+    internal static InterfaceModel ProcessInterface(
         string fileName,
         INamedTypeSymbol interfaceSymbol,
         List<IMethodSymbol> refitMethods,
@@ -449,7 +449,7 @@ internal static partial class Parser
     /// <summary>Resolves the shared route prefix declared on an interface via <c>[PathPrefix]</c>.</summary>
     /// <param name="interfaceSymbol">The interface the client is generated for.</param>
     /// <returns>The declared prefix, or an empty string when the interface carries no <c>[PathPrefix]</c>.</returns>
-    private static string ResolvePathPrefix(INamedTypeSymbol interfaceSymbol)
+    internal static string ResolvePathPrefix(INamedTypeSymbol interfaceSymbol)
     {
         foreach (var attribute in interfaceSymbol.GetAttributes())
         {
@@ -467,7 +467,7 @@ internal static partial class Parser
     /// <summary>Builds the deterministically-ordered set of extern aliases an interface's types reference.</summary>
     /// <param name="aliases">The collected extern aliases.</param>
     /// <returns>The sorted extern aliases, or an empty array when none were used.</returns>
-    private static ImmutableEquatableArray<string> BuildSortedExternAliases(HashSet<string> aliases)
+    internal static ImmutableEquatableArray<string> BuildSortedExternAliases(HashSet<string> aliases)
     {
         if (aliases.Count == 0)
         {
@@ -482,7 +482,7 @@ internal static partial class Parser
     /// <summary>Computes the generated identifiers and display names for an interface.</summary>
     /// <param name="interfaceSymbol">The interface symbol being processed.</param>
     /// <returns>The computed names for the interface.</returns>
-    private static InterfaceNames ComputeInterfaceNames(INamedTypeSymbol interfaceSymbol)
+    internal static InterfaceNames ComputeInterfaceNames(INamedTypeSymbol interfaceSymbol)
     {
         // Start with the interface display name including type parameters, then strip the namespace.
         var className = interfaceSymbol.ToDisplayString();
@@ -517,7 +517,7 @@ internal static partial class Parser
     /// <param name="refitMethods">The Refit methods declared on the interface.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The partitioned member sets.</returns>
-    private static MethodPartition PartitionMembers(
+    internal static MethodPartition PartitionMembers(
         INamedTypeSymbol interfaceSymbol,
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> refitMethods,
@@ -551,7 +551,7 @@ internal static partial class Parser
     /// <param name="members">The directly declared members of the interface.</param>
     /// <param name="refitMethods">The Refit methods declared on the interface.</param>
     /// <returns>The non-Refit methods declared directly on the interface.</returns>
-    private static List<IMethodSymbol> CollectDirectNonRefitMethods(
+    internal static List<IMethodSymbol> CollectDirectNonRefitMethods(
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> refitMethods)
     {
@@ -585,7 +585,7 @@ internal static partial class Parser
     /// <param name="derivedNonRefitMethods">Receives the non-Refit methods inherited from base interfaces.</param>
     /// <param name="inheritedProperties">Receives the emittable properties inherited from base interfaces.</param>
     /// <returns><see langword="true"/> if the interface inherits <c>IDisposable.Dispose</c>; otherwise, <see langword="false"/>.</returns>
-    private static bool CollectDerivedMembers(
+    internal static bool CollectDerivedMembers(
         INamedTypeSymbol interfaceSymbol,
         InterfaceGenerationContext context,
         List<IMethodSymbol> derivedRefitMethods,
@@ -641,14 +641,14 @@ internal static partial class Parser
     /// <param name="method">The candidate method.</param>
     /// <param name="disposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
     /// <returns><see langword="true"/> if the method is declared on <c>IDisposable</c>; otherwise, <see langword="false"/>.</returns>
-    private static bool IsDisposeMethod(IMethodSymbol method, ISymbol? disposableInterfaceSymbol) =>
+    internal static bool IsDisposeMethod(IMethodSymbol method, ISymbol? disposableInterfaceSymbol) =>
         method.ContainingType.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default);
 
     /// <summary>Removes base methods that the current interface re-declares as explicit Refit members.</summary>
     /// <param name="members">The directly declared members of the interface.</param>
     /// <param name="derivedNonRefitMethods">The non-Refit methods discovered on base interfaces.</param>
     /// <returns>The filtered list of derived non-Refit methods.</returns>
-    private static List<IMethodSymbol> ExcludeExplicitlyImplementedBaseMethods(
+    internal static List<IMethodSymbol> ExcludeExplicitlyImplementedBaseMethods(
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> derivedNonRefitMethods)
     {
@@ -696,7 +696,7 @@ internal static partial class Parser
     /// <param name="ClassSuffix">The generated class suffix.</param>
     /// <param name="Namespace">The flattened namespace for generated identifiers.</param>
     /// <param name="InterfaceDisplayName">The fully qualified interface display name.</param>
-    private readonly record struct InterfaceNames(
+    internal readonly record struct InterfaceNames(
         string ClassName,
         string ClassDeclaration,
         string ClassSuffix,
@@ -709,7 +709,7 @@ internal static partial class Parser
     /// <param name="DerivedNonRefitMethods">The non-Refit methods inherited from base interfaces.</param>
     /// <param name="InheritedProperties">The emittable properties inherited from base interfaces, in discovery order.</param>
     /// <param name="HasDispose">Whether the interface inherits <c>IDisposable.Dispose</c>.</param>
-    private readonly record struct MethodPartition(
+    internal readonly record struct MethodPartition(
         List<IMethodSymbol> NonRefitMethods,
         List<IMethodSymbol> DerivedRefitMethods,
         List<IMethodSymbol> DerivedNonRefitMethods,

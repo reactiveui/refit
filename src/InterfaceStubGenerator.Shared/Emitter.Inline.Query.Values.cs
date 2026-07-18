@@ -20,7 +20,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The generated formatting expression.</returns>
-    private static string BuildFormattedValueExpression(
+    internal static string BuildFormattedValueExpression(
         string valueExpression,
         bool canBeNullAtEvaluation,
         string parameterTypeName,
@@ -55,7 +55,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The generated formatting expression.</returns>
-    private static string BuildPathValueExpression(
+    internal static string BuildPathValueExpression(
         RequestParameterModel parameter,
         string providerField,
         in InlineValueEmission emission)
@@ -84,7 +84,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The path value expression.</returns>
-    private static string BuildPathValueExpressionCore(
+    internal static string BuildPathValueExpressionCore(
         string valueAccessor,
         string typeName,
         InlineValueFormatModel? valueFormat,
@@ -117,7 +117,7 @@ internal static partial class Emitter
     /// <remarks>Path bindings always carry a rendering strategy, so the absent-format arm is only reachable for a path
     /// parameter without one, which the shared fixtures never present.</remarks>
     [ExcludeFromCodeCoverage]
-    private static string? ComputeFastPathExpression(
+    internal static string? ComputeFastPathExpression(
         string valueAccessor,
         InlineValueFormatModel? valueFormat,
         in InlineValueEmission emission) =>
@@ -130,7 +130,7 @@ internal static partial class Emitter
     /// <returns><see langword="true"/> when the value has a span-formattable fast write on the consumer target.</returns>
     /// <remarks>Reuses the shared span-formattable tiers computed by the parser: an unformatted URL-safe integer (net6+)
     /// or any span-escapable value (net9+). A <c>TreatAsString</c> value stringifies first and stays on the string path.</remarks>
-    private static bool IsSpanFormattableFast(QueryParameterModel query, out string? format)
+    internal static bool IsSpanFormattableFast(QueryParameterModel query, out string? format)
     {
         var valueFormat = query.ValueFormat;
         format = valueFormat.Format;
@@ -145,7 +145,7 @@ internal static partial class Emitter
     /// <returns><see langword="true"/> when each element has an unformatted span-formattable fast write on the target.</returns>
     /// <remarks><c>AddCollectionValueFormatted</c> takes no format, so a per-element <c>[Query(Format)]</c> keeps the
     /// string-formatted path; only unformatted span-formattable elements qualify.</remarks>
-    private static bool IsCollectionSpanFormattableFast(QueryParameterModel query)
+    internal static bool IsCollectionSpanFormattableFast(QueryParameterModel query)
     {
         var valueFormat = query.ValueFormat;
         return !query.TreatAsString
@@ -160,7 +160,7 @@ internal static partial class Emitter
     /// <param name="valueFormat">The rendering strategy.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The fast-path expression, or <see langword="null"/> when the formatter must always run.</returns>
-    private static string? BuildFastFormatExpression(
+    internal static string? BuildFastFormatExpression(
         string valueExpression,
         InlineValueFormatModel valueFormat,
         in InlineValueEmission emission)

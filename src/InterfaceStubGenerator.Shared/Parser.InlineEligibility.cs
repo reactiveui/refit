@@ -74,7 +74,7 @@ internal static partial class Parser
     /// <summary>Classifies a return type into the shape buckets inline eligibility distinguishes.</summary>
     /// <param name="returnType">The declared return type.</param>
     /// <returns>The return shape; unsupported shapes map to <see cref="ReturnTypeInfo.Return"/>.</returns>
-    private static ReturnTypeInfo ClassifyInlineReturnShape(ITypeSymbol returnType)
+    internal static ReturnTypeInfo ClassifyInlineReturnShape(ITypeSymbol returnType)
     {
         if (returnType is not INamedTypeSymbol namedType)
         {
@@ -99,7 +99,7 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the type is <c>HttpRequestMessage</c>.</returns>
     /// <remarks>Only the <c>Task</c> wrapper is supported: request building is asynchronous (body serialization and the
     /// authorization token getter), so a synchronous <c>HttpRequestMessage</c> return would force a blocking build.</remarks>
-    private static bool IsHttpRequestMessageType(ITypeSymbol type) =>
+    internal static bool IsHttpRequestMessageType(ITypeSymbol type) =>
         type is INamedTypeSymbol { MetadataName: "HttpRequestMessage" } named
         && named.ContainingNamespace.ToDisplayString() == "System.Net.Http";
 }

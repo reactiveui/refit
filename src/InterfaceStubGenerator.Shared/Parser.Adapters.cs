@@ -47,7 +47,7 @@ internal static partial class Parser
     /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
     /// <param name="adapters">The accumulator for discovered adapter types.</param>
     /// <param name="cancellationToken">A token to observe while scanning.</param>
-    private static void CollectReturnTypeAdapters(
+    internal static void CollectReturnTypeAdapters(
         INamespaceSymbol namespaceSymbol,
         INamedTypeSymbol adapterInterface,
         List<INamedTypeSymbol> adapters,
@@ -74,7 +74,7 @@ internal static partial class Parser
     /// <param name="type">The type to inspect.</param>
     /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
     /// <param name="adapters">The accumulator for discovered adapter types.</param>
-    private static void CollectReturnTypeAdapterType(
+    internal static void CollectReturnTypeAdapterType(
         INamedTypeSymbol type,
         INamedTypeSymbol adapterInterface,
         List<INamedTypeSymbol> adapters)
@@ -98,7 +98,7 @@ internal static partial class Parser
     /// <param name="closedAdapter">The closed adapter type to instantiate when matched.</param>
     /// <param name="resultType">The result type the HTTP call materializes when matched.</param>
     /// <returns><see langword="true"/> when a discovered adapter surfaces the return type; otherwise <see langword="false"/>.</returns>
-    private static bool TryMatchReturnTypeAdapter(
+    internal static bool TryMatchReturnTypeAdapter(
         ITypeSymbol returnType,
         InterfaceGenerationContext context,
         out INamedTypeSymbol closedAdapter,
@@ -140,7 +140,7 @@ internal static partial class Parser
     /// <param name="returnType">The declared return type supplying the type arguments.</param>
     /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
     /// <returns>The closed adapter type, or <see langword="null"/> when it cannot surface the return type.</returns>
-    private static INamedTypeSymbol? CloseAdapterForReturn(
+    internal static INamedTypeSymbol? CloseAdapterForReturn(
         INamedTypeSymbol adapter,
         INamedTypeSymbol returnType,
         INamedTypeSymbol adapterInterface)
@@ -180,7 +180,7 @@ internal static partial class Parser
     /// closes over a <c>Wrapper&lt;A, B&gt;</c> return as <c>Adapter&lt;B, A&gt;</c>. The sole caller invokes this only after the
     /// template return and the return type share a generic definition and arity, so the argument counts are equal.
     /// </remarks>
-    private static bool TryMapAdapterTypeArguments(
+    internal static bool TryMapAdapterTypeArguments(
         INamedTypeSymbol templateReturn,
         INamedTypeSymbol returnType,
         INamedTypeSymbol adapter,
@@ -216,7 +216,7 @@ internal static partial class Parser
     /// <param name="adapter">The adapter type definition owning the type parameters.</param>
     /// <param name="mapped">The per-type-parameter binding slots, filled by position.</param>
     /// <returns><see langword="true"/> when the argument binds consistently.</returns>
-    private static bool TryBindAdapterArgument(
+    internal static bool TryBindAdapterArgument(
         ITypeSymbol templateArgument,
         ITypeSymbol returnArgument,
         INamedTypeSymbol adapter,
@@ -243,7 +243,7 @@ internal static partial class Parser
     /// <param name="returnType">The declared return type the adapter must surface.</param>
     /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
     /// <returns>The matching constructed interface, or <see langword="null"/>.</returns>
-    private static INamedTypeSymbol? FindConstructedAdapterInterface(
+    internal static INamedTypeSymbol? FindConstructedAdapterInterface(
         INamedTypeSymbol closedAdapter,
         INamedTypeSymbol returnType,
         INamedTypeSymbol adapterInterface)
@@ -264,7 +264,7 @@ internal static partial class Parser
     /// <param name="type">The type to inspect.</param>
     /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
     /// <returns>The implemented adapter interface, or <see langword="null"/>.</returns>
-    private static INamedTypeSymbol? FindImplementedAdapterInterface(
+    internal static INamedTypeSymbol? FindImplementedAdapterInterface(
         INamedTypeSymbol type,
         INamedTypeSymbol adapterInterface)
     {
