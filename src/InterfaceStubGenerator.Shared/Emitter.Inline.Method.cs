@@ -128,7 +128,6 @@ internal static partial class Emitter
         }
 
         var headerSource = BuildInlineHeaders(request, requestLocal, settingsLocal);
-        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, methodModel, requestLocal, settingsLocal);
 
         // A method that declares a positive [Timeout] stashes it on the request so the send helpers apply it; every
         // other method emits nothing here and pays no per-call timeout cost.
@@ -147,6 +146,8 @@ internal static partial class Emitter
         // The method prefix (fields, opening, settings local), then the request construction shared by every shape
         // (prologue locals, the message, content, headers, request properties, and an optional per-call timeout), then
         // the return statement and closing brace. Appended fragment-by-fragment so no intermediate block string forms.
+        // Request properties bind no query/converter helpers, so they are appended straight in after the attribute-
+        // provider buffer has already been drained above.
         _ = builder
             .Append(plan.ParamInfoBuilder)
             .Append(formFieldsSource)
@@ -158,8 +159,9 @@ internal static partial class Emitter
             .Append(" = new global::System.Net.Http.HttpRequestMessage(").Append(httpMethodExpression)
             .Append(", ").Append(requestUriExpression).Append(");\n")
             .Append(contentSource)
-            .Append(headerSource)
-            .Append(requestPropertySource)
+            .Append(headerSource);
+        AppendInlineRequestProperties(builder, request, interfaceModel, methodModel, requestLocal, settingsLocal);
+        _ = builder
             .Append(timeoutSource)
             .Append(returnSource)
             .Append(methodIndent).Append("}\n");

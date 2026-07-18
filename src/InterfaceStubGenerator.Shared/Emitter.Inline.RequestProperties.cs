@@ -27,6 +27,8 @@ internal static partial class Emitter
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated request option/property statements.</returns>
+    /// <remarks>The cold-observable shape reuses this block inside a string-interpolated construction block, so it
+    /// materializes it here; the standard shape appends it straight into the interface buffer.</remarks>
     internal static string BuildInlineRequestProperties(
         RequestModel request,
         InterfaceModel interfaceModel,
@@ -34,10 +36,27 @@ internal static partial class Emitter
         string requestLocal,
         string settingsLocal)
     {
-        // Append every statement into one pooled buffer. The previous string[] + ConcatParts shape allocated a
-        // throwaway interpolated string per statement; the emitted text is identical, appended with no intermediates.
-        var bodyIndent = Indent(MethodBodyIndentation);
         var sb = new PooledStringBuilder();
+        AppendInlineRequestProperties(sb, request, interfaceModel, methodModel, requestLocal, settingsLocal);
+        return sb.ToString();
+    }
+
+    /// <summary>Appends request-option/property application for an inline generated method straight into the buffer.</summary>
+    /// <param name="sb">The buffer accumulating the interface's generated method source.</param>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="interfaceModel">The interface model being emitted.</param>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    internal static void AppendInlineRequestProperties(
+        PooledStringBuilder sb,
+        RequestModel request,
+        InterfaceModel interfaceModel,
+        MethodModel methodModel,
+        string requestLocal,
+        string settingsLocal)
+    {
+        var bodyIndent = Indent(MethodBodyIndentation);
         _ = sb.Append(bodyIndent)
             .Append("global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(")
             .Append(requestLocal).Append(ArgumentSeparator).Append(settingsLocal)
@@ -78,8 +97,6 @@ internal static partial class Emitter
                 AppendRequestProperty(sb, bodyIndent, requestLocal, parameter.Type, key, "@" + parameter.Name);
             }
         }
-
-        return sb.ToString();
     }
 
     /// <summary>Appends one <c>AddRequestProperty&lt;T&gt;</c> statement directly into the request-property buffer.</summary>
