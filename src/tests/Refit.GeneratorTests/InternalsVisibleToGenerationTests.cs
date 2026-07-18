@@ -143,7 +143,10 @@ public sealed class InternalsVisibleToGenerationTests
 
         var compilation = Fixture.CreateNamedLibrary((string?)null, CSharpSyntaxTree.ParseText(source));
         var result = Fixture.RunGenerator(compilation, generatedRequestBuilding: true, false, null);
-        var generated = string.Join("\n", result.GeneratedSources.Values);
+
+        // Each generated source keeps its own line endings (CRLF on Windows), so normalize to LF before asserting
+        // against a newline-anchored needle; otherwise the "...Generated\n" match fails on Windows runners.
+        var generated = string.Join("\n", result.GeneratedSources.Values).Replace("\r\n", "\n");
 
         await Assert.That(generated).Contains("typeof(global::Refit.Implementation.Generated))");
         await Assert.That(generated).Contains("namespace RefitInternalGenerated\n");
