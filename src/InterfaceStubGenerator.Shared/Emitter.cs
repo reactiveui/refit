@@ -21,9 +21,6 @@ internal static partial class Emitter
     /// <summary>The rendered length of the <c>", "</c> separator emitted between joined items.</summary>
     private const int ListSeparatorLength = 2;
 
-    /// <summary>The number of generated factory registrations emitted per non-generic interface.</summary>
-    private const int RegistrationsPerInterface = 2;
-
     /// <summary>The radix used when rendering decimal integers.</summary>
     private const int DecimalRadix = 10;
 
@@ -318,8 +315,9 @@ internal static partial class Emitter
     /// <returns>The generated factory registrations.</returns>
     internal static string BuildGeneratedFactoryRegistrations(ImmutableEquatableArray<InterfaceModel> interfaces)
     {
-        var registrations = new string[interfaces.Count * RegistrationsPerInterface];
-        var count = 0;
+        // Append each registration straight into one pooled buffer instead of a per-registration string array joined by
+        // ConcatParts, so the array and the trimmed join result never materialize.
+        var builder = new PooledStringBuilder();
         for (var i = 0; i < interfaces.Count; i++)
         {
             var interfaceModel = interfaces[i];
@@ -332,25 +330,23 @@ internal static partial class Emitter
 
             // The static modifier on a lambda is C# 9; older consumers must not see it.
             var lambdaModifier = interfaceModel.SupportsStaticLambdas ? "static " : string.Empty;
-            registrations[count] = $$"""
+            _ = builder.Append($$"""
                                     global::Refit.RestService.RegisterGeneratedFactory<{{interfaceModel.InterfaceDisplayName}}>(
                                         {{lambdaModifier}}(client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
 
-                        """;
-            count++;
+                        """);
 
             if (CanUseGeneratedSettingsFactory(interfaceModel))
             {
-                registrations[count] = $$"""
+                _ = builder.Append($$"""
                                         global::Refit.RestService.RegisterGeneratedSettingsFactory<{{interfaceModel.InterfaceDisplayName}}>(
                                             {{lambdaModifier}}(client, settings) => new {{generatedType}}(client, settings));
 
-                            """;
-                count++;
+                            """);
             }
         }
 
-        return count == 0 ? string.Empty : ConcatParts(registrations, count);
+        return builder.ToString();
     }
 
     /// <summary>Builds the settings-only constructor when the generated implementation can avoid request-builder reflection.</summary>
