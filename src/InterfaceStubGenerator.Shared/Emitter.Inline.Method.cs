@@ -104,7 +104,7 @@ internal static partial class Emitter
         // (prologue locals, the message, content, headers, request properties, and an optional per-call timeout), then
         // the return statement and closing brace. Appended fragment-by-fragment so no intermediate block string forms.
         _ = builder
-            .Append(plan.ParamInfoBuilder.ToString())
+            .Append(plan.ParamInfoBuilder)
             .Append(fragments.FormFieldsSource)
             .Append(fragments.HttpMethodFieldSource)
             .Append(fragments.Opening)

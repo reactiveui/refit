@@ -71,6 +71,27 @@ internal sealed class PooledStringBuilder
         return this;
     }
 
+    /// <summary>Appends the accumulated content of another builder, then returns that builder's buffer to the pool.</summary>
+    /// <param name="other">The builder whose content is copied in; it is emptied and single-use afterward.</param>
+    /// <returns>This builder, for chaining.</returns>
+    /// <remarks>Copies buffer to buffer so a nested fragment builder's content joins this one without materializing an
+    /// intermediate string. The source is drained (its buffer returned to the pool), matching <see cref="ToString"/>.</remarks>
+    public PooledStringBuilder Append(PooledStringBuilder other)
+    {
+        if (other._pos != 0)
+        {
+            EnsureCapacity(_pos + other._pos);
+            Array.Copy(other._buffer, 0, _buffer, _pos, other._pos);
+            _pos += other._pos;
+        }
+
+        var toReturn = other._buffer;
+        other._buffer = [];
+        other._pos = 0;
+        ArrayPool<char>.Shared.Return(toReturn);
+        return this;
+    }
+
     /// <summary>Appends a string followed by a line terminator.</summary>
     /// <param name="value">The string to append, or null.</param>
     /// <returns>This builder, for chaining.</returns>
