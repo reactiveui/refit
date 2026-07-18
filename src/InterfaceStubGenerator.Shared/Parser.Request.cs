@@ -495,18 +495,21 @@ internal static partial class Parser
     {
         if (returnType is INamedTypeSymbol { TypeArguments.Length: 1 } namedType)
         {
-            var ns = namedType.ContainingNamespace.ToDisplayString();
-            if (namedType.MetadataName is "Task`1" or "ValueTask`1" && ns == "System.Threading.Tasks")
+            // The metadata name is checked first (a cheap compare against a cached property) so the namespace walk
+            // only runs for the handful of well-known wrapper shapes, never for an arbitrary user return type.
+            if (namedType.MetadataName is "Task`1" or "ValueTask`1"
+                && IsInNamespace(namedType, "System.Threading.Tasks"))
             {
                 return namedType.TypeArguments[0];
             }
 
-            if (namedType.MetadataName == "IAsyncEnumerable`1" && ns == "System.Collections.Generic")
+            if (namedType.MetadataName == "IAsyncEnumerable`1"
+                && IsInNamespace(namedType, "System.Collections.Generic"))
             {
                 return namedType.TypeArguments[0];
             }
 
-            if (namedType.MetadataName == "IObservable`1" && ns == "System")
+            if (namedType.MetadataName == "IObservable`1" && IsInNamespace(namedType, "System"))
             {
                 return namedType.TypeArguments[0];
             }
@@ -520,7 +523,8 @@ internal static partial class Parser
     /// <returns><see langword="true"/> for API response wrappers.</returns>
     internal static bool IsApiResponseType(ITypeSymbol type) =>
         type is INamedTypeSymbol namedType
-        && namedType.ContainingNamespace.ToDisplayString() == "Refit" && namedType.MetadataName is "IApiResponse" or "ApiResponse`1" or "IApiResponse`1";
+        && namedType.MetadataName is "IApiResponse" or "ApiResponse`1" or "IApiResponse`1"
+        && IsInNamespace(namedType, "Refit");
 
     /// <summary>Gets the response-content deserialization type for a method result type.</summary>
     /// <param name="resultType">The method result type.</param>

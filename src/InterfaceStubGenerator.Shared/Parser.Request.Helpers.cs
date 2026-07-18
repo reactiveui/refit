@@ -17,6 +17,36 @@ internal static partial class Parser
     /// <summary>The underlying value for <c>BodySerializationMethod.JsonLines</c>.</summary>
     private const int BodySerializationJsonLines = 4;
 
+    /// <summary>Determines whether a symbol's containing namespace equals a dotted namespace name, without allocating.</summary>
+    /// <param name="symbol">The symbol whose containing namespace is compared, or null.</param>
+    /// <param name="dottedNamespace">The expected namespace as a dotted name, for example <c>System.Threading.Tasks</c>.</param>
+    /// <returns><see langword="true"/> when the symbol's containing namespace matches segment for segment.</returns>
+    /// <remarks>Walks the namespace symbol chain segment by segment against the dotted string instead of rendering the
+    /// namespace with <c>ToDisplayString</c>, which allocates a fresh string on every call - a cost paid per type and
+    /// per attribute across the whole compilation on every parse.</remarks>
+    internal static bool IsInNamespace(ISymbol? symbol, string dottedNamespace)
+    {
+        var ns = symbol?.ContainingNamespace;
+        var end = dottedNamespace.Length;
+        while (ns is { IsGlobalNamespace: false })
+        {
+            var start = dottedNamespace.LastIndexOf('.', end - 1) + 1;
+            var name = ns.Name;
+            if (end - start != name.Length
+                || string.CompareOrdinal(dottedNamespace, start, name, 0, name.Length) != 0)
+            {
+                return false;
+            }
+
+            end = start - 1;
+            ns = ns.ContainingNamespace;
+        }
+
+        // Every symbol segment matched a dotted segment; the match is exact only when the dotted name is also fully
+        // consumed (end rewound past its first segment) and the chain terminated at the global namespace.
+        return end == -1 && ns is { IsGlobalNamespace: true };
+    }
+
     /// <summary>Finds the HTTP method attribute on a Refit method.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>
     /// <param name="httpMethodAttribute">The Refit HTTP method base attribute symbol.</param>

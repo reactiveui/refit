@@ -235,7 +235,7 @@ internal static partial class Parser
         {
             var attributeClass = attribute.AttributeClass!;
             if (attributeClass.Name == attributeName
-                && attributeClass.ContainingNamespace.ToDisplayString() == "System.Diagnostics.CodeAnalysis")
+                && IsInNamespace(attributeClass, "System.Diagnostics.CodeAnalysis"))
             {
                 return true;
             }

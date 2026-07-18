@@ -77,21 +77,17 @@ internal static partial class Parser
     /// <returns>The return shape; unsupported shapes map to <see cref="ReturnTypeInfo.Return"/>.</returns>
     internal static ReturnTypeInfo ClassifyInlineReturnShape(ITypeSymbol returnType)
     {
-        if (returnType is not INamedTypeSymbol namedType)
-        {
-            return ReturnTypeInfo.Return;
-        }
-
-        var ns = namedType.ContainingNamespace.ToDisplayString();
-        return namedType.MetadataName switch
-        {
-            "Task" when ns == TasksNamespace => ReturnTypeInfo.AsyncVoid,
-            "Task`1" when IsHttpRequestMessageType(namedType.TypeArguments[0]) => ReturnTypeInfo.RequestMessage,
-            "Task`1" or "ValueTask`1" when ns == TasksNamespace => ReturnTypeInfo.AsyncResult,
-            "IAsyncEnumerable`1" when ns == "System.Collections.Generic" => ReturnTypeInfo.AsyncEnumerable,
-            "IObservable`1" when ns == "System" => ReturnTypeInfo.Observable,
-            _ => ReturnTypeInfo.Return
-        };
+        return returnType is not INamedTypeSymbol namedType
+            ? ReturnTypeInfo.Return
+            : namedType.MetadataName switch
+            {
+                "Task" when IsInNamespace(namedType, TasksNamespace) => ReturnTypeInfo.AsyncVoid,
+                "Task`1" when IsHttpRequestMessageType(namedType.TypeArguments[0]) => ReturnTypeInfo.RequestMessage,
+                "Task`1" or "ValueTask`1" when IsInNamespace(namedType, TasksNamespace) => ReturnTypeInfo.AsyncResult,
+                "IAsyncEnumerable`1" when IsInNamespace(namedType, "System.Collections.Generic") => ReturnTypeInfo.AsyncEnumerable,
+                "IObservable`1" when IsInNamespace(namedType, "System") => ReturnTypeInfo.Observable,
+                _ => ReturnTypeInfo.Return
+            };
     }
 
     /// <summary>Determines whether a type is <c>System.Net.Http.HttpRequestMessage</c>, the type argument of the
@@ -102,5 +98,5 @@ internal static partial class Parser
     /// authorization token getter), so a synchronous <c>HttpRequestMessage</c> return would force a blocking build.</remarks>
     internal static bool IsHttpRequestMessageType(ITypeSymbol type) =>
         type is INamedTypeSymbol { MetadataName: "HttpRequestMessage" } named
-        && named.ContainingNamespace.ToDisplayString() == "System.Net.Http";
+        && IsInNamespace(named, "System.Net.Http");
 }
