@@ -6,27 +6,38 @@ using BenchmarkDotNet.Diagnosers;
 
 namespace Refit.Generator.Benchmarks;
 
-/// <summary>Micro-benchmarks for the parser's internal-namespace construction.</summary>
-/// <remarks>The internal namespace is built once per generation pass. It is not a per-method hot path, but its
-/// <see cref="System.Text.StringBuilder"/>-per-segment shape is a candidate for allocation reduction.</remarks>
+/// <summary>Micro-benchmarks for the parser's assembly-scoped generated-name construction.</summary>
+/// <remarks>The internal namespace and container name are built once per generation pass. They are not a per-method
+/// hot path, but their <see cref="System.Text.StringBuilder"/>-per-segment shape is a candidate for allocation
+/// reduction.</remarks>
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 public class NamespaceNormalizationBenchmarks
 {
-    /// <summary>An absent consumer prefix, exercising the default-segment-only path.</summary>
-    private readonly string? _defaultPrefix;
-
     /// <summary>A representative multi-segment consumer namespace prefix.</summary>
     private readonly string _consumerNamespace = "Contoso.Api.Clients.Generated";
 
-    /// <summary>Builds the internal namespace from an empty prefix (default segment only).</summary>
+    /// <summary>A representative compilation assembly name folded into the generated names.</summary>
+    private readonly string _assemblyName = "Contoso.Api.Client";
+
+    /// <summary>Builds the internal namespace from an absent prefix (default segment only).</summary>
     /// <returns>The normalized internal namespace.</returns>
     [Benchmark]
-    public string BuildDefault() => Parser.BuildRefitInternalNamespace(_defaultPrefix);
+    public string BuildDefault() => Parser.BuildRefitInternalNamespace(null, _assemblyName);
 
     /// <summary>Builds the internal namespace from a multi-segment consumer prefix.</summary>
     /// <returns>The normalized internal namespace.</returns>
     [Benchmark]
-    public string BuildFromPrefix() => Parser.BuildRefitInternalNamespace(_consumerNamespace);
+    public string BuildFromPrefix() => Parser.BuildRefitInternalNamespace(_consumerNamespace, _assemblyName);
+
+    /// <summary>Builds the assembly-scoped generated implementation container name.</summary>
+    /// <returns>The container name.</returns>
+    [Benchmark]
+    public string BuildContainerName() => Parser.BuildGeneratedContainerName(_assemblyName);
+
+    /// <summary>Reduces an assembly name to the identifier fragment folded into generated names.</summary>
+    /// <returns>The sanitized assembly-scope fragment.</returns>
+    [Benchmark]
+    public string SanitizeAssembly() => Parser.SanitizeAssemblyScope(_assemblyName);
 }

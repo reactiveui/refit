@@ -381,6 +381,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             new(
                 string.Empty,
                 string.Empty,
+                string.Empty,
                 false,
                 true,
                 ImmutableEquatableArrayFactory.Empty<InterfaceModel>()));

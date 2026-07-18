@@ -14,6 +14,7 @@ namespace Refit.Generator;
 /// models are the equatable, cache-safe values, never this.</remarks>
 /// <param name="Diagnostics">The list that collects diagnostics produced during processing.</param>
 /// <param name="PreserveAttributeDisplayName">The display name of the generated preserve attribute.</param>
+/// <param name="GeneratedClassName">The assembly-scoped name of the generated implementation container type.</param>
 /// <param name="DisposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
 /// <param name="HttpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
 /// <param name="FormattableSymbol">The <c>System.IFormattable</c> symbol used to classify inline-eligible value types, if available.</param>
@@ -39,6 +40,7 @@ namespace Refit.Generator;
 internal sealed record InterfaceGenerationContext(
     List<Diagnostic> Diagnostics,
     string PreserveAttributeDisplayName,
+    string GeneratedClassName,
     ISymbol? DisposableInterfaceSymbol,
     INamedTypeSymbol HttpMethodBaseAttributeSymbol,
     INamedTypeSymbol? FormattableSymbol,

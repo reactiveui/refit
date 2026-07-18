@@ -411,6 +411,7 @@ public static partial class GeneratorComponentTests
             ImmutableEquatableArray<MethodModel> derivedRefitMethods) =>
             new(
                 "RefitInternalGenerated.PreserveAttribute",
+                "Generated",
                 "IGeneratedClient.g.cs",
                 "IGeneratedClient",
                 "RefitGeneratorTest",

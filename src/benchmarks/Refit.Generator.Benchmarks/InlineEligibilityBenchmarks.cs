@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator.Benchmarks;
 
-/// <summary>Profiles inline-eligibility classification (<see cref="Parser.CanBuildRequestInline"/>) over varied request shapes.</summary>
+/// <summary>Profiles inline-eligibility classification (<see cref="Parser.CanBuildRequestInline(IMethodSymbol, INamedTypeSymbol, INamedTypeSymbol?)"/>) over varied request shapes.</summary>
 /// <remarks>Each call parses the method's request through the shared classifier the generator and the RF006 analyzer both
 /// use, so this exercises the request-parsing decision path across scalar, collection, object, converter, and format
 /// query bindings. It is the analyzer's per-keystroke cost as well as part of the generator's parse.</remarks>

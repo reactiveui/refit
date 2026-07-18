@@ -61,11 +61,6 @@ internal static partial class Emitter
         string generatedFileHeader,
         Action<string, SourceText> addSource)
     {
-        const string dynamicDependencyLine =
-            "[System.Diagnostics.CodeAnalysis.DynamicDependency("
-            + "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, "
-            + "typeof(global::Refit.Implementation.Generated))]";
-
         var generatedCodeAttribute = GeneratedCodeAttribute;
         var generatedSource = $$"""
             {{generatedFileHeader}}
@@ -78,7 +73,7 @@ internal static partial class Emitter
                 [{{model.PreserveAttributeDisplayName}}]
                 [global::System.Reflection.Obfuscation(Exclude=true)]
                 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                internal static partial class Generated
+                internal static partial class {{model.GeneratedClassName}}
                 {
             #if NET5_0_OR_GREATER
                     /// <summary>Registers generated Refit factories when the assembly is loaded.</summary>
@@ -87,7 +82,9 @@ internal static partial class Emitter
                         "CA2255:The ModuleInitializer attribute should not be used in libraries",
                         Justification = "ModuleInitializer is used intentionally so generated Refit factories are registered when the assembly loads.")]
                     [System.Runtime.CompilerServices.ModuleInitializer]
-                    {{dynamicDependencyLine}}
+                    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+                        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All,
+                        typeof(global::Refit.Implementation.{{model.GeneratedClassName}}))]
                     internal static void Initialize()
                     {
             {{BuildGeneratedFactoryRegistrations(model.Interfaces)}}        }

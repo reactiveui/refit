@@ -40,8 +40,8 @@ internal static partial class Emitter
     /// <summary>The generated prefix for type expressions.</summary>
     private const string TypeOfPrefix = "typeof(";
 
-    /// <summary>The fully qualified prefix of a generated implementation type, before its namespace mangling and suffix.</summary>
-    private const string GeneratedTypePrefix = "global::Refit.Implementation.Generated.";
+    /// <summary>The fully qualified namespace prefix that precedes the assembly-scoped generated implementation container type.</summary>
+    private const string GeneratedNamespacePrefix = "global::Refit.Implementation.";
 
     /// <summary>The number of spaces in one generated indentation level.</summary>
     private const int CharsPerIndentation = 4;
@@ -126,7 +126,7 @@ internal static partial class Emitter
             .AppendLine("namespace Refit.Implementation")
             .AppendLine("{")
             .AppendLine("    /// <summary>Contains generated Refit implementation types.</summary>")
-            .AppendLine("    internal partial class Generated")
+            .Append("    internal partial class ").Append(model.GeneratedClassName).AppendLine()
             .AppendLine("    {")
             .Append("        /// <summary>Generated Refit implementation for ").Append(ToXmlDocumentationText(model.InterfaceDisplayName)).AppendLine(".</summary>")
             .Append(typeParameterDocs).Append("        ").Append(GeneratedCodeAttribute).AppendLine()
@@ -344,14 +344,16 @@ internal static partial class Emitter
             var lambdaModifier = interfaceModel.SupportsStaticLambdas ? "static " : string.Empty;
             _ = builder
                 .Append("            global::Refit.RestService.RegisterGeneratedFactory<").Append(interfaceModel.InterfaceDisplayName).AppendLine(">(")
-                .Append("                ").Append(lambdaModifier).Append("(client, requestBuilder) => new ").Append(GeneratedTypePrefix)
+                .Append("                ").Append(lambdaModifier).AppendLine("(client, requestBuilder) =>")
+                .Append("                    new ").Append(GeneratedNamespacePrefix).Append(interfaceModel.GeneratedClassName).Append('.')
                 .Append(interfaceModel.Ns).Append(interfaceModel.ClassSuffix).AppendLine("(client, requestBuilder));");
 
             if (CanUseGeneratedSettingsFactory(interfaceModel))
             {
                 _ = builder
                     .Append("            global::Refit.RestService.RegisterGeneratedSettingsFactory<").Append(interfaceModel.InterfaceDisplayName).AppendLine(">(")
-                    .Append("                ").Append(lambdaModifier).Append("(client, settings) => new ").Append(GeneratedTypePrefix)
+                    .Append("                ").Append(lambdaModifier).AppendLine("(client, settings) =>")
+                    .Append("                    new ").Append(GeneratedNamespacePrefix).Append(interfaceModel.GeneratedClassName).Append('.')
                     .Append(interfaceModel.Ns).Append(interfaceModel.ClassSuffix).AppendLine("(client, settings));");
             }
         }

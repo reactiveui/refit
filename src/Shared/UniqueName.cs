@@ -12,6 +12,9 @@ namespace Refit;
 /// </summary>
 public static class UniqueName
 {
+    /// <summary>The initial stack buffer size for sanitizing an assembly name; longer names grow onto pooled storage.</summary>
+    private const int AssemblyNameStackBufferLength = 128;
+
     /// <summary>Builds the unique name for the generated implementation of the given interface type.</summary>
     /// <typeparam name="T">The Refit interface type.</typeparam>
     /// <returns>The unique generated type name.</returns>
@@ -82,13 +85,37 @@ public static class UniqueName
         var ns = refitInterfaceType.Namespace?.Replace(".", string.Empty);
 #endif
 
-        // Refit types will be generated as private classes within a Generated type in namespace
-        // Refit.Implementation
-        // E.g., Refit.Implementation.Generated.NamespaceContainingTpeInterfaceType
+        // Refit types are generated as private classes within a container type in namespace Refit.Implementation.
+        // The container name folds in the interface's assembly name so each assembly emits a distinctly named
+        // container; the generator emits the same name for the same assembly, so this reconstruction matches it.
+        // E.g., Refit.Implementation.GeneratedMyApp.NamespaceContainingTheInterfaceType
+        var assemblyScope = SanitizeAssemblyName(refitInterfaceType.Assembly.GetName().Name);
         var refitTypeName =
-            $"Refit.Implementation.Generated+{ns}{interfaceTypeName}{genericArgs}";
+            $"Refit.Implementation.Generated{assemblyScope}+{ns}{interfaceTypeName}{genericArgs}";
 
         return $"{refitTypeName}, {refitInterfaceType.Assembly.FullName}";
+    }
+
+    /// <summary>Reduces an assembly name to an identifier fragment folded into the generated container name.</summary>
+    /// <param name="assemblyName">The simple assembly name, or <see langword="null"/> when unavailable.</param>
+    /// <returns>The fragment, or an empty string when the assembly name is null or empty. This must stay identical to
+    /// the source generator's sanitization so the reconstructed container name matches the emitted one byte-for-byte.</returns>
+    internal static string SanitizeAssemblyName(string? assemblyName)
+    {
+        if (string.IsNullOrEmpty(assemblyName))
+        {
+            return string.Empty;
+        }
+
+        // Assembly names routinely contain dots and dashes, which are illegal inside an identifier, so every character
+        // that cannot appear in one is folded to an underscore.
+        var builder = new ValueStringBuilder(stackalloc char[AssemblyNameStackBufferLength]);
+        foreach (var character in assemblyName!)
+        {
+            builder.Append(char.IsLetterOrDigit(character) ? character : '_');
+        }
+
+        return builder.ToString();
     }
 
     /// <summary>Returns the suffix for the service key to be added to the unique name for a given type.</summary>

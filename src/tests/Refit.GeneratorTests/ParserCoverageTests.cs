@@ -60,7 +60,7 @@ public sealed class ParserCoverageTests
             CancellationToken.None);
 
         await Assert.That(diagnostics.Count).IsEqualTo(1);
-        await Assert.That(model.RefitInternalNamespace).IsEqualTo("bad_name_thing_RefitInternalGenerated");
+        await Assert.That(model.RefitInternalNamespace).IsEqualTo("bad_name_thing_RefitInternalGenerated.no_refit");
         await Assert.That(model.Interfaces).IsEmpty();
     }
 
@@ -105,10 +105,12 @@ public sealed class ParserCoverageTests
             [],
             CancellationToken.None);
 
-        await Assert.That(leadingDotModel.RefitInternalNamespace).IsEqualTo("ApplicationRefitInternalGenerated");
-        await Assert.That(digitModel.RefitInternalNamespace).IsEqualTo("_123_AppRefitInternalGenerated");
-        await Assert.That(dottedModel.RefitInternalNamespace).IsEqualTo("One.TwoRefitInternalGenerated");
-        await Assert.That(invalidStartModel.RefitInternalNamespace).IsEqualTo("__.ApplicationRefitInternalGenerated");
+        // The compilation assembly name ("no-refit") is folded in as a trailing, identifier-sanitized segment so each
+        // assembly's PreserveAttribute namespace is distinct; the user-provided prefix normalization is unchanged.
+        await Assert.That(leadingDotModel.RefitInternalNamespace).IsEqualTo("ApplicationRefitInternalGenerated.no_refit");
+        await Assert.That(digitModel.RefitInternalNamespace).IsEqualTo("_123_AppRefitInternalGenerated.no_refit");
+        await Assert.That(dottedModel.RefitInternalNamespace).IsEqualTo("One.TwoRefitInternalGenerated.no_refit");
+        await Assert.That(invalidStartModel.RefitInternalNamespace).IsEqualTo("__.ApplicationRefitInternalGenerated.no_refit");
     }
 
     /// <summary>Verifies well-known type lookup caching and failure paths.</summary>

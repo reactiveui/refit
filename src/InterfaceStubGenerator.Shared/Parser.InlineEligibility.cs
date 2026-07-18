@@ -52,6 +52,7 @@ internal static partial class Parser
         var context = new InterfaceGenerationContext(
             [],
             string.Empty,
+            string.Empty,
             null,
             httpMethodBaseAttributeSymbol,
             formattableSymbol,

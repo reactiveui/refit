@@ -9,10 +9,10 @@ namespace Refit.Implementation
     /// <summary>Registers generated Refit factories for interfaces discovered at compile time.</summary>
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.Diagnostics.DebuggerNonUserCode]
-    [global::RefitInternalGenerated.PreserveAttribute]
+    [global::RefitInternalGenerated.Compilation.PreserveAttribute]
     [global::System.Reflection.Obfuscation(Exclude=true)]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    internal static partial class Generated
+    internal static partial class GeneratedCompilation
     {
 #if NET5_0_OR_GREATER
         /// <summary>Registers generated Refit factories when the assembly is loaded.</summary>
@@ -21,13 +21,17 @@ namespace Refit.Implementation
             "CA2255:The ModuleInitializer attribute should not be used in libraries",
             Justification = "ModuleInitializer is used intentionally so generated Refit factories are registered when the assembly loads.")]
         [System.Runtime.CompilerServices.ModuleInitializer]
-        [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
+        [System.Diagnostics.CodeAnalysis.DynamicDependency(
+            System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All,
+            typeof(global::Refit.Implementation.GeneratedCompilation))]
         internal static void Initialize()
         {
             global::Refit.RestService.RegisterGeneratedFactory<global::IServiceWithoutNamespace>(
-                static (client, requestBuilder) => new global::Refit.Implementation.Generated.IServiceWithoutNamespace(client, requestBuilder));
+                static (client, requestBuilder) =>
+                    new global::Refit.Implementation.GeneratedCompilation.IServiceWithoutNamespace(client, requestBuilder));
             global::Refit.RestService.RegisterGeneratedSettingsFactory<global::IServiceWithoutNamespace>(
-                static (client, settings) => new global::Refit.Implementation.Generated.IServiceWithoutNamespace(client, settings));
+                static (client, settings) =>
+                    new global::Refit.Implementation.GeneratedCompilation.IServiceWithoutNamespace(client, settings));
         }
 #endif
     }

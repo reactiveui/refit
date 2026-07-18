@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -14,6 +13,9 @@ internal static partial class Parser
 {
     /// <summary>The suffix used for generator-private Refit helper types.</summary>
     private const string RefitInternalGeneratedSuffix = "RefitInternalGenerated";
+
+    /// <summary>The base name of the generated implementation container, before the assembly scope is folded in.</summary>
+    private const string GeneratedContainerBaseName = "Generated";
 
     /// <summary>Builds the generator model for the candidate Refit interfaces.</summary>
     /// <param name="compilation">The compilation.</param>
@@ -37,7 +39,12 @@ internal static partial class Parser
     {
         ArgumentExceptionHelper.ThrowIfNull(compilation);
 
-        refitInternalNamespace = BuildRefitInternalNamespace(refitInternalNamespace);
+        // The generated container and the internal-generated namespace both fold in the assembly name so that every
+        // assembly emits distinctly named copies. Two assemblies linked by [InternalsVisibleTo] would otherwise each
+        // emit identically named internal helpers, and the second compilation would see both and report a conflict.
+        var assemblyName = compilation.AssemblyName;
+        refitInternalNamespace = BuildRefitInternalNamespace(refitInternalNamespace, assemblyName);
+        var generatedClassName = BuildGeneratedContainerName(assemblyName);
 
         var httpMethodBaseAttributeSymbol = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute");
 
@@ -45,7 +52,7 @@ internal static partial class Parser
         if (httpMethodBaseAttributeSymbol is null)
         {
             diagnostics.Add(Diagnostic.Create(DiagnosticDescriptors.RefitNotReferenced, null));
-            return CreateEmptyResult(diagnostics, refitInternalNamespace, generatedRequestBuilding, emitGeneratedCodeMarkers);
+            return CreateEmptyResult(diagnostics, refitInternalNamespace, generatedClassName, generatedRequestBuilding, emitGeneratedCodeMarkers);
         }
 
         var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>(
@@ -63,7 +70,7 @@ internal static partial class Parser
         // Nothing needs to be generated in this pass.
         if (interfaces.Count == 0)
         {
-            return CreateEmptyResult(diagnostics, refitInternalNamespace, generatedRequestBuilding, emitGeneratedCodeMarkers);
+            return CreateEmptyResult(diagnostics, refitInternalNamespace, generatedClassName, generatedRequestBuilding, emitGeneratedCodeMarkers);
         }
 
         var context = CreateGenerationContext(
@@ -84,6 +91,7 @@ internal static partial class Parser
         var contextGenerationSpec = new ContextGenerationModel(
             refitInternalNamespace,
             context.PreserveAttributeDisplayName,
+            generatedClassName,
             generatedRequestBuilding,
             emitGeneratedCodeMarkers,
             interfaceModels);
@@ -93,12 +101,14 @@ internal static partial class Parser
     /// <summary>Builds the empty generation result returned when there is nothing to generate.</summary>
     /// <param name="diagnostics">The diagnostics collected so far.</param>
     /// <param name="refitInternalNamespace">The resolved internal generated namespace.</param>
+    /// <param name="generatedClassName">The assembly-scoped name of the generated implementation container type.</param>
     /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
     /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <returns>The diagnostics paired with an empty context model.</returns>
     internal static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec) CreateEmptyResult(
         List<Diagnostic> diagnostics,
         string refitInternalNamespace,
+        string generatedClassName,
         bool generatedRequestBuilding,
         bool emitGeneratedCodeMarkers) =>
         (
@@ -106,6 +116,7 @@ internal static partial class Parser
             new(
                 refitInternalNamespace,
                 string.Empty,
+                generatedClassName,
                 generatedRequestBuilding,
                 emitGeneratedCodeMarkers,
                 ImmutableEquatableArrayFactory.Empty<InterfaceModel>())
@@ -152,12 +163,17 @@ internal static partial class Parser
         // every generator pass, which mutated the compilation and forced an extra bind.
         var preserveAttributeDisplayName = $"global::{refitInternalNamespace}.PreserveAttribute";
 
+        // The generated implementation container folds in the assembly name so each assembly emits a distinctly named
+        // container; UniqueName reconstructs the identical name at runtime for reflection-based resolution.
+        var generatedClassName = BuildGeneratedContainerName(compilation.AssemblyName);
+
         var returnTypeAdapterInterface = ResolveReturnTypeAdapterInterface(compilation);
         var returnTypeAdapters = DiscoverReturnTypeAdapters(compilation, returnTypeAdapterInterface, cancellationToken);
 
         return new InterfaceGenerationContext(
             diagnostics,
             preserveAttributeDisplayName,
+            generatedClassName,
             disposableInterfaceSymbol,
             httpMethodBaseAttributeSymbol,
             formattableSymbol,
@@ -174,79 +190,6 @@ internal static partial class Parser
             [],
             new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default),
             new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default));
-    }
-
-    /// <summary>Builds the internal generated namespace from a consumer-provided namespace prefix.</summary>
-    /// <param name="refitInternalNamespace">The optional user or MSBuild-supplied namespace prefix.</param>
-    /// <returns>A valid C# namespace for generated Refit internals.</returns>
-    internal static string BuildRefitInternalNamespace(string? refitInternalNamespace)
-    {
-        var rawNamespace = string.IsNullOrWhiteSpace(refitInternalNamespace)
-            ? RefitInternalGeneratedSuffix
-            : refitInternalNamespace + RefitInternalGeneratedSuffix;
-        var parts = rawNamespace.Split('.');
-        var builder = new StringBuilder(rawNamespace.Length);
-
-        foreach (var part in parts)
-        {
-            var normalized = NormalizeNamespacePart(part);
-            if (normalized.Length == 0)
-            {
-                continue;
-            }
-
-            if (builder.Length > 0)
-            {
-                _ = builder.Append('.');
-            }
-
-            _ = builder.Append(normalized);
-        }
-
-        // The raw namespace always contains the non-empty RefitInternalGeneratedSuffix segment, so at least one
-        // normalized part is appended and the builder is never empty here.
-        return builder.ToString();
-    }
-
-    /// <summary>Normalizes one namespace segment into a valid identifier.</summary>
-    /// <param name="part">The namespace segment.</param>
-    /// <returns>The normalized segment, or an empty string when the segment is blank.</returns>
-    internal static string NormalizeNamespacePart(string part)
-    {
-        if (string.IsNullOrWhiteSpace(part))
-        {
-            return string.Empty;
-        }
-
-        var builder = new StringBuilder(part.Length + 1);
-        foreach (var character in part)
-        {
-            if (builder.Length == 0)
-            {
-                if (SyntaxFacts.IsIdentifierStartCharacter(character))
-                {
-                    _ = builder.Append(character);
-                }
-                else if (SyntaxFacts.IsIdentifierPartCharacter(character))
-                {
-                    _ = builder.Append('_').Append(character);
-                }
-                else
-                {
-                    _ = builder.Append('_');
-                }
-
-                continue;
-            }
-
-            _ = builder.Append(SyntaxFacts.IsIdentifierPartCharacter(character) ? character : '_');
-        }
-
-        var normalized = builder.ToString();
-        return SyntaxFacts.GetKeywordKind(normalized) != SyntaxKind.None
-            || SyntaxFacts.GetContextualKeywordKind(normalized) != SyntaxKind.None
-            ? "_" + normalized
-            : normalized;
     }
 
     /// <summary>Collects the interfaces with Refit methods, declared or inherited, into a single map.</summary>
@@ -425,6 +368,7 @@ internal static partial class Parser
         };
         return new(
             context.PreserveAttributeDisplayName,
+            context.GeneratedClassName,
             fileName,
             names.ClassName,
             names.Namespace,

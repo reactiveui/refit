@@ -5,6 +5,7 @@ namespace Refit.Generator;
 
 /// <summary>Describes a Refit interface and the data needed to generate its implementation.</summary>
 /// <param name="PreserveAttributeDisplayName">The display name of the Preserve attribute.</param>
+/// <param name="GeneratedClassName">The assembly-scoped name of the generated implementation container type.</param>
 /// <param name="FileName">The generated file name.</param>
 /// <param name="ClassName">The generated class name.</param>
 /// <param name="Ns">The namespace of the interface.</param>
@@ -28,6 +29,7 @@ namespace Refit.Generator;
 /// <param name="ExternAliases">The extern aliases the interface's types require, emitted as <c>extern alias</c> directives.</param>
 internal sealed record InterfaceModel(
     string PreserveAttributeDisplayName,
+    string GeneratedClassName,
     string FileName,
     string ClassName,
     string Ns,
