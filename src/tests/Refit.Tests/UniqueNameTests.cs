@@ -100,12 +100,12 @@ public class UniqueNameTests
         await Assert.That(UniqueName.SanitizeAssemblyName(string.Empty)).IsEqualTo(string.Empty);
     }
 
-    /// <summary>Verifies a lowercase assembly name is folded in Pascal-cased.</summary>
+    /// <summary>Verifies a lowercase assembly name is folded in with its case preserved (no forced Pascal-casing).</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task LowercaseAssemblyNameIsPascalCased()
+    public async Task LowercaseAssemblyNameIsPreserved()
     {
-        await Assert.That(UniqueName.SanitizeAssemblyName("myapp")).IsEqualTo("Myapp");
+        await Assert.That(UniqueName.SanitizeAssemblyName("myapp")).IsEqualTo("myapp");
     }
 
     /// <summary>Verifies characters that cannot appear in an identifier, such as dots and dashes, become underscores.</summary>
@@ -116,7 +116,7 @@ public class UniqueNameTests
         await Assert.That(UniqueName.SanitizeAssemblyName("Refit.Tests-1")).IsEqualTo("Refit_Tests_1");
     }
 
-    /// <summary>Verifies a leading digit is preserved (it cannot be upper-cased) since the container base prefixes it.</summary>
+    /// <summary>Verifies a leading digit is preserved; the container base name prefixes it, so the result stays valid.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task LeadingDigitAssemblyNameIsPreserved()

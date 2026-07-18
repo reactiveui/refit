@@ -310,7 +310,7 @@ public static class Fixture
     /// <param name="source">The syntax trees to compile.</param>
     /// <returns>The created compilation.</returns>
     public static CSharpCompilation CreateLibrary(params SyntaxTree[] source) =>
-        CreateNamedLibrary("compilation", source);
+        CreateNamedLibrary(nameof(Compilation), source);
 
     /// <summary>Creates a named compilation from the given syntax trees with the required references.</summary>
     /// <param name="assemblyName">The assembly name for the compilation, so distinct libraries get distinct identities;

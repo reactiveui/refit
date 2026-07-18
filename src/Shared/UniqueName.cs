@@ -96,7 +96,7 @@ public static class UniqueName
         return $"{refitTypeName}, {refitInterfaceType.Assembly.FullName}";
     }
 
-    /// <summary>Reduces an assembly name to a Pascal-cased identifier fragment folded into the generated container name.</summary>
+    /// <summary>Reduces an assembly name to an identifier fragment folded into the generated container name.</summary>
     /// <param name="assemblyName">The simple assembly name, or <see langword="null"/> when unavailable.</param>
     /// <returns>The fragment, or an empty string when the assembly name is null or empty. This must stay identical to
     /// the source generator's sanitization so the reconstructed container name matches the emitted one byte-for-byte.</returns>
@@ -108,15 +108,13 @@ public static class UniqueName
         }
 
         // Assembly names routinely contain dots and dashes, which are illegal inside an identifier, so every character
-        // that cannot appear in one is folded to an underscore and the first character is upper-cased to keep the
-        // container a well-formed Pascal-cased type name.
+        // that cannot appear in one is folded to an underscore.
         var builder = new ValueStringBuilder(stackalloc char[AssemblyNameStackBufferLength]);
         foreach (var character in assemblyName!)
         {
             builder.Append(char.IsLetterOrDigit(character) ? character : '_');
         }
 
-        builder[0] = char.ToUpperInvariant(builder[0]);
         return builder.ToString();
     }
 

@@ -61,7 +61,7 @@ internal static partial class Parser
     private static string BuildGeneratedContainerName(string? assemblyName) =>
         GeneratedContainerBaseName + SanitizeAssemblyScope(assemblyName);
 
-    /// <summary>Reduces an assembly name to a Pascal-cased identifier fragment folded into generated names.</summary>
+    /// <summary>Reduces an assembly name to an identifier fragment folded into generated names.</summary>
     /// <param name="assemblyName">The compilation assembly name, or <see langword="null"/> when unavailable.</param>
     /// <returns>The fragment, or an empty string when the assembly name is null or blank. This must stay identical to
     /// the runtime <c>UniqueName.SanitizeAssemblyName</c> so the reflection lookup reconstructs the same container.</returns>
@@ -78,7 +78,6 @@ internal static partial class Parser
             _ = builder.Append(char.IsLetterOrDigit(character) ? character : '_');
         }
 
-        builder[0] = char.ToUpperInvariant(builder[0]);
         return builder.ToString();
     }
 
