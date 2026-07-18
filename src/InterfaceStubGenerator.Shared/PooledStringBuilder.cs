@@ -166,14 +166,9 @@ internal sealed class PooledStringBuilder
     }
 
     /// <summary>Returns a buffer to the thread-local free list, dropping it when the list is full.</summary>
-    /// <param name="buffer">The buffer to return; an empty buffer is ignored.</param>
+    /// <param name="buffer">The rented buffer to return.</param>
     private static void ReturnBuffer(char[] buffer)
     {
-        if (buffer.Length == 0)
-        {
-            return;
-        }
-
         var pool = _pool ??= new char[MaxPooledPerThread][];
         if (_pooledCount >= MaxPooledPerThread)
         {
