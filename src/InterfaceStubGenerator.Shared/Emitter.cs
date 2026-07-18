@@ -91,58 +91,71 @@ internal static partial class Emitter
         uniqueNames.Reserve(model.MemberNames);
         var requestBuilderFieldName = uniqueNames.New("_requestBuilder");
         var settingsFieldName = uniqueNames.New("_settings");
-        var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
-        var generatedCodeAttribute = GeneratedCodeAttribute;
-        var settingsConstructorSource = BuildSettingsConstructor(model, settingsFieldName);
-        var requestBuilderFieldType = model.SupportsNullable
-            ? "global::Refit.IRequestBuilder?"
-            : "global::Refit.IRequestBuilder";
 
         // Assemble the interface source in one pooled buffer: the fixed wrapper (header, type declaration, fields, and
         // constructors up to the settings constructor), then the member blocks appended straight in, then the closing
-        // braces. The member-block string never materializes before the interface source is assembled.
-        var prefix = $$"""
-            {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}{{BuildExternAliasDirectives(model.ExternAliases)}}
-            namespace Refit.Implementation
-            {
-                /// <summary>Contains generated Refit implementation types.</summary>
-                internal partial class Generated
-                {
-                    /// <summary>Generated Refit implementation for {{ToXmlDocumentationText(model.InterfaceDisplayName)}}.</summary>
-            {{typeParameterDocs}}        {{generatedCodeAttribute}}
-                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                    [global::System.Diagnostics.DebuggerNonUserCode]
-                    [{{model.PreserveAttributeDisplayName}}]
-                    [global::System.Reflection.Obfuscation(Exclude=true)]
-                    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                    private sealed class {{model.Ns}}{{model.ClassDeclaration}}
-                        : {{model.InterfaceDisplayName}}
-            {{BuildConstraints(model.Constraints, false, ClassMemberIndentation)}}        {
-                        /// <summary>The request builder used to create Refit method delegates.</summary>
-                        private readonly {{requestBuilderFieldType}} {{requestBuilderFieldName}};
-
-                        /// <summary>The settings used by this generated Refit implementation.</summary>
-                        private readonly global::Refit.RefitSettings {{settingsFieldName}};
-
-                        /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
-                        public global::System.Net.Http.HttpClient Client { get; }
-
-                        /// <summary>Initializes a new instance of the {{model.Ns}}{{model.ClassSuffix}} class.</summary>
-                        /// <param name="client">The HTTP client used by the generated implementation.</param>
-                        /// <param name="requestBuilder">The request builder used to create Refit method delegates.</param>
-                        public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
-                        {
-                            Client = client;
-                            {{requestBuilderFieldName}} = requestBuilder;
-                            {{settingsFieldName}} = requestBuilder.Settings;
-                        }
-            {{settingsConstructorSource}}
-            """;
+        // braces. Neither the wrapper nor the member blocks materialize as their own string before the source is built.
         var builder = new PooledStringBuilder();
-        _ = builder.Append(prefix);
+        AppendInterfacePrefix(builder, model, requestBuilderFieldName, settingsFieldName);
         AppendInterfaceMemberSource(builder, model, uniqueNames, requestBuilderFieldName, settingsFieldName);
         _ = builder.Append(InterfaceSourceClosingBraces);
         return ToSourceText(builder.ToString());
+    }
+
+    /// <summary>Appends the fixed class wrapper up to the settings constructor straight into the interface buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface source.</param>
+    /// <param name="model">The interface model being emitted.</param>
+    /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
+    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    internal static void AppendInterfacePrefix(
+        PooledStringBuilder builder,
+        InterfaceModel model,
+        string requestBuilderFieldName,
+        string settingsFieldName)
+    {
+        var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
+        var requestBuilderFieldType = model.SupportsNullable
+            ? "global::Refit.IRequestBuilder?"
+            : "global::Refit.IRequestBuilder";
+        var settingsConstructorSource = BuildSettingsConstructor(model, settingsFieldName);
+
+        _ = builder
+            .Append(BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers))
+            .Append(BuildExternAliasDirectives(model.ExternAliases)).Append("\n")
+            .Append("namespace Refit.Implementation\n")
+            .Append("{\n")
+            .Append("    /// <summary>Contains generated Refit implementation types.</summary>\n")
+            .Append("    internal partial class Generated\n")
+            .Append("    {\n")
+            .Append("        /// <summary>Generated Refit implementation for ").Append(ToXmlDocumentationText(model.InterfaceDisplayName)).Append(".</summary>\n")
+            .Append(typeParameterDocs).Append("        ").Append(GeneratedCodeAttribute).Append("\n")
+            .Append("        [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]\n")
+            .Append("        [global::System.Diagnostics.DebuggerNonUserCode]\n")
+            .Append("        [").Append(model.PreserveAttributeDisplayName).Append("]\n")
+            .Append("        [global::System.Reflection.Obfuscation(Exclude=true)]\n")
+            .Append("        [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]\n")
+            .Append("        private sealed class ").Append(model.Ns).Append(model.ClassDeclaration).Append("\n")
+            .Append("            : ").Append(model.InterfaceDisplayName).Append("\n")
+            .Append(BuildConstraints(model.Constraints, false, ClassMemberIndentation)).Append("        {\n")
+            .Append("            /// <summary>The request builder used to create Refit method delegates.</summary>\n")
+            .Append("            private readonly ").Append(requestBuilderFieldType).Append(" ").Append(requestBuilderFieldName).Append(";\n")
+            .Append("\n")
+            .Append("            /// <summary>The settings used by this generated Refit implementation.</summary>\n")
+            .Append("            private readonly global::Refit.RefitSettings ").Append(settingsFieldName).Append(";\n")
+            .Append("\n")
+            .Append("            /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>\n")
+            .Append("            public global::System.Net.Http.HttpClient Client { get; }\n")
+            .Append("\n")
+            .Append("            /// <summary>Initializes a new instance of the ").Append(model.Ns).Append(model.ClassSuffix).Append(" class.</summary>\n")
+            .Append("            /// <param name=\"client\">The HTTP client used by the generated implementation.</param>\n")
+            .Append("            /// <param name=\"requestBuilder\">The request builder used to create Refit method delegates.</param>\n")
+            .Append("            public ").Append(model.Ns).Append(model.ClassSuffix).Append("(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)\n")
+            .Append("            {\n")
+            .Append("                Client = client;\n")
+            .Append("                ").Append(requestBuilderFieldName).Append(" = requestBuilder;\n")
+            .Append("                ").Append(settingsFieldName).Append(" = requestBuilder.Settings;\n")
+            .Append("            }\n")
+            .Append(settingsConstructorSource);
     }
 
     /// <summary>Appends the generated property, method, and dispose member blocks for an interface into the buffer.</summary>
