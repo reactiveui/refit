@@ -44,6 +44,9 @@ internal static partial class Emitter
     /// <c>Generated</c> partial class, and the <c>Refit.Implementation</c> namespace.</summary>
     private const string InterfaceSourceClosingBraces = "        }\n    }\n}\n";
 
+    /// <summary>The fully qualified prefix of a generated implementation type, before its namespace mangling and suffix.</summary>
+    private const string GeneratedTypePrefix = "global::Refit.Implementation.Generated.";
+
     /// <summary>The number of spaces in one generated indentation level.</summary>
     private const int CharsPerIndentation = 4;
 
@@ -339,23 +342,19 @@ internal static partial class Emitter
                 continue;
             }
 
-            var generatedType = $"global::Refit.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}";
-
             // The static modifier on a lambda is C# 9; older consumers must not see it.
             var lambdaModifier = interfaceModel.SupportsStaticLambdas ? "static " : string.Empty;
-            _ = builder.Append($$"""
-                                    global::Refit.RestService.RegisterGeneratedFactory<{{interfaceModel.InterfaceDisplayName}}>(
-                                        {{lambdaModifier}}(client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
-
-                        """);
+            _ = builder
+                .Append("            global::Refit.RestService.RegisterGeneratedFactory<").Append(interfaceModel.InterfaceDisplayName).Append(">(\n")
+                .Append("                ").Append(lambdaModifier).Append("(client, requestBuilder) => new ").Append(GeneratedTypePrefix)
+                .Append(interfaceModel.Ns).Append(interfaceModel.ClassSuffix).Append("(client, requestBuilder));\n");
 
             if (CanUseGeneratedSettingsFactory(interfaceModel))
             {
-                _ = builder.Append($$"""
-                                        global::Refit.RestService.RegisterGeneratedSettingsFactory<{{interfaceModel.InterfaceDisplayName}}>(
-                                            {{lambdaModifier}}(client, settings) => new {{generatedType}}(client, settings));
-
-                            """);
+                _ = builder
+                    .Append("            global::Refit.RestService.RegisterGeneratedSettingsFactory<").Append(interfaceModel.InterfaceDisplayName).Append(">(\n")
+                    .Append("                ").Append(lambdaModifier).Append("(client, settings) => new ").Append(GeneratedTypePrefix)
+                    .Append(interfaceModel.Ns).Append(interfaceModel.ClassSuffix).Append("(client, settings));\n");
             }
         }
 
