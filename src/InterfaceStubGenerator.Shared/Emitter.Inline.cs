@@ -28,6 +28,12 @@ internal static partial class Emitter
     /// <summary>The cast prefix for an explicit collection format value.</summary>
     private const string CollectionFormatCast = "(global::Refit.CollectionFormat)";
 
+    /// <summary>The opening of a generated <c>GeneratedRequestRunner.SetHeader</c> call.</summary>
+    private const string RunnerSetHeader = "global::Refit.GeneratedRequestRunner.SetHeader(";
+
+    /// <summary>The settings member read for the header validation flag, plus the call terminator that follows it.</summary>
+    private const string ValidateHeadersMember = ".ValidateHeaders";
+
     /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
@@ -498,17 +504,17 @@ internal static partial class Emitter
     /// <returns>The generated header statements.</returns>
     internal static string BuildInlineHeaders(RequestModel request, string requestLocal, string settingsLocal)
     {
-        var parts = new string[request.StaticHeaders.Count + request.Parameters.Count];
-        var count = 0;
+        // Append directly into a pooled buffer allocated only once a header is actually emitted; the previous
+        // string[] + interpolated-fragment + ConcatParts shape allocated the array (and a validate-flag string) even
+        // for the common header-less method. The emitted text is identical.
         var bodyIndent = Indent(MethodBodyIndentation);
-        var validateHeaders = $"{settingsLocal}.ValidateHeaders";
+        PooledStringBuilder? sb = null;
         foreach (var header in request.StaticHeaders)
         {
-            var headerName = ToCSharpStringLiteral(header.Name);
-            var headerValue = ToNullableCSharpStringLiteral(header.Value);
-            parts[count] =
-                $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {headerName}, {headerValue}, {validateHeaders});\n";
-            count++;
+            sb ??= new PooledStringBuilder();
+            var name = ToCSharpStringLiteral(header.Name);
+            var value = ToNullableCSharpStringLiteral(header.Value);
+            AppendSetHeader(sb, bodyIndent, requestLocal, name, value, settingsLocal);
         }
 
         foreach (var parameter in request.Parameters)
@@ -519,19 +525,20 @@ internal static partial class Emitter
                     {
                         // An [Authorize] parameter carries a "{scheme} " prefix; a plain [Header] has none.
                         var headerValueExpression = parameter.HeaderValuePrefix is { } valuePrefix
-                            ? $"{ToCSharpStringLiteral(valuePrefix)} + {BuildHeaderValueExpression(parameter)}"
+                            ? ToCSharpStringLiteral(valuePrefix) + " + " + BuildHeaderValueExpression(parameter)
                             : BuildHeaderValueExpression(parameter);
-                        parts[count] =
-                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(parameter.HeaderName)}, {headerValueExpression}, {validateHeaders});\n";
-                        count++;
-                        continue;
+                        sb ??= new PooledStringBuilder();
+                        var headerName = ToCSharpStringLiteral(parameter.HeaderName);
+                        AppendSetHeader(sb, bodyIndent, requestLocal, headerName, headerValueExpression, settingsLocal);
+                        break;
                     }
 
                 case RequestParameterKind.HeaderCollection:
                     {
-                        parts[count] =
-                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddHeaderCollection({requestLocal}, @{parameter.Name}, {validateHeaders});\n";
-                        count++;
+                        sb ??= new PooledStringBuilder();
+                        _ = sb.Append(bodyIndent).Append("global::Refit.GeneratedRequestRunner.AddHeaderCollection(")
+                            .Append(requestLocal).Append(ArgumentSeparator).Append("@").Append(parameter.Name)
+                            .Append(ArgumentSeparator).Append(settingsLocal).Append(ValidateHeadersMember).Append(");\n");
                         break;
                     }
 
@@ -544,8 +551,26 @@ internal static partial class Emitter
             }
         }
 
-        return count == 0 ? string.Empty : ConcatParts(parts, count);
+        return sb?.ToString() ?? string.Empty;
     }
+
+    /// <summary>Appends one <c>SetHeader</c> statement directly into the header buffer.</summary>
+    /// <param name="sb">The pooled statement buffer.</param>
+    /// <param name="bodyIndent">The method-body indentation.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="nameExpression">The header-name expression.</param>
+    /// <param name="valueExpression">The header-value expression.</param>
+    /// <param name="settingsLocal">The generated settings local name, read for the header validation flag.</param>
+    internal static void AppendSetHeader(
+        PooledStringBuilder sb,
+        string bodyIndent,
+        string requestLocal,
+        string nameExpression,
+        string valueExpression,
+        string settingsLocal) =>
+        sb.Append(bodyIndent).Append(RunnerSetHeader).Append(requestLocal).Append(ArgumentSeparator)
+            .Append(nameExpression).Append(ArgumentSeparator).Append(valueExpression).Append(ArgumentSeparator)
+            .Append(settingsLocal).Append(ValidateHeadersMember).Append(");\n");
 
     /// <summary>Builds a header value expression without null-conditionals on non-nullable value types.</summary>
     /// <param name="parameter">The header parameter to format.</param>
