@@ -102,7 +102,7 @@ internal static partial class Emitter
             namespace Refit.Implementation
             {
                 /// <summary>Contains generated Refit implementation types.</summary>
-                internal partial class Generated
+                internal partial class {{model.GeneratedClassName}}
                 {
                     /// <summary>Generated Refit implementation for {{ToXmlDocumentationText(model.InterfaceDisplayName)}}.</summary>
             {{typeParameterDocs}}        {{generatedCodeAttribute}}
@@ -341,13 +341,14 @@ internal static partial class Emitter
                 continue;
             }
 
-            var generatedType = $"global::Refit.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}";
+            var generatedType = $"global::Refit.Implementation.{interfaceModel.GeneratedClassName}.{interfaceModel.Ns}{interfaceModel.ClassSuffix}";
 
             // The static modifier on a lambda is C# 9; older consumers must not see it.
             var lambdaModifier = interfaceModel.SupportsStaticLambdas ? "static " : string.Empty;
             registrations[count] = $$"""
                                     global::Refit.RestService.RegisterGeneratedFactory<{{interfaceModel.InterfaceDisplayName}}>(
-                                        {{lambdaModifier}}(client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
+                                        {{lambdaModifier}}(client, requestBuilder) =>
+                                            new {{generatedType}}(client, requestBuilder));
 
                         """;
             count++;
@@ -356,7 +357,8 @@ internal static partial class Emitter
             {
                 registrations[count] = $$"""
                                         global::Refit.RestService.RegisterGeneratedSettingsFactory<{{interfaceModel.InterfaceDisplayName}}>(
-                                            {{lambdaModifier}}(client, settings) => new {{generatedType}}(client, settings));
+                                            {{lambdaModifier}}(client, settings) =>
+                                                new {{generatedType}}(client, settings));
 
                             """;
                 count++;

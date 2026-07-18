@@ -90,4 +90,37 @@ public class UniqueNameTests
 
         await Assert.That(name).Contains(nameof(IGlobalNamespaceRefitApi));
     }
+
+    /// <summary>Verifies a null or empty assembly name yields no scope, keeping the historical container name.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task MissingAssemblyNameProducesNoScope()
+    {
+        await Assert.That(UniqueName.SanitizeAssemblyName(null)).IsEqualTo(string.Empty);
+        await Assert.That(UniqueName.SanitizeAssemblyName(string.Empty)).IsEqualTo(string.Empty);
+    }
+
+    /// <summary>Verifies a lowercase assembly name is folded in Pascal-cased.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task LowercaseAssemblyNameIsPascalCased()
+    {
+        await Assert.That(UniqueName.SanitizeAssemblyName("myapp")).IsEqualTo("Myapp");
+    }
+
+    /// <summary>Verifies characters that cannot appear in an identifier, such as dots and dashes, become underscores.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task NonIdentifierCharactersBecomeUnderscores()
+    {
+        await Assert.That(UniqueName.SanitizeAssemblyName("Refit.Tests-1")).IsEqualTo("Refit_Tests_1");
+    }
+
+    /// <summary>Verifies a leading digit is preserved (it cannot be upper-cased) since the container base prefixes it.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task LeadingDigitAssemblyNameIsPreserved()
+    {
+        await Assert.That(UniqueName.SanitizeAssemblyName("7zip")).IsEqualTo("7zip");
+    }
 }

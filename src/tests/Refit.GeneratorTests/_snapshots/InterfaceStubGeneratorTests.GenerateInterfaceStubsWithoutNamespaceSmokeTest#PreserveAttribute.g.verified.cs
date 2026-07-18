@@ -4,7 +4,7 @@
 #nullable enable annotations
 #nullable disable warnings
 
-namespace RefitInternalGenerated
+namespace RefitInternalGenerated.Compilation
 {
     /// <summary>Identifies generated members that should be preserved by tools that honor this attribute.</summary>
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
