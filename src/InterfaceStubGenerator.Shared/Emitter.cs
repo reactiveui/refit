@@ -43,6 +43,10 @@ internal static partial class Emitter
     /// <summary>The generated prefix for type expressions.</summary>
     private const string TypeOfPrefix = "typeof(";
 
+    /// <summary>The closing braces that terminate a generated interface source: the implementation class, the
+    /// <c>Generated</c> partial class, and the <c>Refit.Implementation</c> namespace.</summary>
+    private const string InterfaceSourceClosingBraces = "        }\n    }\n}\n";
+
     /// <summary>The number of spaces in one generated indentation level.</summary>
     private const int CharsPerIndentation = 4;
 
@@ -90,14 +94,17 @@ internal static partial class Emitter
         uniqueNames.Reserve(model.MemberNames);
         var requestBuilderFieldName = uniqueNames.New("_requestBuilder");
         var settingsFieldName = uniqueNames.New("_settings");
-        var memberSource = BuildInterfaceMemberSource(model, uniqueNames, requestBuilderFieldName, settingsFieldName);
         var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
         var generatedCodeAttribute = GeneratedCodeAttribute;
         var settingsConstructorSource = BuildSettingsConstructor(model, settingsFieldName);
         var requestBuilderFieldType = model.SupportsNullable
             ? "global::Refit.IRequestBuilder?"
             : "global::Refit.IRequestBuilder";
-        var source = $$"""
+
+        // Assemble the interface source in one pooled buffer: the fixed wrapper (header, type declaration, fields, and
+        // constructors up to the settings constructor), then the member blocks appended straight in, then the closing
+        // braces. The member-block string never materializes before the interface source is assembled.
+        var prefix = $$"""
             {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}{{BuildExternAliasDirectives(model.ExternAliases)}}
             namespace Refit.Implementation
             {
@@ -132,21 +139,23 @@ internal static partial class Emitter
                             {{requestBuilderFieldName}} = requestBuilder;
                             {{settingsFieldName}} = requestBuilder.Settings;
                         }
-            {{settingsConstructorSource}}{{memberSource}}        }
-                }
-            }
-
+            {{settingsConstructorSource}}
             """;
-        return ToSourceText(source);
+        var builder = new PooledStringBuilder();
+        _ = builder.Append(prefix);
+        AppendInterfaceMemberSource(builder, model, uniqueNames, requestBuilderFieldName, settingsFieldName);
+        _ = builder.Append(InterfaceSourceClosingBraces);
+        return ToSourceText(builder.ToString());
     }
 
-    /// <summary>Concatenates the generated property, method, and dispose member blocks for an interface.</summary>
+    /// <summary>Appends the generated property, method, and dispose member blocks for an interface into the buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface source.</param>
     /// <param name="model">The interface model being emitted.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
-    /// <returns>The concatenated member source.</returns>
-    internal static string BuildInterfaceMemberSource(
+    internal static void AppendInterfaceMemberSource(
+        PooledStringBuilder builder,
         InterfaceModel model,
         UniqueNameBuilder uniqueNames,
         string requestBuilderFieldName,
@@ -156,14 +165,12 @@ internal static partial class Emitter
         var fieldNames = new GeneratedFieldNames(requestBuilderFieldName, settingsFieldName);
 
         // Append the five member blocks (properties, top-level and derived Refit methods, non-Refit stubs, and dispose)
-        // straight into one pooled buffer so none of the block strings materialize before the interface source is built.
-        var builder = new PooledStringBuilder();
+        // straight into the interface buffer so none of the block strings materialize before the source is built.
         AppendInterfaceProperties(builder, model.Properties, model.SupportsNullable);
         AppendRefitMethods(builder, model.RefitMethods, true, model, uniqueNames, fieldNames, enumFormatterScope);
         AppendRefitMethods(builder, model.DerivedRefitMethods, false, model, uniqueNames, fieldNames, enumFormatterScope);
         AppendNonRefitMethods(builder, model.NonRefitMethods, model.SupportsNullable);
         AppendDisposableMethod(builder, model.DisposeMethod);
-        return builder.ToString();
     }
 
     /// <summary>Creates source text from generated source.</summary>
