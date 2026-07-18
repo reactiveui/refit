@@ -4,7 +4,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Text;
 
 namespace Refit;
 
@@ -288,7 +287,7 @@ public static partial class GeneratedRequestRunner
             return StringHelpers.EscapeDataString(FormatUrlParameter(settings, null, attributeProvider, type) ?? string.Empty);
         }
 
-        var sb = new StringBuilder(value.Length);
+        var sb = new ValueStringBuilder(stackalloc char[256]);
         var sectionStart = 0;
         for (var i = 0; i <= value.Length; i++)
         {
@@ -299,11 +298,11 @@ public static partial class GeneratedRequestRunner
 
             if (sectionStart > 0)
             {
-                _ = sb.Append('/');
+                sb.Append('/');
             }
 
             var section = value.Substring(sectionStart, i - sectionStart);
-            _ = sb.Append(StringHelpers.EscapeDataString(FormatUrlParameter(settings, section, attributeProvider, type) ?? string.Empty));
+            sb.Append(StringHelpers.EscapeDataString(FormatUrlParameter(settings, section, attributeProvider, type) ?? string.Empty));
             sectionStart = i + 1;
         }
 
