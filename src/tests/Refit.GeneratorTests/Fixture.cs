@@ -309,7 +309,15 @@ public static class Fixture
     /// <summary>Creates a compilation from the given syntax trees with the required references.</summary>
     /// <param name="source">The syntax trees to compile.</param>
     /// <returns>The created compilation.</returns>
-    public static CSharpCompilation CreateLibrary(params SyntaxTree[] source)
+    public static CSharpCompilation CreateLibrary(params SyntaxTree[] source) =>
+        CreateNamedLibrary(nameof(Compilation), source);
+
+    /// <summary>Creates a named compilation from the given syntax trees with the required references.</summary>
+    /// <param name="assemblyName">The assembly name for the compilation, so distinct libraries get distinct identities;
+    /// <see langword="null"/> produces an unnamed compilation.</param>
+    /// <param name="source">The syntax trees to compile.</param>
+    /// <returns>The created compilation.</returns>
+    public static CSharpCompilation CreateNamedLibrary(string? assemblyName, params SyntaxTree[] source)
     {
         var referencePaths = new HashSet<string>(StringComparer.Ordinal);
         AddTrustedPlatformAssemblies(referencePaths);
@@ -330,7 +338,7 @@ public static class Fixture
 
         references.Add(_refitAssembly);
         return CSharpCompilation.Create(
-            "compilation",
+            assemblyName,
             source,
             references,
             new(OutputKind.DynamicallyLinkedLibrary));

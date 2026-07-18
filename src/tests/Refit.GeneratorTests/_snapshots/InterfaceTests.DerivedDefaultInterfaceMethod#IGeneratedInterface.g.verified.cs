@@ -7,12 +7,12 @@
 namespace Refit.Implementation
 {
     /// <summary>Contains generated Refit implementation types.</summary>
-    internal partial class Generated
+    internal partial class GeneratedCompilation
     {
         /// <summary>Generated Refit implementation for global::RefitGeneratorTest.IGeneratedInterface.</summary>
         [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         [global::System.Diagnostics.DebuggerNonUserCode]
-        [global::RefitInternalGenerated.PreserveAttribute]
+        [global::RefitInternalGenerated.Compilation.PreserveAttribute]
         [global::System.Reflection.Obfuscation(Exclude=true)]
         [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
         private sealed class RefitGeneratorTestIGeneratedInterface
