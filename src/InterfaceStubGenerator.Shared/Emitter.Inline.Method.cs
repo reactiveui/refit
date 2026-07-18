@@ -77,21 +77,65 @@ internal static partial class Emitter
     /// <summary>Appends a standard inline generated Refit method: prefix, request construction, and return statement.</summary>
     /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="interfaceModel">The interface model being emitted.</param>
+    /// <param name="isExplicit">Whether the method is emitted as an explicit interface implementation.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
-    /// <param name="fragments">The computed request-construction fragments.</param>
+    /// <remarks>Fragments are computed in the same order the observable-path fragment builder uses so the sequence of
+    /// unique member/local name allocations (and therefore the generated names) stays byte-for-byte identical. Building a
+    /// query- or converter-bound fragment appends helper member declarations into <c>plan.ParamInfoBuilder</c>, so every
+    /// fragment is computed before that buffer is drained into <paramref name="builder"/>. The request prologue is the
+    /// one block accumulated into a scratch buffer and buffer-copied in below rather than materialized as a string.</remarks>
     internal static void AppendInlineStandardRefitMethod(
         PooledStringBuilder builder,
         MethodModel methodModel,
+        InterfaceModel interfaceModel,
+        bool isExplicit,
         string settingsFieldName,
-        in InlineMethodPlan plan,
-        in InlineMethodFragments fragments)
+        UniqueNameBuilder uniqueNames,
+        in InlineMethodPlan plan)
     {
         var request = methodModel.Request;
         var settingsLocal = plan.SettingsLocal;
         var requestLocal = plan.RequestLocal;
         var bodyIndent = Indent(MethodBodyIndentation);
         var methodIndent = Indent(MethodMemberIndentation);
+
+        var prologue = new PooledStringBuilder();
+        var requestPathExpression = AppendInlineRequestPrologue(prologue, request, plan, bodyIndent);
+        var (httpMethodFieldSource, httpMethodExpression) = BuildHttpMethodField(request, uniqueNames);
+
+        // A [Url] method dispatches to an absolute URI (the validated [Url] value with any query appended), bypassing
+        // the base-address merge; every other method builds a relative URI merged onto the base address.
+        var requestUriExpression = HasUrlParameter(request)
+            ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
+            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal);
+        var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
+            plan.BodyParameter,
+            uniqueNames,
+            interfaceModel.SupportsNullable,
+            interfaceModel.SupportsStaticLambdas);
+
+        // A multipart method builds a MultipartFormDataContent from its parts; every other method has at most one body
+        // parameter (a multipart method never carries one), so the two paths never both apply.
+        var contentSource = plan.BodyParameter is null
+            ? string.Empty
+            : BuildInlineContent(plan.BodyParameter, requestLocal, settingsLocal, formFieldsFieldName, interfaceModel.SupportsNullable, plan.Emission, plan.Locals);
+        if (request.IsMultipart)
+        {
+            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, plan.Locals);
+        }
+
+        var headerSource = BuildInlineHeaders(request, requestLocal, settingsLocal);
+        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, methodModel, requestLocal, settingsLocal);
+
+        // A method that declares a positive [Timeout] stashes it on the request so the send helpers apply it; every
+        // other method emits nothing here and pays no per-call timeout cost.
+        var timeoutSource = request.TimeoutMilliseconds > 0
+            ? $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetRequestTimeout({requestLocal}, {request.TimeoutMilliseconds});\n"
+            : string.Empty;
+        var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
 
         // A Task<HttpRequestMessage> method hands the fully built request back to the caller without dispatching it. The
         // caller owns the returned request and its content, so it is neither sent nor disposed here; every other shape
@@ -105,18 +149,18 @@ internal static partial class Emitter
         // the return statement and closing brace. Appended fragment-by-fragment so no intermediate block string forms.
         _ = builder
             .Append(plan.ParamInfoBuilder)
-            .Append(fragments.FormFieldsSource)
-            .Append(fragments.HttpMethodFieldSource)
-            .Append(fragments.Opening)
+            .Append(formFieldsSource)
+            .Append(httpMethodFieldSource)
+            .Append(opening)
             .Append(bodyIndent).Append("var ").Append(settingsLocal).Append(" = ").Append(settingsFieldName).Append(";\n")
-            .Append(fragments.RequestPrologueSource)
+            .Append(prologue)
             .Append(bodyIndent).Append("var ").Append(requestLocal)
-            .Append(" = new global::System.Net.Http.HttpRequestMessage(").Append(fragments.HttpMethodExpression)
-            .Append(", ").Append(fragments.RequestUriExpression).Append(");\n")
-            .Append(fragments.ContentSource)
-            .Append(fragments.HeaderSource)
-            .Append(fragments.RequestPropertySource)
-            .Append(fragments.TimeoutSource)
+            .Append(" = new global::System.Net.Http.HttpRequestMessage(").Append(httpMethodExpression)
+            .Append(", ").Append(requestUriExpression).Append(");\n")
+            .Append(contentSource)
+            .Append(headerSource)
+            .Append(requestPropertySource)
+            .Append(timeoutSource)
             .Append(returnSource)
             .Append(methodIndent).Append("}\n");
     }

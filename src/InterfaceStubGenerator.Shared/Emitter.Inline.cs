@@ -173,19 +173,18 @@ internal static partial class Emitter
         UniqueNameBuilder uniqueNames,
         in InlineMethodPlan plan)
     {
-        var fragments = BuildInlineMethodFragments(methodModel, interfaceModel, isExplicit, uniqueNames, plan);
-
         // A cold IObservable wraps the shared request construction in a per-subscription local function so a second
         // subscription rebuilds and re-sends instead of reusing a disposed request. That shape reuses both the method
-        // prefix and the construction block, so it materializes them as strings; every other shape appends its fragments
-        // straight into the buffer, so the prefix and construction strings never allocate.
+        // prefix and the construction block, so it materializes them as strings; every other shape appends its
+        // request-construction fragments straight into the interface buffer, so none of those fragment strings allocate.
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable)
         {
+            var fragments = BuildInlineMethodFragments(methodModel, interfaceModel, isExplicit, uniqueNames, plan);
             AppendInlineObservableRefitMethod(builder, methodModel, settingsFieldName, plan, fragments);
             return;
         }
 
-        AppendInlineStandardRefitMethod(builder, methodModel, settingsFieldName, plan, fragments);
+        AppendInlineStandardRefitMethod(builder, methodModel, interfaceModel, isExplicit, settingsFieldName, uniqueNames, plan);
     }
 
     /// <summary>Emits the request-prologue formatting locals and resolves the request-path expression to use.</summary>
@@ -200,12 +199,28 @@ internal static partial class Emitter
         string bodyIndent,
         out string requestPathExpression)
     {
+        // The cold-observable shape reuses the prologue inside a string-interpolated construction block, so it
+        // materializes it through a scratch buffer; the standard shape appends straight into the interface buffer.
+        var prologue = new PooledStringBuilder();
+        requestPathExpression = AppendInlineRequestPrologue(prologue, request, plan, bodyIndent);
+        return prologue.ToString();
+    }
+
+    /// <summary>Appends the request-prologue formatting locals into the interface buffer and resolves the request-path
+    /// expression to use, without materializing the prologue as an intermediate string.</summary>
+    /// <param name="prologue">The buffer accumulating the interface's generated method source.</param>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
+    /// <param name="bodyIndent">The method-body indentation.</param>
+    /// <returns>The request-path expression: the query builder's <c>Build()</c> call, or the path when no query binds.</returns>
+    internal static string AppendInlineRequestPrologue(
+        PooledStringBuilder prologue,
+        RequestModel request,
+        in InlineMethodPlan plan,
+        string bodyIndent)
+    {
         var emission = plan.Emission;
         var settingsLocal = plan.SettingsLocal;
-
-        // Accumulate the request prologue through a pooled buffer rather than reallocating the whole string on each
-        // '+=' branch below.
-        var prologue = new PooledStringBuilder();
 
         // A [Url] method dispatches to the absolute URI its [Url] parameter supplies, bypassing the base address:
         // validate the value and use it as the base the query string is appended to, instead of the (empty) template.
@@ -234,8 +249,7 @@ internal static partial class Emitter
                 .Append(settingsLocal).AppendLine(");");
         }
 
-        requestPathExpression = AppendInlineQueryPrologue(prologue, request, plan.ParameterInfoNames, emission, basePathExpression, bodyIndent);
-        return prologue.ToString();
+        return AppendInlineQueryPrologue(prologue, request, plan.ParameterInfoNames, emission, basePathExpression, bodyIndent);
     }
 
     /// <summary>Appends the query-string-builder prologue and returns the request-path expression to use.</summary>
