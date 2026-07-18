@@ -34,6 +34,9 @@ internal static partial class Emitter
     /// <summary>The settings member read for the header validation flag, plus the call terminator that follows it.</summary>
     private const string ValidateHeadersMember = ".ValidateHeaders";
 
+    /// <summary>The indented <c>this.Client</c> argument line shared by every generated send-helper return statement.</summary>
+    private const string ClientArgumentLine = "    this.Client,\n";
+
     /// <summary>Builds the body of the Refit method, appending it to the interface's method buffer.</summary>
     /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="methodModel">The method model being emitted.</param>
@@ -344,119 +347,127 @@ internal static partial class Emitter
             """;
     }
 
-    /// <summary>Builds the return statement for a <c>Task&lt;HttpRequestMessage&gt;</c> method that returns the built request.</summary>
+    /// <summary>Appends the return statement for a <c>Task&lt;HttpRequestMessage&gt;</c> method that returns the built request.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
-    /// <returns>The generated return statement handing the built request back without sending it.</returns>
-    internal static string BuildInlineRequestMessageReturn(string requestLocal)
-    {
-        var bodyIndent = Indent(MethodBodyIndentation);
-        return $$"""
-            {{bodyIndent}}return global::System.Threading.Tasks.Task.FromResult({{requestLocal}});
+    internal static void AppendInlineRequestMessageReturn(PooledStringBuilder builder, string requestLocal) =>
+        builder.Append(Indent(MethodBodyIndentation))
+            .Append("return global::System.Threading.Tasks.Task.FromResult(").Append(requestLocal).Append(");\n");
 
-            """;
-    }
-
-    /// <summary>Builds the return statement for an inline generated Refit method.</summary>
+    /// <summary>Appends the return statement for an inline generated Refit method straight into the method buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="request">The parsed request model.</param>
-    /// <param name="bufferBodyExpression">The expression indicating whether request content should be buffered.</param>
-    /// <param name="cancellationTokenExpression">The cancellation token expression.</param>
-    /// <param name="requestLocal">The generated request message local name.</param>
-    /// <param name="settingsLocal">The generated settings local name.</param>
-    /// <param name="adapterTokenLocal">The lambda parameter name for the return-type adapter's cancellation token.</param>
-    /// <returns>The generated return statement.</returns>
-    internal static string BuildInlineReturn(
+    /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
+    internal static void AppendInlineReturn(
+        PooledStringBuilder builder,
         MethodModel methodModel,
         RequestModel request,
-        string bufferBodyExpression,
-        string cancellationTokenExpression,
-        string requestLocal,
-        string settingsLocal,
-        string adapterTokenLocal)
+        in InlineMethodPlan plan)
     {
+        // A Task<HttpRequestMessage> method hands the fully built request back to the caller without dispatching it. The
+        // caller owns the returned request and its content, so it is neither sent nor disposed here.
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.RequestMessage)
+        {
+            AppendInlineRequestMessageReturn(builder, plan.RequestLocal);
+            return;
+        }
+
         var bodyIndent = Indent(MethodBodyIndentation);
         if (request.AdapterTypeExpression is { } adapterType)
         {
-            // The adapter surfaces the call synchronously and receives a deferred send. The request is built eagerly
-            // and captured, so the deferred call is single-use (a second invocation sends a disposed request).
-            return $$"""
-                {{bodyIndent}}return new {{adapterType}}().Adapt(({{adapterTokenLocal}}) => global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
-                {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    {{requestLocal}},
-                {{bodyIndent}}    {{settingsLocal}},
-                {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
-                {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
-                {{bodyIndent}}    {{bufferBodyExpression}},
-                {{bodyIndent}}    {{adapterTokenLocal}}));
-
-                """;
+            AppendInlineAdapterReturn(builder, request, adapterType, plan, bodyIndent);
+            return;
         }
 
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
         {
-            return $$"""
-                {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendVoidAsync(
-                {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    {{requestLocal}},
-                {{bodyIndent}}    {{settingsLocal}},
-                {{bodyIndent}}    {{bufferBodyExpression}},
-                {{bodyIndent}}    {{cancellationTokenExpression}});
-
-                """;
+            _ = builder
+                .Append(bodyIndent).Append("return global::Refit.GeneratedRequestRunner.SendVoidAsync(\n")
+                .Append(bodyIndent).Append(ClientArgumentLine)
+                .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).Append(",\n")
+                .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).Append(",\n")
+                .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).Append(",\n")
+                .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).Append(");\n");
+            return;
         }
 
-        return methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncEnumerable
-            ? $$"""
-                {{bodyIndent}}return global::Refit.GeneratedRequestRunner.StreamAsync<{{request.ResultType}}>(
-                {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    {{requestLocal}},
-                {{bodyIndent}}    {{settingsLocal}},
-                {{bodyIndent}}    {{cancellationTokenExpression}});
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncEnumerable)
+        {
+            _ = builder
+                .Append(bodyIndent).Append("return global::Refit.GeneratedRequestRunner.StreamAsync<").Append(request.ResultType).Append(">(\n")
+                .Append(bodyIndent).Append(ClientArgumentLine)
+                .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).Append(",\n")
+                .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).Append(",\n")
+                .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).Append(");\n");
+            return;
+        }
 
-                """
-            : BuildInlineSendAsyncReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal, bodyIndent);
+        AppendInlineSendAsyncReturn(builder, methodModel, request, plan, bodyIndent);
     }
 
-    /// <summary>Builds the awaited <c>SendAsync</c> return statement for the standard async-result inline path.</summary>
+    /// <summary>Appends the deferred-send return statement for a return-type adapter into the method buffer.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="adapterType">The adapter type expression that surfaces the call synchronously.</param>
+    /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
+    /// <param name="bodyIndent">The method-body indentation.</param>
+    /// <remarks>The adapter receives a deferred send: the request is built eagerly and captured, so the deferred call is
+    /// single-use (a second invocation would send a disposed request).</remarks>
+    internal static void AppendInlineAdapterReturn(
+        PooledStringBuilder builder,
+        RequestModel request,
+        string adapterType,
+        in InlineMethodPlan plan,
+        string bodyIndent) =>
+        builder
+            .Append(bodyIndent).Append("return new ").Append(adapterType).Append("().Adapt((").Append(plan.AdapterTokenLocal)
+            .Append(") => global::Refit.GeneratedRequestRunner.SendAsync<").Append(request.ResultType).Append(", ")
+            .Append(request.DeserializedResultType).Append(">(\n")
+            .Append(bodyIndent).Append(ClientArgumentLine)
+            .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.IsApiResponse)).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.ShouldDisposeResponse)).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(plan.AdapterTokenLocal).Append("));\n");
+
+    /// <summary>Appends the awaited <c>SendAsync</c> return statement for the standard async-result inline path.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="request">The parsed request model.</param>
-    /// <param name="bufferBodyExpression">The request-body buffering expression.</param>
-    /// <param name="cancellationTokenExpression">The cancellation token expression.</param>
-    /// <param name="requestLocal">The generated request message local name.</param>
-    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
     /// <param name="bodyIndent">The method-body indentation.</param>
-    /// <returns>The generated return statement.</returns>
-    internal static string BuildInlineSendAsyncReturn(
+    /// <remarks>A <c>ValueTask</c> result wraps the send in a <c>new ValueTask&lt;T&gt;(...)</c> and closes an extra
+    /// parenthesis; the two shapes are otherwise byte-identical, so they share one append sequence.</remarks>
+    internal static void AppendInlineSendAsyncReturn(
+        PooledStringBuilder builder,
         MethodModel methodModel,
         RequestModel request,
-        string bufferBodyExpression,
-        string cancellationTokenExpression,
-        string requestLocal,
-        string settingsLocal,
-        string bodyIndent) =>
-        methodModel.ReturnType.StartsWith("global::System.Threading.Tasks.ValueTask<", StringComparison.Ordinal)
-            ? $$"""
-                {{bodyIndent}}return new {{methodModel.ReturnType}}(global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
-                {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    {{requestLocal}},
-                {{bodyIndent}}    {{settingsLocal}},
-                {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
-                {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
-                {{bodyIndent}}    {{bufferBodyExpression}},
-                {{bodyIndent}}    {{cancellationTokenExpression}}));
+        in InlineMethodPlan plan,
+        string bodyIndent)
+    {
+        var isValueTask = methodModel.ReturnType.StartsWith("global::System.Threading.Tasks.ValueTask<", StringComparison.Ordinal);
+        _ = builder.Append(bodyIndent).Append(isValueTask ? "return new " : "return ");
+        if (isValueTask)
+        {
+            _ = builder.Append(methodModel.ReturnType).Append("(global::Refit.GeneratedRequestRunner.SendAsync<");
+        }
+        else
+        {
+            _ = builder.Append("global::Refit.GeneratedRequestRunner.SendAsync<");
+        }
 
-                """
-            : $$"""
-                {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
-                {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    {{requestLocal}},
-                {{bodyIndent}}    {{settingsLocal}},
-                {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
-                {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
-                {{bodyIndent}}    {{bufferBodyExpression}},
-                {{bodyIndent}}    {{cancellationTokenExpression}});
-
-                """;
+        _ = builder
+            .Append(request.ResultType).Append(", ").Append(request.DeserializedResultType).Append(">(\n")
+            .Append(bodyIndent).Append(ClientArgumentLine)
+            .Append(bodyIndent).Append("    ").Append(plan.RequestLocal).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(plan.SettingsLocal).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.IsApiResponse)).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(ToLowerInvariantString(request.ShouldDisposeResponse)).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(plan.BufferBodyExpression).Append(",\n")
+            .Append(bodyIndent).Append("    ").Append(plan.CancellationTokenExpression).Append(isValueTask ? "));\n" : ");\n");
+    }
 
     /// <summary>Builds static and dynamic header application for an inline generated method.</summary>
     /// <param name="request">The parsed request model.</param>

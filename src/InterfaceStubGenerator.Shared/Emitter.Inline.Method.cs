@@ -136,13 +136,6 @@ internal static partial class Emitter
             : string.Empty;
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
 
-        // A Task<HttpRequestMessage> method hands the fully built request back to the caller without dispatching it. The
-        // caller owns the returned request and its content, so it is neither sent nor disposed here; every other shape
-        // emits its normal send-and-deserialize return.
-        var returnSource = methodModel.ReturnTypeMetadata == ReturnTypeInfo.RequestMessage
-            ? BuildInlineRequestMessageReturn(requestLocal)
-            : BuildInlineReturn(methodModel, request, plan.BufferBodyExpression, plan.CancellationTokenExpression, requestLocal, settingsLocal, plan.AdapterTokenLocal);
-
         // The method prefix (fields, opening, settings local), then the request construction shared by every shape
         // (prologue locals, the message, content, headers, request properties, and an optional per-call timeout), then
         // the return statement and closing brace. Appended fragment-by-fragment so no intermediate block string forms.
@@ -161,10 +154,12 @@ internal static partial class Emitter
             .Append(contentSource)
             .Append(headerSource);
         AppendInlineRequestProperties(builder, request, interfaceModel, methodModel, requestLocal, settingsLocal);
-        _ = builder
-            .Append(timeoutSource)
-            .Append(returnSource)
-            .Append(methodIndent).Append("}\n");
+
+        // The optional per-call timeout, then the send-and-deserialize statement (appended straight into the buffer,
+        // dispatching on the return shape), then the method's closing brace.
+        _ = builder.Append(timeoutSource);
+        AppendInlineReturn(builder, methodModel, request, plan);
+        _ = builder.Append(methodIndent).Append("}\n");
     }
 
     /// <summary>Appends a cold-observable inline generated Refit method: a per-subscription request factory and its send.</summary>
