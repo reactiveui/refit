@@ -17,7 +17,7 @@ namespace Refit.Generator;
 /// reflection-fallback implementation must mirror instead of suppressing IL2026.</param>
 /// <param name="RequiresDynamicCode">Whether the interface method declares <c>[RequiresDynamicCode]</c>, which a
 /// reflection-fallback implementation must mirror instead of suppressing IL3050.</param>
-internal sealed record MethodModel(
+internal readonly record struct MethodModel(
     string Name,
     string ReturnType,
     string ContainingType,

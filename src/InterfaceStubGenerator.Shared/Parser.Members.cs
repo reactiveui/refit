@@ -15,10 +15,10 @@ internal static partial class Parser
     /// <param name="inheritedProperties">The emittable inherited properties collected during the single member walk.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased property types.</param>
     /// <returns>The property models.</returns>
-    private static ImmutableEquatableArray<InterfacePropertyModel> BuildInterfacePropertyModels(
+    internal static ImmutableEquatableArray<InterfacePropertyModel> BuildInterfacePropertyModels(
         in ImmutableArray<ISymbol> members,
         List<IPropertySymbol> inheritedProperties,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         var properties = new List<InterfacePropertyModel>();
         foreach (var member in members)
@@ -40,7 +40,7 @@ internal static partial class Parser
     /// <summary>Determines whether an interface property should be implemented by the generated stub.</summary>
     /// <param name="property">The property to inspect.</param>
     /// <returns><see langword="true"/> when the property should be emitted.</returns>
-    private static bool IsEmittableProperty(IPropertySymbol property) =>
+    internal static bool IsEmittableProperty(IPropertySymbol property) =>
         !property.IsStatic
         && property.IsAbstract
         && property.Parameters.IsEmpty;
@@ -50,7 +50,7 @@ internal static partial class Parser
     /// <param name="isDerived">Whether the property comes from a base interface.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased property types.</param>
     /// <returns>The property model.</returns>
-    private static InterfacePropertyModel ParseInterfaceProperty(IPropertySymbol property, bool isDerived, InterfaceGenerationContext context)
+    internal static InterfacePropertyModel ParseInterfaceProperty(IPropertySymbol property, bool isDerived, in InterfaceGenerationContext context)
     {
         var annotation =
             !property.Type.IsValueType && property.NullableAnnotation == NullableAnnotation.Annotated;
@@ -77,7 +77,7 @@ internal static partial class Parser
     /// <param name="property">The property to inspect.</param>
     /// <param name="propertyType">The fully-qualified property type display string.</param>
     /// <returns><see langword="true"/> when no extra property emission is required.</returns>
-    private static bool IsGeneratedClientProperty(IPropertySymbol property, string propertyType) =>
+    internal static bool IsGeneratedClientProperty(IPropertySymbol property, string propertyType) =>
         property.MetadataName == "Client"
         && propertyType == "global::System.Net.Http.HttpClient"
         && property.GetMethod is not null
@@ -86,14 +86,14 @@ internal static partial class Parser
     /// <summary>Determines whether an interface property name collides with generated stub infrastructure members.</summary>
     /// <param name="property">The property to inspect.</param>
     /// <returns><see langword="true"/> when the property should be emitted explicitly to avoid a member collision.</returns>
-    private static bool HasGeneratedMemberNameCollision(IPropertySymbol property) =>
+    internal static bool HasGeneratedMemberNameCollision(IPropertySymbol property) =>
         property.MetadataName is "Client" or "requestBuilder";
 
     /// <summary>Gets the request-property key declared on an interface property.</summary>
     /// <param name="property">The property to inspect.</param>
     /// <returns>The request-property key, or an empty string when the property is not request-bound.</returns>
     [ExcludeFromCodeCoverage]
-    private static string GetInterfacePropertyRequestKey(IPropertySymbol property)
+    internal static string GetInterfacePropertyRequestKey(IPropertySymbol property)
     {
         foreach (var attribute in property.GetAttributes())
         {
@@ -116,10 +116,10 @@ internal static partial class Parser
     /// <param name="isImplicitInterface">Whether the methods belong to the implicitly implemented interface.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The method models.</returns>
-    private static ImmutableEquatableArray<MethodModel> ParseMethods(
+    internal static ImmutableEquatableArray<MethodModel> ParseMethods(
         List<IMethodSymbol> methods,
         bool isImplicitInterface,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         if (methods.Count == 0)
         {
@@ -140,10 +140,10 @@ internal static partial class Parser
     /// <param name="derivedNonRefitMethods">The non-Refit methods inherited from base interfaces.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The non-Refit method models.</returns>
-    private static ImmutableEquatableArray<MethodModel> BuildNonRefitMethodModels(
+    internal static ImmutableEquatableArray<MethodModel> BuildNonRefitMethodModels(
         List<IMethodSymbol> nonRefitMethods,
         List<IMethodSymbol> derivedNonRefitMethods,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         // Only abstract instance methods become non-Refit method models.
         var methodModels = new MethodModel[nonRefitMethods.Count + derivedNonRefitMethods.Count];
@@ -173,7 +173,7 @@ internal static partial class Parser
     /// <summary>Determines whether a non-Refit method should be emitted as a method model.</summary>
     /// <param name="method">The candidate method.</param>
     /// <returns><see langword="true"/> if the method is an abstract instance method; otherwise, <see langword="false"/>.</returns>
-    private static bool IsEmittableNonRefitMethod(IMethodSymbol method) =>
+    internal static bool IsEmittableNonRefitMethod(IMethodSymbol method) =>
         !method.IsStatic
         && method.MethodKind != MethodKind.PropertyGet
         && method.MethodKind != MethodKind.PropertySet
@@ -184,10 +184,10 @@ internal static partial class Parser
     /// <param name="isDerived">Whether the method comes from a base interface.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The model describing the non-Refit method.</returns>
-    private static MethodModel ParseNonRefitMethod(
+    internal static MethodModel ParseNonRefitMethod(
         IMethodSymbol methodSymbol,
         bool isDerived,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         // Derived base-interface methods are emitted as explicit implementations.
         var explicitImpl = FirstExplicitInterfaceImplementation(methodSymbol);
@@ -219,7 +219,7 @@ internal static partial class Parser
     /// <summary>Gets the first explicit interface implementation for a method, if one exists.</summary>
     /// <param name="methodSymbol">The method symbol to inspect.</param>
     /// <returns>The first explicit interface implementation, or <see langword="null"/> when there is none.</returns>
-    private static IMethodSymbol? FirstExplicitInterfaceImplementation(IMethodSymbol methodSymbol)
+    internal static IMethodSymbol? FirstExplicitInterfaceImplementation(IMethodSymbol methodSymbol)
     {
         var implementations = methodSymbol.ExplicitInterfaceImplementations;
         return implementations.IsEmpty ? null : implementations[0];
@@ -228,31 +228,51 @@ internal static partial class Parser
     /// <summary>Classifies a method's return type into its <see cref="ReturnTypeInfo"/> shape.</summary>
     /// <param name="methodSymbol">The method symbol.</param>
     /// <returns>The classified return type information.</returns>
-    private static ReturnTypeInfo GetReturnTypeInfo(IMethodSymbol methodSymbol) =>
-        methodSymbol.ReturnType.MetadataName switch
-        {
-            "Task" => ReturnTypeInfo.AsyncVoid,
-            "Task`1" when IsHttpRequestMessageType(((INamedTypeSymbol)methodSymbol.ReturnType).TypeArguments[0]) => ReturnTypeInfo.RequestMessage,
-            "Task`1" or "ValueTask`1" => ReturnTypeInfo.AsyncResult,
-            "IAsyncEnumerable`1" => ReturnTypeInfo.AsyncEnumerable,
-            "IObservable`1" => ReturnTypeInfo.Observable,
-            "Void" => ReturnTypeInfo.SyncVoid,
-            _ => ReturnTypeInfo.Return
-        };
+    /// <remarks>Matches on the cached <c>Name</c> plus arity rather than <c>MetadataName</c>, whose <c>Name`Arity</c>
+    /// composition allocates a string on every generic return type - which is nearly every Refit method's
+    /// <c>Task&lt;T&gt;</c>. For arity-0 types <c>MetadataName</c> equals <c>Name</c>, and for arity-1 types
+    /// <c>Name`1</c> corresponds to <c>(Name, 1)</c>, so this classifies identically.</remarks>
+    internal static ReturnTypeInfo GetReturnTypeInfo(IMethodSymbol methodSymbol) =>
+        methodSymbol.ReturnType is INamedTypeSymbol named
+            ? (named.Name, named.Arity) switch
+            {
+                ("Task", 0) => ReturnTypeInfo.AsyncVoid,
+                ("Task", 1) when IsHttpRequestMessageType(named.TypeArguments[0]) => ReturnTypeInfo.RequestMessage,
+                ("Task", 1) or ("ValueTask", 1) => ReturnTypeInfo.AsyncResult,
+                ("IAsyncEnumerable", 1) => ReturnTypeInfo.AsyncEnumerable,
+                ("IObservable", 1) => ReturnTypeInfo.Observable,
+                ("Void", 0) => ReturnTypeInfo.SyncVoid,
+                _ => ReturnTypeInfo.Return
+            }
+            : ReturnTypeInfo.Return;
 
     /// <summary>Collects the distinct member names declared on the interface, preserving order.</summary>
     /// <param name="members">The directly declared members of the interface.</param>
     /// <returns>The distinct member names.</returns>
-    private static ImmutableEquatableArray<string> CollectMemberNames(in ImmutableArray<ISymbol> members)
+    internal static ImmutableEquatableArray<string> CollectMemberNames(in ImmutableArray<ISymbol> members)
     {
-        var seenMemberNames = new HashSet<string>();
+        // Deduplicate against the distinct names already collected rather than a HashSet. An interface declares a
+        // handful of members, so the linear scan is cheaper than allocating (and growing) a set on netstandard2.0,
+        // which lacks the capacity constructor; the only allocation is the result array. Ordinal comparison matches
+        // the default set comparer, so the retained names are identical.
         var memberNames = new string[members.Length];
         var count = 0;
         foreach (var member in members)
         {
-            if (seenMemberNames.Add(member.Name))
+            var name = member.Name;
+            var seen = false;
+            for (var i = 0; i < count; i++)
             {
-                memberNames[count] = member.Name;
+                if (string.Equals(memberNames[i], name, StringComparison.Ordinal))
+                {
+                    seen = true;
+                    break;
+                }
+            }
+
+            if (!seen)
+            {
+                memberNames[count] = name;
                 count++;
             }
         }
@@ -265,7 +285,7 @@ internal static partial class Parser
     /// <param name="count">The number of populated entries.</param>
     /// <typeparam name="T">The element type.</typeparam>
     /// <returns>The immutable equatable array.</returns>
-    private static ImmutableEquatableArray<T> TrimAndWrap<T>(T[] values, int count)
+    internal static ImmutableEquatableArray<T> TrimAndWrap<T>(T[] values, int count)
         where T : IEquatable<T>
     {
         if (count == 0)

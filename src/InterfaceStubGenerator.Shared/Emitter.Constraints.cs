@@ -18,7 +18,7 @@ internal static partial class Emitter
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
     /// <param name="indentationLevel">The generated indentation level.</param>
     /// <returns>The generated type constraint clauses.</returns>
-    private static string BuildConstraints(
+    internal static string BuildConstraints(
         ImmutableEquatableArray<TypeConstraint> typeParameters,
         bool isOverrideOrExplicitImplementation,
         int indentationLevel)
@@ -52,7 +52,7 @@ internal static partial class Emitter
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
     /// <param name="indentationLevel">The generated indentation level.</param>
     /// <returns>The generated type constraint clause, or an empty string.</returns>
-    private static string BuildConstraintsForTypeParameter(
+    internal static string BuildConstraintsForTypeParameter(
         in TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation,
         int indentationLevel) =>
@@ -69,7 +69,7 @@ internal static partial class Emitter
     /// <param name="typeParameter">The type parameter constraint to inspect.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
     /// <returns><see langword="true"/> when at least one constraint should be emitted.</returns>
-    private static bool HasConstraintKeywords(
+    internal static bool HasConstraintKeywords(
         in TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation)
     {
@@ -86,7 +86,7 @@ internal static partial class Emitter
     /// <param name="typeParameter">The type parameter constraint to inspect.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
     /// <returns>The generated constraint list.</returns>
-    private static string BuildConstraintList(
+    internal static string BuildConstraintList(
         in TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation)
     {
@@ -127,7 +127,7 @@ internal static partial class Emitter
     /// <param name="keyword">The constraint keyword.</param>
     /// <param name="condition">Whether the keyword should be emitted.</param>
     /// <param name="count">The populated part count.</param>
-    private static void AddConstraint(
+    internal static void AddConstraint(
         string[] parts,
         string keyword,
         bool condition,

@@ -3,7 +3,9 @@
 // See the LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -476,5 +478,59 @@ public static partial class GeneratorComponentTests
         /// <returns>The parsed name syntax.</returns>
         private static NameSyntax ParseName(string name) =>
             SyntaxFactory.ParseName(name);
+    }
+
+    /// <summary>Tests for <see cref="PooledStringBuilder"/> buffer pooling.</summary>
+    public class PooledStringBuilderTests
+    {
+        /// <summary>The number of builders returned in one batch; chosen above the per-thread free-list capacity so the
+        /// surplus exercises the drop path.</summary>
+        private const int OverflowingBuilderCount = 20;
+
+        /// <summary>The content appended to and expected back from every builder.</summary>
+        private const string Content = "x";
+
+        /// <summary>Verifies returning more builders than the per-thread free list holds drops the surplus without error.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task ReturnBuffer_DropsSurplusBuffers_WhenFreeListIsFull()
+        {
+            var results = new string[OverflowingBuilderCount];
+            Exception? failure = null;
+
+            // A dedicated thread starts with an empty thread-local free list, so the buffers rented during
+            // construction are all returned in one batch below: once the list fills, the remainder is dropped.
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    var builders = new List<PooledStringBuilder>(OverflowingBuilderCount);
+                    for (var i = 0; i < OverflowingBuilderCount; i++)
+                    {
+                        var builder = new PooledStringBuilder();
+                        _ = builder.Append(Content);
+                        builders.Add(builder);
+                    }
+
+                    for (var i = 0; i < builders.Count; i++)
+                    {
+                        results[i] = builders[i].ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    failure = ex;
+                }
+            });
+
+            thread.Start();
+            thread.Join();
+
+            await Assert.That(failure).IsNull();
+            foreach (var result in results)
+            {
+                await Assert.That(result).IsEqualTo(Content);
+            }
+        }
     }
 }

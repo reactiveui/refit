@@ -49,9 +49,22 @@ public class UniqueNameBuilder
         return uniqueName;
     }
 
+    /// <summary>Reserves each name in a value-array, iterating its allocation-free struct enumerator.</summary>
+    /// <param name="names">The names to reserve.</param>
+    /// <remarks>Prefer this over the <see cref="IEnumerable{T}"/> overload for an <see cref="ImmutableEquatableArray{T}"/>:
+    /// passing one as <see cref="IEnumerable{T}"/> boxes its struct enumerator, which this overload avoids.</remarks>
+    internal void Reserve(ImmutableEquatableArray<string> names)
+    {
+        // A defaulted value-array enumerates as empty, so no null guard is needed.
+        foreach (var name in names)
+        {
+            _ = _usedNames.Add(name);
+        }
+    }
+
     /// <summary>Determines whether the name is used in this or any parent scope.</summary>
     /// <param name="name">The name to check.</param>
     /// <returns>True if the name is already used; otherwise, false.</returns>
-    private bool Contains(string name) =>
+    internal bool Contains(string name) =>
         _usedNames.Contains(name);
 }

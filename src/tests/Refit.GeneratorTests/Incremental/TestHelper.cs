@@ -52,6 +52,31 @@ internal static class TestHelper
         return compilation.ReplaceSyntaxTree(compilation.SyntaxTrees[0], newTree);
     }
 
+    /// <summary>Replaces a named type declaration inside one syntax tree of a multi-tree compilation.</summary>
+    /// <param name="compilation">The multi-tree compilation to modify.</param>
+    /// <param name="tree">The syntax tree that contains the type declaration to replace.</param>
+    /// <param name="typeName">The name of the type declaration to replace.</param>
+    /// <param name="newDeclaration">The replacement type declaration source.</param>
+    /// <returns>The updated compilation with the other syntax trees left untouched.</returns>
+    internal static CSharpCompilation ReplaceTypeDeclarationInTree(
+        CSharpCompilation compilation,
+        SyntaxTree tree,
+        string typeName,
+        string newDeclaration)
+    {
+        var root = tree.GetCompilationUnitRoot();
+        var typeDeclaration = root
+            .DescendantNodes()
+            .OfType<TypeDeclarationSyntax>()
+            .Single(x => x.Identifier.Text == typeName);
+        var updatedTypeDeclaration = SyntaxFactory.ParseMemberDeclaration(newDeclaration)!;
+
+        var newRoot = root.ReplaceNode(typeDeclaration, updatedTypeDeclaration);
+        var newTree = tree.WithRootAndOptions(newRoot, tree.Options);
+
+        return compilation.ReplaceSyntaxTree(tree, newTree);
+    }
+
     /// <summary>Replaces a local variable declaration in the compilation with new source.</summary>
     /// <param name="compilation">The compilation to modify.</param>
     /// <param name="variableName">The name of the local variable to replace.</param>
@@ -95,6 +120,33 @@ internal static class TestHelper
             reasons.ReportDiagnosticsStep,
             outputIndex);
         await AssertRunReason(runResult, RefitGeneratorStepName.BuildRefit, reasons.BuildRefitStep, outputIndex);
+    }
+
+    /// <summary>Asserts the build-Refit run reason for the interface with the given simple name.</summary>
+    /// <remarks>
+    /// The build-Refit step emits one output per interface, so a per-interface assertion is required when a
+    /// compilation contains more than one interface. The output is located by matching the interface's display
+    /// name rather than a positional index, because the emission order follows the parser's collection order.
+    /// </remarks>
+    /// <param name="driver">The generator driver to inspect.</param>
+    /// <param name="interfaceName">The simple (unqualified) interface name whose output is inspected.</param>
+    /// <param name="expectedReason">The expected build-Refit run reason for that interface.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    internal static async Task AssertBuildRefitReasonForInterface(
+        GeneratorDriver driver,
+        string interfaceName,
+        IncrementalStepRunReason expectedReason)
+    {
+        var qualifiedSuffix = "." + interfaceName;
+        var interfaceOutput = driver
+            .GetRunResult()
+            .Results[0]
+            .TrackedSteps[RefitGeneratorStepName.BuildRefit]
+            .SelectMany(static step => step.Outputs)
+            .Single(output => output.Value is InterfaceModel model
+                && model.InterfaceDisplayName.EndsWith(qualifiedSuffix, StringComparison.Ordinal));
+
+        await Assert.That(interfaceOutput.Reason).IsEqualTo(expectedReason);
     }
 
     /// <summary>Asserts that a single tracked step ran for the expected reason.</summary>

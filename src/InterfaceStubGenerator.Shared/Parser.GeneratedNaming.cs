@@ -18,7 +18,7 @@ internal static partial class Parser
     /// <param name="refitInternalNamespace">The optional user or MSBuild-supplied namespace prefix.</param>
     /// <param name="assemblyName">The compilation assembly name, folded in so each assembly gets a distinct namespace.</param>
     /// <returns>A valid C# namespace for generated Refit internals.</returns>
-    private static string BuildRefitInternalNamespace(string? refitInternalNamespace, string? assemblyName)
+    internal static string BuildRefitInternalNamespace(string? refitInternalNamespace, string? assemblyName)
     {
         var prefixedNamespace = string.IsNullOrWhiteSpace(refitInternalNamespace)
             ? RefitInternalGeneratedSuffix
@@ -58,14 +58,14 @@ internal static partial class Parser
     /// <summary>Builds the generated implementation container name for the compilation's assembly.</summary>
     /// <param name="assemblyName">The compilation assembly name, or <see langword="null"/> when unavailable.</param>
     /// <returns>The container name, scoped to the assembly so each assembly emits a distinct container.</returns>
-    private static string BuildGeneratedContainerName(string? assemblyName) =>
+    internal static string BuildGeneratedContainerName(string? assemblyName) =>
         GeneratedContainerBaseName + SanitizeAssemblyScope(assemblyName);
 
     /// <summary>Reduces an assembly name to an identifier fragment folded into generated names.</summary>
     /// <param name="assemblyName">The compilation assembly name, or <see langword="null"/> when unavailable.</param>
     /// <returns>The fragment, or an empty string when the assembly name is null or blank. This must stay identical to
     /// the runtime <c>UniqueName.SanitizeAssemblyName</c> so the reflection lookup reconstructs the same container.</returns>
-    private static string SanitizeAssemblyScope(string? assemblyName)
+    internal static string SanitizeAssemblyScope(string? assemblyName)
     {
         if (string.IsNullOrEmpty(assemblyName))
         {
@@ -84,7 +84,7 @@ internal static partial class Parser
     /// <summary>Normalizes one namespace segment into a valid identifier.</summary>
     /// <param name="part">The namespace segment.</param>
     /// <returns>The normalized segment, or an empty string when the segment is blank.</returns>
-    private static string NormalizeNamespacePart(string part)
+    internal static string NormalizeNamespacePart(string part)
     {
         if (string.IsNullOrWhiteSpace(part))
         {
