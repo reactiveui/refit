@@ -32,9 +32,15 @@ namespace Refit.Generator;
 /// <param name="ExternAliases">The per-interface collector recording the extern aliases used while qualifying its types.</param>
 /// <param name="AssemblyAliasCache">A pass-wide cache mapping an assembly symbol to its resolved extern alias (or null),
 /// shared across every interface so the extern-alias metadata-reference lookup runs once per assembly, not per type node.</param>
+/// <param name="QualifiedTypeCache">A pass-wide cache mapping a type symbol to its fully-qualified display string for the
+/// common non-extern-aliased case, shared across every interface so <c>ToDisplayString</c> renders each distinct type once
+/// per pass rather than once per occurrence. The aliased path is never cached because it records used aliases as a side effect.</param>
+/// <param name="FormattableClassificationCache">A pass-wide cache mapping a value type symbol to whether it implements
+/// <c>IFormattable</c> and <c>ISpanFormattable</c>, shared across every interface so the interface walk (which materializes a
+/// fresh public <c>AllInterfaces</c> array on each access) runs once per distinct type rather than once per parameter occurrence.</param>
 /// <param name="PathPrefix">The shared route prefix declared by the interface being processed via <c>[PathPrefix]</c>,
 /// prepended to every method's relative path, or an empty string when the interface declares none.</param>
-internal sealed record InterfaceGenerationContext(
+internal readonly record struct InterfaceGenerationContext(
     List<Diagnostic> Diagnostics,
     string PreserveAttributeDisplayName,
     string GeneratedClassName,
@@ -53,4 +59,6 @@ internal sealed record InterfaceGenerationContext(
     INamedTypeSymbol[] ReturnTypeAdapters,
     HashSet<string> ExternAliases,
     Dictionary<ISymbol, string?> AssemblyAliasCache,
+    Dictionary<ISymbol, string> QualifiedTypeCache,
+    Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)> FormattableClassificationCache,
     string PathPrefix = "");

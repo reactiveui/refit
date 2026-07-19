@@ -52,7 +52,7 @@ internal static partial class Emitter
     /// <summary>Determines whether any parameter binds to the query string.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <returns><see langword="true"/> when query emission is required.</returns>
-    private static bool HasQueryBindings(RequestModel request)
+    internal static bool HasQueryBindings(in RequestModel request)
     {
         foreach (var parameter in request.Parameters)
         {
@@ -68,7 +68,7 @@ internal static partial class Emitter
     /// <summary>Determines whether the generated method needs the default-formatting branch local.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <returns><see langword="true"/> when at least one bound value has a reflection-free fast path.</returns>
-    private static bool NeedsFormattingLocal(RequestModel request)
+    internal static bool NeedsFormattingLocal(in RequestModel request)
     {
         foreach (var parameter in request.Parameters)
         {
@@ -105,7 +105,7 @@ internal static partial class Emitter
     /// <summary>Determines whether any flattened property branches on the default-formatting local.</summary>
     /// <param name="properties">The flattened property descriptors.</param>
     /// <returns><see langword="true"/> when at least one property has a reflection-free fast path or a format.</returns>
-    private static bool ObjectPropertiesNeedFormattingLocal(ImmutableEquatableArray<QueryObjectPropertyModel> properties)
+    internal static bool ObjectPropertiesNeedFormattingLocal(ImmutableEquatableArray<QueryObjectPropertyModel> properties)
     {
         foreach (var property in properties)
         {
@@ -136,7 +136,7 @@ internal static partial class Emitter
     /// <summary>Determines whether a path parameter's value or any of its object bindings uses the fast-format branch.</summary>
     /// <param name="parameter">The path parameter model.</param>
     /// <returns><see langword="true"/> when the default-formatting local is referenced when formatting the value.</returns>
-    private static bool PathParameterNeedsFormattingLocal(RequestParameterModel parameter)
+    internal static bool PathParameterNeedsFormattingLocal(in RequestParameterModel parameter)
     {
         if (parameter.ValueFormat is { Kind: not InlineFormatKind.FormatterOnly })
         {
@@ -162,14 +162,14 @@ internal static partial class Emitter
     /// <summary>Determines whether a parameter needs a generated attribute-provider field.</summary>
     /// <param name="parameter">The parameter model.</param>
     /// <returns><see langword="true"/> when formatting may consult the parameter's attributes at runtime.</returns>
-    private static bool NeedsAttributeProvider(RequestParameterModel parameter) =>
+    internal static bool NeedsAttributeProvider(in RequestParameterModel parameter) =>
         parameter.Kind == RequestParameterKind.Path
         || parameter.Query is { Shape: not QueryParameterShape.Converter };
 
     /// <summary>Determines whether the generated method needs the default-form-formatting branch local.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <returns><see langword="true"/> when a flattened query-object property carries a compile-time format.</returns>
-    private static bool NeedsFormFormattingLocal(RequestModel request)
+    internal static bool NeedsFormFormattingLocal(in RequestModel request)
     {
         foreach (var parameter in request.Parameters)
         {
@@ -191,7 +191,7 @@ internal static partial class Emitter
     /// <summary>Determines whether any flattened property (recursing into nested objects) carries a compile-time format.</summary>
     /// <param name="properties">The flattened property descriptors.</param>
     /// <returns><see langword="true"/> when at least one property carries a <c>[Query(Format)]</c>.</returns>
-    private static bool ObjectPropertiesHaveFormat(ImmutableEquatableArray<QueryObjectPropertyModel> properties)
+    internal static bool ObjectPropertiesHaveFormat(ImmutableEquatableArray<QueryObjectPropertyModel> properties)
     {
         foreach (var property in properties)
         {
@@ -214,17 +214,17 @@ internal static partial class Emitter
         return false;
     }
 
-    /// <summary>Builds the query-appending statements for an inline generated method.</summary>
+    /// <summary>Appends the query-appending statements for an inline generated method straight into the prologue buffer.</summary>
+    /// <param name="sb">The buffer accumulating the request-prologue source.</param>
     /// <param name="request">The parsed request model.</param>
     /// <param name="parameterInfoNames">The map of parameter name to cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <returns>The generated query statements.</returns>
-    private static string BuildInlineQueryStatements(
-        RequestModel request,
+    internal static void AppendInlineQueryStatements(
+        PooledStringBuilder sb,
+        in RequestModel request,
         Dictionary<string, string> parameterInfoNames,
         in InlineValueEmission emission)
     {
-        var sb = new PooledStringBuilder();
         foreach (var parameter in request.Parameters)
         {
             if (parameter.Query is not { } query)
@@ -236,8 +236,6 @@ internal static partial class Emitter
             _ = parameterInfoNames.TryGetValue(parameter.Name, out var providerField);
             AppendInlineQueryStatement(sb, parameter, query, providerField, emission);
         }
-
-        return sb.ToString();
     }
 
     /// <summary>Appends the query-building statements for one parameter, dispatched on its query shape.</summary>
@@ -249,9 +247,9 @@ internal static partial class Emitter
     /// <remarks>The <see cref="QueryParameterShape"/> arms are exhaustive over the shapes the parser produces; the
     /// compiler-required collection default arm cannot be reached for every shape value by tests.</remarks>
     [ExcludeFromCodeCoverage]
-    private static void AppendInlineQueryStatement(
+    internal static void AppendInlineQueryStatement(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
         in InlineValueEmission emission)
@@ -296,9 +294,9 @@ internal static partial class Emitter
     /// <param name="query">The query-binding metadata.</param>
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendScalarQueryStatement(
+    internal static void AppendScalarQueryStatement(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
         in InlineValueEmission emission)
@@ -325,9 +323,9 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="indent">The indentation of the emitted statement.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendScalarAddCall(
+    internal static void AppendScalarAddCall(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
         string indent,
@@ -382,7 +380,7 @@ internal static partial class Emitter
     /// <returns>The C# string literal, URI-data-escaped unless <paramref name="preEncoded"/>.</returns>
     /// <remarks>Escaping here rather than on every request matches the reflection builder's output because
     /// <c>Uri.EscapeDataString</c> follows RFC 3986 consistently across the supported target frameworks.</remarks>
-    private static string BuildPreEscapedQueryKeyLiteral(string key, bool preEncoded) =>
+    internal static string BuildPreEscapedQueryKeyLiteral(string key, bool preEncoded) =>
         ToCSharpStringLiteral(preEncoded ? key : System.Uri.EscapeDataString(key));
 
     /// <summary>Appends the statements emitting one collection-valued query parameter or flag set.</summary>
@@ -391,9 +389,9 @@ internal static partial class Emitter
     /// <param name="query">The query-binding metadata.</param>
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendCollectionQueryStatement(
+    internal static void AppendCollectionQueryStatement(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
         in InlineValueEmission emission)
@@ -468,7 +466,7 @@ internal static partial class Emitter
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="preEncoded">The rendered <c>preEncoded</c> boolean literal.</param>
     /// <param name="loopIndent">The indentation of the emitted call.</param>
-    private static void AppendBeginCollection(
+    internal static void AppendBeginCollection(
         PooledStringBuilder sb,
         QueryParameterModel query,
         in InlineValueEmission emission,
@@ -496,9 +494,9 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="itemIndent">The indentation of the emitted element statements.</param>
-    private static void AppendFastCollectionElement(
+    internal static void AppendFastCollectionElement(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         string providerField,
         in InlineValueEmission emission,
         string itemIndent)
@@ -520,9 +518,9 @@ internal static partial class Emitter
     /// <param name="parameter">The parameter model.</param>
     /// <param name="query">The query-binding metadata.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendConverterQueryStatements(
+    internal static void AppendConverterQueryStatements(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         QueryParameterModel query,
         in InlineValueEmission emission)
     {
@@ -561,7 +559,7 @@ internal static partial class Emitter
     /// <param name="MemberSource">The builder receiving emitted helper members.</param>
     /// <param name="SupportsCollectionExpressions">Whether the consumer supports C# 12 collection expressions, so path
     /// replacements are emitted as a stack-allocatable <c>[...]</c> span instead of an explicitly-typed array.</param>
-    private readonly record struct InlineValueEmission(
+    internal readonly record struct InlineValueEmission(
         string QueryBuilderLocal,
         string QueryValueLocal,
         string SettingsLocal,
@@ -576,7 +574,7 @@ internal static partial class Emitter
     /// <param name="KeyExpression">The query key expression, constant or key-formatter call.</param>
     /// <param name="PreEncoded">The rendered <c>preEncoded</c> boolean literal.</param>
     /// <param name="Indentation">The indentation of the statements emitting this property.</param>
-    private readonly record struct QueryPropertySite(
+    internal readonly record struct QueryPropertySite(
         string ValueLocal,
         string KeyExpression,
         string PreEncoded,
@@ -587,7 +585,7 @@ internal static partial class Emitter
     /// <param name="ProviderField">The cached attribute-provider field name for the parameter.</param>
     /// <param name="ParameterCollectionFormat">The parameter's <c>[Query(CollectionFormat)]</c>, or null.</param>
     /// <param name="PreEncoded">The rendered <c>preEncoded</c> boolean literal for the parameter.</param>
-    private readonly record struct QueryObjectContext(
+    internal readonly record struct QueryObjectContext(
         RequestParameterModel Parameter,
         string ProviderField,
         int? ParameterCollectionFormat,
@@ -599,7 +597,7 @@ internal static partial class Emitter
     /// <param name="Delimiter">The delimiter joining nested keys.</param>
     /// <param name="LocalSuffix">The suffix appended to generated local names to keep nested locals unique.</param>
     /// <param name="Indentation">The indentation of the statements emitted at this level.</param>
-    private readonly record struct ObjectFlattenScope(
+    internal readonly record struct ObjectFlattenScope(
         string AccessExpr,
         string? ParentKeyExpr,
         string Delimiter,
@@ -611,7 +609,7 @@ internal static partial class Emitter
     /// <param name="KeyLocal">The local receiving the formatted key.</param>
     /// <param name="ValueLocal">The local holding the entry value.</param>
     /// <param name="Indentation">The indentation of the statements emitting this entry.</param>
-    private readonly record struct DictionaryEntrySite(
+    internal readonly record struct DictionaryEntrySite(
         string EntryLocal,
         string KeyLocal,
         string ValueLocal,
@@ -619,7 +617,7 @@ internal static partial class Emitter
 
     /// <summary>Tracks the enum formatting helpers emitted for one generated interface implementation.</summary>
     /// <param name="uniqueNames">The unique member name builder for the interface scope.</param>
-    private sealed class EnumFormatterScope(UniqueNameBuilder uniqueNames)
+    internal sealed class EnumFormatterScope(UniqueNameBuilder uniqueNames)
     {
         /// <summary>Gets the emitted helper names keyed by enum type and compile-time format.</summary>
         public Dictionary<(string TypeName, string? Format), string> Formatters { get; } = new();

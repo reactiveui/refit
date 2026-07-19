@@ -13,7 +13,7 @@ internal static partial class Emitter
     /// <param name="model">The context generation model describing the interfaces.</param>
     /// <param name="generatedFileHeader">The shared generated file header.</param>
     /// <param name="addSource">Callback used to add generated source files.</param>
-    private static void EmitPreserveAttribute(
+    internal static void EmitPreserveAttribute(
         ContextGenerationModel model,
         string generatedFileHeader,
         Action<string, SourceText> addSource)
@@ -56,7 +56,7 @@ internal static partial class Emitter
     /// <param name="model">The context generation model describing the interfaces.</param>
     /// <param name="generatedFileHeader">The shared generated file header.</param>
     /// <param name="addSource">Callback used to add generated source files.</param>
-    private static void EmitGeneratedFactoryModule(
+    internal static void EmitGeneratedFactoryModule(
         ContextGenerationModel model,
         string generatedFileHeader,
         Action<string, SourceText> addSource)

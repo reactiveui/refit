@@ -30,7 +30,7 @@ internal static partial class Parser
     /// <param name="methodSymbol">The method to inspect.</param>
     /// <param name="isMultipart">Receives whether the method carries <c>[Multipart]</c>.</param>
     /// <returns>The boundary text for a multipart method, or an empty string otherwise.</returns>
-    private static string ResolveMultipartBoundary(IMethodSymbol methodSymbol, out bool isMultipart)
+    internal static string ResolveMultipartBoundary(IMethodSymbol methodSymbol, out bool isMultipart)
     {
         var multipartAttribute = FindMultipartAttribute(methodSymbol);
         isMultipart = multipartAttribute is not null;
@@ -40,7 +40,7 @@ internal static partial class Parser
     /// <summary>Finds the <c>[Multipart]</c> attribute on a method, if present.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>
     /// <returns>The multipart attribute data, or <see langword="null"/> when the method is not multipart.</returns>
-    private static AttributeData? FindMultipartAttribute(IMethodSymbol methodSymbol)
+    internal static AttributeData? FindMultipartAttribute(IMethodSymbol methodSymbol)
     {
         foreach (var attribute in methodSymbol.GetAttributes())
         {
@@ -56,7 +56,7 @@ internal static partial class Parser
     /// <summary>Resolves the multipart boundary text for a method, matching the reflection builder's selection.</summary>
     /// <param name="multipartAttribute">The method's multipart attribute.</param>
     /// <returns>The boundary text: the <c>[Multipart(boundary)]</c> argument, or the attribute default.</returns>
-    private static string GetMultipartBoundaryText(AttributeData multipartAttribute) =>
+    internal static string GetMultipartBoundaryText(AttributeData multipartAttribute) =>
         !multipartAttribute.ConstructorArguments.IsEmpty
         && multipartAttribute.ConstructorArguments[0].Value is string boundary
             ? boundary
@@ -65,7 +65,7 @@ internal static partial class Parser
     /// <summary>Determines whether any parameter is an explicit request body binding.</summary>
     /// <param name="parameters">The parsed request parameter models.</param>
     /// <returns><see langword="true"/> when a parameter carries <c>[Body]</c>.</returns>
-    private static bool HasBodyParameter(ImmutableEquatableArray<RequestParameterModel> parameters)
+    internal static bool HasBodyParameter(ImmutableEquatableArray<RequestParameterModel> parameters)
     {
         foreach (var parameter in parameters)
         {
@@ -83,7 +83,7 @@ internal static partial class Parser
     /// <param name="parameterType">The parameter type display string.</param>
     /// <param name="context">The lookup state used to classify the parameter.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ClassifyMultipartParameter(
+    internal static ParsedRequestParameter ClassifyMultipartParameter(
         IParameterSymbol parameter,
         string parameterType,
         in LooseParameterContext context)
@@ -106,7 +106,7 @@ internal static partial class Parser
     /// <param name="parameter">The parameter to classify.</param>
     /// <param name="context">The lookup state used to classify the parameter.</param>
     /// <returns>The part descriptor, or <see langword="null"/> when the type is not statically dispatchable.</returns>
-    private static MultipartPartModel? TryBuildMultipartPart(IParameterSymbol parameter, in LooseParameterContext context)
+    internal static MultipartPartModel? TryBuildMultipartPart(IParameterSymbol parameter, in LooseParameterContext context)
     {
         // An opt-in [FormObject] parameter is flattened per-property by the reflection request builder; returning null
         // routes the whole method to that one authoritative implementation instead of duplicating the flattening here.
@@ -134,11 +134,11 @@ internal static partial class Parser
     /// <param name="part">The multipart part descriptor.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The multipart part request parameter model.</returns>
-    private static RequestParameterModel MultipartRequestParameter(
+    internal static RequestParameterModel MultipartRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
         MultipartPartModel part,
-        InterfaceGenerationContext context) =>
+        in InterfaceGenerationContext context) =>
         new(
             parameter.MetadataName,
             parameterType,
@@ -158,7 +158,7 @@ internal static partial class Parser
     /// <param name="type">The declared parameter type.</param>
     /// <returns>The part kind and whether it expands element-by-element, or <see langword="null"/> when the type is not
     /// statically dispatchable and the method must fall back to the reflection request builder.</returns>
-    private static (MultipartPartKind Kind, bool IsEnumerable)? ClassifyPartType(ITypeSymbol type)
+    internal static (MultipartPartKind Kind, bool IsEnumerable)? ClassifyPartType(ITypeSymbol type)
     {
         // string and byte[] are single parts even though they are enumerable: the reflection builder's
         // IEnumerable<object> check excludes them because char and byte are value types.
@@ -185,7 +185,7 @@ internal static partial class Parser
     /// <summary>Classifies a single (non-enumerable) value type into its multipart dispatch arm.</summary>
     /// <param name="type">The value's declared type.</param>
     /// <returns>The part kind, or <see langword="null"/> when the type is not statically dispatchable.</returns>
-    private static MultipartPartKind? ClassifySingle(ITypeSymbol type)
+    internal static MultipartPartKind? ClassifySingle(ITypeSymbol type)
     {
         // A Guid?/DateTime? part classifies by its underlying formattable type; the null value itself is guarded
         // out at emission, matching the reflection builder's "skip null parameter" behavior.
@@ -239,7 +239,7 @@ internal static partial class Parser
     /// <param name="type">The declared parameter type.</param>
     /// <returns>The element type when the parameter is a reference-typed enumerable (so its runtime value implements
     /// <c>IEnumerable&lt;object&gt;</c>), otherwise <see langword="null"/>.</returns>
-    private static ITypeSymbol? GetReferenceEnumerableElement(ITypeSymbol type)
+    internal static ITypeSymbol? GetReferenceEnumerableElement(ITypeSymbol type)
     {
         if (type is IArrayTypeSymbol { Rank: 1 } array)
         {
@@ -274,13 +274,13 @@ internal static partial class Parser
     /// <summary>Determines whether a type is a single-rank <see cref="byte"/> array.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is <c>byte[]</c>.</returns>
-    private static bool IsByteArray(ITypeSymbol type) =>
+    internal static bool IsByteArray(ITypeSymbol type) =>
         type is IArrayTypeSymbol { Rank: 1, ElementType.SpecialType: SpecialType.System_Byte };
 
     /// <summary>Determines whether a type is <see cref="System.IO.FileInfo"/>.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is <see cref="System.IO.FileInfo"/>.</returns>
-    private static bool IsFileInfoType(ITypeSymbol type) =>
+    internal static bool IsFileInfoType(ITypeSymbol type) =>
         type is
         {
             Name: "FileInfo",
@@ -292,7 +292,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type is <see cref="System.IO.Stream"/> or derives from it.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is assignable to <see cref="System.IO.Stream"/>.</returns>
-    private static bool IsStreamType(ITypeSymbol type)
+    internal static bool IsStreamType(ITypeSymbol type)
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
@@ -314,7 +314,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type is <see cref="System.Net.Http.HttpContent"/> or derives from it.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is assignable to <see cref="System.Net.Http.HttpContent"/>.</returns>
-    private static bool IsHttpContentType(ITypeSymbol type)
+    internal static bool IsHttpContentType(ITypeSymbol type)
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
@@ -337,7 +337,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type is <c>Refit.MultipartItem</c> or derives from it.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is assignable to <c>Refit.MultipartItem</c>.</returns>
-    private static bool IsMultipartItemType(ITypeSymbol type)
+    internal static bool IsMultipartItemType(ITypeSymbol type)
     {
         for (var current = type; current is not null; current = current.BaseType)
         {
@@ -359,7 +359,7 @@ internal static partial class Parser
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> for the BCL value types the reflection builder renders through the form
     /// URL-encoded formatter instead of the content serializer.</returns>
-    private static bool IsMultipartFormattableType(ITypeSymbol type) =>
+    internal static bool IsMultipartFormattableType(ITypeSymbol type) =>
         type is { ContainingNamespace.Name: SystemNamespace, ContainingNamespace.ContainingNamespace.IsGlobalNamespace: true }
         && type.Name is "Guid" or "DateTime" or "DateTimeOffset" or "TimeSpan" or "DateOnly" or "TimeOnly";
 }

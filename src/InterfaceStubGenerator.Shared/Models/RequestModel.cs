@@ -16,7 +16,7 @@ namespace Refit.Generator;
 /// result-type fields already carry the adapter's wrapped result type.</param>
 /// <param name="StaticHeaders">The static headers parsed from inherited interfaces, the declaring interface, and the method.</param>
 /// <param name="Parameters">The parsed request parameter bindings.</param>
-internal sealed record RequestModel(
+internal readonly record struct RequestModel(
     string HttpMethod,
     string Path,
     string ResultType,

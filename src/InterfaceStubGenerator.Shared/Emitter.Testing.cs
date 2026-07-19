@@ -55,18 +55,22 @@ internal static partial class Emitter
     /// <param name="settingsFieldName">The generated settings field name.</param>
     /// <returns>The generated method implementation.</returns>
     internal static string BuildRefitMethodForTesting(
-        MethodModel methodModel,
+        in MethodModel methodModel,
         bool isTopLevel,
         InterfaceModel interfaceModel,
         UniqueNameBuilder uniqueNames,
         string requestBuilderFieldName,
-        string settingsFieldName) =>
+        string settingsFieldName)
+    {
+        var builder = new PooledStringBuilder();
         BuildRefitMethod(
+            builder,
             methodModel,
             isTopLevel,
             interfaceModel,
             uniqueNames,
-            requestBuilderFieldName,
-            settingsFieldName,
+            new GeneratedFieldNames(requestBuilderFieldName, settingsFieldName),
             new(uniqueNames));
+        return builder.ToString();
+    }
 }

@@ -443,4 +443,71 @@ public sealed class PathObjectBindingGenerationTests
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
     }
+
+    /// <summary>Verifies a dotted placeholder repeated across the template resolves its property chain once and binds
+    /// every occurrence, generating inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RepeatedDottedPathPlaceholderBindsEveryOccurrenceInline()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public record class Data(string Value);
+
+            public interface IGeneratedClient
+            {
+                [Get("/a/{data.Value}/b/{data.Value}")]
+                Task Sample(Data data);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+
+        // Both placeholders bind the same resolved property, so the bound expression is emitted twice.
+        var firstIndex = generated.IndexOf(BoundValuePlaceholder, StringComparison.Ordinal);
+        var secondIndex = generated.IndexOf(BoundValuePlaceholder, firstIndex + 1, StringComparison.Ordinal);
+        await Assert.That(firstIndex).IsGreaterThanOrEqualTo(0);
+        await Assert.That(secondIndex).IsGreaterThan(firstIndex);
+    }
+
+    /// <summary>Verifies a dotted placeholder naming a property absent from a generic parameter's class constraint walks
+    /// the constraint list to its end and falls the parameter back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ConstrainedGenericDottedPathWithUnknownPropertyFallsBack()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public class PathBoundObject
+            {
+                public int SomeProperty { get; init; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/foos/{request.Missing}")]
+                Task Sample<T>(T request)
+                    where T : PathBoundObject;
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
 }

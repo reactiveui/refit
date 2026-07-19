@@ -105,7 +105,7 @@ internal static partial class Parser
     /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
     /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <returns>The diagnostics paired with an empty context model.</returns>
-    private static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec) CreateEmptyResult(
+    internal static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec) CreateEmptyResult(
         List<Diagnostic> diagnostics,
         string refitInternalNamespace,
         string generatedClassName,
@@ -131,7 +131,7 @@ internal static partial class Parser
     /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The generation context for the pass.</returns>
-    private static InterfaceGenerationContext CreateGenerationContext(
+    internal static InterfaceGenerationContext CreateGenerationContext(
         CSharpCompilation compilation,
         List<Diagnostic> diagnostics,
         string refitInternalNamespace,
@@ -188,7 +188,9 @@ internal static partial class Parser
             returnTypeAdapterInterface,
             returnTypeAdapters,
             [],
-            new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default));
+            new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default),
+            new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default),
+            new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default));
     }
 
     /// <summary>Collects the interfaces with Refit methods, declared or inherited, into a single map.</summary>
@@ -199,7 +201,7 @@ internal static partial class Parser
     /// <param name="interfaceToNullableEnabledMap">Receives the nullable-context flag per interface.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A map of interface symbol to its directly declared Refit methods.</returns>
-    private static Dictionary<INamedTypeSymbol, List<IMethodSymbol>> CollectRefitInterfaces(
+    internal static Dictionary<INamedTypeSymbol, List<IMethodSymbol>> CollectRefitInterfaces(
         CSharpCompilation compilation,
         in ImmutableArray<MethodDeclarationSyntax> candidateMethods,
         in ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
@@ -214,14 +216,17 @@ internal static partial class Parser
         var interfaces = new Dictionary<INamedTypeSymbol, List<IMethodSymbol>>(
             SymbolEqualityComparer.Default);
 
+        // compilation.GetSemanticModel creates a fresh SemanticModel on every call - it is not cached by the
+        // compilation. Every candidate method and interface in one file shares a single syntax tree, so caching the
+        // model per tree collapses N allocations to one per tree while still skipping a GroupBy-by-tree allocation.
+        var semanticModelsByTree = new Dictionary<SyntaxTree, SemanticModel>();
+
         var compilationNullableEnabled =
             compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
         foreach (var method in candidateMethods)
         {
-            // GetSemanticModel is cached per syntax tree, so calling it per method is cheap and
-            // lets us skip a GroupBy-by-tree allocation.
-            var model = compilation.GetSemanticModel(method.SyntaxTree);
+            var model = GetCachedSemanticModel(compilation, semanticModelsByTree, method.SyntaxTree);
             var methodSymbol = model.GetDeclaredSymbol(method, cancellationToken);
             if (!IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
             {
@@ -245,7 +250,7 @@ internal static partial class Parser
         // Add interfaces whose Refit methods are inherited from base interfaces.
         foreach (var iface in candidateInterfaces)
         {
-            var model = compilation.GetSemanticModel(iface.SyntaxTree);
+            var model = GetCachedSemanticModel(compilation, semanticModelsByTree, iface.SyntaxTree);
             var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken)!;
 
             // Skip duplicates already captured from candidate methods.
@@ -276,15 +281,21 @@ internal static partial class Parser
     /// <param name="context">The shared generation context.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The interface models, one per collected interface.</returns>
-    private static ImmutableEquatableArray<InterfaceModel> BuildInterfaceModels(
+    internal static ImmutableEquatableArray<InterfaceModel> BuildInterfaceModels(
         Dictionary<INamedTypeSymbol, List<IMethodSymbol>> interfaces,
         Dictionary<INamedTypeSymbol, bool> interfaceToNullableEnabledMap,
-        InterfaceGenerationContext context,
+        in InterfaceGenerationContext context,
         CancellationToken cancellationToken)
     {
         var keyCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var interfaceModels = new InterfaceModel[interfaces.Count];
         var index = 0;
+
+        // One extern-alias collector reused across interfaces: each generated file declares only the extern aliases its
+        // own types use. ProcessInterface clears it at the start of each interface and reads it into that interface's
+        // model, so a shared set avoids allocating a throwaway set per interface (most declare no extern aliases at all).
+        var externAliases = new HashSet<string>();
+        var interfaceContext = context with { ExternAliases = externAliases };
 
         // Process each interface into the generation model.
         foreach (var group in interfaces)
@@ -304,13 +315,12 @@ internal static partial class Parser
             keyCount[keyName] = 0;
             var fileName = $"{keyName}.g.cs";
 
-            // A fresh collector per interface: each generated file declares only the extern aliases its own types use.
             interfaceModels[index] = ProcessInterface(
                 fileName,
                 group.Key,
                 group.Value,
                 interfaceToNullableEnabledMap[group.Key],
-                context with { ExternAliases = [] });
+                interfaceContext);
             index++;
         }
 
@@ -324,13 +334,17 @@ internal static partial class Parser
     /// <param name="nullableEnabled">Whether nullable reference types are enabled for the interface.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The model describing the interface.</returns>
-    private static InterfaceModel ProcessInterface(
+    internal static InterfaceModel ProcessInterface(
         string fileName,
         INamedTypeSymbol interfaceSymbol,
         List<IMethodSymbol> refitMethods,
         bool nullableEnabled,
         InterfaceGenerationContext context)
     {
+        // Reset the shared extern-alias collector, which still holds the previous interface's aliases. Done here,
+        // co-located with where this interface's aliases are collected and read out, rather than in the caller.
+        context.ExternAliases.Clear();
+
         var names = ComputeInterfaceNames(interfaceSymbol);
         var members = interfaceSymbol.GetMembers();
 
@@ -393,7 +407,7 @@ internal static partial class Parser
     /// <summary>Resolves the shared route prefix declared on an interface via <c>[PathPrefix]</c>.</summary>
     /// <param name="interfaceSymbol">The interface the client is generated for.</param>
     /// <returns>The declared prefix, or an empty string when the interface carries no <c>[PathPrefix]</c>.</returns>
-    private static string ResolvePathPrefix(INamedTypeSymbol interfaceSymbol)
+    internal static string ResolvePathPrefix(INamedTypeSymbol interfaceSymbol)
     {
         foreach (var attribute in interfaceSymbol.GetAttributes())
         {
@@ -411,7 +425,7 @@ internal static partial class Parser
     /// <summary>Builds the deterministically-ordered set of extern aliases an interface's types reference.</summary>
     /// <param name="aliases">The collected extern aliases.</param>
     /// <returns>The sorted extern aliases, or an empty array when none were used.</returns>
-    private static ImmutableEquatableArray<string> BuildSortedExternAliases(HashSet<string> aliases)
+    internal static ImmutableEquatableArray<string> BuildSortedExternAliases(HashSet<string> aliases)
     {
         if (aliases.Count == 0)
         {
@@ -426,7 +440,7 @@ internal static partial class Parser
     /// <summary>Computes the generated identifiers and display names for an interface.</summary>
     /// <param name="interfaceSymbol">The interface symbol being processed.</param>
     /// <returns>The computed names for the interface.</returns>
-    private static InterfaceNames ComputeInterfaceNames(INamedTypeSymbol interfaceSymbol)
+    internal static InterfaceNames ComputeInterfaceNames(INamedTypeSymbol interfaceSymbol)
     {
         // Start with the interface display name including type parameters, then strip the namespace.
         var className = interfaceSymbol.ToDisplayString();
@@ -461,11 +475,11 @@ internal static partial class Parser
     /// <param name="refitMethods">The Refit methods declared on the interface.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The partitioned member sets.</returns>
-    private static MethodPartition PartitionMembers(
+    internal static MethodPartition PartitionMembers(
         INamedTypeSymbol interfaceSymbol,
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> refitMethods,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         var nonRefitMethods = CollectDirectNonRefitMethods(members, refitMethods);
 
@@ -495,24 +509,22 @@ internal static partial class Parser
     /// <param name="members">The directly declared members of the interface.</param>
     /// <param name="refitMethods">The Refit methods declared on the interface.</param>
     /// <returns>The non-Refit methods declared directly on the interface.</returns>
-    private static List<IMethodSymbol> CollectDirectNonRefitMethods(
+    internal static List<IMethodSymbol> CollectDirectNonRefitMethods(
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> refitMethods)
     {
-        // Get any other (non-Refit) methods declared directly on the interface. LINQ is avoided
-        // throughout because it runs for every interface on every generator pass; the HashSets
-        // below reproduce the de-duplicating semantics of the previous Except/Distinct.
-        var refitMethodSet = new HashSet<IMethodSymbol>(refitMethods, SymbolEqualityComparer.Default);
+        // Get any other (non-Refit) methods declared directly on the interface. LINQ is avoided throughout because
+        // it runs for every interface on every generator pass. An interface declares a handful of methods, so the two
+        // membership checks are linear scans over the small method lists instead of two throwaway per-interface
+        // HashSets (each with its own bucket array), while keeping the de-duplicating semantics of the previous
+        // Except/Distinct: a member is kept only when it is not a Refit method and not already collected.
         var nonRefitMethods = new List<IMethodSymbol>(members.Length);
-
-        // HashSet has no capacity ctor on netstandard2.0, so it is left unsized.
-        var seenNonRefitMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         foreach (var member in members)
         {
             if (
                 member is IMethodSymbol method
-                && !refitMethodSet.Contains(method)
-                && seenNonRefitMethods.Add(method)
+                && !ContainsSymbol(refitMethods, method)
+                && !ContainsSymbol(nonRefitMethods, method)
             )
             {
                 nonRefitMethods.Add(method);
@@ -529,9 +541,9 @@ internal static partial class Parser
     /// <param name="derivedNonRefitMethods">Receives the non-Refit methods inherited from base interfaces.</param>
     /// <param name="inheritedProperties">Receives the emittable properties inherited from base interfaces.</param>
     /// <returns><see langword="true"/> if the interface inherits <c>IDisposable.Dispose</c>; otherwise, <see langword="false"/>.</returns>
-    private static bool CollectDerivedMembers(
+    internal static bool CollectDerivedMembers(
         INamedTypeSymbol interfaceSymbol,
-        InterfaceGenerationContext context,
+        in InterfaceGenerationContext context,
         List<IMethodSymbol> derivedRefitMethods,
         List<IMethodSymbol> derivedNonRefitMethods,
         List<IPropertySymbol> inheritedProperties)
@@ -541,7 +553,10 @@ internal static partial class Parser
         // properties in the same pass. Methods and properties were previously two separate AllInterfaces walks.
         var disposableInterfaceSymbol = context.DisposableInterfaceSymbol;
         var hasDispose = false;
-        var seenInheritedProperties = new HashSet<IPropertySymbol>(SymbolEqualityComparer.Default);
+
+        // Most interfaces inherit no emittable properties (and the common no-base interface inherits nothing at all),
+        // so the de-duplicating set is created only once one is found rather than on every interface.
+        HashSet<IPropertySymbol>? seenInheritedProperties = null;
         foreach (var baseInterface in interfaceSymbol.AllInterfaces)
         {
             foreach (var member in baseInterface.GetMembers())
@@ -569,7 +584,8 @@ internal static partial class Parser
                     }
 
                     case IPropertySymbol property
-                        when IsEmittableProperty(property) && seenInheritedProperties.Add(property):
+                        when IsEmittableProperty(property)
+                            && (seenInheritedProperties ??= new(SymbolEqualityComparer.Default)).Add(property):
                     {
                         inheritedProperties.Add(property);
                         break;
@@ -585,14 +601,14 @@ internal static partial class Parser
     /// <param name="method">The candidate method.</param>
     /// <param name="disposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
     /// <returns><see langword="true"/> if the method is declared on <c>IDisposable</c>; otherwise, <see langword="false"/>.</returns>
-    private static bool IsDisposeMethod(IMethodSymbol method, ISymbol? disposableInterfaceSymbol) =>
+    internal static bool IsDisposeMethod(IMethodSymbol method, ISymbol? disposableInterfaceSymbol) =>
         method.ContainingType.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default);
 
     /// <summary>Removes base methods that the current interface re-declares as explicit Refit members.</summary>
     /// <param name="members">The directly declared members of the interface.</param>
     /// <param name="derivedNonRefitMethods">The non-Refit methods discovered on base interfaces.</param>
     /// <returns>The filtered list of derived non-Refit methods.</returns>
-    private static List<IMethodSymbol> ExcludeExplicitlyImplementedBaseMethods(
+    internal static List<IMethodSymbol> ExcludeExplicitlyImplementedBaseMethods(
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> derivedNonRefitMethods)
     {
@@ -634,13 +650,49 @@ internal static partial class Parser
         return filteredDerivedNonRefitMethods;
     }
 
+    /// <summary>Returns the semantic model for a syntax tree, creating it once per tree per collection pass.</summary>
+    /// <param name="compilation">The compilation to bind against.</param>
+    /// <param name="semanticModelsByTree">The per-pass cache of semantic models keyed by their syntax tree.</param>
+    /// <param name="tree">The syntax tree whose model is requested.</param>
+    /// <returns>The cached or newly created semantic model.</returns>
+    private static SemanticModel GetCachedSemanticModel(
+        CSharpCompilation compilation,
+        Dictionary<SyntaxTree, SemanticModel> semanticModelsByTree,
+        SyntaxTree tree)
+    {
+        if (!semanticModelsByTree.TryGetValue(tree, out var model))
+        {
+            model = compilation.GetSemanticModel(tree);
+            semanticModelsByTree[tree] = model;
+        }
+
+        return model;
+    }
+
+    /// <summary>Determines whether a method list already contains a symbol, compared with symbol equality.</summary>
+    /// <param name="methods">The method list to search.</param>
+    /// <param name="method">The method symbol to look for.</param>
+    /// <returns><see langword="true"/> when the list already contains the symbol.</returns>
+    private static bool ContainsSymbol(List<IMethodSymbol> methods, IMethodSymbol method)
+    {
+        foreach (var candidate in methods)
+        {
+            if (SymbolEqualityComparer.Default.Equals(candidate, method))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>The generated identifiers and display names computed for an interface.</summary>
     /// <param name="ClassName">The simple generated class name.</param>
     /// <param name="ClassDeclaration">The generated class declaration name.</param>
     /// <param name="ClassSuffix">The generated class suffix.</param>
     /// <param name="Namespace">The flattened namespace for generated identifiers.</param>
     /// <param name="InterfaceDisplayName">The fully qualified interface display name.</param>
-    private readonly record struct InterfaceNames(
+    internal readonly record struct InterfaceNames(
         string ClassName,
         string ClassDeclaration,
         string ClassSuffix,
@@ -653,7 +705,7 @@ internal static partial class Parser
     /// <param name="DerivedNonRefitMethods">The non-Refit methods inherited from base interfaces.</param>
     /// <param name="InheritedProperties">The emittable properties inherited from base interfaces, in discovery order.</param>
     /// <param name="HasDispose">Whether the interface inherits <c>IDisposable.Dispose</c>.</param>
-    private readonly record struct MethodPartition(
+    internal readonly record struct MethodPartition(
         List<IMethodSymbol> NonRefitMethods,
         List<IMethodSymbol> DerivedRefitMethods,
         List<IMethodSymbol> DerivedNonRefitMethods,

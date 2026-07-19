@@ -15,7 +15,7 @@ namespace Refit.Generator;
 /// <param name="PropertyKey">The request property key, when this is a property parameter.</param>
 /// <param name="BodySerializationMethod">The Refit body serialization method name, when this is a body parameter.</param>
 /// <param name="BodyBufferMode">The body buffering mode, when this is a body parameter.</param>
-internal sealed record RequestParameterModel(
+internal readonly record struct RequestParameterModel(
     string Name,
     string Type,
     ImmutableEquatableArray<Range>? Locations,

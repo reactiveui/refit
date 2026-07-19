@@ -4,6 +4,8 @@
 
 using System.Collections.Generic;
 
+using Microsoft.CodeAnalysis.CSharp;
+
 using Refit.Generator;
 
 namespace Refit.GeneratorTests;
@@ -127,6 +129,37 @@ public static partial class GeneratorComponentTests
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpContent")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.IO.Stream")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.String")).IsTrue();
+        }
+
+        /// <summary>Verifies containing-namespace matching handles a null symbol, exact matches, tail matches, and mismatches.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task IsInNamespace_HandlesNullSymbolAndNamespaceBoundaries()
+        {
+            // A null symbol has no containing namespace, so the walk never runs and the match fails.
+            await Assert.That(Parser.IsInNamespace(null, "System")).IsFalse();
+
+            var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+                """
+                namespace System.Threading.Tasks { public sealed class DeepMarker { } }
+                namespace Tasks { public sealed class ShallowMarker { } }
+                public sealed class RootMarker { }
+                """));
+            var deep = compilation.GetTypeByMetadataName("System.Threading.Tasks.DeepMarker")!;
+            var shallow = compilation.GetTypeByMetadataName("Tasks.ShallowMarker")!;
+            var root = compilation.GetTypeByMetadataName("RootMarker")!;
+
+            // An exact segment-for-segment match that consumes the whole dotted name and ends at the global namespace.
+            await Assert.That(Parser.IsInNamespace(deep, "System.Threading.Tasks")).IsTrue();
+
+            // The symbol's namespace matches the dotted tail but reaches the global namespace before the name is consumed.
+            await Assert.That(Parser.IsInNamespace(shallow, "Threading.Tasks")).IsFalse();
+
+            // A first-segment mismatch bails without walking further.
+            await Assert.That(Parser.IsInNamespace(deep, "System.Collections.Generic")).IsFalse();
+
+            // A type in the global namespace matches no dotted name.
+            await Assert.That(Parser.IsInNamespace(root, "System")).IsFalse();
         }
 
         /// <summary>Creates a non-body parameter model.</summary>

@@ -11,7 +11,7 @@ namespace Refit.Generator;
 /// <param name="TypeExpression">The fully-qualified attribute type expression, e.g. <c>global::Refit.AliasAsAttribute</c>.</param>
 /// <param name="ConstructorArguments">The attribute's constructor argument expressions, in order.</param>
 /// <param name="NamedArguments">The attribute's named argument assignments.</param>
-internal sealed record ParameterAttributeModel(
+internal readonly record struct ParameterAttributeModel(
     string TypeExpression,
     ImmutableEquatableArray<string> ConstructorArguments,
     ImmutableEquatableArray<NamedAttributeArgument> NamedArguments);

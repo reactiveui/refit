@@ -30,7 +30,7 @@ internal static partial class Emitter
     /// <param name="parts">The source fragments.</param>
     /// <param name="count">The populated fragment count.</param>
     /// <returns>The concatenated source.</returns>
-    private static string ConcatParts(string[] parts, int count)
+    internal static string ConcatParts(string[] parts, int count)
     {
         var length = 0;
         for (var i = 0; i < count; i++)
@@ -56,7 +56,7 @@ internal static partial class Emitter
     /// <param name="count">The populated fragment count.</param>
     /// <param name="separator">The separator text.</param>
     /// <returns>The joined source.</returns>
-    private static string JoinParts(string[] parts, int count, string separator)
+    internal static string JoinParts(string[] parts, int count, string separator)
     {
         if (count == 0)
         {
@@ -94,14 +94,14 @@ internal static partial class Emitter
     /// instead of allocating an identical fresh string at every per-method and per-parameter call site. Levels beyond
     /// the cache allocate a fresh string, a fallback reached only by nesting deeper than the shared test fixtures.</remarks>
     [ExcludeFromCodeCoverage]
-    private static string Indent(int level) =>
+    internal static string Indent(int level) =>
         (uint)level < (uint)IndentCache.Length
             ? IndentCache[level]
             : new string(' ', level * CharsPerIndentation);
 
     /// <summary>Precomputes the shared indentation strings for levels 0 through <see cref="MaxCachedIndentLevel"/>.</summary>
     /// <returns>The cached indentation strings, indexed by level.</returns>
-    private static string[] BuildIndentCache()
+    internal static string[] BuildIndentCache()
     {
         var cache = new string[MaxCachedIndentLevel + 1];
         for (var level = 0; level <= MaxCachedIndentLevel; level++)
@@ -168,7 +168,7 @@ internal static partial class Emitter
     /// <param name="destination">The target character span.</param>
     /// <param name="value">The value to quote, or <see langword="null"/>.</param>
     /// <param name="position">The current write position.</param>
-    private static void AppendLiteralOrNull(Span<char> destination, string? value, ref int position)
+    internal static void AppendLiteralOrNull(Span<char> destination, string? value, ref int position)
     {
         if (value is null)
         {
@@ -200,7 +200,7 @@ internal static partial class Emitter
     /// <param name="destination">The target character span.</param>
     /// <param name="value">The non-negative value to render (callers only pass <c>CollectionFormat</c> values).</param>
     /// <param name="position">The current write position.</param>
-    private static void AppendInt32(Span<char> destination, int value, ref int position)
+    internal static void AppendInt32(Span<char> destination, int value, ref int position)
     {
         var end = position + Int32Length(value);
         var write = end;
@@ -249,7 +249,7 @@ internal static partial class Emitter
     /// <param name="state">The caller supplied state.</param>
     /// <param name="action">The buffer fill callback.</param>
     /// <returns>The generated string.</returns>
-    private static string CreateGeneratedString<TState>(
+    internal static string CreateGeneratedString<TState>(
         int length,
         TState state,
         GeneratedStringAction<TState> action) =>
@@ -262,7 +262,7 @@ internal static partial class Emitter
     /// <param name="destination">The target character buffer.</param>
     /// <param name="text">The text to append.</param>
     /// <param name="position">The current write position.</param>
-    private static void AppendText(Span<char> destination, string text, ref int position)
+    internal static void AppendText(Span<char> destination, string text, ref int position)
     {
         text.AsSpan().CopyTo(destination[position..]);
         position += text.Length;
