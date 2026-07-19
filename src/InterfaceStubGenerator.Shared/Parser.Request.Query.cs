@@ -17,6 +17,9 @@ internal static partial class Parser
     /// <summary>The maximum nested-object depth flattened inline before the whole parameter falls back to reflection.</summary>
     private const int MaxNestingDepth = 32;
 
+    /// <summary>The underlying integer value of <c>CollectionFormat.Indexed</c>, used by the parser without a direct reference to the Refit assembly.</summary>
+    private const int IndexedCollectionFormatValue = 6;
+
     /// <summary>The metadata name of <c>Refit.QueryAttribute</c>.</summary>
     private const string QueryAttributeDisplayName = "QueryAttribute";
 
@@ -185,6 +188,12 @@ internal static partial class Parser
             return true;
         }
 
+        query = TryBuildIndexedCollectionModel(parameter, urlName, preEncoded, data, format, formattableSymbol, context);
+        if (query is not null)
+        {
+            return true;
+        }
+
         query = TryBuildFlattenedObjectQueryModel(parameter, urlName, preEncoded, data, format, formattableSymbol, context);
         return query is not null;
     }
@@ -261,6 +270,54 @@ internal static partial class Parser
                 CanElementBeNull(elementType!),
                 BuildValueFormat(elementType!, format, formattableSymbol, context))
             : null;
+
+    /// <summary>Builds the query model for a <c>[Query(CollectionFormat.Indexed)]</c> parameter whose element type
+    /// is a complex object that can be flattened inline, or null when the parameter does not match.</summary>
+    /// <param name="parameter">The parameter to classify.</param>
+    /// <param name="urlName">The resolved query key.</param>
+    /// <param name="preEncoded">Whether the parameter carries <c>[Encoded]</c>.</param>
+    /// <param name="data">The parameter's parsed <c>[Query]</c> data.</param>
+    /// <param name="format">The effective compile-time format, or null.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The deep-object collection model, or null when the parameter is not a Indexed collection or
+    /// the element type cannot be flattened inline.</returns>
+    private static QueryParameterModel? TryBuildIndexedCollectionModel(
+        IParameterSymbol parameter,
+        string urlName,
+        bool preEncoded,
+        in QueryFormData data,
+        string? format,
+        INamedTypeSymbol? formattableSymbol,
+        InterfaceGenerationContext context)
+    {
+        if (data.CollectionFormatValue != IndexedCollectionFormatValue)
+        {
+            return null;
+        }
+
+        if (!TryGetEnumerableElementType(parameter.Type, out var elementType)
+            || IsSimpleType(elementType!, formattableSymbol))
+        {
+            return null;
+        }
+
+        if (TryBuildQueryObjectProperties(elementType!, null, formattableSymbol, context) is not { } elementProperties)
+        {
+            return null;
+        }
+
+        return new(
+            urlName,
+            QueryParameterShape.IndexedCollection,
+            TreatAsString: false,
+            preEncoded,
+            data.CollectionFormatValue,
+            CanElementBeNull(elementType!),
+            BuildValueFormat(elementType!, format, formattableSymbol, context),
+            elementProperties,
+            NestingDelimiter: string.IsNullOrEmpty(data.Delimiter) ? "." : data.Delimiter);
+    }
 
     /// <summary>Builds the query model for a <c>[QueryConverter]</c> parameter, or null when the type is unresolved.</summary>
     /// <param name="parameter">The parameter carrying the converter.</param>

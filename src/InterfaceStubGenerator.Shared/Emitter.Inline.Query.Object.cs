@@ -640,4 +640,98 @@ internal static partial class Emitter
         var prefix = ToNullableCSharpStringLiteral(property.PrefixSegment);
         return $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {clrName}, null, {prefix})";
     }
+
+    /// <summary>Appends the statements that iterate a <c>[Query(CollectionFormat.Indexed)]</c> collection,
+    /// flattening each element's properties under an indexed key prefix: <c>key[0].Prop=val</c>.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="parameter">The parameter model.</param>
+    /// <param name="query">The query-binding metadata.</param>
+    /// <param name="providerField">The cached attribute-provider field name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    private static void AppendIndexedCollectionQueryStatements(
+        PooledStringBuilder sb,
+        RequestParameterModel parameter,
+        QueryParameterModel query,
+        string providerField,
+        in InlineValueEmission emission)
+    {
+        var bodyIndent = Indent(MethodBodyIndentation);
+        var guarded = parameter.CanBeNull;
+        var outerIndent = guarded ? bodyIndent + "    " : bodyIndent;
+
+        if (guarded)
+        {
+            _ = sb.Append(bodyIndent).Append(IfParameterPrefix).Append(parameter.Name).AppendLine(NotNullCheckSuffix)
+                .Append(bodyIndent).AppendLine("{");
+        }
+
+        // Wrap in a block so the index local is scoped to this parameter and cannot clash with other parameters.
+        var idxLocal = emission.QueryValueLocal + "_idx";
+        var blockIndent = outerIndent + "    ";
+        var foreachIndent = blockIndent + "    ";
+
+        _ = sb.Append(outerIndent).AppendLine("{")
+            .Append(blockIndent).Append("var ").Append(idxLocal).AppendLine(" = 0;")
+            .Append(blockIndent).Append(ForeachVarKeyword).Append(emission.QueryValueLocal)
+                .Append(" in @").Append(parameter.Name).AppendLine(")")
+            .Append(blockIndent).AppendLine("{");
+
+        AppendIndexedElement(sb, parameter, query, providerField, idxLocal, foreachIndent, emission);
+
+        _ = sb.Append(foreachIndent).Append(idxLocal).AppendLine("++;")
+            .Append(blockIndent).AppendLine("}") // close foreach body
+            .Append(outerIndent).AppendLine("}"); // close wrapper block
+
+        if (!guarded)
+        {
+            return;
+        }
+
+        _ = sb.Append(bodyIndent).AppendLine("}");
+    }
+
+    /// <summary>Appends one element's optional null guard, indexed key declaration, and flattened property statements.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="parameter">The enclosing parameter model.</param>
+    /// <param name="query">The query-binding metadata whose <c>ObjectProperties</c> describes each element's shape.</param>
+    /// <param name="providerField">The cached attribute-provider field name.</param>
+    /// <param name="idxLocal">The generated index counter local name.</param>
+    /// <param name="foreachIndent">The indentation inside the foreach body.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    private static void AppendIndexedElement(
+        PooledStringBuilder sb,
+        RequestParameterModel parameter,
+        QueryParameterModel query,
+        string providerField,
+        string idxLocal,
+        string foreachIndent,
+        in InlineValueEmission emission)
+    {
+        var keyLocal = $"{emission.QueryValueLocal}_key";
+        var itemIndent = foreachIndent;
+
+        _ = sb.Append(itemIndent).Append("var ").Append(keyLocal).Append(" = ")
+            .Append("$").Append('"').Append(query.Key)
+            .Append("[{").Append(idxLocal).Append(".ToString(global::System.Globalization.CultureInfo.InvariantCulture)").Append("}]").Append('"').AppendLine(";");
+
+        if (query.ElementCanBeNull)
+        {
+            _ = sb.Append(foreachIndent).Append("if (").Append(emission.QueryValueLocal).AppendLine(NotNullCheckSuffix)
+                .Append(foreachIndent).AppendLine("{");
+            itemIndent = foreachIndent + "    ";
+        }
+
+        // Flatten the element's properties under the indexed key; pass null as collection format so nested
+        // collection properties fall back to settings default instead of inheriting Indexed.
+        var context = new QueryObjectContext(parameter, providerField, null, ToLowerInvariantString(query.PreEncoded));
+        var scope = new ObjectFlattenScope(emission.QueryValueLocal, keyLocal, query.NestingDelimiter, "_" + parameter.Name, itemIndent);
+        AppendObjectPropertyList(sb, context, query.ObjectProperties!, scope, emission);
+
+        if (!query.ElementCanBeNull)
+        {
+            return;
+        }
+
+        _ = sb.Append(foreachIndent).AppendLine("}");
+    }
 }

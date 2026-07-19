@@ -25,5 +25,9 @@ internal enum QueryParameterShape
     Dictionary,
 
     /// <summary>A value flattened by a user-supplied <c>IQueryConverter&lt;T&gt;</c> named with <c>[QueryConverter]</c>.</summary>
-    Converter
+    Converter,
+
+    /// <summary>A collection of objects whose properties are flattened with an indexed key prefix:
+    /// <c>key[0].Prop=val&amp;key[1].Prop=val</c>, matching <c>CollectionFormat.Indexed</c>.</summary>
+    IndexedCollection
 }

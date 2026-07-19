@@ -43,41 +43,41 @@ internal partial class RequestBuilderImplementation
         switch (restMethod.BodyParameterInfo.Item1)
         {
             case BodySerializationMethod.UrlEncoded:
-            {
-                ret.Content = param is string str
-                    ? new StringContent(
-                        StringHelpers.EscapeDataString(str),
-                        Encoding.UTF8,
-                        "application/x-www-form-urlencoded")
-                    : new FormUrlEncodedContent(new FormValueMultimap(param, _settings));
-                break;
-            }
-
-            case BodySerializationMethod.JsonLines:
-            {
-                ret.Content = new JsonLinesContent(AsJsonLinesSequence(param), _serializer);
-                break;
-            }
-
-            case BodySerializationMethod.Default or BodySerializationMethod.Serialized:
-            {
-                AddSerializedBodyToRequest(restMethod, param, ret);
-                break;
-            }
-
-            default:
-            {
-                // The obsolete legacy JSON serialization method must still serialize, because
-                // already-compiled callers can pass it. Treating it as Default would incorrectly
-                // send string bodies as raw text. It is matched by value rather than by name so
-                // this file never references the obsolete member.
-                if (GeneratedRequestRunner.IsObsoleteJsonSerializationMethod(restMethod.BodyParameterInfo.Item1))
                 {
-                    AddSerializedBodyToRequest(restMethod, param, ret);
+                    ret.Content = param is string str
+                        ? new StringContent(
+                            StringHelpers.EscapeDataString(str),
+                            Encoding.UTF8,
+                            "application/x-www-form-urlencoded")
+                        : new FormUrlEncodedContent(new FormValueMultimap(param, _settings));
+                    break;
                 }
 
-                break;
-            }
+            case BodySerializationMethod.JsonLines:
+                {
+                    ret.Content = new JsonLinesContent(AsJsonLinesSequence(param), _serializer);
+                    break;
+                }
+
+            case BodySerializationMethod.Default or BodySerializationMethod.Serialized:
+                {
+                    AddSerializedBodyToRequest(restMethod, param, ret);
+                    break;
+                }
+
+            default:
+                {
+                    // The obsolete legacy JSON serialization method must still serialize, because
+                    // already-compiled callers can pass it. Treating it as Default would incorrectly
+                    // send string bodies as raw text. It is matched by value rather than by name so
+                    // this file never references the obsolete member.
+                    if (GeneratedRequestRunner.IsObsoleteJsonSerializationMethod(restMethod.BodyParameterInfo.Item1))
+                    {
+                        AddSerializedBodyToRequest(restMethod, param, ret);
+                    }
+
+                    break;
+                }
         }
     }
 
@@ -157,6 +157,16 @@ internal partial class RequestBuilderImplementation
             return;
         }
 
+        var parameterCollectionFormat = attr.IsCollectionFormatSpecified
+            ? attr.CollectionFormat
+            : (CollectionFormat?)null;
+
+        if (parameterCollectionFormat is not null
+            && TryAppendIndexedCollectionQuery(queryParamsToAdd, param, attr, restMethod.QueryParameterMap[i], parameterCollectionFormat))
+        {
+            return;
+        }
+
         if (DoNotConvertToQueryMap(param))
         {
             AppendQueryParameter(
@@ -168,9 +178,6 @@ internal partial class RequestBuilderImplementation
             return;
         }
 
-        var parameterCollectionFormat = attr.IsCollectionFormatSpecified
-            ? attr.CollectionFormat
-            : (CollectionFormat?)null;
         var queryMap = BuildQueryMap(param, attr.Delimiter, parameterInfo, parameterCollectionFormat);
         for (var queryMapIndex = 0; queryMapIndex < queryMap.Count; queryMapIndex++)
         {
@@ -398,6 +405,77 @@ internal partial class RequestBuilderImplementation
                     param,
                     parameterInfo,
                     parameterInfo.ParameterType)));
+    }
+
+    /// <summary>Checks whether the parameter is a <c>CollectionFormat.Indexed</c> collection, and if so appends
+    /// its indexed-prefix query pairs and returns <see langword="true"/>.</summary>
+    /// <param name="queryParamsToAdd">The list receiving query parameters.</param>
+    /// <param name="param">The parameter value.</param>
+    /// <param name="attr">The query attribute governing key naming.</param>
+    /// <param name="paramKey">The base query key for the parameter.</param>
+    /// <param name="parameterCollectionFormat">The resolved collection format, or null to use the settings default.</param>
+    /// <returns><see langword="true"/> when the parameter was handled as a Indexed collection.</returns>
+    private bool TryAppendIndexedCollectionQuery(
+        List<QueryParameterEntry> queryParamsToAdd,
+        object param,
+        QueryAttribute attr,
+        string paramKey,
+        CollectionFormat? parameterCollectionFormat)
+    {
+        if (parameterCollectionFormat != CollectionFormat.Indexed
+            || param is string
+            || param is IDictionary
+            || param is not IEnumerable collection)
+        {
+            return false;
+        }
+
+        AppendIndexedCollectionParameters(queryParamsToAdd, collection, attr, paramKey);
+        return true;
+    }
+
+    /// <summary>Expands a <c>[Query(CollectionFormat.Indexed)]</c> collection into indexed-prefix query pairs,
+    /// producing <c>key[0].Prop=val&amp;key[1].Prop=val</c> for each element's flattened properties.</summary>
+    /// <param name="queryParamsToAdd">The list receiving query parameters.</param>
+    /// <param name="collection">The enumerable parameter value.</param>
+    /// <param name="attr">The query attribute governing key naming.</param>
+    /// <param name="paramKey">The base query key for the parameter.</param>
+    private void AppendIndexedCollectionParameters(
+        List<QueryParameterEntry> queryParamsToAdd,
+        IEnumerable collection,
+        QueryAttribute attr,
+        string paramKey)
+    {
+        var index = 0;
+        foreach (var item in collection)
+        {
+            if (item is null)
+            {
+                index++;
+                continue;
+            }
+
+            var indexedKey = $"{paramKey}[{index}]";
+            if (DoNotConvertToQueryMap(item))
+            {
+                var type = item.GetType();
+                queryParamsToAdd.Add(new(indexedKey, GeneratedRequestRunner.FormatUrlParameter(_settings, item, type, type)));
+            }
+            else
+            {
+                var queryMap = BuildQueryMap(item, attr.Delimiter);
+                for (var j = 0; j < queryMap.Count; j++)
+                {
+                    var kvp = queryMap[j];
+                    var valueType = kvp.Value?.GetType() ?? typeof(object);
+                    queryParamsToAdd.Add(new(
+                        indexedKey + attr.Delimiter + kvp.Key,
+                        GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, valueType, valueType)));
+                }
+            }
+
+            index++;
+        }
     }
 
     /// <summary>Formats an enumerable parameter value according to the effective collection format.</summary>

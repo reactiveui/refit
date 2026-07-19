@@ -87,7 +87,7 @@ internal static partial class Emitter
             {
                 // A converter formats its own values, so the generated method needs no default-formatting branch.
                 { Converter: not null } => false,
-                { ObjectProperties: { } properties } => ObjectPropertiesNeedFormattingLocal(properties),
+                { Shape: QueryParameterShape.Object or QueryParameterShape.IndexedCollection, ObjectProperties: { } properties } => ObjectPropertiesNeedFormattingLocal(properties),
                 { Dictionary: { } dictionary } =>
                     dictionary.KeyFormat.Kind != InlineFormatKind.FormatterOnly
                     || query.ValueFormat.Kind != InlineFormatKind.FormatterOnly,
@@ -267,6 +267,12 @@ internal static partial class Emitter
             case QueryParameterShape.Object:
             {
                 AppendObjectQueryStatements(sb, parameter, query, providerField, emission);
+                break;
+            }
+
+            case QueryParameterShape.IndexedCollection:
+            {
+                AppendIndexedCollectionQueryStatements(sb, parameter, query, providerField, emission);
                 break;
             }
 

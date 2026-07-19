@@ -50,6 +50,21 @@ public sealed partial class QueryRequestBuildingLiveTests
     /// <summary>The upper bound of the formatted complex query-object property scenario.</summary>
     private const int WindowMax = 9;
 
+    /// <summary>The method name for the Indexed collection scenario.</summary>
+    private const string IndexedSearchMethodName = "IndexedSearch";
+
+    /// <summary>The full type name of the <c>Item</c> scenario type used by the Indexed test.</summary>
+    private const string IndexedItemTypeName = "Refit.LiveQuery.Item";
+
+    /// <summary>The name of the Indexed parameter.</summary>
+    private const string IndexedParameterName = "items";
+
+    /// <summary>The name of the Id property on <c>Item</c>.</summary>
+    private const string IndexedIdPropertyName = "Id";
+
+    /// <summary>The name of the Value property on <c>Item</c>.</summary>
+    private const string IndexedValuePropertyName = "Value";
+
     /// <summary>Csv-joined identifiers.</summary>
     private static readonly int[] CsvIds = [1, 2, 3];
 
@@ -242,6 +257,14 @@ public sealed partial class QueryRequestBuildingLiveTests
         await harness.AssertParityAsync("DefaultList", [ListIds], "/base/list?ids=4%2C5");
         await harness.AssertParityAsync("Csv", [EmptyIds], "/base/csv?ids=");
         await harness.AssertParityAsync(ExpandedMethodName, [EmptyIds], "/base/expand");
+
+        const string id = IndexedIdPropertyName;
+        const string value = IndexedValuePropertyName;
+        const string parameter = IndexedParameterName;
+        await harness.AssertParityAsync(IndexedSearchMethodName, [null], "/base/indexed");
+        var item0 = harness.CreateApiValue(IndexedItemTypeName, (id, 1), (value, "a"));
+        var indexedList = harness.CreateApiList(IndexedItemTypeName, item0);
+        await harness.AssertParityAsync(IndexedSearchMethodName, [indexedList], $"/base/indexed?{parameter}%5B0%5D.{id}=1&{parameter}%5B0%5D.{value}=a");
     }
 
     /// <summary>Verifies a custom URL parameter formatter still runs for every generated value.</summary>
@@ -417,6 +440,13 @@ public sealed partial class QueryRequestBuildingLiveTests
                 public override System.Net.Http.HttpMethod Method => new System.Net.Http.HttpMethod("QUERY");
             }
 
+            public sealed class Item
+            {
+                public int Id { get; set; }
+
+                public string? Value { get; set; }
+            }
+
             public interface ILiveQueryApi
             {
                 [Get("/search")]
@@ -512,6 +542,9 @@ public sealed partial class QueryRequestBuildingLiveTests
 
                 [Get("/push/{deviceId}/{notifMsgId?}")]
                 Task<string> TrailingOptional(string deviceId, string? notifMsgId);
+
+                [Get("/indexed")]
+                Task<string> IndexedSearch([Query(CollectionFormat.Indexed)] List<Item>? items);
             }
             """;
 
@@ -588,6 +621,26 @@ public sealed partial class QueryRequestBuildingLiveTests
             }
 
             return dictionary;
+        }
+
+        /// <summary>Creates a <c>List&lt;TValue&gt;</c> of a compiled scenario value type.</summary>
+        /// <param name="valueTypeName">The compiled value type's full name.</param>
+        /// <param name="items">The items to add to the list.</param>
+        /// <returns>The created list instance.</returns>
+        [RequiresUnreferencedCode("Reflects over generated types and members.")]
+        [RequiresDynamicCode("Constructs a closed List type over the compiled scenario value type.")]
+        public object CreateApiList(string valueTypeName, params object?[] items)
+        {
+            var valueType = interfaceType.Assembly.GetType(valueTypeName, throwOnError: true)!;
+            var listType = typeof(List<>).MakeGenericType(valueType);
+            var list = Activator.CreateInstance(listType)!;
+            var add = listType.GetMethod("Add")!;
+            foreach (var item in items)
+            {
+                _ = add.Invoke(list, [item]);
+            }
+
+            return list;
         }
 
         /// <summary>Invokes a method on the generated client and asserts the captured relative URI.</summary>
