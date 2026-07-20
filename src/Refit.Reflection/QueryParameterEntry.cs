@@ -7,4 +7,5 @@ namespace Refit;
 /// <summary>One pending query-string entry collected while building a request.</summary>
 /// <param name="Key">The query key, unescaped.</param>
 /// <param name="Value">The formatted value, or <see langword="null"/> to omit the entry.</param>
-internal readonly record struct QueryParameterEntry(string Key, string? Value);
+/// <param name="KeyPreEscaped">Whether the key is already escaped and should be appended verbatim without re-encoding.</param>
+internal readonly record struct QueryParameterEntry(string Key, string? Value, bool KeyPreEscaped = false);

@@ -288,14 +288,14 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The deep-object collection model, or null when the parameter is not a Indexed collection or
     /// the element type cannot be flattened inline.</returns>
-    private static QueryParameterModel? TryBuildIndexedCollectionModel(
+    internal static QueryParameterModel? TryBuildIndexedCollectionModel(
         IParameterSymbol parameter,
         string urlName,
         bool preEncoded,
         in QueryFormData data,
         string? format,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         if (data.CollectionFormatValue != IndexedCollectionFormatValue)
         {

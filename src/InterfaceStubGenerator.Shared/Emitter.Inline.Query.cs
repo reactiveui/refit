@@ -580,22 +580,27 @@ internal static partial class Emitter
     /// <param name="KeyExpression">The query key expression, constant or key-formatter call.</param>
     /// <param name="PreEncoded">The rendered <c>preEncoded</c> boolean literal.</param>
     /// <param name="Indentation">The indentation of the statements emitting this property.</param>
+    /// <param name="AddPairCall">The query-builder call fragment for emitting a pair; defaults to <see cref="AddQueryPairCall"/>.</param>
     internal readonly record struct QueryPropertySite(
         string ValueLocal,
         string KeyExpression,
         string PreEncoded,
-        string Indentation);
+        string Indentation,
+        string AddPairCall = AddQueryPairCall);
 
     /// <summary>The enclosing-parameter context shared by every flattened property of one query object.</summary>
     /// <param name="Parameter">The enclosing query-object parameter.</param>
     /// <param name="ProviderField">The cached attribute-provider field name for the parameter.</param>
     /// <param name="ParameterCollectionFormat">The parameter's <c>[Query(CollectionFormat)]</c>, or null.</param>
     /// <param name="PreEncoded">The rendered <c>preEncoded</c> boolean literal for the parameter.</param>
+    /// <param name="PreEscapedKeys">When <see langword="true"/>, leaf properties emit via <c>.AddPreEscapedKey(</c>
+    /// so runtime keys containing literal bracket characters are not re-encoded.</param>
     internal readonly record struct QueryObjectContext(
         RequestParameterModel Parameter,
         string ProviderField,
         int? ParameterCollectionFormat,
-        string PreEncoded);
+        string PreEncoded,
+        bool PreEscapedKeys = false);
 
     /// <summary>The per-nesting-level state threaded through recursive query-object flattening.</summary>
     /// <param name="AccessExpr">The C# expression accessing the current object (e.g. <c>@filter</c> or a nested local).</param>

@@ -69,10 +69,13 @@ internal static partial class Emitter
         foreach (var property in properties)
         {
             var valueLocal = emission.QueryValueLocal + scope.LocalSuffix + "_" + property.ClrName;
+
             var keyExpression = scope.ParentKeyExpr is { } parentKey
-                ? BuildNestedKeyExpression(property, parentKey, scope.Delimiter, emission)
+                ? BuildNestedKeyExpression(property, parentKey, scope.Delimiter, emission, context)
                 : BuildQueryObjectKeyExpression(property, emission);
-            var site = new QueryPropertySite(valueLocal, keyExpression, context.PreEncoded, scope.Indentation + "    ");
+
+            var pairCall = context.PreEscapedKeys ? ".AddPreEscapedKey(" : AddQueryPairCall;
+            var site = new QueryPropertySite(valueLocal, keyExpression, context.PreEncoded, scope.Indentation + "    ", pairCall);
 
             if (property.Nested is { } children)
             {
@@ -176,7 +179,7 @@ internal static partial class Emitter
             .Append(valueIndent).Append("if (!string.IsNullOrWhiteSpace(").Append(entryKeyLocal).AppendLine("))")
             .Append(valueIndent).AppendLine("{")
             .Append(valueIndent).Append("    ").Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(" + ").Append(ToCSharpStringLiteral(scope.Delimiter))
+            .Append(site.AddPairCall).Append(site.KeyExpression).Append(" + ").Append(ToCSharpStringLiteral(scope.Delimiter))
             .Append(" + ").Append(entryKeyLocal).Append(", ").Append(valueExpression).Append(", ")
             .Append(context.PreEncoded).AppendLine(");")
             .Append(valueIndent).AppendLine("}");
@@ -271,7 +274,7 @@ internal static partial class Emitter
             _ = sb.Append(innerIndent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
                 .Append(innerIndent).AppendLine("{")
                 .Append(innerIndent).Append("    ").Append(emission.QueryBuilderLocal)
-                .Append(AddQueryPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
+                .Append(site.AddPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
                 .Append(innerIndent).AppendLine("}")
                 .Append(innerIndent).AppendLine("else")
                 .Append(innerIndent).AppendLine("{");
@@ -291,12 +294,14 @@ internal static partial class Emitter
     /// <param name="parentKeyExpr">The runtime key expression (a local) of the enclosing object.</param>
     /// <param name="delimiter">The nesting delimiter.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <param name="context">The enclosing parameter, provider field, and collection-format context.</param>
     /// <returns>The composed key expression: parent key, delimiter, this property's own prefix, then its name.</returns>
     internal static string BuildNestedKeyExpression(
         QueryObjectPropertyModel property,
         string parentKeyExpr,
         string delimiter,
-        in InlineValueEmission emission)
+        in InlineValueEmission emission,
+        in QueryObjectContext context)
     {
         var prefixExpr = $"{parentKeyExpr} + {ToCSharpStringLiteral(delimiter + (property.PrefixSegment ?? string.Empty))}";
 
@@ -306,8 +311,10 @@ internal static partial class Emitter
             return $"{prefixExpr} + {ToCSharpStringLiteral(alias)}";
         }
 
-        var formatterCall =
-            $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {ToCSharpStringLiteral(property.ClrName)}, null, {prefixExpr})";
+        var propertyNameExpr = ToCSharpStringLiteral(property.ClrName);
+        var formatterCall = context.PreEscapedKeys
+            ? $"{prefixExpr} + {propertyNameExpr}"
+            : $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {propertyNameExpr}, null, {prefixExpr})";
 
         // A [JsonPropertyName] name is honored only when the runtime setting is enabled.
         return property.SerializerName is { } serializerName
@@ -352,7 +359,7 @@ internal static partial class Emitter
             _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
                 .Append(indent).AppendLine("{")
                 .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-                .Append(AddQueryPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
+                .Append(site.AddPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
                 .Append(indent).AppendLine("}")
                 .Append(indent).AppendLine("else")
                 .Append(indent).AppendLine("{");
@@ -479,7 +486,7 @@ internal static partial class Emitter
         _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
             .Append(indent).AppendLine("{")
             .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(EmptyValueArgument)
+            .Append(site.AddPairCall).Append(site.KeyExpression).Append(EmptyValueArgument)
             .Append(site.PreEncoded).AppendLine(");")
             .Append(indent).AppendLine("}")
             .Append(indent).AppendLine("else")
@@ -536,7 +543,7 @@ internal static partial class Emitter
             : $"{emission.UseDefaultFormattingLocal} ? ({fastExpression}) : {customExpression}";
 
         _ = sb.Append(site.Indentation).Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(", ").Append(valueExpression).Append(", ")
+            .Append(site.AddPairCall).Append(site.KeyExpression).Append(", ").Append(valueExpression).Append(", ")
             .Append(site.PreEncoded).AppendLine(");");
     }
 
@@ -573,7 +580,7 @@ internal static partial class Emitter
             .Append(indent).Append("if (").Append(formattedLocal).AppendLine(NotNullCheckSuffix)
             .Append(indent).AppendLine("{")
             .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(", ")
+            .Append(site.AddPairCall).Append(site.KeyExpression).Append(", ")
             .Append(emission.UseDefaultFormattingLocal).Append(" ? ").Append(formattedLocal)
             .Append(" : ").Append(customExpression)
             .Append(", ").Append(site.PreEncoded).AppendLine(");")
@@ -648,9 +655,9 @@ internal static partial class Emitter
     /// <param name="query">The query-binding metadata.</param>
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendIndexedCollectionQueryStatements(
+    internal static void AppendIndexedCollectionQueryStatements(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
         in InlineValueEmission emission)
@@ -698,9 +705,9 @@ internal static partial class Emitter
     /// <param name="idxLocal">The generated index counter local name.</param>
     /// <param name="foreachIndent">The indentation inside the foreach body.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendIndexedElement(
+    internal static void AppendIndexedElement(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
         string idxLocal,
@@ -723,9 +730,10 @@ internal static partial class Emitter
 
         // Flatten the element's properties under the indexed key; pass null as collection format so nested
         // collection properties fall back to settings default instead of inheriting Indexed.
-        var context = new QueryObjectContext(parameter, providerField, null, ToLowerInvariantString(query.PreEncoded));
+        // PreEscapedKeys tells every leaf property to use AddPreEscapedKey so the brackets in the key are not re-encoded.
+        var context = new QueryObjectContext(parameter, providerField, null, ToLowerInvariantString(query.PreEncoded), true);
         var scope = new ObjectFlattenScope(emission.QueryValueLocal, keyLocal, query.NestingDelimiter, "_" + parameter.Name, itemIndent);
-        AppendObjectPropertyList(sb, context, query.ObjectProperties!, scope, emission);
+        AppendObjectPropertyList(sb, context, query.ObjectProperties!.Value, scope, emission);
 
         if (!query.ElementCanBeNull)
         {

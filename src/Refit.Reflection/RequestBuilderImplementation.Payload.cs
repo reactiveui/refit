@@ -459,7 +459,7 @@ internal partial class RequestBuilderImplementation
             if (DoNotConvertToQueryMap(item))
             {
                 var type = item.GetType();
-                queryParamsToAdd.Add(new(indexedKey, GeneratedRequestRunner.FormatUrlParameter(_settings, item, type, type)));
+                queryParamsToAdd.Add(new(indexedKey, GeneratedRequestRunner.FormatUrlParameter(_settings, item, type, type), KeyPreEscaped: true));
             }
             else
             {
@@ -470,7 +470,8 @@ internal partial class RequestBuilderImplementation
                     var valueType = kvp.Value?.GetType() ?? typeof(object);
                     queryParamsToAdd.Add(new(
                         indexedKey + attr.Delimiter + kvp.Key,
-                        GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, valueType, valueType)));
+                        GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, valueType, valueType),
+                        KeyPreEscaped: true));
                 }
             }
 

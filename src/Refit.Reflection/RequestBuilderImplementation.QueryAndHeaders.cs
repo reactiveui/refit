@@ -185,7 +185,7 @@ internal partial class RequestBuilderImplementation
                 vsb.Append('&');
             }
 
-            var key = StringHelpers.EscapeDataString(queryParam.Key);
+            var key = queryParam.KeyPreEscaped ? queryParam.Key : StringHelpers.EscapeDataString(queryParam.Key);
 #if NET6_0_OR_GREATER
             // if first query does not start with ? then prepend it
             if (vsb.Length == 0 && key.Length > 0 && key[0] != '?')
