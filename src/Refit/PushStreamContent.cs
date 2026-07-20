@@ -89,6 +89,21 @@ internal class PushStreamContent : HttpContent
         Headers.ContentType = mediaType ?? new MediaTypeHeaderValue("application/octet-stream");
     }
 
+    /// <summary>Wraps a synchronous stream callback in a task-returning callback.</summary>
+    /// <param name="onStreamAvailable">The synchronous action to wrap.</param>
+    /// <returns>A task-returning callback that invokes the action.</returns>
+    internal static Func<Stream, HttpContent, TransportContext?, Task> Taskify(
+        Action<Stream, HttpContent, TransportContext?> onStreamAvailable)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(onStreamAvailable);
+
+        return (stream, content, transportContext) =>
+        {
+            onStreamAvailable(stream, content, transportContext);
+            return Task.CompletedTask;
+        };
+    }
+
     /// <summary>
     /// When this method is called, it calls the action provided in the constructor with the output
     /// stream to write to. Once the action has completed its work it closes the stream which will
@@ -126,21 +141,6 @@ internal class PushStreamContent : HttpContent
         // We can't know the length of the content being pushed to the output stream.
         length = -1;
         return false;
-    }
-
-    /// <summary>Wraps a synchronous stream callback in a task-returning callback.</summary>
-    /// <param name="onStreamAvailable">The synchronous action to wrap.</param>
-    /// <returns>A task-returning callback that invokes the action.</returns>
-    private static Func<Stream, HttpContent, TransportContext?, Task> Taskify(
-        Action<Stream, HttpContent, TransportContext?> onStreamAvailable)
-    {
-        ArgumentExceptionHelper.ThrowIfNull(onStreamAvailable);
-
-        return (stream, content, transportContext) =>
-        {
-            onStreamAvailable(stream, content, transportContext);
-            return Task.CompletedTask;
-        };
     }
 
     /// <summary>A delegating stream that signals completion when it is disposed.</summary>

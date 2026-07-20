@@ -49,6 +49,6 @@ internal static class ReflectionPropertyHelpers
     /// <summary>Determines whether a property can be read through its public getter.</summary>
     /// <param name="property">The property to inspect.</param>
     /// <returns><see langword="true"/> when the property is readable; otherwise <see langword="false"/>.</returns>
-    private static bool IsReadablePublicProperty(PropertyInfo property) =>
+    internal static bool IsReadablePublicProperty(PropertyInfo property) =>
         property.CanRead && property.GetMethod!.IsPublic; // A readable property (CanRead) always has a non-null GetMethod.
 }

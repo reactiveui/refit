@@ -16,7 +16,7 @@ namespace Refit.Buffers;
 internal sealed partial class PooledBufferWriter
 {
     /// <summary>An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool.</summary>
-    private sealed partial class PooledMemoryStream : Stream
+    internal sealed partial class PooledMemoryStream : Stream
     {
         /// <summary>Asynchronously copies the remaining buffered bytes to the destination stream.</summary>
         /// <param name="destination">The stream to copy the buffered bytes to.</param>

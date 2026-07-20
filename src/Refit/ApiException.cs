@@ -385,7 +385,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="content">The response content to read.</param>
     /// <param name="maxChars">The maximum number of characters to read, or <see langword="null"/> for unbounded.</param>
     /// <returns>The (possibly truncated) response body.</returns>
-    private static async Task<string> ReadContentCappedAsync(HttpContent content, int? maxChars)
+    internal static async Task<string> ReadContentCappedAsync(HttpContent content, int? maxChars)
     {
         if (maxChars is not { } limit)
         {
@@ -426,13 +426,13 @@ public class ApiException : ApiExceptionBase
     /// <param name="statusCode">The HTTP status code.</param>
     /// <param name="reasonPhrase">The reason phrase.</param>
     /// <returns>The formatted exception message.</returns>
-    private static string CreateMessage(HttpStatusCode statusCode, string? reasonPhrase) =>
+    internal static string CreateMessage(HttpStatusCode statusCode, string? reasonPhrase) =>
         $"Response status code does not indicate success: {(int)statusCode} ({reasonPhrase}).";
 
     /// <summary>Reads the request body string captured before sending, if request-content capture was enabled.</summary>
     /// <param name="request">The request message that carries the captured content option.</param>
     /// <returns>The captured request content, or <see langword="null"/> when none was captured.</returns>
-    private static string? GetCapturedRequestContent(HttpRequestMessage request)
+    internal static string? GetCapturedRequestContent(HttpRequestMessage request)
     {
 #if NET6_0_OR_GREATER
         return request.Options.TryGetValue(

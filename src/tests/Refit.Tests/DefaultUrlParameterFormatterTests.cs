@@ -5,7 +5,7 @@
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="DefaultUrlParameterFormatter"/> date, collection and enum formatting behaviour.</summary>
-public class DefaultUrlParameterFormatterTests
+public partial class DefaultUrlParameterFormatterTests
 {
     /// <summary>A general date format registered for the DateTime formatter tests.</summary>
     private const string GeneralDateFormat = "yyyy-MM-dd";

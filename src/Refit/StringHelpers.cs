@@ -160,7 +160,7 @@ internal static class StringHelpers
     /// <param name="value">The value to inspect.</param>
     /// <returns>The first CR or LF index, or -1 when none is present.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static int IndexOfCrOrLf(string value) =>
+    internal static int IndexOfCrOrLf(string value) =>
 #if NET8_0_OR_GREATER
         value.AsSpan().IndexOfAny(_lineBreakCharacters);
 #else
@@ -172,7 +172,7 @@ internal static class StringHelpers
     /// <param name="c">The character to test.</param>
     /// <returns><see langword="true"/> for an unreserved character.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsUriUnreserved(char c) =>
+    internal static bool IsUriUnreserved(char c) =>
         c is (>= 'A' and <= 'Z') or (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-' or '.' or '_' or '~';
 #endif
 }

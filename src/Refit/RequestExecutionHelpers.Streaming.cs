@@ -21,7 +21,7 @@ internal static partial class RequestExecutionHelpers
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
-    private static async IAsyncEnumerable<T?> StreamResponseIteratorAsync<T>(
+    internal static async IAsyncEnumerable<T?> StreamResponseIteratorAsync<T>(
         HttpClient client,
         HttpRequestMessage request,
         RefitSettings settings,
@@ -84,7 +84,7 @@ internal static partial class RequestExecutionHelpers
     /// <summary>Chooses the streaming frame format from the response content type.</summary>
     /// <param name="content">The response content whose media type is inspected.</param>
     /// <returns>The detected streaming format.</returns>
-    private static StreamingContentFormat DetectStreamingFormat(HttpContent content)
+    internal static StreamingContentFormat DetectStreamingFormat(HttpContent content)
     {
         var mediaType = content.Headers.ContentType?.MediaType;
         if (string.Equals(mediaType, "text/event-stream", StringComparison.OrdinalIgnoreCase))
