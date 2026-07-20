@@ -16,18 +16,26 @@ namespace Refit;
 internal partial class RequestBuilderImplementation : IRequestBuilder
 {
     /// <summary>Maximum stack-allocated buffer size, in characters, used when building paths and query strings.</summary>
-    private const int StackallocThreshold = 512;
+    internal const int StackallocThreshold = 512;
 
     /// <summary>The name of the <see cref="IReturnTypeAdapter{TReturn, TResult}.Adapt"/> method, resolved reflectively.</summary>
-    private const string AdaptMethodName = "Adapt";
+    internal const string AdaptMethodName = "Adapt";
 
     /// <summary>The default query attribute applied when a parameter has none.</summary>
-    private static readonly QueryAttribute DefaultQueryAttribute = new();
+    internal static readonly QueryAttribute DefaultQueryAttribute = new();
 
     /// <summary>A placeholder base URI used while building relative request URIs. Its scheme and host are
     /// discarded — only the combined path and query are kept (see <c>AssignRequestUri</c>), so it never
     /// reaches the network.</summary>
-    private static readonly Uri BaseUri = new("https://api");
+    internal static readonly Uri BaseUri = new("https://api");
+
+    /// <summary>Caches this type's private delegate-factory methods by name, so resolving one never re-materializes the
+    /// full <see cref="TypeInfo.DeclaredMethods"/> array — a fresh reflection allocation on every lookup — for the small
+    /// fixed set of names the builder repeatedly asks for.</summary>
+    private static readonly ConcurrentDictionary<string, MethodInfo> DeclaredMethodCache = new();
+
+    /// <summary>Reuses one delegate for the declared-method resolver so a cache miss never allocates a callback.</summary>
+    private static readonly Func<string, MethodInfo> DeclaredMethodFactory = ResolveDeclaredMethod;
 
     /// <summary>Lookup of HTTP methods keyed by method name.</summary>
     private readonly Dictionary<string, List<RestMethodInfoInternal>> _interfaceHttpMethods;
@@ -149,34 +157,16 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
             : BuildGeneratedSyncFuncForMethod(restMethod);
     }
 
-    /// <summary>Finds a method declared on this implementation type by name.</summary>
+    /// <summary>Finds a method declared on this implementation type by name, caching the resolved metadata by name.</summary>
     /// <param name="name">The method name.</param>
     /// <returns>The declared method.</returns>
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
-        Justification = "This resolves Refit's own private generic delegate factory methods by known method name.")]
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2111:Reflection access to methods with DynamicallyAccessedMembersAttribute",
-        Justification = "This helper filters by known method names and does not invoke methods with dynamic-access requirements.")]
-    internal static MethodInfo FindDeclaredMethod(string name)
-    {
-        foreach (var method in typeof(RequestBuilderImplementation).GetTypeInfo().DeclaredMethods)
-        {
-            if (method.Name == name)
-            {
-                return method;
-            }
-        }
-
-        throw new MissingMethodException(typeof(RequestBuilderImplementation).FullName, name);
-    }
+    internal static MethodInfo FindDeclaredMethod(string name) =>
+        DeclaredMethodCache.GetOrAdd(name, DeclaredMethodFactory);
 
     /// <summary>Gets the lookup key for a method, stripping any explicit-interface prefix from the name.</summary>
     /// <param name="methodInfo">The method to derive a key for.</param>
     /// <returns>The simple method name used as a lookup key.</returns>
-    private static string GetLookupKeyForMethod(MethodInfo methodInfo)
+    internal static string GetLookupKeyForMethod(MethodInfo methodInfo)
     {
         var name = methodInfo.Name;
         var lastDot = name.LastIndexOf('.');
@@ -187,14 +177,14 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="restMethod">The rest method to inspect.</param>
     /// <param name="openGenericType">The open generic type definition to match.</param>
     /// <returns><see langword="true"/> if the return type closes <paramref name="openGenericType"/>; otherwise <see langword="false"/>.</returns>
-    private static bool IsGenericReturnType(RestMethodInfoInternal restMethod, Type openGenericType) =>
+    internal static bool IsGenericReturnType(RestMethodInfoInternal restMethod, Type openGenericType) =>
         restMethod.ReturnType.GetTypeInfo().IsGenericType
         && restMethod.ReturnType.GetGenericTypeDefinition() == openGenericType;
 
     /// <summary>Determines whether the method returns <see cref="Task{TResult}"/> of <see cref="HttpRequestMessage"/>.</summary>
     /// <param name="restMethod">The rest method to inspect.</param>
     /// <returns><see langword="true"/> when the method builds and returns its request without sending it.</returns>
-    private static bool IsRequestMessageReturnType(RestMethodInfoInternal restMethod) =>
+    internal static bool IsRequestMessageReturnType(RestMethodInfoInternal restMethod) =>
         IsGenericReturnType(restMethod, typeof(Task<>))
         && restMethod.ReturnResultType == typeof(HttpRequestMessage);
 
@@ -203,7 +193,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="parameterTypes">The parameter types to match.</param>
     /// <param name="genericArgumentTypes">The generic argument types, or null.</param>
     /// <returns>The matching candidate methods.</returns>
-    private static RestMethodInfoInternal[] FilterPossibleMethods(
+    internal static RestMethodInfoInternal[] FilterPossibleMethods(
         List<RestMethodInfoInternal> httpMethods,
         Type[] parameterTypes,
         Type[]? genericArgumentTypes)
@@ -249,7 +239,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "Performance",
         "PSH1315:A blocking wait on an awaitable that may not be done",
         Justification = "Deliberate sync-over-async bridge for synchronous (void/non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
-    private static void RunSynchronous(Func<Task> taskFactory) =>
+    internal static void RunSynchronous(Func<Task> taskFactory) =>
         Task.Run(taskFactory).GetAwaiter().GetResult();
 
     /// <summary>Runs an asynchronous task factory synchronously and returns its result.</summary>
@@ -264,7 +254,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "Performance",
         "PSH1315:A blocking wait on an awaitable that may not be done",
         Justification = "Deliberate sync-over-async bridge for synchronous (non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
-    private static T? RunSynchronous<T>(Func<Task<T?>> taskFactory) =>
+    internal static T? RunSynchronous<T>(Func<Task<T?>> taskFactory) =>
         Task.Run(taskFactory).GetAwaiter().GetResult();
 
     /// <summary>Awaits the request task and disposes the linked cancellation source once it completes.</summary>
@@ -276,7 +266,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "Usage",
         "VSTHRD003:Avoid awaiting foreign Tasks",
         Justification = "The task is the request just launched by the caller; awaiting it here only scopes disposal of the linked cancellation source.")]
-    private static async Task<T?> DisposeWhenDoneAsync<T>(Task<T?> task, CancellationTokenSource cts)
+    internal static async Task<T?> DisposeWhenDoneAsync<T>(Task<T?> task, CancellationTokenSource cts)
     {
         try
         {
@@ -292,7 +282,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="parameters">The reflected method parameters.</param>
     /// <param name="parameterTypes">The requested parameter types.</param>
     /// <returns><see langword="true"/> when the parameter types match.</returns>
-    private static bool ParametersMatch(ParameterInfo[] parameters, Type[] parameterTypes)
+    internal static bool ParametersMatch(ParameterInfo[] parameters, Type[] parameterTypes)
     {
         for (var i = 0; i < parameters.Length; i++)
         {
@@ -308,7 +298,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <summary>Finds the first cancellation token in an argument array.</summary>
     /// <param name="paramList">The argument values.</param>
     /// <returns>The first cancellation token, or <see cref="CancellationToken.None"/>.</returns>
-    private static CancellationToken GetCancellationToken(object[] paramList)
+    internal static CancellationToken GetCancellationToken(object[] paramList)
     {
         for (var i = 0; i < paramList.Length; i++)
         {
@@ -325,7 +315,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="interfaceType">The interface to scan for HTTP methods.</param>
     /// <param name="methods">The dictionary to populate with discovered methods.</param>
     [RequiresUnreferencedCode("Reading reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    private void AddInterfaceHttpMethods(
+    internal void AddInterfaceHttpMethods(
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.Interfaces
             | DynamicallyAccessedMemberTypes.PublicMethods
@@ -366,7 +356,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <returns>The matching rest method info.</returns>
     [RequiresUnreferencedCode("Resolving generic Refit methods from reflected metadata requires generic method metadata to be available at runtime.")]
     [RequiresDynamicCode("Resolving generic Refit methods from reflected metadata requires runtime generic method instantiation.")]
-    private RestMethodInfoInternal FindMatchingRestMethodInfo(
+    internal RestMethodInfoInternal FindMatchingRestMethodInfo(
         string key,
         Type[]? parameterTypes,
         Type[]? genericArgumentTypes)
@@ -419,7 +409,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <returns>The closed rest method info, or the original when no generic arguments are supplied.</returns>
     [RequiresUnreferencedCode("Closing generic Refit methods requires generic method metadata to be available at runtime.")]
     [RequiresDynamicCode("Closing generic Refit methods requires runtime generic method instantiation.")]
-    private RestMethodInfoInternal CloseGenericMethodIfNeeded(
+    internal RestMethodInfoInternal CloseGenericMethodIfNeeded(
         RestMethodInfoInternal restMethodInfo,
         Type[]? genericArgumentTypes) =>
         genericArgumentTypes is { } genericArguments
@@ -440,7 +430,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <returns>A delegate that invokes the method.</returns>
     [RequiresUnreferencedCode("Building generic result delegates requires generic method metadata to be available at runtime.")]
     [RequiresDynamicCode("Building generic result delegates requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], object?> BuildResultFuncForMethod(
+    internal Func<HttpClient, object[], object?> BuildResultFuncForMethod(
         RestMethodInfoInternal restMethod,
         string builderMethodName)
     {
@@ -461,7 +451,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <returns>A delegate that adapts the deferred HTTP call into the surfaced return type.</returns>
     [RequiresUnreferencedCode("Building return-type adapter delegates requires generic method metadata to be available at runtime.")]
     [RequiresDynamicCode("Building return-type adapter delegates requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], object?> BuildAdapterFuncForMethod(RestMethodInfoInternal restMethod)
+    internal Func<HttpClient, object[], object?> BuildAdapterFuncForMethod(RestMethodInfoInternal restMethod)
     {
         var builderMethodInfo = FindDeclaredMethod(nameof(BuildAdapterFuncForMethodGeneric));
         return (Func<HttpClient, object[], object?>)
@@ -482,7 +472,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresUnreferencedCode("Instantiating the adapter and resolving its interface method requires adapter metadata to be available at runtime.")]
     [RequiresDynamicCode("Instantiating the adapter and closing its interface method requires runtime generic type instantiation.")]
-    private Func<HttpClient, object[], object?> BuildAdapterFuncForMethodGeneric<T, TBody>(
+    internal Func<HttpClient, object[], object?> BuildAdapterFuncForMethodGeneric<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
         var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
@@ -524,7 +514,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <returns>A delegate that invokes the method synchronously.</returns>
     [RequiresUnreferencedCode("Building synchronous result delegates requires generic method metadata to be available at runtime.")]
     [RequiresDynamicCode("Building synchronous result delegates requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethod(
+    internal Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethod(
         RestMethodInfoInternal restMethod)
     {
         if (restMethod.ReturnResultType == typeof(void))
@@ -562,7 +552,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
+    internal Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
         RestMethodInfoInternal restMethod) =>
         (client, paramList) =>
             RunSynchronous(() =>
@@ -583,7 +573,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
+    internal Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
         var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
@@ -621,7 +611,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "SST1452:Unused type parameters should be removed",
         Justification = "The second type parameter is required so this factory matches the two-type-argument shape invoked reflectively by BuildResultFuncForMethod.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], IAsyncEnumerable<T?>> BuildAsyncEnumerableFuncForMethod<T, TBody>(
+    internal Func<HttpClient, object[], IAsyncEnumerable<T?>> BuildAsyncEnumerableFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod) =>
         (client, paramList) => ExecuteAsyncEnumerableRequestAsync<T>(client, restMethod, paramList);
 
@@ -635,7 +625,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(
+    internal Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
         var ret = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
@@ -656,7 +646,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
+    internal Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
         var ret = BuildTaskFuncForMethod<T, TBody>(restMethod);
@@ -668,7 +658,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that returns a task with no result.</returns>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(
+    internal Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(
         RestMethodInfoInternal restMethod) =>
         (client, paramList) =>
         {
@@ -686,4 +676,30 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
                 restMethod.CancellationToken is not null,
                 ct);
         };
+
+    /// <summary>Resolves a method declared on this implementation type by name, on a declared-method-cache miss.</summary>
+    /// <param name="name">The method name.</param>
+    /// <returns>The declared method.</returns>
+    /// <exception cref="MissingMethodException">No method with the given name is declared on the type. The miss is not
+    /// cached, so an unknown name keeps throwing rather than poisoning the cache.</exception>
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
+        Justification = "This resolves Refit's own private generic delegate factory methods by known method name.")]
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2111:Reflection access to methods with DynamicallyAccessedMembersAttribute",
+        Justification = "This helper filters by known method names and does not invoke methods with dynamic-access requirements.")]
+    private static MethodInfo ResolveDeclaredMethod(string name)
+    {
+        foreach (var method in typeof(RequestBuilderImplementation).GetTypeInfo().DeclaredMethods)
+        {
+            if (method.Name == name)
+            {
+                return method;
+            }
+        }
+
+        throw new MissingMethodException(typeof(RequestBuilderImplementation).FullName, name);
+    }
 }

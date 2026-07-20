@@ -13,27 +13,58 @@ namespace Refit;
 /// <summary>Reflection-based request builder that turns Refit interface calls into HTTP requests.</summary>
 internal partial class RequestBuilderImplementation
 {
-    /// <summary>Caches query-map properties by type without keeping collectible types alive.</summary>
-    private static readonly ConditionalWeakTable<Type, PropertyInfo[]> QueryPropertyCache = new();
+    /// <summary>Caches per-type query-property metadata without keeping collectible types alive.</summary>
+    internal static readonly ConditionalWeakTable<Type, QueryPropertyMetadata[]> QueryPropertyCache = new();
+
+    /// <summary>Caches an attribute provider per parameter/property/type that materializes the <see cref="QueryAttribute"/>
+    /// lookup once, so repeated formatting never re-reads it from metadata.</summary>
+    internal static readonly ConditionalWeakTable<ICustomAttributeProvider, CachedAttributeProvider> AttributeProviderCache = new();
+
+    /// <summary>Reuses one delegate for the cache factory so the flattening path never allocates a callback.</summary>
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2111:Method with DynamicallyAccessedMembersAttribute is accessed via reflection",
+        Justification = "The cache callback receives the same Type key that carries the public property metadata requirement.")]
+    private static readonly ConditionalWeakTable<Type, QueryPropertyMetadata[]>.CreateValueCallback QueryPropertyFactory =
+        BuildQueryPropertyMetadata;
 
     /// <summary>Determines whether a property should be skipped when building the query map.</summary>
-    /// <param name="propertyInfo">The property to inspect.</param>
+    /// <param name="metadata">The cached metadata for the property to inspect.</param>
     /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
     /// <returns><see langword="true"/> when the property is ignored or already bound to the path.</returns>
-    private static bool ShouldSkipQueryProperty(PropertyInfo propertyInfo, RestMethodParameterInfo? parameterInfo)
+    internal static bool ShouldSkipQueryProperty(in QueryPropertyMetadata metadata, RestMethodParameterInfo? parameterInfo)
     {
+        if (metadata.IsIgnored)
+        {
+            return true;
+        }
+
+        if (parameterInfo is not { IsObjectPropertyParameter: true })
+        {
+            return false;
+        }
+
         // Compare by name rather than PropertyInfo reference: for a derived runtime
         // type the inherited property is a different PropertyInfo instance, which
         // would otherwise be wrongly emitted as a duplicate query parameter.
-        return ShouldIgnorePropertyInQueryMap(propertyInfo)
-            || (parameterInfo is { IsObjectPropertyParameter: true }
-                && parameterInfo.ParameterProperties.Exists(x => x.PropertyChain[0].Name == propertyInfo.Name));
+        // A manual scan avoids the per-call predicate closure a List.Exists lambda would allocate.
+        var propertyName = metadata.Property.Name;
+        var properties = parameterInfo.ParameterProperties;
+        for (var i = 0; i < properties.Count; i++)
+        {
+            if (properties[i].PropertyChain[0].Name == propertyName)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Determines whether a property is marked to be ignored during serialization.</summary>
     /// <param name="propertyInfo">The property to inspect.</param>
     /// <returns><see langword="true"/> if the property carries an ignore attribute; otherwise <see langword="false"/>.</returns>
-    private static bool ShouldIgnorePropertyInQueryMap(PropertyInfo propertyInfo)
+    internal static bool ShouldIgnorePropertyInQueryMap(PropertyInfo propertyInfo)
     {
         foreach (var attributeData in propertyInfo.GetCustomAttributesData())
         {
@@ -53,7 +84,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="headersToAdd">The headers to apply, or null.</param>
     /// <param name="ret">The request message to populate.</param>
     /// <param name="validateHeaders">Whether header values are validated as they are applied; see <see cref="SetHeader"/>.</param>
-    private static void AddHeadersToRequest(Dictionary<string, string?>? headersToAdd, HttpRequestMessage ret, bool validateHeaders)
+    internal static void AddHeadersToRequest(Dictionary<string, string?>? headersToAdd, HttpRequestMessage ret, bool validateHeaders)
     {
         // NB: We defer setting headers until the body has been
         // added so any custom content headers don't get left out.
@@ -79,7 +110,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Extracts any query parameters already present on the URI into the pending list.</summary>
     /// <param name="uri">The URI builder whose query is read.</param>
     /// <param name="queryParamsToAdd">The pending query parameter list, created if needed.</param>
-    private static void ParseExistingQueryString(UriBuilder uri, ref List<QueryParameterEntry>? queryParamsToAdd) =>
+    internal static void ParseExistingQueryString(UriBuilder uri, ref List<QueryParameterEntry>? queryParamsToAdd) =>
         ParseQueryStringInto(uri.Query, ref queryParamsToAdd);
 
     /// <summary>Assigns the request URI as a bare relative reference so the <see cref="HttpClient"/> merges it
@@ -87,7 +118,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="ret">The request message being populated.</param>
     /// <param name="urlTarget">The expanded relative path, with dynamic segments already escaped.</param>
     /// <param name="queryParamsToAdd">The query parameters collected for the request, if any.</param>
-    private static void AssignRequestUriRfc3986(
+    internal static void AssignRequestUriRfc3986(
         HttpRequestMessage ret,
         string urlTarget,
         List<QueryParameterEntry>? queryParamsToAdd)
@@ -113,7 +144,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="ret">The request message being populated.</param>
     /// <param name="paramList">The argument values for the call.</param>
     /// <param name="queryParamsToAdd">The query parameters collected for the request, if any.</param>
-    private static void AssignAbsoluteRequestUri(
+    internal static void AssignAbsoluteRequestUri(
         RestMethodInfoInternal restMethod,
         HttpRequestMessage ret,
         object[] paramList,
@@ -131,31 +162,72 @@ internal partial class RequestBuilderImplementation
         ret.RequestUri = builder.Uri;
     }
 
-    /// <summary>Parses a raw query string into the pending query parameter list.</summary>
+    /// <summary>Parses a raw query string into the pending query parameter list, ahead of any already-collected entries.</summary>
     /// <param name="queryString">The raw query string, with or without a leading '?'.</param>
     /// <param name="queryParamsToAdd">The pending query parameter list, created if needed.</param>
-    private static void ParseQueryStringInto(string? queryString, ref List<QueryParameterEntry>? queryParamsToAdd)
+    /// <remarks>Mirrors the reference query-string parser without materializing a name/value collection: a single leading
+    /// '?' is dropped, keys and values are URL-decoded (<c>+</c> to space, percent escapes), a segment with no '=' or a
+    /// blank key is skipped, and keys that match case-insensitively are joined with commas under the first-seen key.</remarks>
+    internal static void ParseQueryStringInto(string? queryString, ref List<QueryParameterEntry>? queryParamsToAdd)
     {
         if (string.IsNullOrEmpty(queryString))
         {
             return;
         }
 
-        queryParamsToAdd ??= [];
-        var query = HttpUtility.ParseQueryString(queryString);
-        var index = 0;
-        var keys = query.AllKeys;
-        for (var i = 0; i < keys.Length; i++)
+        // Assign to a non-null local; the older reference assemblies' string.IsNullOrEmpty lacks a nullable-flow annotation.
+        var query = queryString!;
+        var position = query[0] == '?' ? 1 : 0;
+        List<QueryParameterEntry>? parsed = null;
+        while (position < query.Length)
         {
-            var key = keys[i];
-            if (!string.IsNullOrWhiteSpace(key))
+            var ampersand = query.IndexOf('&', position);
+            var segmentEnd = ampersand < 0 ? query.Length : ampersand;
+            var equals = query.IndexOf('=', position, segmentEnd - position);
+
+            // A segment with no '=' has a null name in the reference parser and is dropped, as is a blank key.
+            if (equals >= 0)
             {
-                queryParamsToAdd.Insert(
-                    index,
-                    new(key, query[key]));
-                index++;
+                var key = HttpUtility.UrlDecode(query.Substring(position, equals - position));
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    var value = HttpUtility.UrlDecode(query.Substring(equals + 1, segmentEnd - equals - 1));
+                    AppendOrJoinQueryValue(ref parsed, key, value);
+                }
+            }
+
+            position = segmentEnd + 1;
+        }
+
+        if (parsed is null)
+        {
+            return;
+        }
+
+        queryParamsToAdd ??= [];
+        for (var i = 0; i < parsed.Count; i++)
+        {
+            queryParamsToAdd.Insert(i, parsed[i]);
+        }
+    }
+
+    /// <summary>Adds a parsed query key/value, joining the value under an existing case-insensitively equal key.</summary>
+    /// <param name="parsed">The accumulating parsed entries, created on first use.</param>
+    /// <param name="key">The decoded query key.</param>
+    /// <param name="value">The decoded query value.</param>
+    internal static void AppendOrJoinQueryValue(ref List<QueryParameterEntry>? parsed, string key, string? value)
+    {
+        parsed ??= [];
+        for (var i = 0; i < parsed.Count; i++)
+        {
+            if (string.Equals(parsed[i].Key, key, StringComparison.InvariantCultureIgnoreCase))
+            {
+                parsed[i] = new(parsed[i].Key, parsed[i].Value + "," + value);
+                return;
             }
         }
+
+        parsed.Add(new(key, value));
     }
 
     /// <summary>Builds an escaped query string from the collected key/value pairs.</summary>
@@ -165,7 +237,7 @@ internal partial class RequestBuilderImplementation
         "Correctness",
         "SST2410:A created disposable is never disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
-    private static string CreateQueryString(List<QueryParameterEntry> queryParamsToAdd)
+    internal static string CreateQueryString(List<QueryParameterEntry> queryParamsToAdd)
     {
         var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
         var firstQuery = true;
@@ -209,18 +281,18 @@ internal partial class RequestBuilderImplementation
     /// <summary>Strips CR and LF characters from a header value to prevent header injection.</summary>
     /// <param name="value">The value to sanitize.</param>
     /// <returns>The value with carriage-return and line-feed characters removed.</returns>
-    private static string EnsureSafe(string value) => StringHelpers.RemoveCrOrLf(value);
+    internal static string EnsureSafe(string value) => StringHelpers.RemoveCrOrLf(value);
 
     /// <summary>Determines whether the HTTP method must not carry a request body.</summary>
     /// <param name="method">The HTTP method to check.</param>
     /// <returns><see langword="true"/> for GET and HEAD; otherwise <see langword="false"/>.</returns>
-    private static bool IsBodyless(HttpMethod method) => method == HttpMethod.Get || method == HttpMethod.Head;
+    internal static bool IsBodyless(HttpMethod method) => method == HttpMethod.Get || method == HttpMethod.Head;
 
     /// <summary>Checks whether a header collection contains a key without throwing for unsupported header types.</summary>
     /// <param name="headers">The header collection to inspect.</param>
     /// <param name="name">The header name.</param>
     /// <returns><see langword="true"/> when the header key exists; otherwise <see langword="false"/>.</returns>
-    private static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
+    internal static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
     {
         foreach (var header in headers)
         {
@@ -233,21 +305,47 @@ internal partial class RequestBuilderImplementation
         return false;
     }
 
-    /// <summary>Gets cached query-map properties for the given type.</summary>
+    /// <summary>Gets the cached query-property metadata for the given type.</summary>
     /// <param name="type">The object type to inspect.</param>
-    /// <returns>The readable public instance properties.</returns>
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2111:Method with DynamicallyAccessedMembersAttribute is accessed via reflection",
-        Justification = "The cache callback receives the same Type key that carries the public property metadata requirement.")]
-    private static PropertyInfo[] GetCachedQueryProperties(Type type) =>
-        QueryPropertyCache.GetValue(type, ReflectionPropertyHelpers.GetReadablePublicInstanceProperties);
+    /// <returns>The readable public instance properties with their attribute-derived facts.</returns>
+    internal static QueryPropertyMetadata[] GetCachedQueryProperties(Type type) =>
+        QueryPropertyCache.GetValue(type, QueryPropertyFactory);
+
+    /// <summary>Gets an attribute provider for a parameter, property or type whose <see cref="QueryAttribute"/> lookup is
+    /// materialized once and reused for every formatted value.</summary>
+    /// <param name="provider">The underlying attribute provider.</param>
+    /// <returns>The cached attribute provider.</returns>
+    internal static ICustomAttributeProvider GetCachedAttributeProvider(ICustomAttributeProvider provider) =>
+        AttributeProviderCache.GetValue(provider, static p => new CachedAttributeProvider(p));
+
+    /// <summary>Builds the per-type query-property metadata, reading each property's serialization-ignore, query and
+    /// alias attributes once so the per-request flattening path never touches attribute metadata.</summary>
+    /// <param name="type">The object type to inspect.</param>
+    /// <returns>The metadata for each readable public instance property.</returns>
+    internal static QueryPropertyMetadata[] BuildQueryPropertyMetadata(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+        Type type)
+    {
+        var properties = ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(type);
+        var metadata = new QueryPropertyMetadata[properties.Length];
+        for (var i = 0; i < properties.Length; i++)
+        {
+            var property = properties[i];
+            metadata[i] = new(
+                property,
+                ShouldIgnorePropertyInQueryMap(property),
+                property.GetCustomAttribute<QueryAttribute>(),
+                property.GetCustomAttribute<AliasAsAttribute>());
+        }
+
+        return metadata;
+    }
 
     /// <summary>Populates the Authorization header from the configured token getter when present.</summary>
     /// <param name="request">The request to add the header to.</param>
     /// <param name="cancellationToken">A token to cancel the getter.</param>
     /// <returns>A task that completes when the header has been set.</returns>
-    private Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+    internal Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
         RequestExecutionHelpers.AddAuthorizationHeaderFromGetterAsync(request, _settings, cancellationToken);
 
     /// <summary>Adds configured options/properties and Refit metadata to the request.</summary>
@@ -255,7 +353,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="ret">The request message to populate.</param>
     /// <param name="paramList">The argument values for the call, with cancellation tokens removed.</param>
     /// <param name="declaredArguments">The full declared-order argument values, including any cancellation token.</param>
-    private void AddPropertiesToRequest(
+    internal void AddPropertiesToRequest(
         RestMethodInfoInternal restMethod,
         HttpRequestMessage ret,
         object[] paramList,
@@ -330,7 +428,7 @@ internal partial class RequestBuilderImplementation
 #if NET6_0_OR_GREATER
     /// <summary>Applies the configured HTTP version and version policy to the request.</summary>
     /// <param name="ret">The request message to populate.</param>
-    private void AddVersionToRequest(HttpRequestMessage ret)
+    internal void AddVersionToRequest(HttpRequestMessage ret)
     {
         ret.Version = _settings.Version;
         ret.VersionPolicy = _settings.VersionPolicy;
@@ -343,7 +441,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
     /// <param name="collectionFormat">The collection format for enumerable values.</param>
     /// <returns>The query-string key/value pairs.</returns>
-    private List<QueryMapEntry> BuildQueryMap(
+    internal List<QueryMapEntry> BuildQueryMap(
         object @object,
         string? delimiter = null,
         RestMethodParameterInfo? parameterInfo = null,
@@ -354,13 +452,11 @@ internal partial class RequestBuilderImplementation
             return BuildQueryMap(idictionary, delimiter, collectionFormat);
         }
 
-        var kvps = new List<QueryMapEntry>();
-
         var props = GetCachedQueryProperties(@object.GetType());
+        var kvps = new List<QueryMapEntry>(props.Length);
         for (var i = 0; i < props.Length; i++)
         {
-            var propertyInfo = props[i];
-            AppendPropertyToQueryMap(@object, propertyInfo, kvps, delimiter, parameterInfo, collectionFormat);
+            AppendPropertyToQueryMap(@object, in props[i], kvps, delimiter, parameterInfo, collectionFormat);
         }
 
         return kvps;
@@ -371,7 +467,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="delimiter">The delimiter used between nested keys.</param>
     /// <param name="collectionFormat">The collection format for enumerable values.</param>
     /// <returns>The query-string key/value pairs.</returns>
-    private List<QueryMapEntry> BuildQueryMap(
+    internal List<QueryMapEntry> BuildQueryMap(
         IDictionary dictionary,
         string? delimiter = null,
         CollectionFormat? collectionFormat = null)
@@ -387,7 +483,7 @@ internal partial class RequestBuilderImplementation
             }
 
             var keyType = key.GetType();
-            var formattedKey = GeneratedRequestRunner.FormatUrlParameter(_settings, key, keyType, keyType);
+            var formattedKey = GeneratedRequestRunner.FormatUrlParameter(_settings, key, GetCachedAttributeProvider(keyType), keyType);
 
             if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
             {
@@ -417,27 +513,28 @@ internal partial class RequestBuilderImplementation
 
     /// <summary>Appends a single property's query-string key/value pairs to the accumulating list.</summary>
     /// <param name="object">The object the property belongs to.</param>
-    /// <param name="propertyInfo">The property to flatten.</param>
+    /// <param name="metadata">The cached metadata for the property to flatten.</param>
     /// <param name="kvps">The accumulating list of query pairs.</param>
     /// <param name="delimiter">The delimiter used between nested property names.</param>
     /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
     /// <param name="collectionFormat">The collection format for enumerable values.</param>
-    private void AppendPropertyToQueryMap(
+    internal void AppendPropertyToQueryMap(
         object @object,
-        PropertyInfo propertyInfo,
+        in QueryPropertyMetadata metadata,
         List<QueryMapEntry> kvps,
         string? delimiter,
         RestMethodParameterInfo? parameterInfo,
         CollectionFormat? collectionFormat)
     {
+        var propertyInfo = metadata.Property;
         var obj = propertyInfo.GetValue(@object);
-        if (ShouldSkipQueryProperty(propertyInfo, parameterInfo))
+        if (ShouldSkipQueryProperty(in metadata, parameterInfo))
         {
             return;
         }
 
-        var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
-        var key = BuildPropertyQueryKey(propertyInfo, queryAttribute);
+        var queryAttribute = metadata.QueryAttribute;
+        var key = BuildPropertyQueryKey(propertyInfo, metadata.AliasAttribute, queryAttribute);
 
         if (obj is null)
         {
@@ -475,12 +572,11 @@ internal partial class RequestBuilderImplementation
 
     /// <summary>Builds the query key for a property, honoring its alias and any query prefix/delimiter.</summary>
     /// <param name="propertyInfo">The property being flattened.</param>
+    /// <param name="aliasAttribute">The property's alias attribute, if any.</param>
     /// <param name="queryAttribute">The property's query attribute, if any.</param>
     /// <returns>The query key for the property.</returns>
-    private string BuildPropertyQueryKey(PropertyInfo propertyInfo, QueryAttribute? queryAttribute)
+    internal string BuildPropertyQueryKey(PropertyInfo propertyInfo, AliasAsAttribute? aliasAttribute, QueryAttribute? queryAttribute)
     {
-        var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
-
         // Match the form-encoded field-naming precedence (FormValueMultimap.GetFieldNameForProperty): an [AliasAs]
         // wins, then the configured content serializer's field name ([JsonPropertyName] for System.Text.Json,
         // [JsonProperty] for Newtonsoft.Json) unless disabled, then the URL parameter key formatter over the CLR name.
@@ -502,7 +598,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="value">The value to format.</param>
     /// <param name="formattedValue">Receives the formatted value.</param>
     /// <returns><see langword="true"/> when a non-null value remains.</returns>
-    private bool TryFormatQueryPropertyValue<T>(
+    internal bool TryFormatQueryPropertyValue<T>(
         QueryAttribute? queryAttribute,
         T value,
         [NotNullWhen(true)] out object? formattedValue)
@@ -533,24 +629,20 @@ internal partial class RequestBuilderImplementation
     /// <param name="kvps">The accumulating list of query pairs.</param>
     /// <param name="queryAttribute">The property's query attribute, if any.</param>
     /// <param name="collectionFormat">The collection format for enumerable values.</param>
-    private void AppendEnumerablePropertyValues(
+    internal void AppendEnumerablePropertyValues(
         IEnumerable values,
         PropertyInfo propertyInfo,
         string key,
         List<QueryMapEntry> kvps,
         QueryAttribute? queryAttribute,
-        CollectionFormat? collectionFormat)
-    {
-        foreach (var value in ParseEnumerableQueryParameterValue(
-                     values,
-                     propertyInfo,
-                     propertyInfo.PropertyType,
-                     queryAttribute,
-                     collectionFormat))
-        {
-            kvps.Add(new(key, value));
-        }
-    }
+        CollectionFormat? collectionFormat) =>
+        AppendFormattedEnumerableValues(
+            values,
+            propertyInfo,
+            propertyInfo.PropertyType,
+            queryAttribute,
+            collectionFormat,
+            new QueryMapEntrySink(kvps, key));
 
     /// <summary>Flattens a nested object or dictionary value into prefixed query-string key/value pairs.</summary>
     /// <param name="obj">The nested value to flatten.</param>
@@ -558,7 +650,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="kvps">The accumulating list of query pairs.</param>
     /// <param name="delimiter">The delimiter used between nested keys.</param>
     /// <param name="collectionFormat">The collection format for enumerable values.</param>
-    private void AppendNestedQueryMap(
+    internal void AppendNestedQueryMap(
         object obj,
         string key,
         List<QueryMapEntry> kvps,

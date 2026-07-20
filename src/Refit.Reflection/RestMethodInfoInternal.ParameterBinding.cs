@@ -17,7 +17,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="allowUnmatchedRouteParameters">When true, a placeholder with no matching argument is left in the path verbatim instead of throwing.</param>
     /// <returns>A tuple containing the parameter map and the ordered list of URL fragments.</returns>
     [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
-    private static (Dictionary<int, RestMethodParameterInfo> Map, List<ParameterFragment> Fragments)
+    internal static (Dictionary<int, RestMethodParameterInfo> Map, List<ParameterFragment> Fragments)
         BuildParameterMap(
             string relativePath,
             ParameterInfo[] parameterInfo,
@@ -35,7 +35,11 @@ internal partial class RestMethodInfoInternal
         }
 
         var paramValidationDict = BuildParamValidationDict(parameterInfo);
-        var objectParamValidationDict = BuildObjectParamValidationDict(parameterInfo);
+
+        // The object-property lookup is only needed for a {obj.prop} placeholder that no direct parameter matches, so it
+        // is built on first such use. A template whose placeholders all bind direct parameters never builds it.
+        (Dictionary<string, ParameterInfo> Param, Dictionary<string, (ParameterInfo Parameter, PropertyInfo Property)>? Object) validation =
+            (paramValidationDict, null);
 
         var fragmentList = new List<ParameterFragment>();
         var index = 0;
@@ -57,7 +61,7 @@ internal partial class RestMethodInfoInternal
                 parameterInfo,
                 ret,
                 fragmentList,
-                (paramValidationDict, objectParamValidationDict),
+                ref validation,
                 match,
                 allowUnmatchedRouteParameters);
         }
@@ -77,7 +81,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Builds a lookup of lower-cased URL parameter names to their declaring method parameter.</summary>
     /// <param name="parameterInfo">The array of method parameters.</param>
     /// <returns>A map of URL parameter names to method parameters.</returns>
-    private static Dictionary<string, ParameterInfo> BuildParamValidationDict(ParameterInfo[] parameterInfo)
+    internal static Dictionary<string, ParameterInfo> BuildParamValidationDict(ParameterInfo[] parameterInfo)
     {
         var paramValidationDict = new Dictionary<string, ParameterInfo>(parameterInfo.Length);
         for (var i = 0; i < parameterInfo.Length; i++)
@@ -92,11 +96,11 @@ internal partial class RestMethodInfoInternal
     /// <param name="parameterInfo">The array of method parameters.</param>
     /// <returns>A map of nested property names to their parameter/property pair.</returns>
     [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
-    private static Dictionary<string, Tuple<ParameterInfo, PropertyInfo>> BuildObjectParamValidationDict(
+    internal static Dictionary<string, (ParameterInfo Parameter, PropertyInfo Property)> BuildObjectParamValidationDict(
         ParameterInfo[] parameterInfo)
     {
         // If the parameter is a class, build a dictionary for all of its potential bound properties.
-        var objectParamValidationDict = new Dictionary<string, Tuple<ParameterInfo, PropertyInfo>>();
+        var objectParamValidationDict = new Dictionary<string, (ParameterInfo Parameter, PropertyInfo Property)>();
         for (var i = 0; i < parameterInfo.Length; i++)
         {
             var parameter = parameterInfo[i];
@@ -109,7 +113,7 @@ internal partial class RestMethodInfoInternal
             for (var j = 0; j < properties.Length; j++)
             {
                 var key = $"{parameter.Name}.{GetUrlNameForProperty(properties[j])}".ToLowerInvariant();
-                _ = objectParamValidationDict.TryAdd(key, Tuple.Create(parameter, properties[j]));
+                _ = objectParamValidationDict.TryAdd(key, (parameter, properties[j]));
             }
         }
 
@@ -121,16 +125,18 @@ internal partial class RestMethodInfoInternal
     /// <param name="parameterInfo">The array of method parameters.</param>
     /// <param name="ret">The parameter map being built.</param>
     /// <param name="fragmentList">The fragment list being built.</param>
-    /// <param name="validation">The lookups of directly matched parameter names and nested object-property names.</param>
+    /// <param name="validation">The lookup of directly matched parameter names, and the single-level object-property
+    /// lookup built on first use and reused across the template's placeholders; its object entry is null until a
+    /// placeholder needs it.</param>
     /// <param name="match">The parameterized URL match being resolved.</param>
     /// <param name="allowUnmatchedRouteParameters">When true, an unmatched placeholder is left in the path verbatim instead of throwing.</param>
     [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
-    private static void AddFragmentForMatch(
+    internal static void AddFragmentForMatch(
         string relativePath,
         ParameterInfo[] parameterInfo,
         Dictionary<int, RestMethodParameterInfo> ret,
         List<ParameterFragment> fragmentList,
-        (Dictionary<string, ParameterInfo> Param, Dictionary<string, Tuple<ParameterInfo, PropertyInfo>> Object) validation,
+        ref (Dictionary<string, ParameterInfo> Param, Dictionary<string, (ParameterInfo Parameter, PropertyInfo Property)>? Object) validation,
         Match match,
         bool allowUnmatchedRouteParameters)
     {
@@ -152,9 +158,10 @@ internal partial class RestMethodInfoInternal
                 value,
                 isOptional);
         }
-        else if (validation.Object.TryGetValue(name, out var value1) && !isRoundTripping)
+        else if (!isRoundTripping
+            && (validation.Object ??= BuildObjectParamValidationDict(parameterInfo)).TryGetValue(name, out var value1))
         {
-            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1.Item1, [value1.Item2], isOptional);
+            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1.Parameter, [value1.Property], isOptional);
         }
         else if (TryResolveNestedPropertyChain(parameterInfo, name) is { } nested)
         {
@@ -182,7 +189,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="parsedName">The parsed parameter name details from the URL template.</param>
     /// <param name="value">The matched method parameter.</param>
     /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
-    private static void AddStandardParameter(
+    internal static void AddStandardParameter(
         ParameterInfo[] parameterInfo,
         Dictionary<int, RestMethodParameterInfo> ret,
         List<ParameterFragment> fragmentList,
@@ -219,7 +226,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="owner">The parameter whose property chain binds the placeholder.</param>
     /// <param name="propertyChain">The ordered property navigation from the parameter to the bound value.</param>
     /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
-    private static void AddObjectPropertyParameter(
+    internal static void AddObjectPropertyParameter(
         ParameterInfo[] parameterInfo,
         Dictionary<int, RestMethodParameterInfo> ret,
         List<ParameterFragment> fragmentList,
@@ -267,7 +274,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="name">The normalized (lower-cased) placeholder name.</param>
     /// <returns>The parameter and its property chain, or null when the placeholder is not a resolvable nested chain.</returns>
     [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
-    private static (ParameterInfo Parameter, IReadOnlyList<PropertyInfo> Chain)? TryResolveNestedPropertyChain(
+    internal static (ParameterInfo Parameter, IReadOnlyList<PropertyInfo> Chain)? TryResolveNestedPropertyChain(
         ParameterInfo[] parameterInfo,
         string name)
     {
@@ -310,7 +317,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="urlName">The URL name segment to match.</param>
     /// <returns>The matching property, or null when none matches.</returns>
     [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
-    private static PropertyInfo? FindPropertyByUrlName(Type type, string urlName)
+    internal static PropertyInfo? FindPropertyByUrlName(Type type, string urlName)
     {
         foreach (var property in ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(type))
         {
@@ -326,7 +333,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets the URL name to use for a parameter, honoring any alias attribute.</summary>
     /// <param name="paramInfo">The parameter whose URL name is resolved.</param>
     /// <returns>The aliased or declared parameter name.</returns>
-    private static string GetUrlNameForParameter(ParameterInfo paramInfo)
+    internal static string GetUrlNameForParameter(ParameterInfo paramInfo)
     {
         var aliasAttr = paramInfo.GetCustomAttribute<AliasAsAttribute>(true);
         return aliasAttr is not null ? aliasAttr.Name : paramInfo.Name!;
@@ -335,7 +342,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets the URL name to use for a property, honoring any alias attribute.</summary>
     /// <param name="propInfo">The property whose URL name is resolved.</param>
     /// <returns>The aliased or declared property name.</returns>
-    private static string GetUrlNameForProperty(PropertyInfo propInfo)
+    internal static string GetUrlNameForProperty(PropertyInfo propInfo)
     {
         var aliasAttr = propInfo.GetCustomAttribute<AliasAsAttribute>(true);
         return aliasAttr is not null ? aliasAttr.Name : propInfo.Name;
@@ -345,7 +352,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="paramInfo">The parameter whose attachment name is resolved.</param>
     /// <returns>The attachment name, or null when none is specified.</returns>
     [ExcludeFromCodeCoverage] // The AttachmentName arm needs the [Obsolete] AttachmentNameAttribute, which CS0618 forbids a test from applying, so the branch cannot be covered.
-    private static string GetAttachmentNameForParameter(ParameterInfo paramInfo)
+    internal static string GetAttachmentNameForParameter(ParameterInfo paramInfo)
     {
 #pragma warning disable CS0618 // Type or member is obsolete
         var nameAttr = paramInfo.GetCustomAttribute<AttachmentNameAttribute>(true);
@@ -355,40 +362,10 @@ internal partial class RestMethodInfoInternal
         return nameAttr?.Name ?? paramInfo.GetCustomAttribute<AliasAsAttribute>(true)?.Name!;
     }
 
-    /// <summary>Finds the parameter that carries the authorization value.</summary>
-    /// <param name="parameterArray">The array of method parameters.</param>
-    /// <returns>The authorization parameter information, or null when there is no authorize parameter.</returns>
-    private static Tuple<string, int>? FindAuthorizationParameter(ParameterInfo[] parameterArray)
-    {
-        AuthorizeAttribute? authorizeAttribute = null;
-        var authorizeIndex = -1;
-
-        for (var i = 0; i < parameterArray.Length; i++)
-        {
-            var attribute = parameterArray[i].GetCustomAttribute<AuthorizeAttribute>(true);
-            if (attribute is null)
-            {
-                continue;
-            }
-
-            if (authorizeAttribute is not null)
-            {
-                throw new ArgumentException("Only one parameter can be an Authorize parameter");
-            }
-
-            authorizeAttribute = attribute;
-            authorizeIndex = i;
-        }
-
-        return authorizeAttribute is null
-            ? null
-            : Tuple.Create(authorizeAttribute.Scheme, authorizeIndex);
-    }
-
     /// <summary>Finds the single cancellation token parameter for the method.</summary>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <returns>The cancellation token parameter, or null when none is present.</returns>
-    private static ParameterInfo? FindCancellationTokenParameter(MethodInfo methodInfo)
+    internal static ParameterInfo? FindCancellationTokenParameter(MethodInfo methodInfo)
     {
         var parameters = methodInfo.GetParameters();
         ParameterInfo? cancellationTokenParam = null;
@@ -414,14 +391,15 @@ internal partial class RestMethodInfoInternal
     /// <summary>Finds and validates the <c>[Url]</c> parameter that supplies the absolute request URI, ensuring the
     /// method does not also declare a path template.</summary>
     /// <param name="parameterArray">The array of method parameters.</param>
+    /// <param name="sets">The classified attribute set for each parameter.</param>
     /// <param name="relativePath">The method's relative path template.</param>
     /// <returns>The index of the <c>[Url]</c> parameter, or a negative value when none is present.</returns>
     /// <exception cref="ArgumentException">More than one parameter carries <c>[Url]</c>, the parameter is not a
     /// <see cref="string"/> or <see cref="Uri"/>, or a <c>[Url]</c> parameter is combined with a non-empty path
     /// template.</exception>
-    private static int ResolveUrlParameter(ParameterInfo[] parameterArray, string relativePath)
+    internal static int ResolveUrlParameter(ParameterInfo[] parameterArray, ParameterAttributeSet[] sets, string relativePath)
     {
-        var urlIndex = FindUrlParameter(parameterArray);
+        var urlIndex = FindUrlParameter(parameterArray, sets);
         if (urlIndex >= 0
             && !string.IsNullOrEmpty(relativePath)
             && relativePath != "/")
@@ -435,17 +413,18 @@ internal partial class RestMethodInfoInternal
 
     /// <summary>Finds the index of the <c>[Url]</c> parameter that supplies the absolute request URI.</summary>
     /// <param name="parameterArray">The array of method parameters.</param>
+    /// <param name="sets">The classified attribute set for each parameter.</param>
     /// <returns>The index of the <c>[Url]</c> parameter, or a negative value when none is present.</returns>
     /// <exception cref="ArgumentException">More than one parameter carries <c>[Url]</c>, or the parameter is not a
     /// <see cref="string"/> or <see cref="Uri"/>.</exception>
-    private static int FindUrlParameter(ParameterInfo[] parameterArray)
+    internal static int FindUrlParameter(ParameterInfo[] parameterArray, ParameterAttributeSet[] sets)
     {
         var urlIndex = -1;
 
         for (var i = 0; i < parameterArray.Length; i++)
         {
             var param = parameterArray[i];
-            if (param.GetCustomAttribute<UrlAttribute>(true) is null)
+            if (sets[i].Url is null)
             {
                 continue;
             }

@@ -2,7 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-namespace Refit.Tests;
+namespace Refit.Reflection.Tests;
 
 /// <summary>Verifies request-building paths of the reflection request builder that only the reflection path reaches:
 /// authorization parameters, synchronous and streaming body serialization, buffered bodies, round-tripping null path

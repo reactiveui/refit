@@ -17,7 +17,7 @@ internal partial class RequestBuilderImplementation
         "Trimming",
         "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
         Justification = "The cached method handle points to a local generic serialization helper used through runtime generic method closure.")]
-    private static readonly MethodInfo SerializeBodyMethod =
+    internal static readonly MethodInfo SerializeBodyMethod =
         FindDeclaredMethod(nameof(SerializeBodyGeneric));
 
     /// <summary>Cached reflection handle to the generic synchronous body-serialization method.</summary>
@@ -25,7 +25,7 @@ internal partial class RequestBuilderImplementation
         "Trimming",
         "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
         Justification = "The cached method handle points to a local generic serialization helper used through runtime generic method closure.")]
-    private static readonly MethodInfo SerializeBodySynchronouslyMethod =
+    internal static readonly MethodInfo SerializeBodySynchronouslyMethod =
         FindDeclaredMethod(nameof(SerializeBodySynchronouslyGeneric));
 
     /// <summary>Cached reflection handle to the generic streaming body-serialization method.</summary>
@@ -33,7 +33,7 @@ internal partial class RequestBuilderImplementation
         "Trimming",
         "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
         Justification = "The cached method handle points to a local generic serialization helper used through runtime generic method closure.")]
-    private static readonly MethodInfo SerializeBodyStreamingMethod =
+    internal static readonly MethodInfo SerializeBodyStreamingMethod =
         FindDeclaredMethod(nameof(SerializeBodyStreamingGeneric));
 
     /// <summary>Maps a single header, header-collection or authorization parameter into the pending headers.</summary>
@@ -42,7 +42,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="param">The argument value.</param>
     /// <param name="headersToAdd">The pending header collection, created as needed.</param>
     /// <returns><see langword="true"/> when the parameter contributed a header.</returns>
-    private static bool MapHeaderParameters(
+    internal static bool MapHeaderParameters(
         RestMethodInfoInternal restMethod,
         int i,
         object? param,
@@ -77,7 +77,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Adds each entry of a header-collection argument to the pending header dictionary.</summary>
     /// <param name="param">The header-collection argument value.</param>
     /// <param name="headersToAdd">The pending header collection, created as needed.</param>
-    private static void AddHeaderCollection(object? param, ref Dictionary<string, string?>? headersToAdd)
+    internal static void AddHeaderCollection(object? param, ref Dictionary<string, string?>? headersToAdd)
     {
         if (param is not IDictionary<string, string> headerCollection)
         {
@@ -95,14 +95,14 @@ internal partial class RequestBuilderImplementation
     /// <param name="restMethod">The rest method being invoked.</param>
     /// <param name="i">The index of the parameter.</param>
     /// <returns><see langword="true"/> when the parameter is property-only and should not also feed the query string.</returns>
-    private static bool IsPropertyOnlyParameter(RestMethodInfoInternal restMethod, int i) =>
+    internal static bool IsPropertyOnlyParameter(RestMethodInfoInternal restMethod, int i) =>
         restMethod.PropertyParameterMap.ContainsKey(i)
-        && restMethod.ParameterInfoArray[i].GetCustomAttribute<QueryAttribute>() is null;
+        && restMethod.ParameterQueryAttributes[i] is null;
 
     /// <summary>Reduces a round-tripping parameter value to its string form, using <c>ToString</c> for non-strings.</summary>
     /// <param name="param">The parameter value.</param>
     /// <returns>The value's string form, or null.</returns>
-    private static string? RoundTripStringValue(object? param) => (param as string) ?? param?.ToString();
+    internal static string? RoundTripStringValue(object? param) => (param as string) ?? param?.ToString();
 
     /// <summary>Serializes a request body using the declared body type.</summary>
     /// <param name="serializer">The content serializer to use.</param>
@@ -114,7 +114,7 @@ internal partial class RequestBuilderImplementation
         "IL2060:MakeGenericMethod",
         Justification = "The reflection request builder intentionally closes the serializer method over the runtime body type.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private static HttpContent SerializeBody(
+    internal static HttpContent SerializeBody(
         IHttpContentSerializer serializer,
         object? body,
         Type declaredBodyType)
@@ -132,7 +132,7 @@ internal partial class RequestBuilderImplementation
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    private static HttpContent SerializeBodyGeneric<T>(IHttpContentSerializer serializer, object? body) =>
+    internal static HttpContent SerializeBodyGeneric<T>(IHttpContentSerializer serializer, object? body) =>
         serializer.ToHttpContent((T)body!);
 
     /// <summary>Serializes a request body synchronously as the given type.</summary>
@@ -145,7 +145,7 @@ internal partial class RequestBuilderImplementation
         "IL2060:MakeGenericMethod",
         Justification = "The reflection request builder intentionally closes the serializer method over the runtime body type.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private static HttpContent SerializeBodySynchronously(
+    internal static HttpContent SerializeBodySynchronously(
         ISynchronousContentSerializer serializer,
         object? body,
         Type declaredBodyType)
@@ -163,7 +163,7 @@ internal partial class RequestBuilderImplementation
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    private static HttpContent SerializeBodySynchronouslyGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
+    internal static HttpContent SerializeBodySynchronouslyGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
         serializer.ToHttpContentSynchronous((T)body!);
 
     /// <summary>Serializes a request body as a streaming content for the given type.</summary>
@@ -176,7 +176,7 @@ internal partial class RequestBuilderImplementation
         "IL2060:MakeGenericMethod",
         Justification = "The reflection request builder intentionally closes the serializer method over the runtime body type.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private static HttpContent SerializeBodyStreaming(
+    internal static HttpContent SerializeBodyStreaming(
         ISynchronousContentSerializer serializer,
         object? body,
         Type declaredBodyType)
@@ -194,13 +194,13 @@ internal partial class RequestBuilderImplementation
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    private static HttpContent SerializeBodyStreamingGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
+    internal static HttpContent SerializeBodyStreamingGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
         serializer.ToStreamingHttpContent((T)body!);
 
     /// <summary>Coerces a JSON Lines body argument into the sequence of values to serialize line by line.</summary>
     /// <param name="param">The body argument value.</param>
     /// <returns>The sequence of values; a non-enumerable value becomes a single line.</returns>
-    private static IEnumerable AsJsonLinesSequence(object param) =>
+    internal static IEnumerable AsJsonLinesSequence(object param) =>
         param is IEnumerable enumerable and not string
             ? enumerable
             : new[] { param };
@@ -208,7 +208,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Returns a copy of an argument array with cancellation tokens removed.</summary>
     /// <param name="paramList">The original argument values.</param>
     /// <returns>The argument values used for request mapping.</returns>
-    private static object[] RemoveCancellationTokens(object[] paramList)
+    internal static object[] RemoveCancellationTokens(object[] paramList)
     {
         var count = 0;
         for (var i = 0; i < paramList.Length; i++)
@@ -240,7 +240,7 @@ internal partial class RequestBuilderImplementation
 
     /// <summary>Removes the '/' separator that precedes a dropped optional segment, if one was already appended.</summary>
     /// <param name="vsb">The path builder to trim.</param>
-    private static void DropOptionalSegmentSeparator(ref ValueStringBuilder vsb)
+    internal static void DropOptionalSegmentSeparator(ref ValueStringBuilder vsb)
     {
         if (vsb.Length == 0 || vsb[vsb.Length - 1] != '/')
         {
@@ -259,7 +259,7 @@ internal partial class RequestBuilderImplementation
     /// dispatch-time step skipped when the request is built only to be handed back to the caller.</param>
     /// <returns>The constructed request message.</returns>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private async Task<HttpRequestMessage> BuildRequestMessageForMethodAsync(
+    internal async Task<HttpRequestMessage> BuildRequestMessageForMethodAsync(
         RestMethodInfoInternal restMethod,
         string basePath,
         bool paramsContainsCancellationToken,
@@ -289,9 +289,16 @@ internal partial class RequestBuilderImplementation
             }
 
             List<QueryParameterEntry>? queryParamsToAdd = null;
-            var headersToAdd = restMethod.Headers.Count > 0
-                ? new Dictionary<string, string?>(restMethod.Headers)
-                : null;
+
+            // The static headers only need a per-request mutable copy when an argument can add, override or remove a
+            // header; otherwise the parsed set is emitted directly (it is read, never mutated, on this path).
+            Dictionary<string, string?>? headersToAdd = null;
+            if (restMethod.Headers.Count > 0)
+            {
+                headersToAdd = restMethod.ContributesDynamicHeaders
+                    ? new Dictionary<string, string?>(restMethod.Headers)
+                    : restMethod.Headers;
+            }
 
             MapParametersToRequest(restMethod, paramList, ret, multiPartContent, ref headersToAdd, ref queryParamsToAdd);
 
@@ -324,7 +331,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="headersToAdd">The pending header collection, created as needed.</param>
     /// <param name="queryParamsToAdd">The pending query parameter collection, created as needed.</param>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private void MapParametersToRequest(
+    internal void MapParametersToRequest(
         RestMethodInfoInternal restMethod,
         object[] paramList,
         HttpRequestMessage ret,
@@ -354,9 +361,7 @@ internal partial class RequestBuilderImplementation
                 continue;
             }
 
-            var queryAttribute = restMethod
-                .ParameterInfoArray[i]
-                .GetCustomAttribute<QueryAttribute>();
+            var queryAttribute = restMethod.ParameterQueryAttributes[i];
             if (!restMethod.IsMultipart
                 || (restMethod.ParameterMap.TryGetValue(i, out var mapValue) && mapValue.IsObjectPropertyParameter)
                 || queryAttribute is not null)
@@ -384,7 +389,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="headersToAdd">The pending header collection, created as needed.</param>
     /// <returns><see langword="true"/> when the parameter was fully mapped and needs no further handling.</returns>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private bool MapSingleParameterToRequest(
+    internal bool MapSingleParameterToRequest(
         RestMethodInfoInternal restMethod,
         int i,
         object? param,
@@ -428,7 +433,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="basePath">The base path from the client's base address.</param>
     /// <param name="paramList">The argument values for the call.</param>
     /// <param name="queryParamsToAdd">The query parameters collected for the request, if any.</param>
-    private void AssignRequestUri(
+    internal void AssignRequestUri(
         RestMethodInfoInternal restMethod,
         HttpRequestMessage ret,
         string basePath,
@@ -467,7 +472,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="restMethod">The rest method being invoked.</param>
     /// <param name="paramList">The argument values used to resolve dynamic fragments.</param>
     /// <returns>The fully expanded relative path.</returns>
-    private string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
+    internal string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
     {
         // Under RFC 3986 resolution the HttpClient merges the base address with the relative path itself,
         // so emit only the declared relative path (preserving any leading slash) and prepend nothing.
@@ -506,7 +511,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="restMethod">The rest method being invoked.</param>
     /// <param name="paramList">The argument values used to resolve the fragment.</param>
     /// <param name="fragment">The path fragment to append.</param>
-    private void AppendPathFragmentValue(
+    internal void AppendPathFragmentValue(
         ref ValueStringBuilder vsb,
         RestMethodInfoInternal restMethod,
         object[] paramList,
@@ -538,7 +543,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="paramList">The argument values used to resolve the fragment.</param>
     /// <param name="fragment">The path fragment to append.</param>
     /// <param name="parameterMapValue">The parameter info for the fragment.</param>
-    private void AppendObjectPropertyFragment(
+    internal void AppendObjectPropertyFragment(
         ref ValueStringBuilder vsb,
         object[] paramList,
         ParameterFragment fragment,
@@ -582,7 +587,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="paramList">The argument values used to resolve the fragment.</param>
     /// <param name="fragment">The path fragment to append.</param>
     /// <param name="parameterMapValue">The parameter info for the fragment.</param>
-    private void AppendDynamicRouteFragment(
+    internal void AppendDynamicRouteFragment(
         ref ValueStringBuilder vsb,
         RestMethodInfoInternal restMethod,
         object[] paramList,
@@ -645,7 +650,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="param">The bound argument value.</param>
     /// <param name="parameterInfo">The parameter supplying the value.</param>
     /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
-    private void AppendNormalRouteFragment(
+    internal void AppendNormalRouteFragment(
         ref ValueStringBuilder vsb,
         object? param,
         ParameterInfo parameterInfo,

@@ -21,4 +21,19 @@ public sealed class NestedRoutePropertyBindingTests
 
         await Assert.That(output.RequestUri!.ToString()).Contains("/items/abc");
     }
+
+    /// <summary>Verifies the chain walk stops at a null intermediate link so a missing nested object formats the
+    /// placeholder as an empty segment rather than throwing.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task NestedPropertyChainWithNullIntermediateFormatsEmptySegment()
+    {
+        var fixture = new RequestBuilderImplementation<INestedRouteApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(INestedRouteApi.GetByNestedValue));
+        var request = new NestedRouteRequest { Inner = null };
+
+        var output = await factory([request]);
+
+        await Assert.That(output.RequestUri!.ToString()).IsEqualTo("http://api/items/");
+    }
 }
