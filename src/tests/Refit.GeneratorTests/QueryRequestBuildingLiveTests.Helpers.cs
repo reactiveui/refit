@@ -142,6 +142,16 @@ public sealed partial class QueryRequestBuildingLiveTests
                 public Bounds? Window { get; set; }
             }
 
+            // A value-type (struct) query object used through a nullable parameter: exercises flattening the underlying
+            // struct's properties through .Value inside the parameter's HasValue guard.
+            public struct GeoPoint
+            {
+                public string? Name { get; set; }
+
+                [Query(Format = "0.00")]
+                public double Lat { get; set; }
+            }
+
             // Deliberately not sealed: exercises the concrete (non-sealed) declared-type flatten. The test value is not a
             // subtype, so the declared-type flatten matches the reflection builder's runtime-type flatten exactly.
             public class Facet
@@ -228,6 +238,9 @@ public sealed partial class QueryRequestBuildingLiveTests
 
                 [Get("/range")]
                 Task<string> RangeSearch([Query] RangeQuery query);
+
+                [Get("/point")]
+                Task<string> NullableStructQuery([Query] GeoPoint? point);
 
                 [Get("/facets")]
                 Task<string> Facets(Dictionary<string, Facet> facets);

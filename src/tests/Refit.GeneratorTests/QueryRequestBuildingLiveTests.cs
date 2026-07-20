@@ -171,6 +171,25 @@ public sealed partial class QueryRequestBuildingLiveTests
         _ = await harness.AssertParityAsync("RangeSearch", [query], "/base/range?Window=1..9");
     }
 
+    /// <summary>Verifies a nullable value-type (struct) query object matches the reflection builder: a present value
+    /// reaches its properties through <c>.Value</c> inside the parameter's <c>HasValue</c> guard, and a null value is
+    /// omitted entirely.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task NullableStructQueryObjectMatchesReflection()
+    {
+        using var harness = LiveQueryHarness.Create();
+
+        // A present nullable struct flattens its underlying properties; parity guards the exact key order and encoding.
+        var point = harness.CreateApiValue("Refit.LiveQuery.GeoPoint", ("Name", "peak"), ("Lat", RawDouble));
+        _ = await harness.AssertParityAsync("NullableStructQuery", [point], null);
+
+        // A null nullable-struct parameter contributes no query pairs, matching the reflection builder.
+        _ = await harness.AssertParityAsync("NullableStructQuery", [null], "/base/point");
+    }
+
     /// <summary>Verifies a dictionary of a concrete (non-sealed) complex value type flattens each entry under the entry key, matching
     /// the reflection builder's per-value nested map (<c>key.Property=value</c>).</summary>
     /// <returns>A task representing the asynchronous test.</returns>

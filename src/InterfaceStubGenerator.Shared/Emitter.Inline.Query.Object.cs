@@ -42,7 +42,13 @@ internal static partial class Emitter
             providerField,
             query.CollectionFormatValue,
             ToLowerInvariantString(query.PreEncoded));
-        var scope = new ObjectFlattenScope("@" + parameter.Name, null, query.NestingDelimiter, string.Empty, indent);
+
+        // A Nullable<T> query object holds its underlying struct behind .Value; the != null guard above is the HasValue
+        // check, so the deref is always safe here. A reference-type object flattens directly off the parameter.
+        var accessExpr = query.ValueFormat.IsNullableValueType
+            ? "@" + parameter.Name + NullableValueAccess
+            : "@" + parameter.Name;
+        var scope = new ObjectFlattenScope(accessExpr, null, query.NestingDelimiter, string.Empty, indent);
         AppendObjectPropertyList(sb, context, query.ObjectProperties!.Value, scope, emission);
 
         if (!guarded)

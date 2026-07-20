@@ -232,7 +232,16 @@ internal static partial class Parser
             return dictionaryQuery;
         }
 
-        if (TryBuildQueryObjectProperties(parameter.Type, parameterPrefixSegment, formattableSymbol, context) is not { } properties)
+        // A Nullable<T> query object flattens its underlying struct's properties. The object emitter reaches the value
+        // through .Value inside the HasValue guard it already emits for a nullable parameter (CanBeNull is true for a
+        // Nullable<T>), mirroring how a nested nullable-value-type property flattens. A Nullable<dictionary> is
+        // impossible, so only this object branch unwraps; BuildValueFormat keeps the Nullable<T> so the emitted access
+        // reads through .Value.
+        var objectType = parameter.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableObject
+            ? nullableObject.TypeArguments[0]
+            : parameter.Type;
+
+        if (TryBuildQueryObjectProperties(objectType, parameterPrefixSegment, formattableSymbol, context) is not { } properties)
         {
             return null;
         }
