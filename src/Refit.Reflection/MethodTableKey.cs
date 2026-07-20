@@ -18,13 +18,13 @@ internal readonly struct MethodTableKey : IEquatable<MethodTableKey>
     }
 
     /// <summary>Gets the methods name.</summary>
-    private string MethodName { get; }
+    internal string MethodName { get; }
 
     /// <summary>Gets the Array containing the methods parameters.</summary>
-    private Type[] Parameters { get; }
+    internal Type[] Parameters { get; }
 
     /// <summary>Gets the Array containing the methods generic arguments.</summary>
-    private Type[] GenericArguments { get; }
+    internal Type[] GenericArguments { get; }
 
     /// <inheritdoc/>
     public override int GetHashCode()

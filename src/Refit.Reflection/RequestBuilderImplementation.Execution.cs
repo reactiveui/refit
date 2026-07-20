@@ -9,6 +9,26 @@ namespace Refit;
 /// <summary>Reflection-based request builder that turns Refit interface calls into HTTP requests.</summary>
 internal partial class RequestBuilderImplementation
 {
+    /// <summary>Gets the cancellation token declared by the interface method, if any.</summary>
+    /// <param name="restMethod">The rest method being invoked.</param>
+    /// <param name="paramList">The argument values for the call.</param>
+    /// <returns>The method's cancellation token, or <see cref="CancellationToken.None"/>.</returns>
+    internal static CancellationToken GetMethodCancellationToken(
+        RestMethodInfoInternal restMethod,
+        object[] paramList) =>
+        restMethod.CancellationToken is not null
+            ? GetCancellationToken(paramList)
+            : CancellationToken.None;
+
+    /// <summary>Determines whether the request body should be buffered before sending.</summary>
+    /// <param name="restMethod">The rest method being invoked.</param>
+    /// <param name="request">The built request message.</param>
+    /// <returns><see langword="true"/> if the body should be buffered; otherwise <see langword="false"/>.</returns>
+    internal static bool IsBodyBuffered(
+        RestMethodInfoInternal restMethod,
+        HttpRequestMessage request) =>
+        (restMethod.BodyParameterInfo?.Item2 ?? false) && request.Content is not null;
+
     /// <summary>Builds and streams the response for a method returning an asynchronous sequence.</summary>
     /// <typeparam name="T">The element type yielded to the caller.</typeparam>
     /// <param name="client">The HTTP client to send with.</param>
@@ -53,31 +73,11 @@ internal partial class RequestBuilderImplementation
         }
     }
 
-    /// <summary>Gets the cancellation token declared by the interface method, if any.</summary>
-    /// <param name="restMethod">The rest method being invoked.</param>
-    /// <param name="paramList">The argument values for the call.</param>
-    /// <returns>The method's cancellation token, or <see cref="CancellationToken.None"/>.</returns>
-    private static CancellationToken GetMethodCancellationToken(
-        RestMethodInfoInternal restMethod,
-        object[] paramList) =>
-        restMethod.CancellationToken is not null
-            ? GetCancellationToken(paramList)
-            : CancellationToken.None;
-
-    /// <summary>Determines whether the request body should be buffered before sending.</summary>
-    /// <param name="restMethod">The rest method being invoked.</param>
-    /// <param name="request">The built request message.</param>
-    /// <returns><see langword="true"/> if the body should be buffered; otherwise <see langword="false"/>.</returns>
-    private static bool IsBodyBuffered(
-        RestMethodInfoInternal restMethod,
-        HttpRequestMessage request) =>
-        (restMethod.BodyParameterInfo?.Item2 ?? false) && request.Content is not null;
-
     /// <summary>Builds a delegate that constructs and returns the request for a <c>Task&lt;HttpRequestMessage&gt;</c> method.</summary>
     /// <param name="restMethod">The rest method to build a delegate for.</param>
     /// <returns>A delegate that returns a task producing the built request without sending it.</returns>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Func<HttpClient, object[], object?> BuildRequestMessageFuncForMethod(
+    internal Func<HttpClient, object[], object?> BuildRequestMessageFuncForMethod(
         RestMethodInfoInternal restMethod) =>
         (client, paramList) => BuildRequestMessageWithoutSendingAsync(client, restMethod, paramList);
 
@@ -90,7 +90,7 @@ internal partial class RequestBuilderImplementation
     /// logging, or manual dispatch. Any configured async authorization token getter runs at dispatch time and is
     /// therefore not applied to a request obtained this way.</remarks>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Task<HttpRequestMessage> BuildRequestMessageWithoutSendingAsync(
+    internal Task<HttpRequestMessage> BuildRequestMessageWithoutSendingAsync(
         HttpClient client,
         RestMethodInfoInternal restMethod,
         object[] paramList)
@@ -113,7 +113,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>A task that completes when the request finishes.</returns>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private async Task ExecuteVoidRequestAsync(
+    internal async Task ExecuteVoidRequestAsync(
         HttpClient client,
         RestMethodInfoInternal restMethod,
         object[] paramList,
@@ -154,7 +154,7 @@ internal partial class RequestBuilderImplementation
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private async Task<T?> ExecuteRequestAsync<T, TBody>(
+    internal async Task<T?> ExecuteRequestAsync<T, TBody>(
         HttpClient client,
         RestMethodInfoInternal restMethod,
         object[] paramList,
@@ -192,7 +192,7 @@ internal partial class RequestBuilderImplementation
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     [ExcludeFromCodeCoverage]
-    private async IAsyncEnumerable<T?> ExecuteAsyncEnumerableRequestAsync<T>(
+    internal async IAsyncEnumerable<T?> ExecuteAsyncEnumerableRequestAsync<T>(
         HttpClient client,
         RestMethodInfoInternal restMethod,
         object[] paramList,
@@ -218,7 +218,7 @@ internal partial class RequestBuilderImplementation
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private Func<HttpClient, CancellationToken, object[], Task<T?>> BuildCancellableTaskFuncForMethod<T, TBody>(
+    internal Func<HttpClient, CancellationToken, object[], Task<T?>> BuildCancellableTaskFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod) =>
         async (client, ct, paramList) =>
         {
@@ -254,7 +254,7 @@ internal partial class RequestBuilderImplementation
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    private Task<T?> SendAndProcessResponseAsync<T, TBody>(
+    internal Task<T?> SendAndProcessResponseAsync<T, TBody>(
         HttpClient client,
         RestMethodInfoInternal restMethod,
         HttpRequestMessage request,

@@ -17,7 +17,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="param">The body argument value.</param>
     /// <param name="ret">The request message to populate.</param>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private void AddBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
+    internal void AddBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
     {
         if (param is HttpContent httpContentParam)
         {
@@ -86,7 +86,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="param">The body argument value.</param>
     /// <param name="ret">The request message to populate.</param>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private void AddSerializedBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
+    internal void AddSerializedBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
     {
         var declaredBodyType = restMethod.ParameterInfoArray[
             restMethod.BodyParameterInfo!.Item3].ParameterType;
@@ -134,7 +134,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="queryParamsToAdd">The list of query parameters being built.</param>
     /// <param name="i">The index of the parameter.</param>
     /// <param name="parameterInfo">Optional parameter info for property-bound parameters.</param>
-    private void AddQueryParameters(
+    internal void AddQueryParameters(
         RestMethodInfoInternal restMethod,
         QueryAttribute? queryAttribute,
         object param,
@@ -161,7 +161,7 @@ internal partial class RequestBuilderImplementation
             ? attr.CollectionFormat
             : (CollectionFormat?)null;
 
-        if (parameterCollectionFormat is not null
+        if (attr.IsCollectionFormatSpecified
             && TryAppendIndexedCollectionQuery(queryParamsToAdd, param, attr, restMethod.QueryParameterMap[i], parameterCollectionFormat))
         {
             return;
@@ -199,7 +199,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="i">The index of the parameter.</param>
     /// <param name="param">The argument value, which may be a single item or an enumerable.</param>
     /// <param name="multiPartContent">The multipart content to add to.</param>
-    private void AddMultiPart(
+    internal void AddMultiPart(
         RestMethodInfoInternal restMethod,
         int i,
         object param,
@@ -212,7 +212,7 @@ internal partial class RequestBuilderImplementation
 
         // An opt-in [FormObject] parameter is flattened into one text form-data part per property (resolved field name +
         // formatted value) so server-side form model binding sees individual fields instead of a single serialized part.
-        if (restMethod.ParameterInfoArray[i].GetCustomAttribute<FormObjectAttribute>(true) is not null)
+        if (restMethod.ParameterFormObjectFlags[i])
         {
             AddFlattenedFormObject(multiPartContent!, param);
             return;
@@ -249,7 +249,7 @@ internal partial class RequestBuilderImplementation
     /// <remarks>Reuses <see cref="FormValueMultimap"/> so field-name resolution (alias, serializer, key formatter),
     /// value formatting, collection handling and nested <c>parent.child</c> composition match url-encoded body
     /// flattening. Each entry is added as its own text <see cref="StringContent"/> under the resolved field name.</remarks>
-    private void AddFlattenedFormObject(MultipartFormDataContent multiPartContent, object param)
+    internal void AddFlattenedFormObject(MultipartFormDataContent multiPartContent, object param)
     {
         foreach (var field in new FormValueMultimap(param, _settings))
         {
@@ -269,7 +269,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="fileName">The file name to use for file-like parts.</param>
     /// <param name="parameterName">The form field name for the part.</param>
     /// <param name="itemValue">The value to add.</param>
-    private void AddMultipartItem(
+    internal void AddMultipartItem(
         MultipartFormDataContent multiPartContent,
         string fileName,
         string parameterName,
@@ -327,7 +327,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="fileName">The file name used in the error message.</param>
     /// <param name="parameterName">The form field name for the part.</param>
     /// <param name="itemValue">The value to serialize and add.</param>
-    private void AddSerializedMultipartItem(
+    internal void AddSerializedMultipartItem(
         MultipartFormDataContent multiPartContent,
         string fileName,
         string parameterName,
@@ -376,7 +376,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="parameterInfo">Reflection info for the parameter.</param>
     /// <param name="queryPath">The query key path for the parameter.</param>
     /// <param name="queryAttribute">The query attribute governing formatting.</param>
-    private void AppendQueryParameter(
+    internal void AppendQueryParameter(
         List<QueryParameterEntry> queryParamsToAdd,
         object? param,
         ParameterInfo parameterInfo,
@@ -385,15 +385,13 @@ internal partial class RequestBuilderImplementation
     {
         if (param is not string and IEnumerable paramValues)
         {
-            foreach (var value in ParseEnumerableQueryParameterValue(
-                         paramValues,
-                         parameterInfo,
-                         parameterInfo.ParameterType,
-                         queryAttribute))
-            {
-                queryParamsToAdd.Add(new(queryPath, value));
-            }
-
+            AppendFormattedEnumerableValues(
+                paramValues,
+                parameterInfo,
+                parameterInfo.ParameterType,
+                queryAttribute,
+                null,
+                new QueryParameterEntrySink(queryParamsToAdd, queryPath));
             return;
         }
 
@@ -403,7 +401,7 @@ internal partial class RequestBuilderImplementation
                 GeneratedRequestRunner.FormatUrlParameter(
                     _settings,
                     param,
-                    parameterInfo,
+                    GetCachedAttributeProvider(parameterInfo),
                     parameterInfo.ParameterType)));
     }
 
@@ -415,7 +413,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="paramKey">The base query key for the parameter.</param>
     /// <param name="parameterCollectionFormat">The resolved collection format, or null to use the settings default.</param>
     /// <returns><see langword="true"/> when the parameter was handled as a Indexed collection.</returns>
-    private bool TryAppendIndexedCollectionQuery(
+    internal bool TryAppendIndexedCollectionQuery(
         List<QueryParameterEntry> queryParamsToAdd,
         object param,
         QueryAttribute attr,
@@ -440,7 +438,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="collection">The enumerable parameter value.</param>
     /// <param name="attr">The query attribute governing key naming.</param>
     /// <param name="paramKey">The base query key for the parameter.</param>
-    private void AppendIndexedCollectionParameters(
+    internal void AppendIndexedCollectionParameters(
         List<QueryParameterEntry> queryParamsToAdd,
         IEnumerable collection,
         QueryAttribute attr,
@@ -479,19 +477,23 @@ internal partial class RequestBuilderImplementation
         }
     }
 
-    /// <summary>Formats an enumerable parameter value according to the effective collection format.</summary>
+    /// <summary>Formats an enumerable value according to the effective collection format and appends each result to a
+    /// sink, without allocating an intermediate sequence or iterator state machine.</summary>
+    /// <typeparam name="TSink">The sink that receives each formatted value.</typeparam>
     /// <param name="paramValues">The enumerable values to format.</param>
     /// <param name="customAttributeProvider">The attribute provider for the parameter or property.</param>
     /// <param name="type">The element type used for formatting.</param>
     /// <param name="queryAttribute">The query attribute governing the collection format, if any.</param>
     /// <param name="fallbackCollectionFormat">The collection format to use when none is specified.</param>
-    /// <returns>The formatted query values.</returns>
-    private IEnumerable<string?> ParseEnumerableQueryParameterValue(
+    /// <param name="sink">The sink receiving each formatted value.</param>
+    internal void AppendFormattedEnumerableValues<TSink>(
         IEnumerable paramValues,
         ICustomAttributeProvider customAttributeProvider,
         Type type,
         QueryAttribute? queryAttribute,
-        CollectionFormat? fallbackCollectionFormat = null)
+        CollectionFormat? fallbackCollectionFormat,
+        TSink sink)
+        where TSink : struct, IQueryValueSink
     {
         // Precedence: the property's own [Query] format wins; otherwise the format
         // supplied by the enclosing parameter's [Query] attribute (if any); finally
@@ -503,16 +505,18 @@ internal partial class RequestBuilderImplementation
 
         if (collectionFormat == CollectionFormat.Multi)
         {
+            var cachedProvider = GetCachedAttributeProvider(customAttributeProvider);
             foreach (var paramValue in paramValues)
             {
-                yield return GeneratedRequestRunner.FormatUrlParameter(
-                    _settings,
-                    paramValue,
-                    customAttributeProvider,
-                    type);
+                sink.Add(
+                    GeneratedRequestRunner.FormatUrlParameter(
+                        _settings,
+                        paramValue,
+                        cachedProvider,
+                        type));
             }
 
-            yield break;
+            return;
         }
 
         var delimiter =
@@ -524,8 +528,8 @@ internal partial class RequestBuilderImplementation
                 _ => ","
             };
 
-        // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
-        yield return JoinFormattedQueryValues(paramValues, customAttributeProvider, type, delimiter);
+        // A single joined value is emitted; a missing default arm here previously dropped the collection entirely.
+        sink.Add(JoinFormattedQueryValues(paramValues, customAttributeProvider, type, delimiter));
     }
 
     /// <summary>Formats and joins an enumerable query value without LINQ adapters.</summary>
@@ -538,7 +542,7 @@ internal partial class RequestBuilderImplementation
         "Correctness",
         "SST2410:A created disposable is never disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
-    private string JoinFormattedQueryValues(
+    internal string JoinFormattedQueryValues(
         IEnumerable paramValues,
         ICustomAttributeProvider customAttributeProvider,
         Type type,
@@ -552,12 +556,13 @@ internal partial class RequestBuilderImplementation
                 return string.Empty;
             }
 
+            var cachedProvider = GetCachedAttributeProvider(customAttributeProvider);
             var builder = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
             builder.Append(
                 GeneratedRequestRunner.FormatUrlParameter(
                     _settings,
                     enumerator.Current,
-                    customAttributeProvider,
+                    cachedProvider,
                     type));
 
             while (enumerator.MoveNext())
@@ -567,7 +572,7 @@ internal partial class RequestBuilderImplementation
                     GeneratedRequestRunner.FormatUrlParameter(
                         _settings,
                         enumerator.Current,
-                        customAttributeProvider,
+                        cachedProvider,
                         type));
             }
 

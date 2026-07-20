@@ -65,7 +65,7 @@ internal static class ReturnTypeAdapterResolver
     /// <param name="resultType">The result type the adapter wraps (its <c>TResult</c>) when matched.</param>
     /// <returns><see langword="true"/> when the adapter surfaces the return type; otherwise <see langword="false"/>.</returns>
     [RequiresUnreferencedCode("Resolving return-type adapters inspects adapter interface metadata that trimming may remove.")]
-    private static bool TryMatch(
+    internal static bool TryMatch(
         Type returnType,
         Type adapter,
         out Type[] typeArguments,
@@ -90,7 +90,7 @@ internal static class ReturnTypeAdapterResolver
     /// <param name="resultType">The adapter's <c>TResult</c> when matched.</param>
     /// <returns><see langword="true"/> when the adapter surfaces the return type; otherwise <see langword="false"/>.</returns>
     [RequiresUnreferencedCode("Resolving return-type adapters inspects adapter interface metadata that trimming may remove.")]
-    private static bool TryMatchClosed(Type returnType, Type adapter, [NotNullWhen(true)] out Type? resultType)
+    internal static bool TryMatchClosed(Type returnType, Type adapter, [NotNullWhen(true)] out Type? resultType)
     {
         foreach (var implemented in adapter.GetInterfaces())
         {
@@ -117,7 +117,7 @@ internal static class ReturnTypeAdapterResolver
     /// generic definition matches the return type's, so <c>Wrapper&lt;X&gt;</c> closes the adapter over <c>X</c>.
     /// </remarks>
     [RequiresUnreferencedCode("Resolving return-type adapters inspects adapter interface metadata that trimming may remove.")]
-    private static bool TryMatchGenericDefinition(
+    internal static bool TryMatchGenericDefinition(
         Type returnType,
         Type adapter,
         out Type[] typeArguments,
@@ -167,7 +167,7 @@ internal static class ReturnTypeAdapterResolver
     /// <summary>Determines whether an implemented interface is a closed <see cref="IReturnTypeAdapter{TReturn, TResult}"/>.</summary>
     /// <param name="implemented">The implemented interface to test.</param>
     /// <returns><see langword="true"/> when the interface is a return-type adapter.</returns>
-    private static bool IsAdapterInterface(Type implemented) =>
+    internal static bool IsAdapterInterface(Type implemented) =>
         implemented.IsGenericType && implemented.GetGenericTypeDefinition() == typeof(IReturnTypeAdapter<,>);
 
     /// <summary>Maps a wrapper return type's arguments onto the adapter's type parameters, in adapter declaration order.</summary>
@@ -181,7 +181,7 @@ internal static class ReturnTypeAdapterResolver
     /// return type's argument, so <c>Adapter&lt;T1, T2&gt; : IReturnTypeAdapter&lt;Wrapper&lt;T2, T1&gt;, …&gt;</c> closes over a
     /// <c>Wrapper&lt;A, B&gt;</c> return as <c>Adapter&lt;B, A&gt;</c>. Mirrors the generator's <c>TryMapAdapterTypeArguments</c>.
     /// </remarks>
-    private static bool TryMapTypeArguments(Type templateReturn, Type returnType, out Type[] adapterOrdered)
+    internal static bool TryMapTypeArguments(Type templateReturn, Type returnType, out Type[] adapterOrdered)
     {
         adapterOrdered = [];
         if (!templateReturn.IsGenericType
@@ -215,7 +215,7 @@ internal static class ReturnTypeAdapterResolver
     /// <param name="returnArgument">The return type's argument at the same position.</param>
     /// <param name="mapped">The per-type-parameter binding slots, filled by position.</param>
     /// <returns><see langword="true"/> when the argument binds consistently.</returns>
-    private static bool TryBindArgument(Type templateArgument, Type returnArgument, Type?[] mapped)
+    internal static bool TryBindArgument(Type templateArgument, Type returnArgument, Type?[] mapped)
     {
         if (!templateArgument.IsGenericParameter)
         {
@@ -238,7 +238,7 @@ internal static class ReturnTypeAdapterResolver
     /// <param name="templateResult">The adapter's declared <c>TResult</c>.</param>
     /// <param name="returnArguments">The return type's type arguments, ordered by the adapter's type parameters.</param>
     /// <returns>The concrete result type, or <see langword="null"/> when it needs runtime generic instantiation.</returns>
-    private static Type? ResolveTemplateResult(Type templateResult, Type[] returnArguments) =>
+    internal static Type? ResolveTemplateResult(Type templateResult, Type[] returnArguments) =>
         templateResult switch
         {
             { IsGenericParameter: true } => returnArguments[templateResult.GenericParameterPosition],

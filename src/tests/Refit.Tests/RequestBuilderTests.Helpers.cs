@@ -186,6 +186,21 @@ public partial class RequestBuilderTests
         await Assert.That(uri.AbsolutePath).IsEqualTo("/foo/bar///");
     }
 
+    /// <summary>Renders a round-tripping path placeholder as an empty segment when the bound value itself is null,
+    /// rather than splitting a string form that does not exist.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task RoundTrippingPathWithNullValueFormatsAnEmptySegment()
+    {
+        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithRoundTrippingParam));
+
+        var output = await factory([null!, 1]);
+
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
+        await Assert.That(uri.AbsolutePath).IsEqualTo("/foo/bar//1");
+    }
+
     /// <summary>Falls back to the derived file name when a multipart item supplies an empty one.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

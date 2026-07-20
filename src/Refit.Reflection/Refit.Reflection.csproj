@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Refit.Tests"/>
+    <InternalsVisibleTo Include="Refit.Reflection.Tests"/>
+    <InternalsVisibleTo Include="Refit.Reflection.Benchmarks"/>
     <ProjectReference Include="..\Refit\Refit.csproj" PrivateAssets="Analyzers"/>
   </ItemGroup>
 

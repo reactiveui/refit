@@ -2,7 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-namespace Refit.Tests;
+namespace Refit.Reflection.Tests;
 
 /// <summary>A Refit interface with an authorization parameter, exercised through the reflection builder.</summary>
 public interface IAuthorizeHeaderApi

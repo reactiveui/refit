@@ -26,6 +26,7 @@
     <Folder Name="/Benchmarks/">
         <Project Path="benchmarks/Refit.Benchmarks/Refit.Benchmarks.csproj" />
         <Project Path="benchmarks/Refit.Generator.Benchmarks/Refit.Generator.Benchmarks.csproj" />
+        <Project Path="benchmarks/Refit.Reflection.Benchmarks/Refit.Reflection.Benchmarks.csproj" />
     </Folder>
     <Folder Name="/Solution Items/workflows/">
         <File Path="../.github/workflows/ci-build.yml" />
@@ -41,6 +42,7 @@
         <Project Path="tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" />
         <Project Path="tests/Refit.MockInterop.Tests/Refit.MockInterop.Tests.csproj" />
         <Project Path="tests/Refit.Newtonsoft.Json.Tests/Refit.Newtonsoft.Json.Tests.csproj" />
+        <Project Path="tests/Refit.Reflection.Tests/Refit.Reflection.Tests.csproj" />
         <Project Path="tests/Refit.Testing.Tests/Refit.Testing.Tests.csproj" />
         <Project Path="tests/Refit.Tests/Refit.Tests.csproj" />
     </Folder>
