@@ -48,7 +48,7 @@ internal static class HttpHeaderApplier
     /// <returns><see langword="true"/> when the header was stored; <see langword="false"/> when it belongs on the
     /// content collection instead, mirroring the <c>false</c> return of <c>TryAddWithoutValidation</c>.</returns>
     /// <exception cref="FormatException">The value is malformed for this header's parser.</exception>
-    private static bool TryAddValidated(System.Net.Http.Headers.HttpHeaders headers, string name, string value)
+    internal static bool TryAddValidated(System.Net.Http.Headers.HttpHeaders headers, string name, string value)
     {
         try
         {

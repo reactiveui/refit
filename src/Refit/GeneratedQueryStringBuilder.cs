@@ -264,7 +264,7 @@ public ref struct GeneratedQueryStringBuilder
     /// <param name="format">The compile-time format, or null for the default rendering.</param>
     /// <returns>The number of characters written into <paramref name="buffer"/>.</returns>
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // The grow back-edge only fires for a value larger than the stack buffer; the compiler's loop second-jump stays unreachable in practice.
-    private static int FormatWithGrowth<T>(T value, ref Span<char> buffer, ref char[]? rented, string? format)
+    internal static int FormatWithGrowth<T>(T value, ref Span<char> buffer, ref char[]? rented, string? format)
         where T : ISpanFormattable
     {
         int written;
@@ -284,7 +284,7 @@ public ref struct GeneratedQueryStringBuilder
 #endif
 
     /// <summary>Appends the <c>?</c> or <c>&amp;</c> separator, materializing the text buffer on first use.</summary>
-    private void AppendSeparator()
+    internal void AppendSeparator()
     {
         if (!_hasAppended)
         {
@@ -302,7 +302,7 @@ public ref struct GeneratedQueryStringBuilder
     /// <param name="value">The non-null formatted value.</param>
     /// <param name="keyEscaped">Whether the key is already escaped by the generator and appended verbatim.</param>
     /// <param name="preEncoded">Whether the value (and, when not <paramref name="keyEscaped"/>, the key) is caller-encoded.</param>
-    private void AppendPair(string name, string value, bool keyEscaped, bool preEncoded)
+    internal void AppendPair(string name, string value, bool keyEscaped, bool preEncoded)
     {
         AppendSeparator();
         _text.Append(keyEscaped || preEncoded ? name : StringHelpers.EscapeDataString(name));
@@ -318,7 +318,7 @@ public ref struct GeneratedQueryStringBuilder
     /// <param name="format">The compile-time format, or null.</param>
     /// <param name="keyEscaped">Whether the key is already escaped by the generator and appended verbatim.</param>
     /// <param name="preEncoded">Whether the value (and, when not <paramref name="keyEscaped"/>, the key) is caller-encoded.</param>
-    private void AppendFormattedPair<T>(string name, T value, string? format, bool keyEscaped, bool preEncoded)
+    internal void AppendFormattedPair<T>(string name, T value, string? format, bool keyEscaped, bool preEncoded)
         where T : ISpanFormattable
     {
         AppendSeparator();
@@ -334,7 +334,7 @@ public ref struct GeneratedQueryStringBuilder
     /// <param name="value">The value to render.</param>
     /// <param name="format">The compile-time format, or null for the default rendering.</param>
     /// <param name="escape">Whether the formatted span is URI-data-escaped before it is appended.</param>
-    private readonly void AppendFormattedValue<T>(ref ValueStringBuilder target, T value, string? format, bool escape)
+    internal readonly void AppendFormattedValue<T>(ref ValueStringBuilder target, T value, string? format, bool escape)
         where T : ISpanFormattable
     {
         Span<char> buffer = stackalloc char[FormatBufferLength];

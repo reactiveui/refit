@@ -191,7 +191,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="consumerCancellationToken">The per-subscription (or per-enumeration) cancellation token.</param>
     /// <returns>The token the request should run against, and the linked source to dispose once the request completes
     /// (null when no source was allocated).</returns>
-    private static (CancellationToken Token, CancellationTokenSource? LinkedSource) ResolveRequestCancellationToken(
+    internal static (CancellationToken Token, CancellationTokenSource? LinkedSource) ResolveRequestCancellationToken(
         CancellationToken methodCancellationToken,
         CancellationToken consumerCancellationToken)
     {
@@ -207,7 +207,7 @@ public static partial class GeneratedRequestRunner
     /// <summary>Reads the per-call timeout stashed by <see cref="SetRequestTimeout"/>, or 0 when none was set.</summary>
     /// <param name="request">The generated request message to inspect.</param>
     /// <returns>The per-call timeout in milliseconds, or 0 when none was set.</returns>
-    private static int GetRequestTimeout(HttpRequestMessage request) =>
+    internal static int GetRequestTimeout(HttpRequestMessage request) =>
 #if NET6_0_OR_GREATER
         request.Options.TryGetValue(new HttpRequestOptionsKey<int>(TimeoutOptionKey), out var timeoutMilliseconds)
             ? timeoutMilliseconds

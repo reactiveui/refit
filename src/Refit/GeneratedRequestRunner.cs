@@ -287,6 +287,12 @@ public static partial class GeneratedRequestRunner
             return StringHelpers.EscapeDataString(FormatUrlParameter(settings, null, attributeProvider, type) ?? string.Empty);
         }
 
+#if NET8_0_OR_GREATER
+        // The pristine default formatter returns a string value unchanged (a format string is ignored for a string),
+        // so each section can be percent-encoded straight from the source span with no intermediate substring and no
+        // formatter round-trip.
+        var escapeInline = UsesDefaultUrlParameterFormatting(settings);
+#endif
         var sb = new ValueStringBuilder(stackalloc char[256]);
         var sectionStart = 0;
         for (var i = 0; i <= value.Length; i++)
@@ -301,8 +307,18 @@ public static partial class GeneratedRequestRunner
                 sb.Append('/');
             }
 
-            var section = value.Substring(sectionStart, i - sectionStart);
-            sb.Append(StringHelpers.EscapeDataString(FormatUrlParameter(settings, section, attributeProvider, type) ?? string.Empty));
+#if NET8_0_OR_GREATER
+            if (escapeInline)
+            {
+                StringHelpers.AppendUriDataEscaped(ref sb, value.AsSpan(sectionStart, i - sectionStart));
+            }
+            else
+            {
+                AppendFormattedSection(ref sb, value[sectionStart..i], settings, attributeProvider, type);
+            }
+#else
+            AppendFormattedSection(ref sb, value[sectionStart..i], settings, attributeProvider, type);
+#endif
             sectionStart = i + 1;
         }
 
@@ -573,7 +589,7 @@ public static partial class GeneratedRequestRunner
     /// <summary>Resolves the single-character delimiter for a non-multi collection format.</summary>
     /// <param name="collectionFormat">The collection format.</param>
     /// <returns>The delimiter character.</returns>
-    private static char CollectionDelimiter(CollectionFormat collectionFormat) =>
+    internal static char CollectionDelimiter(CollectionFormat collectionFormat) =>
         collectionFormat switch
         {
             CollectionFormat.Ssv => ' ',
@@ -592,7 +608,7 @@ public static partial class GeneratedRequestRunner
         "Correctness",
         "SST2410:A created disposable is never disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
-    private static string JoinFormattedElements(
+    internal static string JoinFormattedElements(
         IEnumerable values,
         RefitSettings settings,
         Type elementProviderType,
@@ -622,7 +638,7 @@ public static partial class GeneratedRequestRunner
     /// there still renders an empty segment exactly as before. The separator is trimmed only when it is a '/', so a null
     /// value in a query position (for example <c>?key={value?}</c>) collapses to an empty value rather than eating an
     /// unrelated character.</remarks>
-    private static void DropOptionalSegmentSeparator(ref ValueStringBuilder sb, ReadOnlySpan<char> template, int endIdx)
+    internal static void DropOptionalSegmentSeparator(ref ValueStringBuilder sb, ReadOnlySpan<char> template, int endIdx)
     {
         // An optional {name?} placeholder ends with the two-character "?}" suffix, so the '?' sits one char before endIdx.
         const int optionalMarkerSuffixLength = 2;
@@ -640,7 +656,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="settings">The Refit settings supplying the registry and default formatter.</param>
     /// <param name="value">The value about to be formatted, or null.</param>
     /// <returns>The registered formatter for the value's exact runtime type, or the configured default formatter.</returns>
-    private static IUrlParameterFormatter ResolveUrlParameterFormatter(RefitSettings settings, object? value) =>
+    internal static IUrlParameterFormatter ResolveUrlParameterFormatter(RefitSettings settings, object? value) =>
         value is not null
         && settings.UrlParameterFormatterMap.Count > 0
         && settings.UrlParameterFormatterMap.TryGetValue(value.GetType(), out var formatter)
@@ -652,7 +668,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="relativePathTemplate">The original path template, used in the error message.</param>
     /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
     /// <returns>The validated path, returned unchanged.</returns>
-    private static string ThrowIfUnmatchedParameter(string path, string relativePathTemplate, bool allowUnmatchedParameter)
+    internal static string ThrowIfUnmatchedParameter(string path, string relativePathTemplate, bool allowUnmatchedParameter)
     {
         if (allowUnmatchedParameter)
         {
@@ -679,7 +695,7 @@ public static partial class GeneratedRequestRunner
     /// <summary>Rejects a no-leading-slash path under legacy resolution, matching the reflection request builder.</summary>
     /// <param name="relativePath">The resolved relative request path.</param>
     /// <exception cref="ArgumentException">The path is non-empty and does not start with '/'.</exception>
-    private static void RequireLeadingSlashUnderLegacy(string relativePath)
+    internal static void RequireLeadingSlashUnderLegacy(string relativePath)
     {
         if (relativePath.Length == 0 || relativePath[0] == '/')
         {
@@ -693,14 +709,14 @@ public static partial class GeneratedRequestRunner
     /// <summary>Builds the message describing an invalid <c>[Url]</c> parameter value.</summary>
     /// <param name="value">The rejected value.</param>
     /// <returns>The exception message.</returns>
-    private static string FormatAbsoluteUrlError(object? value) =>
+    internal static string FormatAbsoluteUrlError(object? value) =>
         $"The [Url] parameter value \"{value}\" must be an absolute URI (for example \"https://host/path\").";
 
     /// <summary>Adds one pre-boxed configured request property or option value.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="key">The property key.</param>
     /// <param name="value">The pre-boxed property value.</param>
-    private static void AddBoxedRequestProperty(HttpRequestMessage request, string key, object value)
+    internal static void AddBoxedRequestProperty(HttpRequestMessage request, string key, object value)
     {
 #if NET6_0_OR_GREATER
         request.Options.Set(new(key), value);
@@ -715,7 +731,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="body">The body value.</param>
     /// <param name="serializationMethod">The configured body serialization method.</param>
     /// <returns>The serialized HTTP content.</returns>
-    private static HttpContent CreateSerializedBodyContent<TBody>(
+    internal static HttpContent CreateSerializedBodyContent<TBody>(
         RefitSettings settings,
         TBody body,
         BodySerializationMethod serializationMethod)
@@ -748,21 +764,21 @@ public static partial class GeneratedRequestRunner
     /// <summary>Determines whether request bodies should be serialized synchronously through the configured serializer.</summary>
     /// <param name="settings">The Refit settings to inspect.</param>
     /// <returns><see langword="true"/> when synchronous body serialization is enabled and supported.</returns>
-    private static bool UsesSynchronousSerialization(RefitSettings settings) =>
+    internal static bool UsesSynchronousSerialization(RefitSettings settings) =>
         settings.RequestBodySerialization != RequestBodySerializationMode.Default
         && settings.ContentSerializer is ISynchronousContentSerializer;
 
     /// <summary>Determines whether the HTTP method must not carry generated placeholder content for content headers.</summary>
     /// <param name="method">The HTTP method to inspect.</param>
     /// <returns><see langword="true"/> for bodyless methods.</returns>
-    private static bool IsBodyless(HttpMethod method) =>
+    internal static bool IsBodyless(HttpMethod method) =>
         method == HttpMethod.Get || method == HttpMethod.Head;
 
     /// <summary>Checks whether a header collection contains a key without throwing for unsupported header types.</summary>
     /// <param name="headers">The header collection to inspect.</param>
     /// <param name="name">The header name.</param>
     /// <returns><see langword="true"/> when the header key exists; otherwise <see langword="false"/>.</returns>
-    private static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
+    internal static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
     {
 #if NET6_0_OR_GREATER
         // NonValidated checks key presence (case-insensitively, like the store) without parsing or materializing the
@@ -785,5 +801,19 @@ public static partial class GeneratedRequestRunner
     /// <summary>Removes CR and LF characters from a generated header name or value.</summary>
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
-    private static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
+    internal static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
+
+    /// <summary>Formats a single catch-all path section through the configured formatter and appends its escaped form.</summary>
+    /// <param name="sb">The path builder receiving the escaped section.</param>
+    /// <param name="section">The raw path section.</param>
+    /// <param name="settings">The Refit settings supplying the URL parameter formatter registry and default.</param>
+    /// <param name="attributeProvider">The parameter's attribute provider passed to the formatter.</param>
+    /// <param name="type">The parameter's declared type passed to the formatter.</param>
+    private static void AppendFormattedSection(
+        ref ValueStringBuilder sb,
+        string section,
+        RefitSettings settings,
+        ICustomAttributeProvider attributeProvider,
+        Type type) =>
+        sb.Append(StringHelpers.EscapeDataString(FormatUrlParameter(settings, section, attributeProvider, type) ?? string.Empty));
 }

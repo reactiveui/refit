@@ -85,7 +85,7 @@ public static class ApiResponseExtensions
     /// <summary>Gets the captured error, or a fallback when an unsuccessful response did not record one.</summary>
     /// <param name="response">The unsuccessful response.</param>
     /// <returns>The exception to surface to the caller.</returns>
-    private static Exception GetError(IApiResponse response) =>
+    internal static Exception GetError(IApiResponse response) =>
         (Exception?)response.Error
         ?? new InvalidOperationException("The response was unsuccessful but did not capture an error.");
 }

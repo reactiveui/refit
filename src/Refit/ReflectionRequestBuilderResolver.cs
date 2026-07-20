@@ -29,7 +29,7 @@ internal static class ReflectionRequestBuilderResolver
     /// <returns>The factory instance.</returns>
     [RequiresUnreferencedCode("The reflection request builder requires runtime type lookup and request metadata.")]
     [ExcludeFromCodeCoverage] // The not-installed throw is unreachable in-process: Refit.Reflection is always present when this resolver runs.
-    private static IRequestBuilderFactory CreateFactory() =>
+    internal static IRequestBuilderFactory CreateFactory() =>
         Type.GetType(FactoryTypeName, throwOnError: false) is { } factoryType
         && Activator.CreateInstance(factoryType) is IRequestBuilderFactory factory
             ? factory

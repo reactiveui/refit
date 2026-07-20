@@ -287,7 +287,7 @@ internal static partial class RequestExecutionHelpers
     /// <param name="options">The send and response-processing options.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>A task that completes once the request has been prepared.</returns>
-    private static async Task PrepareRequestAsync(
+    internal static async Task PrepareRequestAsync(
         HttpRequestMessage request,
         RefitSettings settings,
         RequestExecutionOptions options,
@@ -322,7 +322,7 @@ internal static partial class RequestExecutionHelpers
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by callers for ApiResponse<T> failure wrapping.")]
-    private static async Task<SendResult<T>> SendOrCaptureExceptionAsync<T, TBody>(
+    internal static async Task<SendResult<T>> SendOrCaptureExceptionAsync<T, TBody>(
         HttpClient client,
         HttpRequestMessage request,
         RefitSettings settings,
@@ -363,7 +363,7 @@ internal static partial class RequestExecutionHelpers
     /// <param name="exception">The exception to rethrow.</param>
     /// <returns>Never returns; the return type only lets callers write <c>throw Rethrow(...)</c> as a terminator.</returns>
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // The trailing return is unreachable: ExceptionDispatchInfo.Throw() always throws first.
-    private static Exception Rethrow(Exception exception)
+    internal static Exception Rethrow(Exception exception)
     {
         System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
         return exception;
@@ -384,7 +384,7 @@ internal static partial class RequestExecutionHelpers
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by generated and reflection callers for ApiResponse<T> body deserialization.")]
-    private static async Task<T?> DispatchResponseAsync<T, TBody>(
+    internal static async Task<T?> DispatchResponseAsync<T, TBody>(
         HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
@@ -433,7 +433,7 @@ internal static partial class RequestExecutionHelpers
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by callers for ApiResponse<T> body deserialization.")]
-    private static async ValueTask<T?> BuildApiResponseAsync<T, TBody>(
+    internal static async ValueTask<T?> BuildApiResponseAsync<T, TBody>(
         HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
@@ -478,7 +478,7 @@ internal static partial class RequestExecutionHelpers
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async ValueTask<T?> DeserializeOrThrowAsync<T>(
+    internal static async ValueTask<T?> DeserializeOrThrowAsync<T>(
         HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
@@ -525,7 +525,7 @@ internal static partial class RequestExecutionHelpers
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="exception">The original exception.</param>
     /// <returns>The wrapped exception, or null when a configured factory returns null.</returns>
-    private static async ValueTask<Exception?> CreateDeserializationExceptionAsync(
+    internal static async ValueTask<Exception?> CreateDeserializationExceptionAsync(
         HttpRequestMessage request,
         HttpResponseMessage response,
         RefitSettings settings,
@@ -552,7 +552,7 @@ internal static partial class RequestExecutionHelpers
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async ValueTask<T?> DeserializeContentAsync<T>(
+    internal static async ValueTask<T?> DeserializeContentAsync<T>(
         HttpResponseMessage response,
         HttpContent content,
         RefitSettings settings,
@@ -618,7 +618,7 @@ internal static partial class RequestExecutionHelpers
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async ValueTask<T?> DeserializeSerializedContentAsync<T>(
+    internal static async ValueTask<T?> DeserializeSerializedContentAsync<T>(
         HttpResponseMessage response,
         HttpContent content,
         RefitSettings settings,
@@ -641,7 +641,7 @@ internal static partial class RequestExecutionHelpers
     /// <param name="content">The content to buffer.</param>
     /// <param name="cancellationToken">A token to cancel buffering.</param>
     /// <returns>A task that completes once buffering has been attempted.</returns>
-    private static async Task TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
+    internal static async Task TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
     {
         try
         {
@@ -655,13 +655,13 @@ internal static partial class RequestExecutionHelpers
 
     /// <summary>The outcome of attempting to send a request.</summary>
     /// <typeparam name="T">The result type returned to the caller.</typeparam>
-    private readonly record struct SendResult<T>
+    internal readonly record struct SendResult<T>
     {
         /// <summary>Initializes a new instance of the <see cref="SendResult{T}"/> struct.</summary>
         /// <param name="hasResponse">Whether the send produced a response.</param>
         /// <param name="response">The response, or null when the send failed.</param>
         /// <param name="failureResult">The captured failure result, valid only when <paramref name="hasResponse"/> is false.</param>
-        private SendResult(bool hasResponse, HttpResponseMessage? response, T? failureResult)
+        internal SendResult(bool hasResponse, HttpResponseMessage? response, T? failureResult)
         {
             HasResponse = hasResponse;
             Response = response;
