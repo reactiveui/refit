@@ -48,9 +48,6 @@ public sealed partial class QueryRequestBuildingLiveTests
     /// <summary>The upper bound of the formatted complex query-object property scenario.</summary>
     private const int WindowMax = 9;
 
-    /// <summary>The full type name of the <c>Item</c> scenario type used by the Indexed test.</summary>
-    private const string IndexedItemTypeName = "Refit.LiveQuery.Item";
-
     /// <summary>Csv-joined identifiers.</summary>
     private static readonly int[] CsvIds = [1, 2, 3];
 
@@ -273,13 +270,14 @@ public sealed partial class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        const string id = "id";
-        const string value = "value";
+        const string id = "Id";
+        const string value = "Value";
         const string parameter = "items";
         const string indexedSearchMethodName = "IndexedSearch";
+        const string typeName = "Refit.LiveQuery.Item";
         await harness.AssertParityAsync(indexedSearchMethodName, [null], "/base/indexed");
-        var item0 = harness.CreateApiValue(IndexedItemTypeName, (id, 1), (value, "a"));
-        var indexedList = harness.CreateApiList(IndexedItemTypeName, item0);
+        var item0 = harness.CreateApiValue(typeName, (id, 1), (value, "a"));
+        var indexedList = harness.CreateApiList(typeName, item0);
         _ = await harness.AssertParityAsync(indexedSearchMethodName, [indexedList], $"/base/indexed?{parameter}[0].{id}=1&{parameter}[0].{value}=a");
     }
 
