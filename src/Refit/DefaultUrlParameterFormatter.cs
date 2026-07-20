@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Reflection;
 
 namespace Refit;
@@ -21,10 +20,10 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
         && GeneralFormats.Count == 0;
 
     /// <summary>Gets the registered format strings keyed by container and parameter type.</summary>
-    private Dictionary<(Type containerType, Type parameterType), string> SpecificFormats { get; } = [];
+    internal Dictionary<(Type containerType, Type parameterType), string> SpecificFormats { get; } = [];
 
     /// <summary>Gets the registered format strings keyed by parameter type.</summary>
-    private Dictionary<Type, string> GeneralFormats { get; } = [];
+    internal Dictionary<Type, string> GeneralFormats { get; } = [];
 
     /// <summary>
     /// Add format for specified parameter type contained within container class of specified type.
@@ -75,20 +74,25 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
 
         formatString = ResolveFormatString(formatString, type, parameterType);
 
-        return string.Format(
-            CultureInfo.InvariantCulture,
-            string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
-            enumMemberValue ?? value);
+        return InvariantValueRenderer.Render(enumMemberValue ?? value, formatString);
     }
 
     /// <summary>Gets the first query attribute from an attribute provider.</summary>
     /// <param name="attributeProvider">The attribute provider to inspect.</param>
     /// <returns>The first query attribute, or null when absent.</returns>
-    private static QueryAttribute? GetFirstQueryAttribute(ICustomAttributeProvider attributeProvider)
+    internal static QueryAttribute? GetFirstQueryAttribute(ICustomAttributeProvider attributeProvider)
     {
-        // GetCustomAttributes is type-filtered, so every element is a QueryAttribute; take the first, if any.
+        // IsDefined avoids materializing an attribute array when none is present. That matters for a Type provider
+        // (used when formatting collection elements), whose GetCustomAttributes allocates even for an empty result,
+        // whereas a PropertyInfo or ParameterInfo already returns a cached empty array. When the attribute is
+        // present, GetCustomAttributes is type-filtered, so the first element is the QueryAttribute.
+        if (!attributeProvider.IsDefined(typeof(QueryAttribute), true))
+        {
+            return null;
+        }
+
         var attributes = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true);
-        return attributes.Length > 0 ? attributes[0] as QueryAttribute : null;
+        return attributes[0] as QueryAttribute;
     }
 
     /// <summary>Selects the effective format string, preferring the attribute format, then specific, then general formats.</summary>
@@ -96,7 +100,7 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <param name="type">The container class type.</param>
     /// <param name="parameterType">The runtime type of the value.</param>
     /// <returns>The resolved format string, or null when none applies.</returns>
-    private string? ResolveFormatString(string? formatString, Type type, Type parameterType)
+    internal string? ResolveFormatString(string? formatString, Type type, Type parameterType)
     {
         if (string.IsNullOrWhiteSpace(formatString) &&
             SpecificFormats.TryGetValue((type, parameterType), out var specificFormat))

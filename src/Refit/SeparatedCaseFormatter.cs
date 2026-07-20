@@ -49,7 +49,7 @@ internal static class SeparatedCaseFormatter
     /// <param name="key">The identifier being formatted.</param>
     /// <param name="index">The index of the uppercase character.</param>
     /// <returns><see langword="true"/> when a separator should be inserted before the character.</returns>
-    private static bool NeedsSeparatorBefore(string key, int index)
+    internal static bool NeedsSeparatorBefore(string key, int index)
     {
         var previous = key[index - 1];
 

@@ -62,7 +62,7 @@ internal ref struct ValueStringBuilder
     /// <remarks>ToString() clears the builder, so we need a side-effect free debugger display.</remarks>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Only evaluated by the debugger, never by tests.
-    private readonly string DebuggerDisplay => AsSpan().ToString();
+    internal readonly string DebuggerDisplay => AsSpan().ToString();
 
     /// <summary>Gets a reference to the character at the specified index.</summary>
     /// <param name="index">The zero-based index of the character.</param>
@@ -321,7 +321,7 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Appends a string using the slow path that may grow the buffer.</summary>
     /// <param name="s">The string to append.</param>
-    private void AppendSlow(string s)
+    internal void AppendSlow(string s)
     {
         var pos = _pos;
         if (pos > _chars.Length - s.Length)
@@ -340,7 +340,7 @@ internal ref struct ValueStringBuilder
     /// <summary>Grows the buffer and then appends the character.</summary>
     /// <param name="c">The character to append.</param>
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private void GrowAndAppend(char c)
+    internal void GrowAndAppend(char c)
     {
         Grow(1);
         Append(c);
@@ -351,7 +351,7 @@ internal ref struct ValueStringBuilder
     /// Number of chars requested beyond current position.
     /// </param>
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private void Grow(int additionalCapacityBeyondPos)
+    internal void Grow(int additionalCapacityBeyondPos)
     {
         Debug.Assert(additionalCapacityBeyondPos > 0, "Grow must be called with a positive additional capacity.");
         Debug.Assert(

@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="FormValueMultimap"/> source loading and serialization behavior.</summary>
-public class FormValueMultimapTests
+public partial class FormValueMultimapTests
 {
     /// <summary>The second element shared by the sample integer collections.</summary>
     private const int SecondSampleInt = 2;
