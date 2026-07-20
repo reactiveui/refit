@@ -131,6 +131,40 @@ public sealed class QueryObjectFlatteningGenerationTests
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
     }
 
+    /// <summary>Verifies a nullable value-type (struct) query object flattens inline: the underlying struct's properties
+    /// are reached through <c>.Value</c> inside the parameter's <c>HasValue</c> guard, rather than falling back to the
+    /// reflection request builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task NullableStructQueryObjectFlattensInline()
+    {
+        const string source =
+            """
+            #nullable enable
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public struct GeoQuery
+            {
+                public string? Name { get; set; }
+                [Query(Format = "0.00")] public double Lat { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/geo")]
+                Task<string> Find([Query] GeoQuery? query);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+    }
+
     /// <summary>Verifies a query object with nullable and non-nullable dictionary properties (with nullable values)
     /// expands each entry inline under the property key.</summary>
     /// <returns>A task representing the asynchronous test.</returns>

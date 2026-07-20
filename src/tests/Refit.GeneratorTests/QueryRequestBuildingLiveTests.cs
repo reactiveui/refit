@@ -170,6 +170,25 @@ public sealed partial class QueryRequestBuildingLiveTests
         _ = await harness.AssertParityAsync("RangeSearch", [query], "/base/range?Window=1..9");
     }
 
+    /// <summary>Verifies a nullable value-type (struct) query object matches the reflection builder: a present value
+    /// reaches its properties through <c>.Value</c> inside the parameter's <c>HasValue</c> guard, and a null value is
+    /// omitted entirely.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task NullableStructQueryObjectMatchesReflection()
+    {
+        using var harness = LiveQueryHarness.Create();
+
+        // A present nullable struct flattens its underlying properties; parity guards the exact key order and encoding.
+        var point = harness.CreateApiValue("Refit.LiveQuery.GeoPoint", ("Name", "peak"), ("Lat", RawDouble));
+        _ = await harness.AssertParityAsync("NullableStructQuery", [point], null);
+
+        // A null nullable-struct parameter contributes no query pairs, matching the reflection builder.
+        _ = await harness.AssertParityAsync("NullableStructQuery", [null], "/base/point");
+    }
+
     /// <summary>Verifies a dictionary of a concrete (non-sealed) complex value type flattens each entry under the entry key, matching
     /// the reflection builder's per-value nested map (<c>key.Property=value</c>).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -400,6 +419,16 @@ public sealed partial class QueryRequestBuildingLiveTests
                 public Bounds? Window { get; set; }
             }
 
+            // A value-type (struct) query object used through a nullable parameter: exercises flattening the underlying
+            // struct's properties through .Value inside the parameter's HasValue guard.
+            public struct GeoPoint
+            {
+                public string? Name { get; set; }
+
+                [Query(Format = "0.00")]
+                public double Lat { get; set; }
+            }
+
             // Deliberately not sealed: exercises the concrete (non-sealed) declared-type flatten. The test value is not a
             // subtype, so the declared-type flatten matches the reflection builder's runtime-type flatten exactly.
             public class Facet
@@ -479,6 +508,9 @@ public sealed partial class QueryRequestBuildingLiveTests
 
                 [Get("/range")]
                 Task<string> RangeSearch([Query] RangeQuery query);
+
+                [Get("/point")]
+                Task<string> NullableStructQuery([Query] GeoPoint? point);
 
                 [Get("/facets")]
                 Task<string> Facets(Dictionary<string, Facet> facets);
