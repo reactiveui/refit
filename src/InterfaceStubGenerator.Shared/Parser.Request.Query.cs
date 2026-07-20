@@ -17,8 +17,11 @@ internal static partial class Parser
     /// <summary>The maximum nested-object depth flattened inline before the whole parameter falls back to reflection.</summary>
     private const int MaxNestingDepth = 32;
 
-    /// <summary>The underlying integer value of <c>CollectionFormat.Indexed</c>, used by the parser without a direct reference to the Refit assembly.</summary>
-    private const int IndexedCollectionFormatValue = 6;
+    /// <summary>The metadata name of <c>Refit.CollectionFormat</c>.</summary>
+    private const string CollectionFormatTypeName = "Refit.CollectionFormat";
+
+    /// <summary>The member name of <c>CollectionFormat.Indexed</c>.</summary>
+    private const string IndexedMemberName = "Indexed";
 
     /// <summary>The metadata name of <c>Refit.QueryAttribute</c>.</summary>
     private const string QueryAttributeDisplayName = "QueryAttribute";
@@ -286,6 +289,38 @@ internal static partial class Parser
                 BuildValueFormat(elementType!, format, formattableSymbol, context))
             : null;
 
+    /// <summary>Determines whether <paramref name="collectionFormatValue"/> is the underlying integer value of
+    /// <c>CollectionFormat.Indexed</c> by resolving the enum member from the compilation rather than comparing
+    /// against a hardcoded literal, so the check stays correct if the enum is ever reordered.</summary>
+    /// <param name="collectionFormatValue">The collection format value from the attribute, or null.</param>
+    /// <param name="context">The generation context supplying the compilation.</param>
+    /// <returns><see langword="true"/> when the value matches <c>CollectionFormat.Indexed</c>.</returns>
+    internal static bool IsIndexedCollectionFormat(int? collectionFormatValue, in InterfaceGenerationContext context)
+    {
+        if (collectionFormatValue is null)
+        {
+            return false;
+        }
+
+        // Resolve the CollectionFormat enum type from the compilation and find the Indexed member's constant value.
+        // This avoids hardcoding the integer and stays correct if the enum is ever reordered.
+        var collectionFormatType = context.Compilation?.GetTypeByMetadataName(CollectionFormatTypeName);
+        if (collectionFormatType is null)
+        {
+            return false;
+        }
+
+        foreach (var member in collectionFormatType.GetMembers())
+        {
+            if (member is IFieldSymbol { HasConstantValue: true, Name: IndexedMemberName } field)
+            {
+                return collectionFormatValue == (int)field.ConstantValue!;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Builds the query model for a <c>[Query(CollectionFormat.Indexed)]</c> parameter whose element type
     /// is a complex object that can be flattened inline, or null when the parameter does not match.</summary>
     /// <param name="parameter">The parameter to classify.</param>
@@ -306,7 +341,7 @@ internal static partial class Parser
         INamedTypeSymbol? formattableSymbol,
         in InterfaceGenerationContext context)
     {
-        if (data.CollectionFormatValue != IndexedCollectionFormatValue)
+        if (!IsIndexedCollectionFormat(data.CollectionFormatValue, context))
         {
             return null;
         }

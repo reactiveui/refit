@@ -83,6 +83,7 @@ public sealed partial class QueryRequestBuildingLiveTests
             using System.Collections.Generic;
             using System.Runtime.Serialization;
             using System.Threading.Tasks;
+            using System.Text.Json.Serialization;
             using Refit;
 
             namespace Refit.LiveQuery;
@@ -172,6 +173,12 @@ public sealed partial class QueryRequestBuildingLiveTests
                 public int Id { get; set; }
 
                 public string? Value { get; set; }
+            }
+            public sealed class Name
+            {
+                [JsonPropertyName("First Name")]
+                public string? FirstName { get; set; }
+                public string? LastName { get; set; }
             }
 
             public interface ILiveQueryApi
@@ -275,6 +282,12 @@ public sealed partial class QueryRequestBuildingLiveTests
 
                 [Get("/indexed")]
                 Task<string> IndexedSearch([Query(CollectionFormat.Indexed)] List<Item>? items);
+
+                [Get("/indexedListInt")]
+                Task<string> IndexedListSearch([Query(CollectionFormat.Indexed)] List<int>? items);
+
+                [Get("/indexedNameWithSerialized")]
+                Task<string> indexedNameWithSerialized([Query(CollectionFormat.Indexed)] List<Name>? items);
             }
             """;
 

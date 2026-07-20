@@ -43,41 +43,41 @@ internal partial class RequestBuilderImplementation
         switch (restMethod.BodyParameterInfo.Item1)
         {
             case BodySerializationMethod.UrlEncoded:
-                {
-                    ret.Content = param is string str
-                        ? new StringContent(
-                            StringHelpers.EscapeDataString(str),
-                            Encoding.UTF8,
-                            "application/x-www-form-urlencoded")
-                        : new FormUrlEncodedContent(new FormValueMultimap(param, _settings));
-                    break;
-                }
+            {
+                ret.Content = param is string str
+                    ? new StringContent(
+                        StringHelpers.EscapeDataString(str),
+                        Encoding.UTF8,
+                        "application/x-www-form-urlencoded")
+                    : new FormUrlEncodedContent(new FormValueMultimap(param, _settings));
+                break;
+            }
 
             case BodySerializationMethod.JsonLines:
-                {
-                    ret.Content = new JsonLinesContent(AsJsonLinesSequence(param), _serializer);
-                    break;
-                }
+            {
+                ret.Content = new JsonLinesContent(AsJsonLinesSequence(param), _serializer);
+                break;
+            }
 
             case BodySerializationMethod.Default or BodySerializationMethod.Serialized:
-                {
-                    AddSerializedBodyToRequest(restMethod, param, ret);
-                    break;
-                }
+            {
+                AddSerializedBodyToRequest(restMethod, param, ret);
+                break;
+            }
 
             default:
+            {
+                // The obsolete legacy JSON serialization method must still serialize, because
+                // already-compiled callers can pass it. Treating it as Default would incorrectly
+                // send string bodies as raw text. It is matched by value rather than by name so
+                // this file never references the obsolete member.
+                if (GeneratedRequestRunner.IsObsoleteJsonSerializationMethod(restMethod.BodyParameterInfo.Item1))
                 {
-                    // The obsolete legacy JSON serialization method must still serialize, because
-                    // already-compiled callers can pass it. Treating it as Default would incorrectly
-                    // send string bodies as raw text. It is matched by value rather than by name so
-                    // this file never references the obsolete member.
-                    if (GeneratedRequestRunner.IsObsoleteJsonSerializationMethod(restMethod.BodyParameterInfo.Item1))
-                    {
-                        AddSerializedBodyToRequest(restMethod, param, ret);
-                    }
-
-                    break;
+                    AddSerializedBodyToRequest(restMethod, param, ret);
                 }
+
+                break;
+            }
         }
     }
 
@@ -423,7 +423,8 @@ internal partial class RequestBuilderImplementation
         if (parameterCollectionFormat != CollectionFormat.Indexed
             || param is string
             || param is IDictionary
-            || param is not IEnumerable collection)
+            || param is not IEnumerable collection
+            || DoNotConvertToQueryMap(param))
         {
             return false;
         }
@@ -454,23 +455,16 @@ internal partial class RequestBuilderImplementation
             }
 
             var indexedKey = $"{paramKey}[{index}]";
-            if (DoNotConvertToQueryMap(item))
+
+            var queryMap = BuildQueryMap(item, attr.Delimiter);
+            for (var j = 0; j < queryMap.Count; j++)
             {
-                var type = item.GetType();
-                queryParamsToAdd.Add(new(indexedKey, GeneratedRequestRunner.FormatUrlParameter(_settings, item, type, type), KeyPreEscaped: true));
-            }
-            else
-            {
-                var queryMap = BuildQueryMap(item, attr.Delimiter);
-                for (var j = 0; j < queryMap.Count; j++)
-                {
-                    var kvp = queryMap[j];
-                    var valueType = kvp.Value?.GetType() ?? typeof(object);
-                    queryParamsToAdd.Add(new(
-                        indexedKey + attr.Delimiter + kvp.Key,
-                        GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, valueType, valueType),
-                        KeyPreEscaped: true));
-                }
+                var kvp = queryMap[j];
+                var valueType = kvp.Value?.GetType() ?? typeof(object);
+                queryParamsToAdd.Add(new(
+                    indexedKey + attr.Delimiter + kvp.Key,
+                    GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, valueType, valueType),
+                    KeyPreEscaped: true));
             }
 
             index++;
