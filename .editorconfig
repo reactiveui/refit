@@ -1147,7 +1147,7 @@ stylesharp.max_property_cognitive_complexity = 3
 # SST1484 also reports a field that shadows one inherited from a base type.
 stylesharp.SST1484.check_base_types = true
 stylesharp.max_line_length = 200                           # SST1521 (characters; keeps the limit this repo has always enforced)
-# stylesharp.max_file_lines = 1000                          # SST1522 (code lines; blank lines and comments do not count)
+stylesharp.max_file_lines = 1000                           # SST1522 (code lines; blank lines and comments do not count)
 # stylesharp.max_member_lines = 60                         # SST1523 (code lines)
 # stylesharp.max_switch_section_lines = 20                 # SST1524 (code lines)
 # stylesharp.include_internal = true                       # SST1499 (set false to report only fields visible outside the assembly)
