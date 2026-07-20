@@ -46,7 +46,7 @@ internal static class EnumHelpers
         "Trimming",
         "IL2070:DynamicallyAccessedMembers",
         Justification = "Enum field metadata is inspected for EnumMemberAttribute formatting on runtime enum values.")]
-    private static Dictionary<string, string?> CreateEnumMemberValueMap(Type enumType)
+    internal static Dictionary<string, string?> CreateEnumMemberValueMap(Type enumType)
     {
         var fields = enumType.GetFields(BindingFlags.Public | BindingFlags.Static);
         var enumMemberValues = new Dictionary<string, string?>(fields.Length, StringComparer.Ordinal);
@@ -63,6 +63,12 @@ internal static class EnumHelpers
         return enumMemberValues;
     }
 
+    /// <summary>Determines whether the given enum backing type code is unsigned.</summary>
+    /// <param name="underlyingTypeCode">The enum backing type code.</param>
+    /// <returns><see langword="true"/> when the enum backing type is unsigned.</returns>
+    internal static bool IsUnsignedBackingType(TypeCode underlyingTypeCode) =>
+        underlyingTypeCode is TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64;
+
     /// <summary>Provides cached helpers for a single enum type.</summary>
     /// <typeparam name="TEnum">The enum type.</typeparam>
     internal static class Info<
@@ -77,7 +83,7 @@ internal static class EnumHelpers
         /// <param name="value">The enum value to format.</param>
         /// <returns>The invariant numeric string.</returns>
         internal static string FormatNumericValue(TEnum value) =>
-            IsUnsignedBackingType()
+            IsUnsignedBackingType(_underlyingTypeCode)
                 ? ToUInt64(value).ToString(CultureInfo.InvariantCulture)
                 : ToInt64(value).ToString(CultureInfo.InvariantCulture);
 
@@ -122,7 +128,7 @@ internal static class EnumHelpers
         /// <param name="value">The enum value to write.</param>
         internal static void WriteJsonNumericValue(Utf8JsonWriter writer, TEnum value)
         {
-            if (IsUnsignedBackingType())
+            if (IsUnsignedBackingType(_underlyingTypeCode))
             {
                 writer.WriteNumberValue(ToUInt64(value));
                 return;
@@ -157,16 +163,11 @@ internal static class EnumHelpers
                 _ => throw new JsonException($"Enum {typeof(TEnum)} does not use an unsigned backing type.")
             };
 
-        /// <summary>Determines whether the enum backing type is unsigned.</summary>
-        /// <returns><see langword="true"/> when the enum backing type is unsigned.</returns>
-        private static bool IsUnsignedBackingType() =>
-            _underlyingTypeCode is TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64;
-
         /// <summary>Converts a numeric backing value to the enum type without boxing.</summary>
         /// <typeparam name="TUnderlying">The enum backing value type.</typeparam>
         /// <param name="value">The numeric backing value.</param>
         /// <returns>The enum value.</returns>
-        private static TEnum ToEnum<TUnderlying>(TUnderlying value)
+        internal static TEnum ToEnum<TUnderlying>(TUnderlying value)
             where TUnderlying : struct =>
             Unsafe.As<TUnderlying, TEnum>(ref value);
     }

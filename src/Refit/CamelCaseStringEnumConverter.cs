@@ -49,21 +49,74 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         return (JsonConverter)Activator.CreateInstance(converterType)!;
     }
 
+    /// <summary>Gets the preferred serialized name for the given enum field.</summary>
+    /// <param name="field">The enum field to inspect.</param>
+    /// <returns>The preferred serialized name.</returns>
+    internal static string GetPreferredSerializedName(FieldInfo field)
+    {
+#if NET9_0_OR_GREATER
+        var enumMemberNameAttribute = field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>();
+        return enumMemberNameAttribute?.Name ?? ToCamelCase(field.Name);
+#else
+        return ToCamelCase(field.Name);
+#endif
+    }
+
+    /// <summary>Converts the given value to camelCase.</summary>
+    /// <param name="value">The value to convert.</param>
+    /// <returns>The camelCase form of the value.</returns>
+    internal static string ToCamelCase(string value) =>
+        string.IsNullOrEmpty(value) || !char.IsUpper(value[0])
+            ? value
+#if NET8_0_OR_GREATER
+
+            // Produce the camelCase form in a single allocation: copy the source, then lowercase the first character
+            // in place. The "char.ToLowerInvariant(value[0]) + value[1..]" form allocates an extra substring tail.
+            : string.Create(value.Length, value, static (span, source) =>
+            {
+                source.AsSpan().CopyTo(span);
+                span[0] = char.ToLowerInvariant(source[0]);
+            });
+#else
+            : char.ToLowerInvariant(value[0]) + value[1..];
+#endif
+
+    /// <summary>Determines whether the reader is positioned on a JSON null or an empty/whitespace string.</summary>
+    /// <param name="reader">The reader to inspect.</param>
+    /// <returns><see langword="true"/> when the value should be treated as null.</returns>
+    internal static bool IsNullOrEmptyString(ref Utf8JsonReader reader) =>
+        reader.TokenType == JsonTokenType.Null
+        || (reader.TokenType is JsonTokenType.String or JsonTokenType.PropertyName
+            && string.IsNullOrWhiteSpace(reader.GetString()));
+
     /// <summary>A strongly-typed JSON converter that maps enum values to and from their camelCase names.</summary>
     /// <typeparam name="TEnum">The enum type whose fields are inspected.</typeparam>
-    private sealed class EnumConverter<
+    internal sealed class EnumConverter<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] TEnum> : JsonConverter<TEnum>
         where TEnum : struct, Enum
     {
+        /// <summary>The upper bound of serialized names per enum field: its camelCase name plus its declared name.</summary>
+        private const int MaxNamesPerField = 2;
+
         /// <summary>Maps serialized names to enum values using ordinal comparison.</summary>
-        private readonly Dictionary<string, TEnum> _namesToValues = GetNamesToValues(StringComparer.Ordinal);
+        private readonly Dictionary<string, TEnum> _namesToValues;
 
         /// <summary>Maps serialized names to enum values using case-insensitive comparison.</summary>
-        private readonly Dictionary<string, TEnum> _namesToValuesIgnoreCase =
-            GetNamesToValues(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TEnum> _namesToValuesIgnoreCase;
 
         /// <summary>Maps enum values to their preferred serialized names.</summary>
-        private readonly Dictionary<TEnum, string> _valuesToNames = GetValuesToNames();
+        private readonly Dictionary<TEnum, string> _valuesToNames;
+
+        /// <summary>Initializes a new instance of the <see cref="EnumConverter{TEnum}"/> class, building the three
+        /// serialized-name maps from a single scan of the enum's fields.</summary>
+        /// <remarks>Public because the converter factory instantiates it through <see cref="Activator.CreateInstance(Type)"/>,
+        /// which resolves only a public parameterless constructor.</remarks>
+        public EnumConverter() =>
+            (_namesToValues, _namesToValuesIgnoreCase, _valuesToNames) = BuildNameMaps();
+
+        /// <summary>Gets the number of names-to-values entries, exposed so a benchmark can force and observe the
+        /// converter's one-time name-map construction.</summary>
+        internal int MapEntryCount => _namesToValues.Count;
 
         /// <inheritdoc/>
         public override TEnum Read(
@@ -106,81 +159,48 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
             writer.WritePropertyName(EnumHelpers.Info<TEnum>.FormatNumericValue(value));
         }
 
-        /// <summary>Builds a map of serialized names to enum values using the given comparer.</summary>
-        /// <param name="comparer">The comparer used for the resulting dictionary keys.</param>
-        /// <returns>A dictionary mapping serialized names to enum values.</returns>
-        private static Dictionary<string, TEnum> GetNamesToValues(StringComparer comparer)
+        /// <summary>Builds the three serialized-name maps from a single scan of the enum's fields, so the field
+        /// metadata and each field's camelCase name are computed once instead of once per map.</summary>
+        /// <returns>The ordinal and case-insensitive names-to-values maps and the values-to-names map.</returns>
+        internal static (
+            Dictionary<string, TEnum> NamesToValues,
+            Dictionary<string, TEnum> NamesToValuesIgnoreCase,
+            Dictionary<TEnum, string> ValuesToNames) BuildNameMaps()
         {
-            var map = new Dictionary<string, TEnum>(comparer);
+            var fields = typeof(TEnum).GetFields(BindingFlags.Public | BindingFlags.Static);
 
-            foreach (var field in typeof(TEnum).GetFields(BindingFlags.Public | BindingFlags.Static))
+            // Each field contributes its camelCase name and, when different, its declared name, so two entries per field
+            // is the upper bound for the name-keyed maps; presizing to it avoids the grow-and-rehash cycle.
+            var namesToValues = new Dictionary<string, TEnum>(fields.Length * MaxNamesPerField, StringComparer.Ordinal);
+            var namesToValuesIgnoreCase = new Dictionary<string, TEnum>(fields.Length * MaxNamesPerField, StringComparer.OrdinalIgnoreCase);
+            var valuesToNames = new Dictionary<TEnum, string>(fields.Length);
+
+            foreach (var field in fields)
             {
                 var value = EnumHelpers.Info<TEnum>.ParseName(field.Name);
-                foreach (var name in GetSerializedNames(field))
+                var preferredName = GetPreferredSerializedName(field);
+
+                // The single camelCase name string is shared as a key in both name maps and as the reverse-map value.
+                namesToValues[preferredName] = value;
+                namesToValuesIgnoreCase[preferredName] = value;
+
+                // The declared name is a second lookup key only when it differs from the camelCase preferred name.
+                if (!string.Equals(field.Name, preferredName, StringComparison.Ordinal))
                 {
-                    map[name] = value;
+                    namesToValues[field.Name] = value;
+                    namesToValuesIgnoreCase[field.Name] = value;
                 }
+
+                valuesToNames[value] = preferredName;
             }
 
-            return map;
+            return (namesToValues, namesToValuesIgnoreCase, valuesToNames);
         }
-
-        /// <summary>Builds a map of enum values to their preferred serialized names.</summary>
-        /// <returns>A dictionary mapping enum values to serialized names.</returns>
-        private static Dictionary<TEnum, string> GetValuesToNames()
-        {
-            var map = new Dictionary<TEnum, string>();
-
-            foreach (var field in typeof(TEnum).GetFields(BindingFlags.Public | BindingFlags.Static))
-            {
-                var value = EnumHelpers.Info<TEnum>.ParseName(field.Name);
-                map[value] = GetPreferredSerializedName(field);
-            }
-
-            return map;
-        }
-
-        /// <summary>Yields the serialized names that should map to the given enum field.</summary>
-        /// <param name="field">The enum field to inspect.</param>
-        /// <returns>The serialized names for the field.</returns>
-        private static IEnumerable<string> GetSerializedNames(FieldInfo field)
-        {
-            var preferredName = GetPreferredSerializedName(field);
-            yield return preferredName;
-
-            if (string.Equals(field.Name, preferredName, StringComparison.Ordinal))
-            {
-                yield break;
-            }
-
-            yield return field.Name;
-        }
-
-        /// <summary>Gets the preferred serialized name for the given enum field.</summary>
-        /// <param name="field">The enum field to inspect.</param>
-        /// <returns>The preferred serialized name.</returns>
-        private static string GetPreferredSerializedName(FieldInfo field)
-        {
-#if NET9_0_OR_GREATER
-            var enumMemberNameAttribute = field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>();
-            return enumMemberNameAttribute?.Name ?? ToCamelCase(field.Name);
-#else
-            return ToCamelCase(field.Name);
-#endif
-        }
-
-        /// <summary>Converts the given value to camelCase.</summary>
-        /// <param name="value">The value to convert.</param>
-        /// <returns>The camelCase form of the value.</returns>
-        private static string ToCamelCase(string value) =>
-            string.IsNullOrEmpty(value) || !char.IsUpper(value[0])
-                ? value
-                : char.ToLowerInvariant(value[0]) + value[1..];
 
         /// <summary>Reads an enum value from either a string name or a numeric value.</summary>
         /// <param name="reader">The reader positioned on the value to read.</param>
         /// <returns>The parsed enum value.</returns>
-        private TEnum ReadValue(ref Utf8JsonReader reader)
+        internal TEnum ReadValue(ref Utf8JsonReader reader)
         {
             if (reader.TokenType is JsonTokenType.String or JsonTokenType.PropertyName)
             {
@@ -214,7 +234,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
 
     /// <summary>A strongly-typed JSON converter for nullable enums that maps values to and from camelCase names.</summary>
     /// <typeparam name="TEnum">The underlying enum type.</typeparam>
-    private sealed class NullableEnumConverter<
+    internal sealed class NullableEnumConverter<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] TEnum> : JsonConverter<TEnum?>
         where TEnum : struct, Enum
     {
@@ -261,13 +281,5 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
 
             _inner.WriteAsPropertyName(writer, value.Value, options);
         }
-
-        /// <summary>Determines whether the reader is positioned on a JSON null or an empty/whitespace string.</summary>
-        /// <param name="reader">The reader to inspect.</param>
-        /// <returns><see langword="true"/> when the value should be treated as null.</returns>
-        private static bool IsNullOrEmptyString(ref Utf8JsonReader reader) =>
-            reader.TokenType == JsonTokenType.Null
-            || (reader.TokenType is JsonTokenType.String or JsonTokenType.PropertyName
-                && string.IsNullOrWhiteSpace(reader.GetString()));
     }
 }

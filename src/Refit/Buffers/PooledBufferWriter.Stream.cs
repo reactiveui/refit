@@ -10,9 +10,9 @@ internal sealed partial class PooledBufferWriter
 {
     /// <summary>An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool.</summary>
 #if NET6_0_OR_GREATER
-    private sealed partial class PooledMemoryStream : Stream
+    internal sealed partial class PooledMemoryStream : Stream
 #else
-    private sealed class PooledMemoryStream : Stream
+    internal sealed class PooledMemoryStream : Stream
 #endif
     {
         /// <summary>The current used length for <see cref="_pooledBuffer"/>.</summary>

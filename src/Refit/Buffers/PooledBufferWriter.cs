@@ -82,7 +82,7 @@ internal sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposa
     /// <summary>Ensures the buffer in use has the free capacity to contain the specified amount of new data.</summary>
     /// <param name="count">The size in bytes of the new data to insert into the buffer.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void EnsureFreeCapacity(int count)
+    internal void EnsureFreeCapacity(int count)
     {
         if (count < 0)
         {

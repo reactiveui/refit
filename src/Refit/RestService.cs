@@ -429,7 +429,7 @@ public static class RestService
     /// <returns>The generated implementation type.</returns>
     [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
     [RequiresUnreferencedCode("Resolving a generated client type by name requires runtime type lookup.")]
-    private static Type GetGeneratedType(
+    internal static Type GetGeneratedType(
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
@@ -445,7 +445,7 @@ public static class RestService
     /// <summary>Creates the exception thrown when no source-generated implementation is available.</summary>
     /// <param name="refitInterfaceType">The Refit interface type.</param>
     /// <returns>The generated-client exception.</returns>
-    private static InvalidOperationException CreateMissingGeneratedFactoryException(Type refitInterfaceType)
+    internal static InvalidOperationException CreateMissingGeneratedFactoryException(Type refitInterfaceType)
     {
         var message =
             refitInterfaceType.Name

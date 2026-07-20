@@ -42,7 +42,7 @@ public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[
     /// <summary>Flattens the per-type attribute arrays into a single array without nested iteration.</summary>
     /// <param name="attributes">The attribute arrays keyed by attribute type.</param>
     /// <returns>Every attribute in a single array.</returns>
-    private static object[] FlattenAttributes(Dictionary<Type, object[]> attributes)
+    internal static object[] FlattenAttributes(Dictionary<Type, object[]> attributes)
     {
         var totalCount = 0;
         foreach (var attributeArray in attributes.Values)

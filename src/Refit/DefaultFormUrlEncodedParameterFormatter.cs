@@ -2,8 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Globalization;
-
 namespace Refit;
 
 /// <summary>Default form Url-encoded parameter formatter.</summary>
@@ -23,9 +21,6 @@ public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterF
         var parameterType = value.GetType();
         var enumMemberValue = EnumHelpers.GetEnumMemberValue(parameterType, value);
 
-        return string.Format(
-            CultureInfo.InvariantCulture,
-            string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
-            enumMemberValue ?? value);
+        return InvariantValueRenderer.Render(enumMemberValue ?? value, formatString);
     }
 }

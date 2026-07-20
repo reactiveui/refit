@@ -315,7 +315,7 @@ public class RefitSettings
     /// <param name="jsonNamingPolicy">The naming policy applied to JSON body property names.</param>
     /// <param name="urlParameterKeyFormatter">The formatter applied to query and form-url-encoded keys.</param>
     /// <returns>The configured settings.</returns>
-    private static RefitSettings ForNamingConvention(
+    internal static RefitSettings ForNamingConvention(
         JsonNamingPolicy jsonNamingPolicy,
         IUrlParameterKeyFormatter urlParameterKeyFormatter)
     {
@@ -333,7 +333,7 @@ public class RefitSettings
     /// <see cref="CancellationToken.IsCancellationRequested"/> is <see langword="true"/>, and wraps every
     /// other exception in an <see cref="ApiRequestException"/> that captures the request and these settings.
     /// </returns>
-    private Func<HttpRequestMessage, Exception, CancellationToken, Exception> DefaultTransportExceptionFactory()
+    internal Func<HttpRequestMessage, Exception, CancellationToken, Exception> DefaultTransportExceptionFactory()
         => (req, ex, ct) =>
              ex is OperationCanceledException && ct.IsCancellationRequested ? ex : new ApiRequestException(req, req.Method, this, ex);
 }

@@ -36,7 +36,7 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
 
     /// <summary>Lowercases the leading uppercase run of characters in place.</summary>
     /// <param name="chars">The characters to adjust.</param>
-    private static void FixCasing(Span<char> chars)
+    internal static void FixCasing(Span<char> chars)
     {
         for (var i = 0; i < chars.Length; i++)
         {

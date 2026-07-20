@@ -20,7 +20,7 @@ public class DefaultApiExceptionFactory(RefitSettings refitSettings)
     /// <param name="responseMessage">The response message.</param>
     /// <param name="refitSettings">The Refit settings.</param>
     /// <returns>The created exception.</returns>
-    private static async ValueTask<Exception?> CreateExceptionAsync(
+    internal static async ValueTask<Exception?> CreateExceptionAsync(
         HttpResponseMessage responseMessage,
         RefitSettings refitSettings)
     {

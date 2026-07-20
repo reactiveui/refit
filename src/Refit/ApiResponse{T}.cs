@@ -170,7 +170,7 @@ public sealed class ApiResponse<T>(
     /// <summary>Releases the underlying response when disposing.</summary>
     /// <param name="disposing">Whether the method is being called from <see cref="Dispose()"/>.</param>
     [ExcludeFromCodeCoverage] // There is no finalizer, so Dispose(false) never runs and the !disposing guard is unreachable.
-    private void Dispose(bool disposing)
+    internal void Dispose(bool disposing)
     {
         if (!disposing)
         {
@@ -181,7 +181,7 @@ public sealed class ApiResponse<T>(
     }
 
     /// <summary>Disposes the underlying response once, guarding against repeated disposal.</summary>
-    private void DisposeResponse()
+    internal void DisposeResponse()
     {
         if (_disposed)
         {
@@ -195,11 +195,11 @@ public sealed class ApiResponse<T>(
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
-    private ValueTask<ApiResponse<T>> EnsureSlowAsync() => ThrowsApiExceptionAsync();
+    internal ValueTask<ApiResponse<T>> EnsureSlowAsync() => ThrowsApiExceptionAsync();
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous throw operation.</returns>
-    private async ValueTask<ApiResponse<T>> ThrowsApiExceptionAsync()
+    internal async ValueTask<ApiResponse<T>> ThrowsApiExceptionAsync()
     {
         var responseMessage = response
                               ?? throw new InvalidOperationException(
