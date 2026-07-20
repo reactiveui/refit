@@ -133,4 +133,83 @@ public class ReturnShapeInlineGenerationTests
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
         await Assert.That(generated).DoesNotContain(TaskFromResultCall);
     }
+
+    /// <summary>Verifies a cold-observable multipart method builds its multipart content inline per subscription.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ObservableMultipartMethodBuildsContentInline()
+    {
+        var result = Fixture.RunGeneratorForBody(
+            """
+            [Multipart]
+            [Post("/upload")]
+            IObservable<string> Upload([AliasAs("file")] StreamPart part);
+            """,
+            generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(SendObservableCall);
+        await Assert.That(generated).Contains("MultipartFormDataContent");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a cold-observable method with a request body builds its content inline per subscription.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ObservableBodyMethodBuildsContentInline()
+    {
+        var result = Fixture.RunGeneratorForBody(
+            """
+            [Post("/items")]
+            IObservable<string> Send([Body] string data);
+            """,
+            generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(SendObservableCall);
+        await Assert.That(generated).Contains(".Content = ");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a cold-observable <c>[Url]</c> method dispatches to an absolute URI inline per subscription.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ObservableUrlMethodDispatchesToAbsoluteUriInline()
+    {
+        var result = Fixture.RunGeneratorForBody(
+            """
+            [Get("")]
+            IObservable<string> Fetch([Url] string url);
+            """,
+            generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(SendObservableCall);
+        await Assert.That(generated).Contains("global::System.UriKind.Absolute");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a cold-observable method with a positive <c>[Timeout]</c> stashes it on each rebuilt request inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ObservableTimeoutMethodStashesTimeoutInline()
+    {
+        const int TimeoutMilliseconds = 5000;
+        var result = Fixture.RunGeneratorForBody(
+            $$"""
+            [Get("/items")]
+            [Timeout({{TimeoutMilliseconds}})]
+            IObservable<string> Poll();
+            """,
+            generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(SendObservableCall);
+        await Assert.That(generated).Contains("SetRequestTimeout");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
 }

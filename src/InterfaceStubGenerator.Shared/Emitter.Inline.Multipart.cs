@@ -35,8 +35,8 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
     /// <returns>The generated multipart content statements, ending with the request-content assignment.</returns>
-    private static string BuildInlineMultipartContent(
-        RequestModel request,
+    internal static string BuildInlineMultipartContent(
+        in RequestModel request,
         string requestLocal,
         string settingsLocal,
         UniqueNameBuilder locals)
@@ -69,9 +69,9 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="contentLocal">The generated multipart content local name.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
-    private static void AppendMultipartPart(
+    internal static void AppendMultipartPart(
         PooledStringBuilder sb,
-        RequestParameterModel parameter,
+        in RequestParameterModel parameter,
         MultipartPartModel part,
         string settingsLocal,
         string contentLocal,
@@ -115,7 +115,7 @@ internal static partial class Emitter
     /// <param name="contentLocal">The generated multipart content local name.</param>
     /// <param name="value">The value expression (a parameter accessor or a foreach element local).</param>
     /// <param name="indent">The statement indentation.</param>
-    private static void AppendMultipartAdd(
+    internal static void AppendMultipartAdd(
         PooledStringBuilder sb,
         MultipartPartModel part,
         string settingsLocal,
@@ -139,7 +139,7 @@ internal static partial class Emitter
     /// <remarks>The <see cref="MultipartPartKind"/> arms are exhaustive over statically-dispatchable part kinds; the
     /// compiler-required default arm handling the formattable kind cannot be selected for every kind by tests.</remarks>
     [ExcludeFromCodeCoverage]
-    private static void AppendMultipartAddArguments(
+    internal static void AppendMultipartAddArguments(
         PooledStringBuilder sb,
         MultipartPartModel part,
         string settingsLocal,
@@ -214,7 +214,7 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="value">The value expression (a parameter accessor or a foreach element local).</param>
     /// <param name="fieldName">The C# string literal for the part's field name.</param>
-    private static void AppendSerializedMultipartArgument(PooledStringBuilder sb, string settingsLocal, string value, string fieldName)
+    internal static void AppendSerializedMultipartArgument(PooledStringBuilder sb, string settingsLocal, string value, string fieldName)
     {
         // A sealed/value part is JSON-serialized under its field name, matching AddSerializedMultipartItem's
         // serializer fallback. The declared type drives ToHttpContent<T>, so the serialized form matches; a

@@ -1,12 +1,11 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Buffers;
 using System.Globalization;
 
 namespace Refit.Generator;
 
-/// <summary>A drop-in fluent string builder for the emitter that grows using <see cref="ArrayPool{T}"/> buffers.</summary>
+/// <summary>A drop-in fluent string builder for the emitter that grows using thread-local pooled buffers.</summary>
 /// <remarks>The emitter builds many transient fragment strings. Backing accumulation with a pooled <c>char[]</c> lets the
 /// underlying buffer be reused across emissions instead of allocating fresh <see cref="System.Text.StringBuilder"/>
 /// chunks each time. The final <see cref="ToString"/> returns the buffer to the pool, so an instance is single-use.</remarks>
@@ -18,10 +17,23 @@ internal sealed class PooledStringBuilder
     /// <summary>The buffer growth factor applied when the current backing array is exhausted.</summary>
     private const int GrowthFactor = 2;
 
+    /// <summary>The number of buffers cached per thread; sized to cover the emitter's nesting depth (interface, member,
+    /// method, parameter-info, and query builders alive at once) so nested rents stay on the lock-free path.</summary>
+    private const int MaxPooledPerThread = 16;
+
     /// <summary>The line terminator emitted by the <see cref="AppendLine()"/> overloads.</summary>
     /// <remarks>Fixed to <c>\n</c> for deterministic generated output (matching the emitter's explicit <c>\n</c>
     /// literals); analyzers are banned from reading <c>Environment.NewLine</c>.</remarks>
     private const string NewLine = "\n";
+
+    /// <summary>The per-thread free list of reusable buffers. Thread-local so rent and return never lock; the emitter
+    /// nests builders on one thread, which exhausts the single-slot lock-free tier of the shared array pool.</summary>
+    [ThreadStatic]
+    private static char[][]? _pool;
+
+    /// <summary>The number of populated slots in <see cref="_pool"/>.</summary>
+    [ThreadStatic]
+    private static int _pooledCount;
 
     /// <summary>The pooled array currently backing the builder.</summary>
     private char[] _buffer;
@@ -37,7 +49,7 @@ internal sealed class PooledStringBuilder
 
     /// <summary>Initializes a new instance of the <see cref="PooledStringBuilder"/> class with an initial capacity.</summary>
     /// <param name="capacity">The initial buffer capacity to rent.</param>
-    public PooledStringBuilder(int capacity) => _buffer = ArrayPool<char>.Shared.Rent(Math.Max(capacity, DefaultCapacity));
+    public PooledStringBuilder(int capacity) => _buffer = RentBuffer(Math.Max(capacity, DefaultCapacity));
 
     /// <summary>Appends a string.</summary>
     /// <param name="value">The string to append, or null.</param>
@@ -71,6 +83,27 @@ internal sealed class PooledStringBuilder
         return this;
     }
 
+    /// <summary>Appends the accumulated content of another builder, then returns that builder's buffer to the pool.</summary>
+    /// <param name="other">The builder whose content is copied in; it is emptied and single-use afterward.</param>
+    /// <returns>This builder, for chaining.</returns>
+    /// <remarks>Copies buffer to buffer so a nested fragment builder's content joins this one without materializing an
+    /// intermediate string. The source is drained (its buffer returned to the pool), matching <see cref="ToString"/>.</remarks>
+    public PooledStringBuilder Append(PooledStringBuilder other)
+    {
+        if (other._pos != 0)
+        {
+            EnsureCapacity(_pos + other._pos);
+            Array.Copy(other._buffer, 0, _buffer, _pos, other._pos);
+            _pos += other._pos;
+        }
+
+        var toReturn = other._buffer;
+        other._buffer = [];
+        other._pos = 0;
+        ReturnBuffer(toReturn);
+        return this;
+    }
+
     /// <summary>Appends a string followed by a line terminator.</summary>
     /// <param name="value">The string to append, or null.</param>
     /// <returns>This builder, for chaining.</returns>
@@ -88,23 +121,61 @@ internal sealed class PooledStringBuilder
         var toReturn = _buffer;
         _buffer = [];
         _pos = 0;
-        ArrayPool<char>.Shared.Return(toReturn);
+        ReturnBuffer(toReturn);
         return result;
     }
 
     /// <summary>Ensures the backing buffer can hold at least the requested number of characters.</summary>
     /// <param name="required">The required total capacity.</param>
-    private void EnsureCapacity(int required)
+    internal void EnsureCapacity(int required)
     {
         if (required <= _buffer.Length)
         {
             return;
         }
 
-        var next = ArrayPool<char>.Shared.Rent(Math.Max(required, _buffer.Length * GrowthFactor));
+        var next = RentBuffer(Math.Max(required, _buffer.Length * GrowthFactor));
         Array.Copy(_buffer, next, _pos);
         var toReturn = _buffer;
         _buffer = next;
-        ArrayPool<char>.Shared.Return(toReturn);
+        ReturnBuffer(toReturn);
+    }
+
+    /// <summary>Rents a buffer of at least the requested length from the thread-local free list, or allocates one.</summary>
+    /// <param name="minimumLength">The minimum buffer length required.</param>
+    /// <returns>A buffer with <see cref="Array.Length"/> at least <paramref name="minimumLength"/>.</returns>
+    private static char[] RentBuffer(int minimumLength)
+    {
+        var pool = _pool;
+        if (pool is not null)
+        {
+            for (var i = _pooledCount - 1; i >= 0; i--)
+            {
+                var candidate = pool[i];
+                if (candidate.Length >= minimumLength)
+                {
+                    pool[i] = pool[_pooledCount - 1];
+                    pool[_pooledCount - 1] = null!;
+                    _pooledCount--;
+                    return candidate;
+                }
+            }
+        }
+
+        return new char[minimumLength];
+    }
+
+    /// <summary>Returns a buffer to the thread-local free list, dropping it when the list is full.</summary>
+    /// <param name="buffer">The rented buffer to return.</param>
+    private static void ReturnBuffer(char[] buffer)
+    {
+        var pool = _pool ??= new char[MaxPooledPerThread][];
+        if (_pooledCount >= MaxPooledPerThread)
+        {
+            return;
+        }
+
+        pool[_pooledCount] = buffer;
+        _pooledCount++;
     }
 }

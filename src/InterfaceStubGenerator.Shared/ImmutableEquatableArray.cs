@@ -8,44 +8,50 @@ namespace Refit.Generator;
 
 /// <summary>Provides an immutable list implementation which implements sequence equality.</summary>
 /// <typeparam name="T">The element type.</typeparam>
-internal sealed class ImmutableEquatableArray<T>
+/// <remarks>A <see langword="readonly struct"/> so the value sits inline in its owning model instead of adding a
+/// separate wrapper heap object per parsed collection. It still carries sequence value-equality (the incremental
+/// cache key) and an allocation-free struct enumerator; only the explicit <see cref="IEnumerable{T}"/> path boxes.</remarks>
+internal readonly struct ImmutableEquatableArray<T>
     : IEquatable<ImmutableEquatableArray<T>>,
         IReadOnlyList<T>
     where T : IEquatable<T>
 {
-    /// <summary>The backing array of values.</summary>
-    private readonly T[] _values;
+    /// <summary>The backing array of values, or null for a defaulted value (treated as empty).</summary>
+    private readonly T[]? _values;
 
-    /// <summary>Initializes a new instance of the <see cref="ImmutableEquatableArray{T}"/> class.</summary>
+    /// <summary>Initializes a new instance of the <see cref="ImmutableEquatableArray{T}"/> struct.</summary>
     /// <param name="values">The array to wrap.</param>
     public ImmutableEquatableArray(T[] values) => _values = values;
 
     /// <summary>Gets a shared empty array instance.</summary>
-    public static ImmutableEquatableArray<T> Empty { get; } = new([]);
+    public static ImmutableEquatableArray<T> Empty => default;
 
     /// <summary>Gets the number of elements in the array.</summary>
-    public int Count => _values.Length;
+    public int Count => _values?.Length ?? 0;
 
     /// <summary>Gets the element at the specified index.</summary>
     /// <param name="index">The zero-based index.</param>
     /// <returns>The element at the given index.</returns>
-    public T this[int index] => _values[index];
+    public T this[int index] => _values![index];
 
     /// <summary>Returns the underlying array.</summary>
     /// <returns>The backing array of values.</returns>
-    public T[] AsArray() => _values;
+    public T[] AsArray() => _values ?? [];
 
     /// <inheritdoc/>
-    public bool Equals(ImmutableEquatableArray<T>? other)
+    public bool Equals(ImmutableEquatableArray<T> other)
     {
-        if (other is null || other._values.Length != _values.Length)
+        var values = _values;
+        var otherValues = other._values;
+        var length = values?.Length ?? 0;
+        if (length != (otherValues?.Length ?? 0))
         {
             return false;
         }
 
-        for (var i = 0; i < _values.Length; i++)
+        for (var i = 0; i < length; i++)
         {
-            if (!_values[i].Equals(other._values[i]))
+            if (!values![i].Equals(otherValues![i]))
             {
                 return false;
             }
@@ -61,10 +67,14 @@ internal sealed class ImmutableEquatableArray<T>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
+        var values = _values;
         var hash = 0;
-        for (var i = 0; i < _values.Length; i++)
+        if (values is not null)
         {
-            hash = Combine(hash, _values[i].GetHashCode());
+            for (var i = 0; i < values.Length; i++)
+            {
+                hash = Combine(hash, values[i].GetHashCode());
+            }
         }
 
         return hash;
@@ -72,13 +82,13 @@ internal sealed class ImmutableEquatableArray<T>
 
     /// <summary>Returns an allocation-free enumerator over the array.</summary>
     /// <returns>An enumerator for the array.</returns>
-    public Enumerator GetEnumerator() => new(_values);
+    public Enumerator GetEnumerator() => new(_values ?? []);
 
     /// <inheritdoc/>
-    IEnumerator<T> IEnumerable<T>.GetEnumerator() => ((IEnumerable<T>)_values).GetEnumerator();
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() => ((IEnumerable<T>)(_values ?? [])).GetEnumerator();
 
     /// <inheritdoc/>
-    IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => (_values ?? []).GetEnumerator();
 
     /// <summary>Combines two hash codes into one.</summary>
     /// <param name="h1">The accumulated hash code.</param>

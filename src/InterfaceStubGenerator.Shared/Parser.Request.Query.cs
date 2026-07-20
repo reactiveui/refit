@@ -78,7 +78,7 @@ internal static partial class Parser
     /// <param name="attributeClass">The attribute class symbol.</param>
     /// <param name="attributeMetadataName">The attribute's metadata name inside the <c>Refit</c> namespace.</param>
     /// <returns><see langword="true"/> when the attribute matches.</returns>
-    private static bool IsRefitAttribute(INamedTypeSymbol? attributeClass, string attributeMetadataName) =>
+    internal static bool IsRefitAttribute(INamedTypeSymbol? attributeClass, string attributeMetadataName) =>
         attributeClass is not null
         && attributeClass.Name == attributeMetadataName
         && attributeClass.ContainingNamespace is { Name: "Refit", ContainingNamespace.IsGlobalNamespace: true };
@@ -87,7 +87,7 @@ internal static partial class Parser
     /// <param name="parameter">The parameter to inspect.</param>
     /// <param name="attributeMetadataName">The attribute's metadata name inside the <c>Refit</c> namespace.</param>
     /// <returns>The attribute data, or null when absent.</returns>
-    private static AttributeData? FindParameterAttribute(IParameterSymbol parameter, string attributeMetadataName)
+    internal static AttributeData? FindParameterAttribute(IParameterSymbol parameter, string attributeMetadataName)
     {
         foreach (var attribute in parameter.GetAttributes())
         {
@@ -104,19 +104,25 @@ internal static partial class Parser
     /// <param name="parameter">The parameter to inspect.</param>
     /// <param name="attributeMetadataName">The attribute's metadata name inside the <c>Refit</c> namespace.</param>
     /// <returns><see langword="true"/> when the attribute is present.</returns>
-    private static bool HasParameterAttribute(IParameterSymbol parameter, string attributeMetadataName) =>
+    internal static bool HasParameterAttribute(IParameterSymbol parameter, string attributeMetadataName) =>
         FindParameterAttribute(parameter, attributeMetadataName) is not null;
 
     /// <summary>Determines whether any placeholder binds a property of this parameter (a dotted <c>{param.Prop}</c>).</summary>
     /// <param name="parameterLocations">The placeholder names in the URL template.</param>
     /// <param name="urlName">The parameter's resolved URL name.</param>
     /// <returns><see langword="true"/> when a dotted placeholder targets this parameter.</returns>
-    private static bool HasDottedPlaceholderFor(
-        Dictionary<string, List<Range>> parameterLocations,
+    internal static bool HasDottedPlaceholderFor(
+        in PathParameterLocations parameterLocations,
         string urlName)
     {
-        foreach (var key in parameterLocations.Keys)
+        if (!parameterLocations.HasDotted)
         {
+            return false;
+        }
+
+        foreach (var occurrence in parameterLocations.Occurrences)
+        {
+            var key = occurrence.Name;
             if (key.Length > urlName.Length
                 && key[urlName.Length] == '.'
                 && key.StartsWith(urlName, StringComparison.OrdinalIgnoreCase))
@@ -135,11 +141,11 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="query">Receives the query-binding model.</param>
     /// <returns><see langword="true"/> when the parameter's shape is supported by inline query generation.</returns>
-    private static bool TryBuildQueryModel(
+    internal static bool TryBuildQueryModel(
         IParameterSymbol parameter,
         string urlName,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context,
+        in InterfaceGenerationContext context,
         out QueryParameterModel? query)
     {
         var data = ParseParameterQueryData(parameter);
@@ -207,14 +213,14 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The flattened object query model, or null when the parameter cannot be flattened inline.</returns>
-    private static QueryParameterModel? TryBuildFlattenedObjectQueryModel(
+    internal static QueryParameterModel? TryBuildFlattenedObjectQueryModel(
         IParameterSymbol parameter,
         string urlName,
         bool preEncoded,
         in QueryFormData data,
         string? format,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         // A complex object is flattened into one query pair per public readable property, mirroring the reflection
         // builder's BuildQueryMap. The enclosing [Query(Prefix)] segment is folded into each property's key.
@@ -252,14 +258,14 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The collection query model, or null when the parameter is not a collection of simple elements.</returns>
-    private static QueryParameterModel? TryBuildScalarCollectionModel(
+    internal static QueryParameterModel? TryBuildScalarCollectionModel(
         ITypeSymbol type,
         string urlName,
         bool preEncoded,
         in QueryFormData data,
         string? format,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context) =>
+        in InterfaceGenerationContext context) =>
         TryGetEnumerableElementType(type, out var elementType) && IsSimpleType(elementType!, formattableSymbol)
             ? new(
                 urlName,
@@ -327,13 +333,13 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The converter query model, or null when the converter type cannot be resolved.</returns>
-    private static QueryParameterModel? BuildConverterQueryModel(
+    internal static QueryParameterModel? BuildConverterQueryModel(
         IParameterSymbol parameter,
         AttributeData converterAttribute,
         in QueryFormData data,
         bool preEncoded,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         // The converter type is the sole typeof(...) constructor argument.
         if (GetSoleTypeArgument(converterAttribute) is not { } converterType)
@@ -361,7 +367,7 @@ internal static partial class Parser
     /// <remarks>The absent-argument guard defends against error-recovery symbols and cannot be reached from an
     /// attribute application that compiles.</remarks>
     [ExcludeFromCodeCoverage]
-    private static ITypeSymbol? GetSoleTypeArgument(AttributeData attribute) =>
+    internal static ITypeSymbol? GetSoleTypeArgument(AttributeData attribute) =>
         attribute.ConstructorArguments.IsEmpty
             ? null
             : attribute.ConstructorArguments[0].Value as ITypeSymbol;
@@ -379,14 +385,14 @@ internal static partial class Parser
     /// Only simple keys and values generate inline: the reflection builder inspects each value's <em>runtime</em> type
     /// to decide whether to recurse into it, which a declared-type walk cannot reproduce for <c>object</c> values.
     /// </remarks>
-    private static QueryParameterModel? TryBuildDictionaryQueryModel(
+    internal static QueryParameterModel? TryBuildDictionaryQueryModel(
         ITypeSymbol type,
         string urlName,
         bool preEncoded,
         string? format,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         if (!TryGetDictionaryTypes(type, out var keyType, out var valueType)
             || !IsSimpleType(keyType!, formattableSymbol))
@@ -418,10 +424,10 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The flag query model; both a scalar flag and a per-element flag collection resolve to a value.</returns>
-    private static QueryParameterModel BuildFlagModel(
+    internal static QueryParameterModel BuildFlagModel(
         IParameterSymbol parameter,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         var data = ParseParameterQueryData(parameter);
         var preEncoded = HasParameterAttribute(parameter, EncodedAttributeDisplayName);
@@ -451,7 +457,7 @@ internal static partial class Parser
     /// <summary>Normalizes a compile-time format string, mapping empty/whitespace to no format.</summary>
     /// <param name="format">The raw format from the query attribute.</param>
     /// <returns>The effective format, or null.</returns>
-    private static string? NormalizeFormat(string? format) =>
+    internal static string? NormalizeFormat(string? format) =>
         string.IsNullOrWhiteSpace(format) ? null : format;
 
     /// <summary>Builds the reflection-free rendering strategy for one statically-known value type.</summary>
@@ -460,11 +466,11 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The rendering strategy matching the default URL parameter formatter's output.</returns>
-    private static InlineValueFormatModel BuildValueFormat(
+    internal static InlineValueFormatModel BuildValueFormat(
         ITypeSymbol type,
         string? format,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         var isNullableValueType = false;
         if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable)
@@ -495,9 +501,11 @@ internal static partial class Parser
         }
 
         // One pass over AllInterfaces resolves both the IFormattable and ISpanFormattable questions, instead of
-        // walking the interface list again inside ComputeSpanFormattableTiers.
+        // walking the interface list again inside ComputeSpanFormattableTiers. The result is memoized per type because
+        // the public AllInterfaces accessor materializes a fresh symbol array on each call and the same value types
+        // (int, Guid, DateTime, ...) recur across many parameters in a pass.
         var (implementsFormattable, implementsSpanFormattable) =
-            ClassifyFormattable(type, formattableSymbol, context.SpanFormattableSymbol);
+            ClassifyFormattableCached(type, formattableSymbol, context);
         if (!implementsFormattable)
         {
             return new(InlineFormatKind.ToStringOnly, format, typeName, isNullableValueType, null);
@@ -515,12 +523,32 @@ internal static partial class Parser
         };
     }
 
+    /// <summary>Returns the memoized <c>IFormattable</c>/<c>ISpanFormattable</c> classification for a type, computing it once per pass.</summary>
+    /// <param name="type">The value type to classify.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="context">The generation context carrying the pass-wide classification cache and the span-formattable symbol.</param>
+    /// <returns>Whether the type implements each interface.</returns>
+    internal static (bool Formattable, bool SpanFormattable) ClassifyFormattableCached(
+        ITypeSymbol type,
+        INamedTypeSymbol? formattableSymbol,
+        in InterfaceGenerationContext context)
+    {
+        if (context.FormattableClassificationCache.TryGetValue(type, out var cached))
+        {
+            return cached;
+        }
+
+        var classification = ClassifyFormattable(type, formattableSymbol, context.SpanFormattableSymbol);
+        context.FormattableClassificationCache[type] = classification;
+        return classification;
+    }
+
     /// <summary>Determines, in a single interface walk, whether a type implements <c>IFormattable</c> and <c>ISpanFormattable</c>.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="spanFormattableSymbol">The resolved <c>System.ISpanFormattable</c> symbol, or null when unavailable.</param>
     /// <returns>Whether the type implements each interface.</returns>
-    private static (bool Formattable, bool SpanFormattable) ClassifyFormattable(
+    internal static (bool Formattable, bool SpanFormattable) ClassifyFormattable(
         ITypeSymbol type,
         INamedTypeSymbol? formattableSymbol,
         INamedTypeSymbol? spanFormattableSymbol)
@@ -558,11 +586,11 @@ internal static partial class Parser
     /// <returns>Whether the value qualifies for the net6+ URL-safe integer write and the net9+ span-escape write.</returns>
     /// <remarks>net6+: an unformatted integer renders as URL-safe digits, so it is written with no escaping.
     /// net9+: any <c>ISpanFormattable</c> renders into a stack buffer and escapes span-to-string, skipping the ToString.</remarks>
-    private static (bool UrlSafe, bool Escapable) ComputeSpanFormattableTiers(
+    internal static (bool UrlSafe, bool Escapable) ComputeSpanFormattableTiers(
         ITypeSymbol type,
         string? format,
         bool implementsSpanFormattable,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         // A nullable value type still qualifies: the scalar query emitter formats it inside the existing null guard and
         // writes the unwrapped .Value (which is span-formattable). The path and collection fast paths opt out of the
@@ -578,7 +606,7 @@ internal static partial class Parser
     /// <summary>Resolves the compile-time enum members honored by the default URL parameter formatter.</summary>
     /// <param name="enumType">The enum type symbol.</param>
     /// <returns>The member models, or null when duplicate constants make a compile-time switch unfaithful.</returns>
-    private static ImmutableEquatableArray<EnumFormatMemberModel>? BuildEnumFormatMembers(ITypeSymbol enumType)
+    internal static ImmutableEquatableArray<EnumFormatMemberModel>? BuildEnumFormatMembers(ITypeSymbol enumType)
     {
         var members = new List<EnumFormatMemberModel>();
         var seenValues = new HashSet<object>();
@@ -606,7 +634,7 @@ internal static partial class Parser
     /// <summary>Reads the <c>[EnumMember(Value = ...)]</c> override for an enum field.</summary>
     /// <param name="field">The enum field symbol.</param>
     /// <returns>The override value, or null when absent (or declared without a value).</returns>
-    private static string? GetEnumMemberOverride(IFieldSymbol field)
+    internal static string? GetEnumMemberOverride(IFieldSymbol field)
     {
         foreach (var attribute in field.GetAttributes())
         {
@@ -634,14 +662,14 @@ internal static partial class Parser
     /// <returns>The string value, or <see langword="null"/> when the argument is not a string <c>Value</c>.</returns>
     /// <remarks><c>EnumMember</c> declares only the <c>Value</c> named argument, so the key comparison never fails here.</remarks>
     [ExcludeFromCodeCoverage]
-    private static string? TryReadEnumMemberValue(KeyValuePair<string, TypedConstant> namedArgument) =>
+    internal static string? TryReadEnumMemberValue(KeyValuePair<string, TypedConstant> namedArgument) =>
         namedArgument.Key == "Value" ? namedArgument.Value.Value as string : null;
 
     /// <summary>Tries to resolve the single <c>IEnumerable&lt;T&gt;</c> element type of a parameter type.</summary>
     /// <param name="type">The parameter type.</param>
     /// <param name="elementType">Receives the element type.</param>
     /// <returns><see langword="true"/> when exactly one generic enumerable element type is implemented.</returns>
-    private static bool TryGetEnumerableElementType(
+    internal static bool TryGetEnumerableElementType(
         ITypeSymbol type,
         out ITypeSymbol? elementType)
     {
@@ -684,7 +712,7 @@ internal static partial class Parser
     /// <summary>Determines whether a type is a closed <c>System.Collections.Generic.IEnumerable&lt;T&gt;</c>.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is the generic enumerable interface.</returns>
-    private static bool IsGenericEnumerable(ITypeSymbol type) =>
+    internal static bool IsGenericEnumerable(ITypeSymbol type) =>
         type is INamedTypeSymbol
         {
             TypeKind: TypeKind.Interface,
@@ -701,14 +729,14 @@ internal static partial class Parser
     /// <remarks>The nullable-value-element arm is only selected by a <c>Nullable&lt;T&gt;</c> collection element, which the
     /// shared collection fixtures never present, so that outcome cannot be exercised.</remarks>
     [ExcludeFromCodeCoverage]
-    private static bool CanElementBeNull(ITypeSymbol elementType) =>
+    internal static bool CanElementBeNull(ITypeSymbol elementType) =>
         !elementType.IsValueType
         || elementType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 
     /// <summary>Parses the query-relevant data from a parameter's <c>[Query]</c> attribute, if present.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
     /// <returns>The parsed data, or defaults when the attribute is absent.</returns>
-    private static QueryFormData ParseParameterQueryData(IParameterSymbol parameter)
+    internal static QueryFormData ParseParameterQueryData(IParameterSymbol parameter)
     {
         var attribute = FindParameterAttribute(parameter, QueryAttributeDisplayName);
         return attribute is null ? default : ParseFormQueryAttribute(attribute);

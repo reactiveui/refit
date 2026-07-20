@@ -18,7 +18,7 @@ internal static partial class Parser
     /// path, a flattened residual query. Falls back when a placeholder property is unresolvable or non-simple, or when
     /// a residual property has a shape the query flattener cannot render inline.
     /// </returns>
-    private static ParsedRequestParameter BuildPathObjectBinding(
+    internal static ParsedRequestParameter BuildPathObjectBinding(
         IParameterSymbol parameter,
         string parameterType,
         in LooseParameterContext context)
@@ -55,12 +55,12 @@ internal static partial class Parser
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="residualQuery">Receives the residual object query, or null when every property is bound to the path.</param>
     /// <returns><see langword="false"/> when a residual property cannot flatten inline and the parameter must fall back.</returns>
-    private static bool TryBuildPathResidualQuery(
+    internal static bool TryBuildPathResidualQuery(
         IParameterSymbol parameter,
         string urlName,
         HashSet<string> boundPropertyNames,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context,
+        in InterfaceGenerationContext context,
         out QueryParameterModel? residualQuery)
     {
         residualQuery = null;
@@ -113,17 +113,25 @@ internal static partial class Parser
     /// <param name="urlName">The parameter's resolved URL name.</param>
     /// <param name="context">The lookup state carrying the placeholder locations and generation context.</param>
     /// <returns>The property bindings, or null when any placeholder cannot be resolved to a simple readable property.</returns>
-    private static ImmutableEquatableArray<PathObjectBindingModel>? TryBuildPathObjectBindings(
+    internal static ImmutableEquatableArray<PathObjectBindingModel>? TryBuildPathObjectBindings(
         IParameterSymbol parameter,
         string urlName,
         in LooseParameterContext context)
     {
         var prefix = urlName + ".";
         var bindings = new List<PathObjectBindingModel>();
-        foreach (var placeholder in context.ParameterLocations)
+        var occurrences = context.ParameterLocations.Occurrences;
+        for (var index = 0; index < occurrences.Length; index++)
         {
-            var key = placeholder.Key;
+            var key = occurrences[index].Name;
             if (key.Length <= prefix.Length || !key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // Resolve each distinct dotted placeholder once, in first-occurrence order, then bind every range it
+            // covers - a repeated placeholder must not re-walk the property chain.
+            if (HasEarlierNameMatch(occurrences, key, index))
             {
                 continue;
             }
@@ -136,9 +144,12 @@ internal static partial class Parser
                 return null;
             }
 
-            foreach (var location in placeholder.Value)
+            foreach (var occurrence in occurrences)
             {
-                bindings.Add(new(location, chain.AccessPath, chain.TopLevelName, chain.PropertyType, chain.ValueFormat, chain.CanBeNull));
+                if (string.Equals(occurrence.Name, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    bindings.Add(new(occurrence.Location, chain.AccessPath, chain.TopLevelName, chain.PropertyType, chain.ValueFormat, chain.CanBeNull));
+                }
             }
         }
 
@@ -157,7 +168,7 @@ internal static partial class Parser
     /// <param name="propertyPath">The placeholder text after the parameter name (e.g. <c>Slug</c> or <c>a.b</c>).</param>
     /// <param name="context">The lookup state carrying the generation context.</param>
     /// <returns>The resolved access path, top-level property, final type, formatting strategy and nullability, or null.</returns>
-    private static (string AccessPath, string TopLevelName, string PropertyType, InlineValueFormatModel ValueFormat, bool CanBeNull)?
+    internal static (string AccessPath, string TopLevelName, string PropertyType, InlineValueFormatModel ValueFormat, bool CanBeNull)?
         TryResolvePathPropertyChain(ITypeSymbol rootType, string propertyPath, in LooseParameterContext context)
     {
         var segments = propertyPath.Split('.');
@@ -205,7 +216,7 @@ internal static partial class Parser
     /// <param name="type">The declared parameter type.</param>
     /// <param name="propertyName">The property name from the dotted placeholder.</param>
     /// <returns>The matching property, or null when none is readable.</returns>
-    private static IPropertySymbol? FindReadablePathProperty(ITypeSymbol type, string propertyName)
+    internal static IPropertySymbol? FindReadablePathProperty(ITypeSymbol type, string propertyName)
     {
         // A generic type parameter has no members of its own; the reflection builder binds against the closed generic
         // method's concrete argument. A class or interface constraint exposes those members at compile time, so resolve
@@ -247,7 +258,7 @@ internal static partial class Parser
     /// one class constraint, so the resolution is unambiguous; an interface-only or unconstrained parameter resolves to
     /// itself, which the query flattener rejects, keeping it on the reflection request builder.
     /// </remarks>
-    private static ITypeSymbol ResolveConstraintClassType(ITypeSymbol type)
+    internal static ITypeSymbol ResolveConstraintClassType(ITypeSymbol type)
     {
         if (type is not ITypeParameterSymbol typeParameter)
         {
@@ -273,11 +284,11 @@ internal static partial class Parser
     /// <param name="bindings">The resolved property bindings.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The path parameter model carrying the property bindings.</returns>
-    private static RequestParameterModel BuildPathObjectParameter(
+    internal static RequestParameterModel BuildPathObjectParameter(
         IParameterSymbol parameter,
         string parameterType,
         ImmutableEquatableArray<PathObjectBindingModel> bindings,
-        InterfaceGenerationContext context) =>
+        in InterfaceGenerationContext context) =>
         new(
             parameter.MetadataName,
             parameterType,
@@ -292,4 +303,25 @@ internal static partial class Parser
         {
             PathObjectBindings = bindings,
         };
+
+    /// <summary>Determines whether a placeholder name already appeared before a given index (case-insensitively).</summary>
+    /// <param name="occurrences">The placeholder occurrences in template order.</param>
+    /// <param name="name">The placeholder name to search for.</param>
+    /// <param name="before">The exclusive upper bound index.</param>
+    /// <returns><see langword="true"/> when an earlier occurrence carries the same name.</returns>
+    private static bool HasEarlierNameMatch(
+        ReadOnlySpan<PathPlaceholderOccurrence> occurrences,
+        string name,
+        int before)
+    {
+        for (var index = 0; index < before; index++)
+        {
+            if (string.Equals(occurrences[index].Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

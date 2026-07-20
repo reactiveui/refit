@@ -25,7 +25,7 @@ internal static partial class Emitter
     internal static string BuildBufferBodyExpression(RequestParameterModel? bodyParameter, string settingsLocal) =>
         bodyParameter is null
             ? FalseLiteral
-            : bodyParameter.BodyBufferMode switch
+            : bodyParameter.Value.BodyBufferMode switch
             {
                 BodyBufferMode.Settings => $"{settingsLocal}.Buffered",
                 BodyBufferMode.Buffered => TrueLiteral,
@@ -36,7 +36,7 @@ internal static partial class Emitter
     /// <param name="bodyParameter">The parsed body parameter.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The streaming expression.</returns>
-    internal static string BuildStreamBodyExpression(RequestParameterModel bodyParameter, string settingsLocal) =>
+    internal static string BuildStreamBodyExpression(in RequestParameterModel bodyParameter, string settingsLocal) =>
         bodyParameter.BodySerializationMethod == "UrlEncoded"
             ? FalseLiteral
             : bodyParameter.BodyBufferMode switch
@@ -214,16 +214,17 @@ internal static partial class Emitter
             : name;
     }
 
-    /// <summary>Builds the method signature, constraints, and opening brace.</summary>
+    /// <summary>Appends the method signature, constraints, and opening brace straight into the buffer.</summary>
+    /// <param name="builder">The buffer accumulating the generated method source.</param>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isDerivedExplicitImpl">True if the method is a derived explicit implementation.</param>
     /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <param name="isAsync">True if the method should be emitted as async.</param>
     /// <param name="methodAttributes">Attribute lines emitted between the documentation and the signature.</param>
-    /// <returns>The generated method opening.</returns>
-    internal static string BuildMethodOpening(
-        MethodModel methodModel,
+    internal static void AppendMethodOpening(
+        PooledStringBuilder builder,
+        in MethodModel methodModel,
         bool isDerivedExplicitImpl,
         bool isExplicitInterface,
         bool supportsNullable,
@@ -233,19 +234,38 @@ internal static partial class Emitter
         var visibility = !isExplicitInterface ? "public " : string.Empty;
         var asyncKeyword = isAsync ? "async " : string.Empty;
         var explicitInterface = BuildExplicitInterfacePrefix(methodModel, isExplicitInterface);
-        var parameters = BuildParameterList(methodModel.Parameters, supportsNullable);
         var methodIndent = Indent(MethodMemberIndentation);
         var constraints = BuildConstraints(methodModel.Constraints, isDerivedExplicitImpl || isExplicitInterface, MethodBodyIndentation);
 
-        return $$"""
+        _ = builder
+            .AppendLine()
+            .Append(methodIndent).AppendLine("/// <inheritdoc />")
+            .Append(methodAttributes).Append(methodIndent).Append(visibility).Append(asyncKeyword)
+            .Append(methodModel.ReturnType).Append(' ').Append(explicitInterface).Append(methodModel.DeclaredMethod)
+            .Append('(').Append(BuildParameterList(methodModel.Parameters, supportsNullable)).Append(')').AppendLine()
+            .Append(constraints)
+            .Append(methodIndent).Append('{').AppendLine();
+    }
 
-            {{methodIndent}}/// <inheritdoc />
-            {{methodAttributes}}{{methodIndent}}{{visibility}}{{asyncKeyword}}{{methodModel.ReturnType}} {{explicitInterface}}{{methodModel.DeclaredMethod}}({{parameters}})
-
-            """
-            + constraints
-            + methodIndent
-            + "{\n";
+    /// <summary>Builds the method signature, constraints, and opening brace.</summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="isDerivedExplicitImpl">True if the method is a derived explicit implementation.</param>
+    /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
+    /// <param name="isAsync">True if the method should be emitted as async.</param>
+    /// <param name="methodAttributes">Attribute lines emitted between the documentation and the signature.</param>
+    /// <returns>The generated method opening.</returns>
+    internal static string BuildMethodOpening(
+        in MethodModel methodModel,
+        bool isDerivedExplicitImpl,
+        bool isExplicitInterface,
+        bool supportsNullable,
+        bool isAsync = false,
+        string methodAttributes = "")
+    {
+        var builder = new PooledStringBuilder();
+        AppendMethodOpening(builder, methodModel, isDerivedExplicitImpl, isExplicitInterface, supportsNullable, isAsync, methodAttributes);
+        return builder.ToString();
     }
 
     /// <summary>Builds the trim/AOT annotations emitted onto methods that use the reflection request builder.</summary>
@@ -295,7 +315,7 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isExplicitInterface">Whether the method is emitted explicitly.</param>
     /// <returns>The explicit interface prefix, or an empty string.</returns>
-    private static string BuildExplicitInterfacePrefix(MethodModel methodModel, bool isExplicitInterface)
+    internal static string BuildExplicitInterfacePrefix(in MethodModel methodModel, bool isExplicitInterface)
     {
         if (!isExplicitInterface)
         {
@@ -312,7 +332,7 @@ internal static partial class Emitter
     /// <param name="parameters">The parameter models.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated method parameter list.</returns>
-    private static string BuildParameterList(
+    internal static string BuildParameterList(
         ImmutableEquatableArray<ParameterModel> parameters,
         bool supportsNullable)
     {

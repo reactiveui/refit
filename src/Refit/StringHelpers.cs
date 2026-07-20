@@ -6,6 +6,7 @@
 using System.Buffers;
 #endif
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -35,6 +36,7 @@ internal static class StringHelpers
     /// <summary>Determines whether the value contains CR or LF characters.</summary>
     /// <param name="value">The value to inspect.</param>
     /// <returns><see langword="true"/> if the value contains CR or LF characters.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool ContainsCrOrLf(string value) =>
 #if NET8_0_OR_GREATER
         value.AsSpan().ContainsAny(_lineBreakCharacters);
@@ -47,6 +49,7 @@ internal static class StringHelpers
     /// <param name="prefix">The character the value is expected to start with.</param>
     /// <returns><see langword="true"/> if the value starts with <paramref name="prefix"/>.</returns>
     /// <remarks>The <see cref="string"/> overload taking a <see cref="char"/> only exists on the modern targets.</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool StartsWith(string value, char prefix) =>
 #if NET8_0_OR_GREATER
         value.StartsWith(prefix);
@@ -59,6 +62,7 @@ internal static class StringHelpers
     /// <param name="character">The character to find.</param>
     /// <returns><see langword="true"/> if the value contains <paramref name="character"/>.</returns>
     /// <remarks>The <see cref="string"/> overload taking a <see cref="char"/> only exists on the modern targets.</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool Contains(string value, char character) =>
 #if NET8_0_OR_GREATER
         value.Contains(character);
@@ -69,6 +73,7 @@ internal static class StringHelpers
     /// <summary>Escapes a string for a URI data component.</summary>
     /// <param name="value">The value to escape.</param>
     /// <returns>The escaped value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string EscapeDataString(string value) => Uri.EscapeDataString(value);
 
     /// <summary>Escapes a string slice for a URI data component.</summary>
@@ -76,6 +81,7 @@ internal static class StringHelpers
     /// <param name="start">The slice start index.</param>
     /// <param name="length">The slice length.</param>
     /// <returns>The escaped value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string EscapeDataString(string value, int start, int length) =>
 #if NET10_0_OR_GREATER
         Uri.EscapeDataString(value.AsSpan(start, length));
@@ -153,6 +159,7 @@ internal static class StringHelpers
     /// <summary>Finds the first CR or LF character in the value.</summary>
     /// <param name="value">The value to inspect.</param>
     /// <returns>The first CR or LF index, or -1 when none is present.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static int IndexOfCrOrLf(string value) =>
 #if NET8_0_OR_GREATER
         value.AsSpan().IndexOfAny(_lineBreakCharacters);
@@ -164,6 +171,7 @@ internal static class StringHelpers
     /// <summary>Determines whether a character is RFC 3986 unreserved and needs no percent-encoding.</summary>
     /// <param name="c">The character to test.</param>
     /// <returns><see langword="true"/> for an unreserved character.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsUriUnreserved(char c) =>
         c is (>= 'A' and <= 'Z') or (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-' or '.' or '_' or '~';
 #endif

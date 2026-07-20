@@ -15,15 +15,21 @@ internal static partial class Parser
     /// <summary>The <c>System</c> namespace name, matched structurally to identify well-known BCL types.</summary>
     private const string SystemNamespace = "System";
 
+    /// <summary>The shared empty placeholder set returned for paths that declare no path parameters.</summary>
+    /// <remarks>Most parsed paths carry no <c>{placeholder}</c>, so the empty value carries no backing array and no
+    /// per-parse allocation - a cost otherwise paid on every keystroke because the parser re-runs for the whole
+    /// compilation on each edit.</remarks>
+    private static readonly PathParameterLocations EmptyPathParameters = PathParameterLocations.Empty;
+
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The parsed request metadata.</returns>
-    private static RequestModel ParseRequest(
+    internal static RequestModel ParseRequest(
         IMethodSymbol methodSymbol,
         ReturnTypeInfo returnTypeInfo,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         if (!context.GeneratedRequestBuilding)
         {
@@ -95,9 +101,9 @@ internal static partial class Parser
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The HTTP method, raw path, normalized path, and path parameter placeholders.</returns>
-    private static (string HttpMethod, string Path, string NormalizedPath, Dictionary<string, List<Range>> PathParameters) ResolveRequestTarget(
+    internal static (string HttpMethod, string Path, string NormalizedPath, PathParameterLocations PathParameters) ResolveRequestTarget(
         IMethodSymbol methodSymbol,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         var httpMethodAttribute = FindHttpMethodAttribute(
             methodSymbol,
@@ -114,9 +120,9 @@ internal static partial class Parser
     /// <param name="returnType">The method's declared return type.</param>
     /// <param name="context">The shared generation context.</param>
     /// <returns>The adapter type expression (or null) and the result type to classify the request against.</returns>
-    private static (string? AdapterTypeExpression, ITypeSymbol ResultTypeSource) ResolveReturnTypeAdapter(
+    internal static (string? AdapterTypeExpression, ITypeSymbol ResultTypeSource) ResolveReturnTypeAdapter(
         ITypeSymbol returnType,
-        InterfaceGenerationContext context) =>
+        in InterfaceGenerationContext context) =>
         TryMatchReturnTypeAdapter(returnType, context, out var closedAdapter, out var adapterResultType)
             ? (QualifyType(closedAdapter, context), adapterResultType)
             : (null, returnType);
@@ -125,7 +131,7 @@ internal static partial class Parser
     /// <param name="returnTypeInfo">The classified return type shape.</param>
     /// <param name="adapterTypeExpression">The registered adapter expression, or null.</param>
     /// <returns><see langword="true"/> when the return shape can be generated inline.</returns>
-    private static bool IsInlineReturnShape(ReturnTypeInfo returnTypeInfo, string? adapterTypeExpression) =>
+    internal static bool IsInlineReturnShape(ReturnTypeInfo returnTypeInfo, string? adapterTypeExpression) =>
         returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
             or ReturnTypeInfo.Observable or ReturnTypeInfo.RequestMessage
         || adapterTypeExpression is not null;
@@ -133,9 +139,9 @@ internal static partial class Parser
     /// <summary>Reports an error when a method uses a source-generation-only attribute but cannot generate inline.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="context">The shared generation context.</param>
-    private static void ReportSourceGenOnlyAttributeMisuse(
+    internal static void ReportSourceGenOnlyAttributeMisuse(
         IMethodSymbol methodSymbol,
-        InterfaceGenerationContext context)
+        in InterfaceGenerationContext context)
     {
         foreach (var parameter in methodSymbol.Parameters)
         {
@@ -161,7 +167,7 @@ internal static partial class Parser
     /// <summary>Determines whether an HTTP method may carry an implicit request body.</summary>
     /// <param name="httpMethod">The HTTP method name.</param>
     /// <returns><see langword="true"/> for POST, PUT and PATCH.</returns>
-    private static bool IsBodyCapableHttpMethod(string httpMethod) =>
+    internal static bool IsBodyCapableHttpMethod(string httpMethod) =>
         httpMethod is "POST" or "PUT" or "PATCH";
 
     /// <summary>Determines whether a method's request can be constructed by generated inline code.</summary>
@@ -178,7 +184,7 @@ internal static partial class Parser
     /// correctly or trim-safely — a complex query object (its properties are only known per value) or a form-url-encoded
     /// body (<c>[DynamicallyAccessedMembers]</c>) — are excluded upstream through <paramref name="parameterEligibility"/>.
     /// </remarks>
-    private static bool CanGenerateInlineRequest(
+    internal static bool CanGenerateInlineRequest(
         bool parameterEligibility,
         bool returnShapeEligible,
         string httpMethod,
@@ -203,7 +209,7 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the method has no <c>[Url]</c> parameter, or has exactly one alongside an
     /// empty path template and no path placeholders. Other shapes fall back to the reflection builder, whose
     /// validation throws for the invalid combination.</returns>
-    private static bool IsUrlBindingSupported(
+    internal static bool IsUrlBindingSupported(
         in RequestPathForms path,
         ImmutableEquatableArray<RequestParameterModel> parameters)
     {
@@ -233,70 +239,59 @@ internal static partial class Parser
     /// <summary>Determines whether a path template is empty or the bare root, so a <c>[Url]</c> parameter may supply the URI.</summary>
     /// <param name="path">The path template.</param>
     /// <returns><see langword="true"/> when the template is empty or <c>"/"</c>.</returns>
-    private static bool IsEmptyOrRootPath(string path) =>
+    internal static bool IsEmptyOrRootPath(string path) =>
         string.IsNullOrEmpty(path) || path == "/";
 
     /// <summary>Extracts the path parameter placeholder names and their locations from a URL template.</summary>
     /// <param name="path">The normalized path template.</param>
-    /// <returns>A map of placeholder name to the ranges where each placeholder occurs in the template.</returns>
-    private static Dictionary<string, List<Range>> ExtractPathParameterPlaceholderNames(string path)
+    /// <returns>The placeholder occurrences (name and range) discovered in the template.</returns>
+    /// <remarks>The occurrences are collected into a single exact-sized array rather than a dictionary of per-name
+    /// range lists: placeholder counts are tiny, so a linear scan matches parameters without the dictionary, its
+    /// bucket array, and the per-name lists that the previous grouping allocated on every parse.</remarks>
+    internal static PathParameterLocations ExtractPathParameterPlaceholderNames(string path)
     {
         var pathSpan = path.AsSpan();
-
-        var i = pathSpan.IndexOf('{');
-        if (i < 0)
+        var count = 0;
+        var counter = new PathPlaceholderScanner(pathSpan);
+        while (counter.MoveNext())
         {
-            return [];
+            count++;
         }
 
-        var paramNames = new Dictionary<string, List<Range>>(StringComparer.OrdinalIgnoreCase);
-        var j = i + pathSpan[i..].IndexOfAny('}', '/');
-
-        // i always points at a '{' that IndexOf located, so it is always in range; only j can fall behind i
-        // (when no '}' or '/' follows the brace), which ends the scan.
-        while (j > i)
+        if (count == 0)
         {
-            if (pathSpan[j] == '}')
-            {
-                // A trailing '?' marks the placeholder optional ({name?}); strip it from the bound name so the
-                // parameter still matches, while the location range keeps covering the whole {name?} so the runtime
-                // path builder can detect and drop the segment when the bound value is null.
-                var placeholder = pathSpan[(i + 1)..j];
-                if (!placeholder.IsEmpty && placeholder[placeholder.Length - 1] == '?')
-                {
-                    placeholder = placeholder[..^1];
-                }
-
-                var paramName = placeholder.ToString();
-                var location = new Range(i, j + 1);
-                if (paramNames.TryGetValue(paramName, out var values))
-                {
-                    values.Add(location);
-                }
-                else
-                {
-                    paramNames[paramName] = [location];
-                }
-            }
-
-            var i2 = pathSpan[j..].IndexOf('{');
-            if (i2 < 0)
-            {
-                break;
-            }
-
-            i = j;
-            i += i2;
-            j = i + pathSpan[i..].IndexOfAny('}', '/');
+            return EmptyPathParameters;
         }
 
-        return paramNames;
+        var occurrences = new PathPlaceholderOccurrence[count];
+        var hasRoundTrip = false;
+        var hasDotted = false;
+        var index = 0;
+        var scanner = new PathPlaceholderScanner(pathSpan);
+        while (scanner.MoveNext())
+        {
+            // A trailing '?' marks the placeholder optional ({name?}); strip it from the bound name so the
+            // parameter still matches, while the location range keeps covering the whole {name?} so the runtime
+            // path builder can detect and drop the segment when the bound value is null.
+            var nameSpan = pathSpan[(scanner.Start + 1)..scanner.End];
+            if (!nameSpan.IsEmpty && nameSpan[nameSpan.Length - 1] == '?')
+            {
+                nameSpan = nameSpan[..^1];
+            }
+
+            hasRoundTrip |= nameSpan.Length >= 2 && nameSpan[0] == '*' && nameSpan[1] == '*';
+            hasDotted |= nameSpan.IndexOf('.') >= 0;
+            occurrences[index] = new(nameSpan.ToString(), new Range(scanner.Start, scanner.End + 1));
+            index++;
+        }
+
+        return new(occurrences, hasRoundTrip, hasDotted);
     }
 
     /// <summary>Gets the literal path from a Refit HTTP method attribute.</summary>
     /// <param name="attributeData">The attribute data.</param>
     /// <returns>The path literal.</returns>
-    private static string GetHttpPath(AttributeData attributeData)
+    internal static string GetHttpPath(AttributeData attributeData)
     {
         var arguments = attributeData.ConstructorArguments;
         return !arguments.IsEmpty && arguments[0].Value is string path
@@ -311,7 +306,7 @@ internal static partial class Parser
     /// <param name="partLength">The query segment length.</param>
     /// <param name="queryBuffer">The query buffer, allocated only when a segment is retained.</param>
     /// <param name="queryLength">The number of characters currently written to the query buffer.</param>
-    private static void AppendNonEmptyQueryPart(
+    internal static void AppendNonEmptyQueryPart(
         string path,
         int queryStart,
         int partStart,
@@ -349,7 +344,7 @@ internal static partial class Parser
     /// <returns>The <c>UriFormat</c> enum value, or null when the method has no <c>[QueryUriFormat]</c>.</returns>
     /// <remarks>The value re-encodes the whole built path and query, matching the reflection builder's final
     /// <c>Uri.GetComponents(PathAndQuery, QueryUriFormat)</c> pass, so the attribute no longer forces the runtime builder.</remarks>
-    private static int? ResolveQueryUriFormat(IMethodSymbol methodSymbol)
+    internal static int? ResolveQueryUriFormat(IMethodSymbol methodSymbol)
     {
         foreach (var attribute in methodSymbol.GetAttributes())
         {
@@ -368,7 +363,7 @@ internal static partial class Parser
     /// <remarks>The single-<c>int</c>-argument guards match the attribute's only constructor and cannot fail for a
     /// <c>[QueryUriFormat]</c> application that compiles.</remarks>
     [ExcludeFromCodeCoverage]
-    private static int? TryReadQueryUriFormat(AttributeData attribute) =>
+    internal static int? TryReadQueryUriFormat(AttributeData attribute) =>
         IsRefitAttribute(attribute.AttributeClass, QueryUriFormatAttributeDisplayName)
         && attribute.ConstructorArguments.Length == 1
         && attribute.ConstructorArguments[0].Value is int uriFormat
@@ -378,7 +373,7 @@ internal static partial class Parser
     /// <summary>Reads the per-call timeout in milliseconds from a method's <c>[Timeout]</c> attribute.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>
     /// <returns>The timeout in milliseconds, or 0 when the method has no <c>[Timeout]</c>.</returns>
-    private static int ResolveTimeout(IMethodSymbol methodSymbol)
+    internal static int ResolveTimeout(IMethodSymbol methodSymbol)
     {
         foreach (var attribute in methodSymbol.GetAttributes())
         {
@@ -397,7 +392,7 @@ internal static partial class Parser
     /// <remarks>The single-<c>int</c>-argument guards match the attribute's only constructor and cannot fail for a
     /// <c>[Timeout]</c> application that compiles.</remarks>
     [ExcludeFromCodeCoverage]
-    private static int? TryReadTimeout(AttributeData attribute) =>
+    internal static int? TryReadTimeout(AttributeData attribute) =>
         IsRefitAttribute(attribute.AttributeClass, TimeoutAttributeDisplayName)
         && attribute.ConstructorArguments.Length == 1
         && attribute.ConstructorArguments[0].Value is int milliseconds
@@ -407,27 +402,29 @@ internal static partial class Parser
     /// <summary>Parses the static headers declared on inherited interfaces, the declaring interface, and the method.</summary>
     /// <param name="methodSymbol">The method whose header metadata should be parsed.</param>
     /// <returns>The final static header set.</returns>
-    private static ImmutableEquatableArray<HeaderModel> ParseStaticHeaders(IMethodSymbol methodSymbol)
+    internal static ImmutableEquatableArray<HeaderModel> ParseStaticHeaders(IMethodSymbol methodSymbol)
     {
-        var headers = new List<HeaderModel>();
+        // Most methods declare no [Headers], so the list is created only once a header is actually found - a saved
+        // per-method allocation on the hot per-keystroke parse path. A null list flattens to the shared empty set.
+        List<HeaderModel>? headers = null;
 
         var inheritedInterfaces = methodSymbol.ContainingType.AllInterfaces;
         for (var i = inheritedInterfaces.Length - 1; i >= 0; i--)
         {
-            AddStaticHeaders(headers, inheritedInterfaces[i].GetAttributes());
+            AddStaticHeaders(ref headers, inheritedInterfaces[i].GetAttributes());
         }
 
-        AddStaticHeaders(headers, methodSymbol.ContainingType.GetAttributes());
-        AddStaticHeaders(headers, methodSymbol.GetAttributes());
+        AddStaticHeaders(ref headers, methodSymbol.ContainingType.GetAttributes());
+        AddStaticHeaders(ref headers, methodSymbol.GetAttributes());
 
         return headers.ToImmutableEquatableArray();
     }
 
     /// <summary>Adds headers from a collection of attributes, replacing earlier values for the same header name.</summary>
-    /// <param name="headers">The mutable header list.</param>
+    /// <param name="headers">The header list, created on first use.</param>
     /// <param name="attributes">The attributes to inspect.</param>
-    private static void AddStaticHeaders(
-        List<HeaderModel> headers,
+    internal static void AddStaticHeaders(
+        ref List<HeaderModel>? headers,
         in ImmutableArray<AttributeData> attributes)
     {
         foreach (var attribute in attributes)
@@ -437,14 +434,14 @@ internal static partial class Parser
                 continue;
             }
 
-            AddHeadersAttributeValues(headers, attribute);
+            AddHeadersAttributeValues(ref headers, attribute);
         }
     }
 
     /// <summary>Adds the string values from a <c>HeadersAttribute</c> to the static header list.</summary>
-    /// <param name="headers">The mutable header list.</param>
+    /// <param name="headers">The header list, created on first use.</param>
     /// <param name="attribute">The attribute data.</param>
-    private static void AddHeadersAttributeValues(List<HeaderModel> headers, AttributeData attribute)
+    internal static void AddHeadersAttributeValues(ref List<HeaderModel>? headers, AttributeData attribute)
     {
         foreach (var argument in attribute.ConstructorArguments)
         {
@@ -454,7 +451,7 @@ internal static partial class Parser
                 {
                     if (value.Value is string header)
                     {
-                        AddStaticHeader(headers, header);
+                        AddStaticHeader(headers ??= [], header);
                     }
                 }
             }
@@ -468,7 +465,7 @@ internal static partial class Parser
     /// <param name="returnType">The declared return type, or an adapter's wrapped result type.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The parsed return type details.</returns>
-    private static RequestReturnTypes GetRequestReturnTypes(ITypeSymbol returnType, InterfaceGenerationContext context)
+    internal static RequestReturnTypes GetRequestReturnTypes(ITypeSymbol returnType, in InterfaceGenerationContext context)
     {
         var resultType = GetReturnResultType(returnType);
         var isApiResponse = IsApiResponseType(resultType);
@@ -485,22 +482,27 @@ internal static partial class Parser
     /// <summary>Gets the result type wrapped by Task or ValueTask.</summary>
     /// <param name="returnType">The declared return type.</param>
     /// <returns>The result type.</returns>
-    private static ITypeSymbol GetReturnResultType(ITypeSymbol returnType)
+    internal static ITypeSymbol GetReturnResultType(ITypeSymbol returnType)
     {
         if (returnType is INamedTypeSymbol { TypeArguments.Length: 1 } namedType)
         {
-            var ns = namedType.ContainingNamespace.ToDisplayString();
-            if (namedType.MetadataName is "Task`1" or "ValueTask`1" && ns == "System.Threading.Tasks")
+            // The single-arity guard above means the cached Name identifies each wrapper as precisely as its
+            // "Name`1" MetadataName would, without the concatenation MetadataName performs on every generic type.
+            // The name is checked first (a cheap compare against a cached property) so the namespace walk only runs
+            // for the handful of well-known wrapper shapes, never for an arbitrary user return type.
+            if (namedType.Name is "Task" or "ValueTask"
+                && IsInNamespace(namedType, "System.Threading.Tasks"))
             {
                 return namedType.TypeArguments[0];
             }
 
-            if (namedType.MetadataName == "IAsyncEnumerable`1" && ns == "System.Collections.Generic")
+            if (namedType.Name == "IAsyncEnumerable"
+                && IsInNamespace(namedType, "System.Collections.Generic"))
             {
                 return namedType.TypeArguments[0];
             }
 
-            if (namedType.MetadataName == "IObservable`1" && ns == "System")
+            if (namedType.Name == "IObservable" && IsInNamespace(namedType, "System"))
             {
                 return namedType.TypeArguments[0];
             }
@@ -512,16 +514,17 @@ internal static partial class Parser
     /// <summary>Determines whether a type is one of Refit's API response wrappers.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> for API response wrappers.</returns>
-    private static bool IsApiResponseType(ITypeSymbol type) =>
+    internal static bool IsApiResponseType(ITypeSymbol type) =>
         type is INamedTypeSymbol namedType
-        && namedType.ContainingNamespace.ToDisplayString() == "Refit" && namedType.MetadataName is "IApiResponse" or "ApiResponse`1" or "IApiResponse`1";
+        && namedType.MetadataName is "IApiResponse" or "ApiResponse`1" or "IApiResponse`1"
+        && IsInNamespace(namedType, "Refit");
 
     /// <summary>Gets the response-content deserialization type for a method result type.</summary>
     /// <param name="resultType">The method result type.</param>
     /// <param name="isApiResponse">Whether the result is an API response wrapper.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The deserialization target type.</returns>
-    private static string GetDeserializedResultTypeName(ITypeSymbol resultType, bool isApiResponse, InterfaceGenerationContext context)
+    internal static string GetDeserializedResultTypeName(ITypeSymbol resultType, bool isApiResponse, in InterfaceGenerationContext context)
     {
         if (!isApiResponse)
         {
@@ -539,7 +542,7 @@ internal static partial class Parser
     /// <param name="DeserializedResultType">The response-body deserialization type.</param>
     /// <param name="IsApiResponse">Whether the result type is an API response wrapper.</param>
     /// <param name="DisposeResponse">Whether the runner should dispose the response.</param>
-    private readonly record struct RequestReturnTypes(
+    internal readonly record struct RequestReturnTypes(
         string ResultType,
         string DeserializedResultType,
         bool IsApiResponse,
@@ -554,11 +557,11 @@ internal static partial class Parser
     /// <param name="ImplicitBodyEligible">Whether an un-attributed complex parameter becomes the implicit request body.</param>
     /// <param name="IsMultipart">Whether the method is multipart, so an un-attributed parameter becomes a form part.</param>
     /// <param name="Generation">The interface generation context, carrying the extern-alias collector for type qualification.</param>
-    private readonly record struct LooseParameterContext(
+    internal readonly record struct LooseParameterContext(
         string UrlName,
         ImmutableEquatableArray<Range>? Locations,
         ImmutableEquatableArray<Range>? RoundTripLocations,
-        Dictionary<string, List<Range>> ParameterLocations,
+        PathParameterLocations ParameterLocations,
         INamedTypeSymbol? FormattableSymbol,
         bool ImplicitBodyEligible,
         bool IsMultipart,
@@ -570,7 +573,7 @@ internal static partial class Parser
     /// <param name="BodyCount">The number of body parameters represented by this parameter.</param>
     /// <param name="CancellationTokenCount">The number of cancellation tokens represented by this parameter.</param>
     /// <param name="HeaderCollectionCount">The number of header collections represented by this parameter.</param>
-    private readonly record struct ParsedRequestParameter(
+    internal readonly record struct ParsedRequestParameter(
         RequestParameterModel Parameter,
         bool CanGenerateInline,
         int BodyCount,
@@ -580,5 +583,227 @@ internal static partial class Parser
     /// <summary>The raw and normalized forms of a method's path template.</summary>
     /// <param name="Raw">The raw path literal from the HTTP method attribute.</param>
     /// <param name="Normalized">The path after constant-path normalization (fragment/empty-query cleanup).</param>
-    private readonly record struct RequestPathForms(string Raw, string Normalized);
+    internal readonly record struct RequestPathForms(string Raw, string Normalized);
+
+    /// <summary>A single <c>{placeholder}</c> occurrence in a path template.</summary>
+    /// <param name="Name">The placeholder name (a trailing optional marker <c>?</c> already stripped).</param>
+    /// <param name="Location">The range covering the whole <c>{placeholder}</c> including its braces.</param>
+    internal readonly record struct PathPlaceholderOccurrence(string Name, Range Location);
+
+    /// <summary>The path parameter placeholders discovered in one method's URL template.</summary>
+    /// <remarks>Backed by a single occurrence array (or none for the shared empty value); placeholder counts are tiny,
+    /// so parameters are matched by a linear scan instead of a dictionary keyed by name.</remarks>
+    internal readonly struct PathParameterLocations : IEquatable<PathParameterLocations>
+    {
+        /// <summary>The length of the round-trip placeholder prefix (<c>**</c>).</summary>
+        private const int RoundTripPrefixLength = 2;
+
+        /// <summary>The placeholder occurrences in template order, or null for the shared empty value.</summary>
+        private readonly PathPlaceholderOccurrence[]? _occurrences;
+
+        /// <summary>Initializes a new instance of the <see cref="PathParameterLocations"/> struct.</summary>
+        /// <param name="occurrences">The placeholder occurrences in template order.</param>
+        /// <param name="hasRoundTrip">Whether any placeholder is a round-trip (<c>{**name}</c>) placeholder.</param>
+        /// <param name="hasDotted">Whether any placeholder name binds a nested property (<c>{param.Prop}</c>).</param>
+        public PathParameterLocations(PathPlaceholderOccurrence[] occurrences, bool hasRoundTrip, bool hasDotted)
+        {
+            _occurrences = occurrences;
+            HasRoundTrip = hasRoundTrip;
+            HasDotted = hasDotted;
+        }
+
+        /// <summary>Gets the shared empty value for paths that declare no placeholders.</summary>
+        public static PathParameterLocations Empty => default;
+
+        /// <summary>Gets a value indicating whether any placeholder is a round-trip (<c>{**name}</c>) placeholder.</summary>
+        public bool HasRoundTrip { get; }
+
+        /// <summary>Gets a value indicating whether any placeholder binds a nested property (<c>{param.Prop}</c>).</summary>
+        public bool HasDotted { get; }
+
+        /// <summary>Gets the placeholder occurrences in template order.</summary>
+        public ReadOnlySpan<PathPlaceholderOccurrence> Occurrences => _occurrences;
+
+        /// <summary>Determines whether two placeholder sets share the same backing occurrences.</summary>
+        /// <param name="left">The left value.</param>
+        /// <param name="right">The right value.</param>
+        /// <returns><see langword="true"/> when both wrap the same occurrence array.</returns>
+        public static bool operator ==(PathParameterLocations left, PathParameterLocations right) => left.Equals(right);
+
+        /// <summary>Determines whether two placeholder sets wrap different backing occurrences.</summary>
+        /// <param name="left">The left value.</param>
+        /// <param name="right">The right value.</param>
+        /// <returns><see langword="true"/> when the values differ.</returns>
+        public static bool operator !=(PathParameterLocations left, PathParameterLocations right) => !left.Equals(right);
+
+        /// <summary>Collects the ranges of the placeholder whose name matches a parameter's URL name.</summary>
+        /// <param name="name">The parameter's URL name.</param>
+        /// <param name="locations">Receives the matching placeholder ranges in template order.</param>
+        /// <returns><see langword="true"/> when at least one placeholder matches.</returns>
+        public bool TryGetDirectLocations(string name, out ImmutableEquatableArray<Range> locations)
+        {
+            var occurrences = _occurrences;
+            if (occurrences is not null)
+            {
+                var matches = 0;
+                foreach (var occurrence in occurrences)
+                {
+                    if (string.Equals(occurrence.Name, name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matches++;
+                    }
+                }
+
+                if (matches > 0)
+                {
+                    locations = BuildLocations(occurrences, name, matches, roundTrip: false);
+                    return true;
+                }
+            }
+
+            locations = ImmutableEquatableArray<Range>.Empty;
+            return false;
+        }
+
+        /// <summary>Collects the ranges of the round-trip placeholder (<c>{**name}</c>) bound to a parameter's URL name.</summary>
+        /// <param name="name">The parameter's URL name.</param>
+        /// <param name="locations">Receives the matching placeholder ranges in template order.</param>
+        /// <returns><see langword="true"/> when at least one round-trip placeholder matches.</returns>
+        public bool TryGetRoundTripLocations(string name, out ImmutableEquatableArray<Range> locations)
+        {
+            var occurrences = _occurrences;
+            if (occurrences is not null)
+            {
+                var matches = 0;
+                foreach (var occurrence in occurrences)
+                {
+                    if (IsRoundTripMatch(occurrence.Name, name))
+                    {
+                        matches++;
+                    }
+                }
+
+                if (matches > 0)
+                {
+                    locations = BuildLocations(occurrences, name, matches, roundTrip: true);
+                    return true;
+                }
+            }
+
+            locations = ImmutableEquatableArray<Range>.Empty;
+            return false;
+        }
+
+        /// <inheritdoc/>
+        public bool Equals(PathParameterLocations other) => ReferenceEquals(_occurrences, other._occurrences);
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => obj is PathParameterLocations other && Equals(other);
+
+        /// <inheritdoc/>
+        public override int GetHashCode() => _occurrences?.GetHashCode() ?? 0;
+
+        /// <summary>Determines whether a placeholder name is the round-trip form (<c>**name</c>) of a parameter name.</summary>
+        /// <param name="placeholderName">The placeholder name.</param>
+        /// <param name="name">The parameter's URL name.</param>
+        /// <returns><see langword="true"/> when the placeholder is <c>**</c> followed by the parameter name.</returns>
+        private static bool IsRoundTripMatch(string placeholderName, string name) =>
+            placeholderName.Length == name.Length + RoundTripPrefixLength
+            && placeholderName[0] == '*'
+            && placeholderName[1] == '*'
+            && string.Compare(placeholderName, RoundTripPrefixLength, name, 0, name.Length, StringComparison.OrdinalIgnoreCase) == 0;
+
+        /// <summary>Builds the exact-sized range array for the placeholders matching a parameter's URL name.</summary>
+        /// <param name="occurrences">The placeholder occurrences in template order.</param>
+        /// <param name="name">The parameter's URL name.</param>
+        /// <param name="matches">The number of matching occurrences.</param>
+        /// <param name="roundTrip">Whether to match the round-trip placeholder form.</param>
+        /// <returns>The matching placeholder ranges in template order.</returns>
+        private static ImmutableEquatableArray<Range> BuildLocations(
+            PathPlaceholderOccurrence[] occurrences,
+            string name,
+            int matches,
+            bool roundTrip)
+        {
+            var ranges = new Range[matches];
+            var index = 0;
+            foreach (var occurrence in occurrences)
+            {
+                var matched = roundTrip
+                    ? IsRoundTripMatch(occurrence.Name, name)
+                    : string.Equals(occurrence.Name, name, StringComparison.OrdinalIgnoreCase);
+                if (matched)
+                {
+                    ranges[index] = occurrence.Location;
+                    index++;
+                }
+            }
+
+            return ImmutableEquatableArrayFactory.FromArray(ranges);
+        }
+    }
+
+    /// <summary>Walks a path template, yielding each <c>}</c>-terminated <c>{placeholder}</c> span.</summary>
+    internal ref struct PathPlaceholderScanner
+    {
+        /// <summary>The path template being scanned.</summary>
+        private readonly ReadOnlySpan<char> _path;
+
+        /// <summary>The index of the current placeholder's opening brace.</summary>
+        private int _i;
+
+        /// <summary>The index of the current placeholder's terminator (a <c>}</c> or <c>/</c>).</summary>
+        private int _j;
+
+        /// <summary>Initializes a new instance of the <see cref="PathPlaceholderScanner"/> struct.</summary>
+        /// <param name="path">The path template to scan.</param>
+        public PathPlaceholderScanner(ReadOnlySpan<char> path)
+        {
+            _path = path;
+            _i = path.IndexOf('{');
+
+            // When there is no '{', keep _j <= _i so the first MoveNext ends immediately.
+            _j = _i < 0 ? _i : _i + path[_i..].IndexOfAny('}', '/');
+        }
+
+        /// <summary>Gets the index of the current placeholder's opening brace.</summary>
+        public int Start { get; private set; }
+
+        /// <summary>Gets the index of the current placeholder's closing brace.</summary>
+        public int End { get; private set; }
+
+        /// <summary>Advances to the next <c>}</c>-terminated placeholder.</summary>
+        /// <returns><see langword="true"/> when a placeholder was found.</returns>
+        public bool MoveNext()
+        {
+            // _i always points at a '{' that IndexOf located, so it is always in range; only _j can fall behind _i
+            // (when no '}' or '/' follows the brace), which ends the scan.
+            while (_j > _i)
+            {
+                var currentStart = _i;
+                var currentEnd = _j;
+                var isClose = _path[currentEnd] == '}';
+
+                var nextBrace = _path[currentEnd..].IndexOf('{');
+                if (nextBrace < 0)
+                {
+                    _j = _i;
+                }
+                else
+                {
+                    _i = currentEnd + nextBrace;
+                    _j = _i + _path[_i..].IndexOfAny('}', '/');
+                }
+
+                if (isClose)
+                {
+                    Start = currentStart;
+                    End = currentEnd;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
 }

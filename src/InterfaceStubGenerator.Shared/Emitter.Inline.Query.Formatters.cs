@@ -12,7 +12,7 @@ internal static partial class Emitter
     /// <param name="valueFormat">The enum rendering strategy.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The helper method name.</returns>
-    private static string GetOrAddEnumFormatter(
+    internal static string GetOrAddEnumFormatter(
         InlineValueFormatModel valueFormat,
         in InlineValueEmission emission)
     {
@@ -33,7 +33,7 @@ internal static partial class Emitter
     /// <param name="valueFormat">The enum rendering strategy.</param>
     /// <param name="helperName">The unique helper method name.</param>
     /// <param name="memberSb">The builder receiving emitted helper members.</param>
-    private static void AppendEnumFormatterSource(
+    internal static void AppendEnumFormatterSource(
         InlineValueFormatModel valueFormat,
         string helperName,
         PooledStringBuilder memberSb)
@@ -81,7 +81,7 @@ internal static partial class Emitter
     /// <param name="converterTypeName">The fully-qualified converter type.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The cached field name.</returns>
-    private static string GetOrAddConverterField(string converterTypeName, in InlineValueEmission emission)
+    internal static string GetOrAddConverterField(string converterTypeName, in InlineValueEmission emission)
     {
         var scope = emission.Scope;
         if (scope.Converters.TryGetValue(converterTypeName, out var existing))
@@ -99,7 +99,7 @@ internal static partial class Emitter
     /// <param name="converterTypeName">The fully-qualified converter type.</param>
     /// <param name="fieldName">The unique field name.</param>
     /// <param name="memberSb">The builder receiving emitted helper members.</param>
-    private static void AppendConverterFieldSource(
+    internal static void AppendConverterFieldSource(
         string converterTypeName,
         string fieldName,
         PooledStringBuilder memberSb)

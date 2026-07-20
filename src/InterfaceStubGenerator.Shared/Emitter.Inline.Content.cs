@@ -16,8 +16,8 @@ internal static partial class Emitter
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
     /// <returns>The generated content assignment.</returns>
-    private static string BuildInlineContent(
-        RequestParameterModel bodyParameter,
+    internal static string BuildInlineContent(
+        in RequestParameterModel bodyParameter,
         string requestLocal,
         string settingsLocal,
         string? formFieldsFieldName,
@@ -80,8 +80,8 @@ internal static partial class Emitter
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
     /// <returns>The generated content assignment.</returns>
-    private static string BuildInlineFormUnroll(
-        RequestParameterModel bodyParameter,
+    internal static string BuildInlineFormUnroll(
+        in RequestParameterModel bodyParameter,
         string requestLocal,
         bool supportsNullable,
         in InlineValueEmission emission,
@@ -90,7 +90,7 @@ internal static partial class Emitter
         var settingsLocal = emission.SettingsLocal;
         var bodyIndent = Indent(MethodBodyIndentation);
         var inner = bodyIndent + "    ";
-        var fields = bodyParameter.FormFields!.AsArray();
+        var fields = bodyParameter.FormFields!.Value.AsArray();
         var bodyExpr = "@" + bodyParameter.Name;
         var entriesLocal = locals.New("______formEntries");
 
@@ -129,7 +129,7 @@ internal static partial class Emitter
     /// <param name="field">The form field descriptor.</param>
     /// <param name="site">The shared locals and rendered fragments for the enclosing body.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendFormFieldUnroll(
+    internal static void AppendFormFieldUnroll(
         PooledStringBuilder sb,
         FormFieldModel field,
         in FormUnrollSite site,
@@ -179,7 +179,7 @@ internal static partial class Emitter
     /// <param name="indent">The statement indentation.</param>
     /// <param name="keyExpr">The field key expression.</param>
     /// <param name="valueExpr">The field value expression.</param>
-    private static void AppendFormEntryAdd(PooledStringBuilder sb, in FormUnrollSite site, string indent, string keyExpr, string valueExpr) =>
+    internal static void AppendFormEntryAdd(PooledStringBuilder sb, in FormUnrollSite site, string indent, string keyExpr, string valueExpr) =>
         _ = sb.Append(indent).Append(site.EntriesLocal).Append(".Add(").Append(site.KvpNew)
             .Append('(').Append(keyExpr).Append(", ").Append(valueExpr).AppendLine("));");
 
@@ -188,7 +188,7 @@ internal static partial class Emitter
     /// <param name="valueLocal">The non-null value local name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The rendering expression, branching to the formatter when it is customized.</returns>
-    private static string BuildFormFieldValueExpression(
+    internal static string BuildFormFieldValueExpression(
         FormFieldModel field,
         string valueLocal,
         in InlineValueEmission emission)
@@ -208,7 +208,7 @@ internal static partial class Emitter
     /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
     /// <returns><see langword="true"/> when every field is a simple scalar carrying a compile-time rendering strategy,
     /// so the body needs neither the descriptor array nor reflection on the common System.Text.Json path.</returns>
-    private static bool IsUnrollableFormBody(RequestParameterModel? bodyParameter)
+    internal static bool IsUnrollableFormBody(RequestParameterModel? bodyParameter)
     {
         if (bodyParameter is not { BodySerializationMethod: "UrlEncoded", FormFields: { Count: > 0 } formFields })
         {
@@ -232,14 +232,14 @@ internal static partial class Emitter
     /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
     /// <returns><see langword="true"/> when a field renders through the default-form-formatting branch, so the generated
     /// method must declare that branch local.</returns>
-    private static bool FormBodyHasFastPath(RequestParameterModel? bodyParameter)
+    internal static bool FormBodyHasFastPath(RequestParameterModel? bodyParameter)
     {
         if (!IsUnrollableFormBody(bodyParameter))
         {
             return false;
         }
 
-        foreach (var field in bodyParameter!.FormFields!)
+        foreach (var field in bodyParameter!.Value.FormFields!)
         {
             if (field.ValueFormat!.Kind != InlineFormatKind.FormatterOnly)
             {

@@ -157,7 +157,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Creates the provider for methods decorated with Refit's built-in HTTP method attributes.</summary>
     /// <param name="context">The generator initialization context.</param>
     /// <returns>The collected candidate methods.</returns>
-    private static IncrementalValueProvider<ImmutableArray<MethodDeclarationSyntax>>
+    internal static IncrementalValueProvider<ImmutableArray<MethodDeclarationSyntax>>
         CreateStandardHttpMethodCandidateProvider(in IncrementalGeneratorInitializationContext context)
     {
         var deleteMethods = CreateHttpMethodCandidateProvider(context, DeleteAttributeMetadataName).Collect();
@@ -194,7 +194,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="context">The generator initialization context.</param>
     /// <param name="metadataName">The fully qualified metadata name.</param>
     /// <returns>The matching method declarations.</returns>
-    private static IncrementalValuesProvider<MethodDeclarationSyntax> CreateHttpMethodCandidateProvider(
+    internal static IncrementalValuesProvider<MethodDeclarationSyntax> CreateHttpMethodCandidateProvider(
         in IncrementalGeneratorInitializationContext context,
         string metadataName) =>
         context.SyntaxProvider.ForAttributeWithMetadataName(
@@ -206,13 +206,13 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="syntax">The candidate syntax node carrying a Refit HTTP method attribute.</param>
     /// <returns><see langword="true"/> when the node is an interface method declaration.</returns>
     [ExcludeFromCodeCoverage]
-    private static bool IsInterfaceMethodDeclaration(SyntaxNode syntax) =>
+    internal static bool IsInterfaceMethodDeclaration(SyntaxNode syntax) =>
         syntax is MethodDeclarationSyntax { Parent: InterfaceDeclarationSyntax };
 
     /// <summary>Combines standard HTTP method candidate arrays into one array.</summary>
     /// <param name="candidates">The candidate arrays.</param>
     /// <returns>The combined candidates.</returns>
-    private static ImmutableArray<MethodDeclarationSyntax> CombineStandardHttpMethodCandidates(
+    internal static ImmutableArray<MethodDeclarationSyntax> CombineStandardHttpMethodCandidates(
         in StandardHttpMethodCandidates candidates)
     {
 #if ROSLYN_5
@@ -250,7 +250,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Combines built-in and potential custom HTTP method candidates.</summary>
     /// <param name="combined">The built-in and custom candidate arrays.</param>
     /// <returns>The combined candidates.</returns>
-    private static ImmutableArray<MethodDeclarationSyntax> CombineCandidateMethods(
+    internal static ImmutableArray<MethodDeclarationSyntax> CombineCandidateMethods(
         (ImmutableArray<MethodDeclarationSyntax> StandardMethods,
         ImmutableArray<MethodDeclarationSyntax> CustomMethods) combined)
     {
@@ -278,7 +278,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Determines whether syntax might be a method using a custom Refit HTTP method attribute.</summary>
     /// <param name="syntax">The syntax node to inspect.</param>
     /// <returns><see langword="true"/> when the method should go through the compatibility fallback.</returns>
-    private static bool IsPotentialCustomHttpMethodSyntax(SyntaxNode syntax)
+    internal static bool IsPotentialCustomHttpMethodSyntax(SyntaxNode syntax)
     {
         if (syntax is not MethodDeclarationSyntax
             {
@@ -306,7 +306,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Determines whether an attribute syntax name is a built-in Refit HTTP method attribute name.</summary>
     /// <param name="name">The attribute name syntax.</param>
     /// <returns><see langword="true"/> when the name is one of Refit's built-in HTTP method attributes.</returns>
-    private static bool IsStandardHttpMethodAttributeName(NameSyntax name)
+    internal static bool IsStandardHttpMethodAttributeName(NameSyntax name)
     {
         var identifier = GetRightmostIdentifier(name);
         const string attributeSuffix = "Attribute";
@@ -321,7 +321,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Gets the rightmost identifier text from an attribute name.</summary>
     /// <param name="name">The attribute name syntax.</param>
     /// <returns>The rightmost identifier text.</returns>
-    private static string GetRightmostIdentifier(NameSyntax name) =>
+    internal static string GetRightmostIdentifier(NameSyntax name) =>
         name switch
         {
             IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,
@@ -333,14 +333,14 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Creates the collected candidate syntax input.</summary>
     /// <param name="combined">The combined method and interface candidate collections.</param>
     /// <returns>The named candidate syntax input.</returns>
-    private static CandidateSyntax CreateCandidateSyntax(
+    internal static CandidateSyntax CreateCandidateSyntax(
         (ImmutableArray<MethodDeclarationSyntax> Methods, ImmutableArray<InterfaceDeclarationSyntax> Interfaces) combined) =>
         new(combined.Methods, combined.Interfaces);
 
     /// <summary>Creates the generator options input.</summary>
     /// <param name="options">The global analyzer-config options.</param>
     /// <returns>The named generator options input.</returns>
-    private static GeneratorOptions CreateGeneratorOptions(AnalyzerConfigOptions options)
+    internal static GeneratorOptions CreateGeneratorOptions(AnalyzerConfigOptions options)
     {
         _ = TryGetGlobalOption(options, RefitInternalNamespaceOption, out var refitInternalNamespace);
 
@@ -354,14 +354,14 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Creates the combined syntax and options input.</summary>
     /// <param name="combined">The combined candidate syntax and generator options.</param>
     /// <returns>The named syntax-and-options input.</returns>
-    private static SyntaxAndOptions CreateSyntaxAndOptions(
+    internal static SyntaxAndOptions CreateSyntaxAndOptions(
         (CandidateSyntax CandidateSyntax, GeneratorOptions Options) combined) =>
         new(combined.CandidateSyntax, combined.Options);
 
     /// <summary>Creates the final parser input.</summary>
     /// <param name="combined">The combined syntax/options input and compilation.</param>
     /// <returns>The named parser input.</returns>
-    private static GeneratorInputs CreateGeneratorInputs(
+    internal static GeneratorInputs CreateGeneratorInputs(
         (SyntaxAndOptions SyntaxAndOptions, Compilation Compilation) combined) =>
         new(
             combined.SyntaxAndOptions.CandidateSyntax.CandidateMethods,
@@ -374,7 +374,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
 
     /// <summary>Creates an empty result when generation is explicitly disabled.</summary>
     /// <returns>The disabled generation result.</returns>
-    private static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec)
+    internal static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec)
         CreateDisabledGenerationResult() =>
         new(
             [],
@@ -391,7 +391,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="name">The option name without the build-property prefix.</param>
     /// <param name="defaultValue">The value to use when the option is not present or cannot be parsed.</param>
     /// <returns>The parsed option value.</returns>
-    private static bool GetBooleanOption(
+    internal static bool GetBooleanOption(
         AnalyzerConfigOptions options,
         string name,
         bool defaultValue) =>
@@ -402,12 +402,12 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The collected syntax candidates for one generator pass.</summary>
     /// <param name="CandidateMethods">The candidate method declarations.</param>
     /// <param name="CandidateInterfaces">The candidate interface declarations.</param>
-    private readonly record struct CandidateSyntax(
+    internal readonly record struct CandidateSyntax(
         ImmutableArray<MethodDeclarationSyntax> CandidateMethods,
         ImmutableArray<InterfaceDeclarationSyntax> CandidateInterfaces);
 
     /// <summary>The method declarations found through Refit's built-in HTTP method attributes.</summary>
-    private readonly record struct StandardHttpMethodCandidates
+    internal readonly record struct StandardHttpMethodCandidates
     {
         /// <summary>Gets the methods decorated with <c>DeleteAttribute</c>.</summary>
         public ImmutableArray<MethodDeclarationSyntax> DeleteMethods { get; init; }
@@ -436,7 +436,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="GeneratedRequestBuilding">Whether inline request construction is enabled.</param>
     /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <param name="DisableSourceGenerator">Whether source generation is disabled.</param>
-    private readonly record struct GeneratorOptions(
+    internal readonly record struct GeneratorOptions(
         string? RefitInternalNamespace,
         bool GeneratedRequestBuilding,
         bool EmitGeneratedCodeMarkers,
@@ -445,7 +445,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The collected syntax candidates plus generator options.</summary>
     /// <param name="CandidateSyntax">The candidate syntax input.</param>
     /// <param name="Options">The generator options input.</param>
-    private readonly record struct SyntaxAndOptions(
+    internal readonly record struct SyntaxAndOptions(
         CandidateSyntax CandidateSyntax,
         GeneratorOptions Options);
 
@@ -457,7 +457,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <param name="DisableSourceGenerator">Whether source generation is disabled.</param>
     /// <param name="Compilation">The current compilation.</param>
-    private readonly record struct GeneratorInputs(
+    internal readonly record struct GeneratorInputs(
         ImmutableArray<MethodDeclarationSyntax> CandidateMethods,
         ImmutableArray<InterfaceDeclarationSyntax> CandidateInterfaces,
         string? RefitInternalNamespace,

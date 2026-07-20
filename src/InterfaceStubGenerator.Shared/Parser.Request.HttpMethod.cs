@@ -32,13 +32,13 @@ internal static partial class Parser
     /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
     /// <param name="attributeClass">The resolved HTTP method attribute type.</param>
     /// <returns>The HTTP method name, or an empty string when a custom attribute's verb is not statically readable.</returns>
-    private static string GetHttpMethodName(INamedTypeSymbol attributeClass) =>
+    internal static string GetHttpMethodName(INamedTypeSymbol attributeClass) =>
         MapKnownHttpVerb(attributeClass.MetadataName) ?? ResolveCustomHttpVerb(attributeClass);
 
     /// <summary>Resolves a statically-readable custom HTTP verb, or an empty string when the method must fall back.</summary>
     /// <param name="attributeClass">The custom HTTP method attribute type.</param>
     /// <returns>The verb, or an empty string.</returns>
-    private static string ResolveCustomHttpVerb(INamedTypeSymbol attributeClass) =>
+    internal static string ResolveCustomHttpVerb(INamedTypeSymbol attributeClass) =>
         TryResolveCustomHttpVerb(attributeClass, out var verb) ? verb : string.Empty;
 
     /// <summary>Reads a custom HTTP verb from a derived attribute whose <c>Method</c> getter returns a string literal.</summary>
@@ -52,7 +52,7 @@ internal static partial class Parser
     /// model), so the RF006 analyzer and the generator agree. The reflection builder reads the same verb at runtime, so
     /// the emitted <c>new HttpMethod("VERB")</c> matches it.
     /// </remarks>
-    private static bool TryResolveCustomHttpVerb(INamedTypeSymbol attributeClass, out string verb)
+    internal static bool TryResolveCustomHttpVerb(INamedTypeSymbol attributeClass, out string verb)
     {
         verb = string.Empty;
 
@@ -85,7 +85,7 @@ internal static partial class Parser
     /// here derives from HttpMethodAttribute, which declares an (abstract) HttpMethod Method getter, so the walk always
     /// resolves one and the trailing fallback is unreachable.</remarks>
     [ExcludeFromCodeCoverage]
-    private static (IPropertySymbol Property, IMethodSymbol Getter) FindMethodPropertyGetter(INamedTypeSymbol attributeClass)
+    internal static (IPropertySymbol Property, IMethodSymbol Getter) FindMethodPropertyGetter(INamedTypeSymbol attributeClass)
     {
         for (INamedTypeSymbol? current = attributeClass; current is not null; current = current.BaseType)
         {
@@ -105,7 +105,7 @@ internal static partial class Parser
     /// <param name="syntax">The getter or property syntax.</param>
     /// <returns>The returned expression, or null when the getter is not a single expression.</returns>
     [ExcludeFromCodeCoverage]
-    private static ExpressionSyntax? GetterReturnExpression(SyntaxNode syntax) =>
+    internal static ExpressionSyntax? GetterReturnExpression(SyntaxNode syntax) =>
         syntax switch
         {
             ArrowExpressionClauseSyntax { Expression: { } arrowBody } => arrowBody,
