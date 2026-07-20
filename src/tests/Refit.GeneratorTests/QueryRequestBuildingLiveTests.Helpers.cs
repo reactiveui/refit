@@ -7,10 +7,8 @@ using System.Net;
 using System.Text;
 
 namespace Refit.GeneratorTests;
-/// <summary>
-/// Compiles, loads and invokes generated query request building, asserting the final <see cref="Uri"/> and its
-/// parity with the reflection request builder for every query parameter shape that generates inline.
-/// </summary>
+
+/// <summary> Helpers used on any QueryRequestBuildingLiveTests.</summary>
 public sealed partial class QueryRequestBuildingLiveTests
 {
     /// <summary>Formats every value through the default rules and upper-cases the result.</summary>
