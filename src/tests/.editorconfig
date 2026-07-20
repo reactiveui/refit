@@ -22,7 +22,6 @@ dotnet_diagnostic.S5332.severity = none # Using http protocol is insecure (test 
 ###################
 dotnet_diagnostic.SST2016.severity = none # Prefer DateTimeOffset over DateTime on a visible signature — test models exercise DateTime handling deliberately
 dotnet_diagnostic.SST2410.severity = none # A created disposable is never disposed — test-local disposables are short-lived and GC-reclaimed
-dotnet_diagnostic.SST1522.severity = none # File length maximum — live test harnesses are intentionally consolidated in one file
 
 ###################
 # PerformanceSharp (PSH) — relaxed for test projects
