@@ -14,11 +14,11 @@ namespace Refit;
 internal partial class RestMethodInfoInternal
 {
     /// <summary>The HTTP PATCH method instance.</summary>
-    private static readonly HttpMethod _patchMethod = new("PATCH");
+    internal static readonly HttpMethod _patchMethod = new("PATCH");
 
 #if !NET7_0_OR_GREATER
     /// <summary>The compiled regular expression that matches URL path parameters, including an optional <c>?</c> marker.</summary>
-    private static readonly Regex _parameterRegexValue = new(
+    internal static readonly Regex _parameterRegexValue = new(
         "{(([^/?\\r\\n])*?)(\\?)?}",
         RegexOptions.Compiled,
         TimeSpan.FromSeconds(1));
@@ -73,9 +73,22 @@ internal partial class RestMethodInfoInternal
         // Exclude cancellation token parameters from this list
         ParameterInfoArray = GetNonCancellationTokenParameters(methodInfo.GetParameters());
 
+        // Read every parameter's request-shaping attributes once. Each classifier below then consults this set instead
+        // of issuing its own GetCustomAttribute call, which would re-enumerate the same attribute records (allocating a
+        // scratch array each time) once per parameter per lookup.
+        var parameterAttributeSets = BuildParameterAttributeSets(ParameterInfoArray);
+
+        // Materialize each parameter's [Query] attribute once so the per-request mapping path never re-reads it from
+        // metadata (each reflected read allocates the attribute-record and candidate-type scratch arrays).
+        ParameterQueryAttributes = BuildParameterQueryAttributes(parameterAttributeSets);
+
+        // Record which parameters carry [FormObject] once, so the per-part multipart path never re-reads it. Only
+        // multipart methods reach that path, so non-multipart methods keep the shared empty array.
+        ParameterFormObjectFlags = BuildFormObjectFlags(parameterAttributeSets, IsMultipart);
+
         // A [Url] parameter supplies the complete absolute request URI, bypassing the base address. It provides the
         // full URL, so the method's path template must be empty; a non-empty template is an invalid combination.
-        UrlParameterInfo = ResolveUrlParameter(ParameterInfoArray, RelativePath);
+        UrlParameterInfo = ResolveUrlParameter(ParameterInfoArray, parameterAttributeSets, RelativePath);
 
         // An open generic method definition cannot resolve dotted {obj.Prop} placeholders yet — the generic parameter
         // has no properties until the method is closed over a concrete type. This RestMethodInfo is only used for
@@ -83,13 +96,13 @@ internal partial class RestMethodInfoInternal
         // unmatched placeholder in place here instead of throwing.
         var allowUnmatched = RefitSettings.AllowUnmatchedRouteParameters || methodInfo.IsGenericMethodDefinition;
         (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray, allowUnmatched);
-        BodyParameterInfo = FindBodyParameter(ParameterInfoArray, IsMultipart, hma.Method);
-        AuthorizeParameterInfo = FindAuthorizationParameter(ParameterInfoArray);
+        BodyParameterInfo = FindBodyParameter(ParameterInfoArray, parameterAttributeSets, IsMultipart, hma.Method);
+        AuthorizeParameterInfo = FindAuthorizationParameter(parameterAttributeSets);
 
         Headers = ParseHeaders(targetInterface, methodInfo);
-        HeaderParameterMap = BuildHeaderParameterMap(ParameterInfoArray);
-        _headerCollectionParameterIndex = GetHeaderCollectionParameterIndex(ParameterInfoArray);
-        PropertyParameterMap = BuildRequestPropertyMap(ParameterInfoArray);
+        HeaderParameterMap = BuildHeaderParameterMap(parameterAttributeSets);
+        _headerCollectionParameterIndex = GetHeaderCollectionParameterIndex(ParameterInfoArray, parameterAttributeSets);
+        PropertyParameterMap = BuildRequestPropertyMap(ParameterInfoArray, parameterAttributeSets);
 
         AttachmentNameMap = BuildAttachmentNameMap();
         QueryParameterMap = BuildQueryParameterMap();
@@ -198,7 +211,21 @@ internal partial class RestMethodInfoInternal
     public bool HasHeaderCollection => _headerCollectionParameterIndex >= 0;
 
     /// <summary>Gets the name of the method.</summary>
-    private string Name => MethodInfo.Name;
+    internal string Name => MethodInfo.Name;
+
+    /// <summary>Gets each parameter's <see cref="QueryAttribute"/> (or null), indexed to match <see cref="ParameterInfoArray"/>,
+    /// materialized once so the per-request path never re-reads it from metadata.</summary>
+    internal QueryAttribute?[] ParameterQueryAttributes { get; }
+
+    /// <summary>Gets a value indicating whether any argument can add, override or remove a header at call time (a header
+    /// parameter, a header collection or an authorization parameter). When false the per-call path can emit the method's
+    /// static headers without first copying them into a mutable per-request dictionary.</summary>
+    internal bool ContributesDynamicHeaders =>
+        HeaderParameterMap.Count > 0 || HasHeaderCollection || AuthorizeParameterInfo is not null;
+
+    /// <summary>Gets a flag per parameter indicating whether it carries <see cref="FormObjectAttribute"/> on a multipart
+    /// method, indexed to match <see cref="ParameterInfoArray"/>; a shared empty array for non-multipart methods.</summary>
+    internal bool[] ParameterFormObjectFlags { get; }
 
     /// <summary>Determines whether the parameter at the given index is the header collection parameter.</summary>
     /// <param name="index">The parameter index to test.</param>
@@ -209,7 +236,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Removes cancellation-token parameters from a reflected parameter array.</summary>
     /// <param name="parameters">The reflected method parameters.</param>
     /// <returns>The parameters used for request mapping.</returns>
-    private static ParameterInfo[] GetNonCancellationTokenParameters(ParameterInfo[] parameters)
+    internal static ParameterInfo[] GetNonCancellationTokenParameters(ParameterInfo[] parameters)
     {
         var count = 0;
         for (var i = 0; i < parameters.Length; i++)
@@ -242,7 +269,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Determines whether a parameter is a cancellation token.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
     /// <returns><see langword="true"/> for cancellation-token parameters.</returns>
-    private static bool IsCancellationTokenParameter(ParameterInfo parameter) =>
+    internal static bool IsCancellationTokenParameter(ParameterInfo parameter) =>
         parameter.ParameterType == typeof(CancellationToken)
         || parameter.ParameterType == typeof(CancellationToken?);
 
@@ -250,7 +277,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="methodInfo">The reflected method information.</param>
     /// <param name="isMultipart">A value indicating whether the request is multipart.</param>
     /// <returns>The multipart boundary text, or an empty string for non-multipart requests.</returns>
-    private static string GetMultipartBoundary(MethodInfo methodInfo, bool isMultipart) =>
+    internal static string GetMultipartBoundary(MethodInfo methodInfo, bool isMultipart) =>
         isMultipart
             ? methodInfo.GetCustomAttribute<MultipartAttribute>(true)!.BoundaryText // [Multipart] is present whenever isMultipart is true, and its BoundaryText is never null.
             : string.Empty;
@@ -258,7 +285,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Determines whether the result type is one of the supported API response wrappers.</summary>
     /// <param name="returnResultType">The result type wrapped by the method's return type.</param>
     /// <returns><see langword="true"/> when the result type is an API response wrapper; otherwise <see langword="false"/>.</returns>
-    private static bool DetermineIsApiResponse(Type returnResultType)
+    internal static bool DetermineIsApiResponse(Type returnResultType)
     {
         if (returnResultType == typeof(IApiResponse))
         {
@@ -275,79 +302,17 @@ internal partial class RestMethodInfoInternal
                || genericDefinition == typeof(IApiResponse<>);
     }
 
-    /// <summary>Finds the index of the header collection parameter in the parameter array.</summary>
-    /// <param name="parameterArray">The array of method parameters.</param>
-    /// <returns>The index of the header collection parameter, or a negative value when none exists.</returns>
-    private static int GetHeaderCollectionParameterIndex(ParameterInfo[] parameterArray)
-    {
-        var headerIndex = -1;
-
-        for (var i = 0; i < parameterArray.Length; i++)
-        {
-            var param = parameterArray[i];
-            var headerCollection = param.GetCustomAttribute<HeaderCollectionAttribute>(true);
-
-            if (headerCollection is null)
-            {
-                continue;
-            }
-
-            // Opted for IDictionary<string, string> semantics here as opposed to the looser
-            // IEnumerable<KeyValuePair<string, string>> because IDictionary enforces unique keys.
-            if (!param.ParameterType.IsAssignableFrom(typeof(IDictionary<string, string>)))
-            {
-                throw new ArgumentException(
-                    $"HeaderCollection parameter of type {param.ParameterType.Name} is not assignable from IDictionary<string, string>");
-            }
-
-            // Throw if there is already a HeaderCollection parameter.
-            if (headerIndex >= 0)
-            {
-                throw new ArgumentException("Only one parameter can be a HeaderCollection parameter");
-            }
-
-            headerIndex = i;
-        }
-
-        return headerIndex;
-    }
-
-    /// <summary>Builds the map of parameter indexes to request property keys.</summary>
-    /// <param name="parameterArray">The array of method parameters.</param>
-    /// <returns>A map of parameter indexes to property keys.</returns>
-    private static Dictionary<int, string> BuildRequestPropertyMap(ParameterInfo[] parameterArray)
-    {
-        Dictionary<int, string>? propertyMap = null;
-
-        for (var i = 0; i < parameterArray.Length; i++)
-        {
-            var param = parameterArray[i];
-            var propertyAttribute = param.GetCustomAttribute<PropertyAttribute>(true);
-
-            if (propertyAttribute is not null)
-            {
-                var propertyKey = !string.IsNullOrEmpty(propertyAttribute.Key)
-                    ? propertyAttribute.Key
-                    : param.Name!;
-                propertyMap ??= [];
-                propertyMap[i] = propertyKey!;
-            }
-        }
-
-        return propertyMap ?? EmptyDictionary<int, string>.Get();
-    }
-
     /// <summary>Gets the readable public instance properties of a parameter type.</summary>
     /// <param name="parameter">The parameter whose properties are enumerated.</param>
     /// <returns>The readable public instance properties.</returns>
     [RequiresUnreferencedCode("Reading request object properties requires public property metadata to be available at runtime.")]
-    private static PropertyInfo[] GetParameterProperties(ParameterInfo parameter) =>
+    internal static PropertyInfo[] GetParameterProperties(ParameterInfo parameter) =>
         ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(parameter.ParameterType);
 
     /// <summary>Verifies that the relative URL path is well formed and free of injection characters.</summary>
     /// <param name="relativePath">The relative URL path to validate.</param>
     /// <param name="urlResolution">The URL resolution mode; the leading-slash requirement is relaxed under <see cref="UrlResolutionMode.Rfc3986"/>.</param>
-    private static void VerifyUrlPathIsSane(string relativePath, UrlResolutionMode urlResolution)
+    internal static void VerifyUrlPathIsSane(string relativePath, UrlResolutionMode urlResolution)
     {
         if (string.IsNullOrEmpty(relativePath))
         {
@@ -374,7 +339,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Adds headers from a <see cref="HeadersAttribute"/> into the accumulated map.</summary>
     /// <param name="headersAttribute">The header attribute to process.</param>
     /// <param name="ret">The accumulated map, created as needed.</param>
-    private static void AddHeaders(HeadersAttribute headersAttribute, ref Dictionary<string, string?>? ret)
+    internal static void AddHeaders(HeadersAttribute headersAttribute, ref Dictionary<string, string?>? ret)
     {
         var headers = headersAttribute.Headers;
         for (var i = 0; i < headers.Length; i++)
@@ -401,7 +366,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="targetInterface">The interface type that declares the method.</param>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <returns>A map of header names to header values.</returns>
-    private static Dictionary<string, string?> ParseHeaders(
+    internal static Dictionary<string, string?> ParseHeaders(
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type targetInterface,
         MethodInfo methodInfo)
     {
@@ -427,7 +392,7 @@ internal partial class RestMethodInfoInternal
     /// <param name="attributes">The attributes to scan.</param>
     /// <param name="reverse">When true, scans the attributes from last to first so earlier declarations take precedence.</param>
     /// <param name="ret">The header map being built, created lazily on first use.</param>
-    private static void AddHeadersFromAttributes(object[] attributes, bool reverse, ref Dictionary<string, string?>? ret)
+    internal static void AddHeadersFromAttributes(object[] attributes, bool reverse, ref Dictionary<string, string?>? ret)
     {
         if (reverse)
         {
@@ -451,33 +416,12 @@ internal partial class RestMethodInfoInternal
         }
     }
 
-    /// <summary>Builds the map of parameter indexes to header names.</summary>
-    /// <param name="parameterArray">The array of method parameters.</param>
-    /// <returns>A map of parameter indexes to header names.</returns>
-    private static Dictionary<int, string> BuildHeaderParameterMap(ParameterInfo[] parameterArray)
-    {
-        Dictionary<int, string>? ret = null;
-
-        for (var i = 0; i < parameterArray.Length; i++)
-        {
-            var header = parameterArray[i].GetCustomAttribute<HeaderAttribute>(true)?.Header;
-
-            if (!string.IsNullOrWhiteSpace(header))
-            {
-                ret ??= [];
-                ret[i] = header!.Trim();
-            }
-        }
-
-        return ret ?? EmptyDictionary<int, string>.Get();
-    }
-
     /// <summary>Determines the return type, result type, and deserialized result type for the method.</summary>
     /// <param name="methodInfo">The reflected method whose return type is classified.</param>
     /// <param name="adapterResultType">The wrapped result type of a matched return-type adapter, or
     /// <see langword="null"/> when the return type is a built-in shape or unadapted.</param>
     /// <returns>A tuple of the return type, result type, and deserialized result type.</returns>
-    private static (Type ReturnType, Type ReturnResultType, Type DeserializedResultType) DetermineReturnTypeInfo(
+    internal static (Type ReturnType, Type ReturnResultType, Type DeserializedResultType) DetermineReturnTypeInfo(
         MethodInfo methodInfo,
         Type? adapterResultType)
     {
@@ -531,7 +475,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Determines the type that response content is deserialized into for the given result type.</summary>
     /// <param name="returnResultType">The result type wrapped by the return type.</param>
     /// <returns>The type to deserialize response content into.</returns>
-    private static Type DetermineDeserializedResultType(Type returnResultType)
+    internal static Type DetermineDeserializedResultType(Type returnResultType)
     {
         if (
             returnResultType.IsGenericType
@@ -552,7 +496,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Determines whether the response must be disposed based on the deserialized result type.</summary>
     /// <param name="deserializedResultType">The type the response content is deserialized into.</param>
     /// <returns><see langword="true"/> when the caller must dispose the response; otherwise <see langword="false"/>.</returns>
-    private static bool DetermineIfResponseMustBeDisposed(Type deserializedResultType) =>
+    internal static bool DetermineIfResponseMustBeDisposed(Type deserializedResultType) =>
 
         // Rest method caller will have to dispose if it's one of those 3
         deserializedResultType != typeof(HttpResponseMessage)
@@ -563,44 +507,16 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets the compiled regular expression that matches URL path parameters, including an optional <c>?</c> marker.</summary>
     /// <returns>The parameter matching regular expression.</returns>
     [GeneratedRegex("{(([^/?\\r\\n])*?)(\\?)?}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex ParameterRegex();
+    internal static partial Regex ParameterRegex();
 #else
     /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
     /// <returns>The parameter matching regular expression.</returns>
-    private static Regex ParameterRegex() => _parameterRegexValue;
+    internal static Regex ParameterRegex() => _parameterRegexValue;
 #endif
-
-    /// <summary>Scans the parameters for an explicit <see cref="BodyAttribute"/>.</summary>
-    /// <param name="parameterArray">The array of method parameters.</param>
-    /// <returns>The first body attribute and its index, and whether more than one parameter carries one.</returns>
-    private static (BodyAttribute? Attribute, int Index, bool HasMultiple) FindBodyAttribute(
-        ParameterInfo[] parameterArray)
-    {
-        BodyAttribute? bodyAttribute = null;
-        var bodyParameterIndex = -1;
-        for (var i = 0; i < parameterArray.Length; i++)
-        {
-            var attribute = parameterArray[i].GetCustomAttribute<BodyAttribute>(true);
-            if (attribute is null)
-            {
-                continue;
-            }
-
-            if (bodyAttribute is not null)
-            {
-                return (bodyAttribute, bodyParameterIndex, true);
-            }
-
-            bodyAttribute = attribute;
-            bodyParameterIndex = i;
-        }
-
-        return (bodyAttribute, bodyParameterIndex, false);
-    }
 
     /// <summary>Builds the map of parameter indexes to multipart attachment names.</summary>
     /// <returns>A map of parameter indexes to attachment name pairs.</returns>
-    private Dictionary<int, Tuple<string, string>> BuildAttachmentNameMap()
+    internal Dictionary<int, Tuple<string, string>> BuildAttachmentNameMap()
     {
         if (!IsMultipart)
         {
@@ -635,7 +551,7 @@ internal partial class RestMethodInfoInternal
 
     /// <summary>Builds the map of parameter indexes to query string names.</summary>
     /// <returns>A map of parameter indexes to query string names.</returns>
-    private Dictionary<int, string> BuildQueryParameterMap()
+    internal Dictionary<int, string> BuildQueryParameterMap()
     {
         Dictionary<int, string>? queryDict = null;
         for (var i = 0; i < ParameterInfoArray.Length; i++)
@@ -655,14 +571,14 @@ internal partial class RestMethodInfoInternal
     /// <summary>Determines whether the parameter at the given index should be excluded from the query map.</summary>
     /// <param name="index">The parameter index to test.</param>
     /// <returns><see langword="true"/> when the parameter is not a query parameter; otherwise <see langword="false"/>.</returns>
-    private bool IsExcludedFromQueryMap(int index) =>
+    internal bool IsExcludedFromQueryMap(int index) =>
         ParameterMap.ContainsKey(index)
         || HeaderParameterMap.ContainsKey(index)
 
         // A parameter can carry both [Property] and [Query]; only exclude it from the
         // query map when it is a property AND does not also opt into the query string.
         || (PropertyParameterMap.ContainsKey(index)
-            && ParameterInfoArray[index].GetCustomAttribute<QueryAttribute>() is null)
+            && ParameterQueryAttributes[index] is null)
         || HeaderCollectionAt(index)
         || (BodyParameterInfo is not null && BodyParameterInfo.Item3 == index)
         || (AuthorizeParameterInfo is not null && AuthorizeParameterInfo.Item2 == index)
@@ -672,11 +588,13 @@ internal partial class RestMethodInfoInternal
 
     /// <summary>Finds the parameter that carries the request body.</summary>
     /// <param name="parameterArray">The array of method parameters.</param>
+    /// <param name="sets">The classified attribute set for each parameter.</param>
     /// <param name="isMultipart">A value indicating whether the request is multipart.</param>
     /// <param name="method">The HTTP method of the request.</param>
     /// <returns>The body parameter information, or null when there is no body parameter.</returns>
-    private Tuple<BodySerializationMethod, bool, int>? FindBodyParameter(
+    internal Tuple<BodySerializationMethod, bool, int>? FindBodyParameter(
         ParameterInfo[] parameterArray,
+        ParameterAttributeSet[] sets,
         bool isMultipart,
         HttpMethod method)
     {
@@ -684,7 +602,7 @@ internal partial class RestMethodInfoInternal
         // 1) [Body] attribute
         // 2) POST/PUT/PATCH: Reference type other than string
         // 3) If there are two reference types other than string, without the body attribute, throw
-        var (bodyAttribute, bodyParameterIndex, hasMultipleBodyParameters) = FindBodyAttribute(parameterArray);
+        var (bodyAttribute, bodyParameterIndex, hasMultipleBodyParameters) = FindBodyAttribute(sets);
 
         // multipart requests may not contain a body, implicit or explicit
         if (isMultipart)
@@ -716,14 +634,17 @@ internal partial class RestMethodInfoInternal
         return method.Equals(HttpMethod.Post)
             || method.Equals(HttpMethod.Put)
             || method.Equals(_patchMethod)
-            ? FindImplicitBodyParameter(parameterArray)
+            ? FindImplicitBodyParameter(parameterArray, sets)
             : null;
     }
 
     /// <summary>Finds an implicit body parameter for POST/PUT/PATCH requests.</summary>
     /// <param name="parameterArray">The array of method parameters.</param>
+    /// <param name="sets">The classified attribute set for each parameter.</param>
     /// <returns>The body parameter information, or null when there is no implicit body parameter.</returns>
-    private Tuple<BodySerializationMethod, bool, int>? FindImplicitBodyParameter(ParameterInfo[] parameterArray)
+    internal Tuple<BodySerializationMethod, bool, int>? FindImplicitBodyParameter(
+        ParameterInfo[] parameterArray,
+        ParameterAttributeSet[] sets)
     {
         // see if we're a post/put/patch
         // explicitly skip [Query], [HeaderCollection], and [Property]-denoted params
@@ -734,12 +655,12 @@ internal partial class RestMethodInfoInternal
             var parameter = parameterArray[i];
             if (parameter.ParameterType.GetTypeInfo().IsValueType
                 || parameter.ParameterType == typeof(string)
-                || parameter.GetCustomAttribute<QueryAttribute>() is not null
-                || parameter.GetCustomAttribute<HeaderCollectionAttribute>() is not null
-                || parameter.GetCustomAttribute<PropertyAttribute>() is not null
+                || sets[i].Query is not null
+                || sets[i].HeaderCollection is not null
+                || sets[i].Property is not null
 
                 // A [Url] Uri parameter supplies the request URI, never the implicit body.
-                || parameter.GetCustomAttribute<UrlAttribute>() is not null)
+                || sets[i].Url is not null)
             {
                 continue;
             }
@@ -766,5 +687,5 @@ internal partial class RestMethodInfoInternal
     /// <param name="RawName">The raw parameter name from the URL template.</param>
     /// <param name="Name">The normalized parameter name with any round-tripping prefix removed.</param>
     /// <param name="IsRoundTripping">A value indicating whether the parameter is round-tripping.</param>
-    private readonly record struct ParsedParameterName(string RawName, string Name, bool IsRoundTripping);
+    internal readonly record struct ParsedParameterName(string RawName, string Name, bool IsRoundTripping);
 }
