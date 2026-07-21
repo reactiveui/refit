@@ -332,7 +332,7 @@ internal static partial class Parser
         INamedTypeSymbol? formattableSymbol,
         in InterfaceGenerationContext context)
     {
-        if (data.CollectionFormatValue.HasValue && data.CollectionFormatValue != context.IndexedCollectionFormatValue)
+        if (!data.CollectionFormatValue.HasValue || data.CollectionFormatValue != context.IndexedCollectionFormatValue)
         {
             return null;
         }
