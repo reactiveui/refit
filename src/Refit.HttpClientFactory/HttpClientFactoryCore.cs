@@ -128,7 +128,7 @@ internal static class HttpClientFactoryCore
 
         // add typed client using framework AddTypedClient
         return builder.AddTypedClient(static (client, serviceProvider) =>
-            RestService.For<T>(
+            RestService.For(
                 client,
                 serviceProvider.GetRequiredService<IRequestBuilder<T>>()));
     }
@@ -259,7 +259,7 @@ internal static class HttpClientFactoryCore
             {
                 var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
                 var httpClient = httpClientFactory.CreateClient(builder.Name);
-                return RestService.For<T>(
+                return RestService.For(
                     httpClient,
                     s.GetRequiredKeyedService<IRequestBuilder<T>>(serviceKey));
             });

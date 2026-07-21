@@ -363,9 +363,10 @@ internal partial class RequestBuilderImplementation
             e = ex;
         }
 
+        const string allowedTypes = "String, Stream, FileInfo, Byte array and anything that's JSON serializable";
+        var parameterType = itemValue.GetType().Name;
         throw new ArgumentException(
-            $"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, "
-                + "whereas allowed types are String, Stream, FileInfo, Byte array and anything that's JSON serializable",
+            $"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {parameterType}, whereas allowed types are {allowedTypes}",
             nameof(itemValue),
             e);
     }

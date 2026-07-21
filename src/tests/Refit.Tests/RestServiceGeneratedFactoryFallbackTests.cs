@@ -19,7 +19,7 @@ public sealed class RestServiceGeneratedFactoryFallbackTests
         // Clear only the strongly typed holder so For<T> falls through to the type-keyed dictionary registered above.
         RestService.GeneratedSettingsFactory<IRestServiceFallbackApi>.Factory = null;
 
-        using var client = new HttpClient { BaseAddress = new("http://api/") };
+        using var client = HttpClientTestFactory.Create(new Uri("http://api/"));
         var api = RestService.For<IRestServiceFallbackApi>(client, new RefitSettings());
 
         await Assert.That(api).IsSameReferenceAs(stub);

@@ -291,7 +291,7 @@ internal static partial class Emitter
 
         _ = prologue.AppendLine(");");
         AppendInlineQueryStatements(prologue, request, parameterInfoNames, emission);
-        return emission.QueryBuilderLocal + ".Build()";
+        return $"{emission.QueryBuilderLocal}.Build()";
     }
 
     /// <summary>Assembles a cold-observable inline method: a per-subscription request factory and its send.</summary>
@@ -498,7 +498,7 @@ internal static partial class Emitter
                     {
                         // An [Authorize] parameter carries a "{scheme} " prefix; a plain [Header] has none.
                         var headerValueExpression = parameter.HeaderValuePrefix is { } valuePrefix
-                            ? ToCSharpStringLiteral(valuePrefix) + " + " + BuildHeaderValueExpression(parameter)
+                            ? $"{ToCSharpStringLiteral(valuePrefix)} + {BuildHeaderValueExpression(parameter)}"
                             : BuildHeaderValueExpression(parameter);
                         sb ??= new PooledStringBuilder();
                         var headerName = ToCSharpStringLiteral(parameter.HeaderName);

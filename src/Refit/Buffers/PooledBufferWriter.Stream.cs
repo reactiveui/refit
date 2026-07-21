@@ -26,7 +26,7 @@ internal sealed partial class PooledBufferWriter
 
         /// <summary>Initializes a new instance of the <see cref="PooledMemoryStream"/> class.</summary>
         /// <param name="writer">The <see cref="PooledBufferWriter"/> whose buffer is detached into the stream.</param>
-        public PooledMemoryStream(PooledBufferWriter writer)
+        internal PooledMemoryStream(PooledBufferWriter writer)
         {
             _length = writer._position;
             _pooledBuffer = writer._buffer;

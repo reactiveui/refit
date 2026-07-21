@@ -113,7 +113,7 @@ public partial class RestServiceIntegrationTests
             typeof(IGeneratedFactoryApi),
             static (client, builder) => new GeneratedFactoryApiClient(client, builder));
 
-        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
+        using var client = HttpClientTestFactory.Create(new Uri(BaseUrl));
 
         var instance = RestService.For<IGeneratedFactoryApi>(client);
         var generated = await Assert.That(instance).IsTypeOf<GeneratedFactoryApiClient>();
@@ -131,7 +131,7 @@ public partial class RestServiceIntegrationTests
             typeof(IGeneratedFactoryApi),
             static (client, builder) => new GeneratedFactoryApiClient(client, builder));
 
-        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
+        using var client = HttpClientTestFactory.Create(new Uri(BaseUrl));
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var instance = RestService.ForGenerated<IGeneratedFactoryApi>(client, settings);
@@ -152,7 +152,7 @@ public partial class RestServiceIntegrationTests
         RestService.RegisterGeneratedSettingsFactory<IGeneratedSettingsFactoryApi>(
             static (client, settings) => new GeneratedSettingsFactoryApiClient(client, settings));
 
-        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
+        using var client = HttpClientTestFactory.Create(new Uri(BaseUrl));
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var instance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>(client, settings);
@@ -205,7 +205,7 @@ public partial class RestServiceIntegrationTests
             typeof(IGeneratedTypeFactoryApi),
             static (client, builder) => new GeneratedTypeFactoryApiClient(client, builder));
 
-        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
+        using var client = HttpClientTestFactory.Create(new Uri(BaseUrl));
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var instance = RestService.ForGenerated(typeof(IGeneratedTypeFactoryApi), client, settings);
@@ -236,8 +236,8 @@ public partial class RestServiceIntegrationTests
             typeof(IGeneratedFactoryApi),
             static (client, builder) => new GeneratedFactoryApiClient(client, builder));
 
-        using var generatedClient = new HttpClient { BaseAddress = new("http://settings") };
-        using var reflectionClient = new HttpClient { BaseAddress = new("http://factory") };
+        using var generatedClient = HttpClientTestFactory.Create(new Uri("http://settings"));
+        using var reflectionClient = HttpClientTestFactory.Create(new Uri("http://factory"));
 
         var generatedOnly = RestService.ForGenerated<IGeneratedSettingsFactoryApi>(generatedClient);
         var reflectionPath = RestService.For(typeof(IGeneratedFactoryApi), reflectionClient);
@@ -260,7 +260,7 @@ public partial class RestServiceIntegrationTests
 
         try
         {
-            using var client = new HttpClient { BaseAddress = new("http://typed") };
+            using var client = HttpClientTestFactory.Create(new Uri("http://typed"));
             var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
             var instance = RestService.ForGenerated<IGeneratedTypedFactoryApi>(client, settings);
@@ -287,7 +287,7 @@ public partial class RestServiceIntegrationTests
 
         try
         {
-            using var client = new HttpClient { BaseAddress = new("http://typed-settings") };
+            using var client = HttpClientTestFactory.Create(new Uri("http://typed-settings"));
             var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
             var instance = RestService.ForGenerated<IGeneratedTypedSettingsFallbackApi>(client, settings);
@@ -307,7 +307,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ForGeneratedRequiresRegisteredFactory()
     {
-        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
+        using var client = HttpClientTestFactory.Create(new Uri(BaseUrl));
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var exception = await Assert
@@ -638,11 +638,10 @@ public partial class RestServiceIntegrationTests
 
         // compute resource name suffix
         var relativeName =
-            "."
-            + relativeFilePath
+            $".{relativeFilePath
                 .Replace('\\', namespaceSeparator)
                 .Replace('/', namespaceSeparator)
-                .Replace(' ', '_');
+                .Replace(' ', '_')}";
 
         // get resource stream
         var fullName = Array.Find(

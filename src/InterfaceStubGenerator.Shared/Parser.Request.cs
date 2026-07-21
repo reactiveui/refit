@@ -593,7 +593,7 @@ internal static partial class Parser
     /// <summary>The path parameter placeholders discovered in one method's URL template.</summary>
     /// <remarks>Backed by a single occurrence array (or none for the shared empty value); placeholder counts are tiny,
     /// so parameters are matched by a linear scan instead of a dictionary keyed by name.</remarks>
-    internal readonly struct PathParameterLocations : IEquatable<PathParameterLocations>
+    internal readonly partial struct PathParameterLocations : IEquatable<PathParameterLocations>
     {
         /// <summary>The length of the round-trip placeholder prefix (<c>**</c>).</summary>
         private const int RoundTripPrefixLength = 2;
@@ -605,7 +605,7 @@ internal static partial class Parser
         /// <param name="occurrences">The placeholder occurrences in template order.</param>
         /// <param name="hasRoundTrip">Whether any placeholder is a round-trip (<c>{**name}</c>) placeholder.</param>
         /// <param name="hasDotted">Whether any placeholder name binds a nested property (<c>{param.Prop}</c>).</param>
-        public PathParameterLocations(PathPlaceholderOccurrence[] occurrences, bool hasRoundTrip, bool hasDotted)
+        internal PathParameterLocations(PathPlaceholderOccurrence[] occurrences, bool hasRoundTrip, bool hasDotted)
         {
             _occurrences = occurrences;
             HasRoundTrip = hasRoundTrip;
@@ -613,34 +613,22 @@ internal static partial class Parser
         }
 
         /// <summary>Gets the shared empty value for paths that declare no placeholders.</summary>
-        public static PathParameterLocations Empty => default;
+        internal static PathParameterLocations Empty => default;
 
         /// <summary>Gets a value indicating whether any placeholder is a round-trip (<c>{**name}</c>) placeholder.</summary>
-        public bool HasRoundTrip { get; }
+        internal bool HasRoundTrip { get; }
 
         /// <summary>Gets a value indicating whether any placeholder binds a nested property (<c>{param.Prop}</c>).</summary>
-        public bool HasDotted { get; }
+        internal bool HasDotted { get; }
 
         /// <summary>Gets the placeholder occurrences in template order.</summary>
-        public ReadOnlySpan<PathPlaceholderOccurrence> Occurrences => _occurrences;
-
-        /// <summary>Determines whether two placeholder sets share the same backing occurrences.</summary>
-        /// <param name="left">The left value.</param>
-        /// <param name="right">The right value.</param>
-        /// <returns><see langword="true"/> when both wrap the same occurrence array.</returns>
-        public static bool operator ==(PathParameterLocations left, PathParameterLocations right) => left.Equals(right);
-
-        /// <summary>Determines whether two placeholder sets wrap different backing occurrences.</summary>
-        /// <param name="left">The left value.</param>
-        /// <param name="right">The right value.</param>
-        /// <returns><see langword="true"/> when the values differ.</returns>
-        public static bool operator !=(PathParameterLocations left, PathParameterLocations right) => !left.Equals(right);
+        internal ReadOnlySpan<PathPlaceholderOccurrence> Occurrences => _occurrences;
 
         /// <summary>Collects the ranges of the placeholder whose name matches a parameter's URL name.</summary>
         /// <param name="name">The parameter's URL name.</param>
         /// <param name="locations">Receives the matching placeholder ranges in template order.</param>
         /// <returns><see langword="true"/> when at least one placeholder matches.</returns>
-        public bool TryGetDirectLocations(string name, out ImmutableEquatableArray<Range> locations)
+        internal bool TryGetDirectLocations(string name, out ImmutableEquatableArray<Range> locations)
         {
             var occurrences = _occurrences;
             if (occurrences is not null)
@@ -669,7 +657,7 @@ internal static partial class Parser
         /// <param name="name">The parameter's URL name.</param>
         /// <param name="locations">Receives the matching placeholder ranges in template order.</param>
         /// <returns><see langword="true"/> when at least one round-trip placeholder matches.</returns>
-        public bool TryGetRoundTripLocations(string name, out ImmutableEquatableArray<Range> locations)
+        internal bool TryGetRoundTripLocations(string name, out ImmutableEquatableArray<Range> locations)
         {
             var occurrences = _occurrences;
             if (occurrences is not null)
@@ -693,15 +681,6 @@ internal static partial class Parser
             locations = ImmutableEquatableArray<Range>.Empty;
             return false;
         }
-
-        /// <inheritdoc/>
-        public bool Equals(PathParameterLocations other) => ReferenceEquals(_occurrences, other._occurrences);
-
-        /// <inheritdoc/>
-        public override bool Equals(object? obj) => obj is PathParameterLocations other && Equals(other);
-
-        /// <inheritdoc/>
-        public override int GetHashCode() => _occurrences?.GetHashCode() ?? 0;
 
         /// <summary>Determines whether a placeholder name is the round-trip form (<c>**name</c>) of a parameter name.</summary>
         /// <param name="placeholderName">The placeholder name.</param>
@@ -757,7 +736,7 @@ internal static partial class Parser
 
         /// <summary>Initializes a new instance of the <see cref="PathPlaceholderScanner"/> struct.</summary>
         /// <param name="path">The path template to scan.</param>
-        public PathPlaceholderScanner(ReadOnlySpan<char> path)
+        internal PathPlaceholderScanner(ReadOnlySpan<char> path)
         {
             _path = path;
             _i = path.IndexOf('{');
@@ -767,14 +746,14 @@ internal static partial class Parser
         }
 
         /// <summary>Gets the index of the current placeholder's opening brace.</summary>
-        public int Start { get; private set; }
+        internal int Start { get; private set; }
 
         /// <summary>Gets the index of the current placeholder's closing brace.</summary>
-        public int End { get; private set; }
+        internal int End { get; private set; }
 
         /// <summary>Advances to the next <c>}</c>-terminated placeholder.</summary>
         /// <returns><see langword="true"/> when a placeholder was found.</returns>
-        public bool MoveNext()
+        internal bool MoveNext()
         {
             // _i always points at a '{' that IndexOf located, so it is always in range; only _j can fall behind _i
             // (when no '}' or '/' follows the brace), which ends the scan.

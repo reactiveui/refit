@@ -22,10 +22,10 @@ public sealed partial class ResponseTests
     private const string BaseAddress = "http://api";
 
     /// <summary>Endpoint URL for the alias test operation.</summary>
-    private const string AliasTestUrl = BaseAddress + "/aliasTest";
+    private const string AliasTestUrl = $"{BaseAddress}/aliasTest";
 
     /// <summary>Endpoint URL for the API response test operation.</summary>
-    private const string GetApiResponseTestObjectUrl = BaseAddress + "/GetApiResponseTestObject";
+    private const string GetApiResponseTestObjectUrl = $"{BaseAddress}/GetApiResponseTestObject";
 
     /// <summary>Media type used for RFC 7807 problem-details responses.</summary>
     private const string ProblemJsonMediaType = "application/problem+json";

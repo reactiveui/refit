@@ -103,7 +103,7 @@ internal static partial class Parser
         var trimmedPath = path.TrimStart('/');
         return trimmedPath.Length == 0
             ? trimmedPrefix
-            : trimmedPrefix + "/" + trimmedPath;
+            : $"{trimmedPrefix}/{trimmedPath}";
     }
 
     /// <summary>Normalizes constant inline paths to match the reflection request builder URI cleanup.</summary>

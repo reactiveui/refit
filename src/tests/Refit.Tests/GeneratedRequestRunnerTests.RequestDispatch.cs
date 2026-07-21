@@ -120,7 +120,7 @@ public partial class GeneratedRequestRunnerTests
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
-        GeneratedRequestRunner.AddRequestProperty<int>(request, "number", RequestPropertyValue);
+        GeneratedRequestRunner.AddRequestProperty(request, "number", RequestPropertyValue);
 
 #if NET6_0_OR_GREATER
         await Assert.That(request.Options.TryGetValue(new HttpRequestOptionsKey<int>("number"), out var value))
@@ -449,7 +449,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRelativeUriThrowsWhenBaseAddressMissing()
     {
-        using var client = new HttpClient();
+        using var client = HttpClientTestFactory.Create();
 
         await Assert
             .That(() => GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy))
@@ -461,7 +461,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRelativeUriPrependsBasePathInLegacyMode()
     {
-        using var client = new HttpClient { BaseAddress = new("http://foo/api/") };
+        using var client = HttpClientTestFactory.Create(new Uri("http://foo/api/"));
 
         var uri = GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy);
 
@@ -473,7 +473,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRelativeUriEmitsRelativePathInRfcMode()
     {
-        using var client = new HttpClient();
+        using var client = HttpClientTestFactory.Create();
 
         var uri = GeneratedRequestRunner.BuildRelativeUri(client, "x", UrlResolutionMode.Rfc3986);
 
@@ -486,7 +486,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRelativeUriWithQueryFormatEmitsRelativePathInRfcMode()
     {
-        using var client = new HttpClient();
+        using var client = HttpClientTestFactory.Create();
 
         var uri = GeneratedRequestRunner.BuildRelativeUri(client, "x", UrlResolutionMode.Rfc3986, UriFormat.UriEscaped);
 
@@ -498,7 +498,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRelativeUriWithQueryFormatPrependsBasePathInLegacyMode()
     {
-        using var client = new HttpClient { BaseAddress = new("http://foo/api/") };
+        using var client = HttpClientTestFactory.Create(new Uri("http://foo/api/"));
 
         var uri = GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy, UriFormat.UriEscaped);
 
@@ -510,7 +510,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRelativeUriWithQueryFormatUsesEmptyBasePathForRootBaseAddress()
     {
-        using var client = new HttpClient { BaseAddress = new("http://foo/") };
+        using var client = HttpClientTestFactory.Create(new Uri("http://foo/"));
 
         var uri = GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy, UriFormat.UriEscaped);
 
@@ -522,7 +522,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRelativeUriWithQueryFormatThrowsWhenBaseAddressMissing()
     {
-        using var client = new HttpClient();
+        using var client = HttpClientTestFactory.Create();
 
         await Assert
             .That(() => GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy, UriFormat.UriEscaped))

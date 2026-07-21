@@ -10,7 +10,7 @@ namespace Refit.Buffers;
 internal sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposable
 {
     /// <summary>The default size to use to create new <see cref="PooledBufferWriter"/> instances.</summary>
-    public const int DefaultSize = 1024;
+    internal const int DefaultSize = 1024;
 
     /// <summary>The <see cref="byte"/> array current in use.</summary>
     private byte[] _buffer;
@@ -19,7 +19,7 @@ internal sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposa
     private int _position;
 
     /// <summary>Initializes a new instance of the <see cref="PooledBufferWriter"/> class.</summary>
-    public PooledBufferWriter()
+    internal PooledBufferWriter()
     {
         _buffer = ArrayPool<byte>.Shared.Rent(DefaultSize);
         _position = 0;
@@ -70,7 +70,7 @@ internal sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposa
 
     /// <summary>Gets a readable <see cref="Stream"/> for the current instance, by detaching the used buffer.</summary>
     /// <returns>A readable <see cref="Stream"/> with the contents of the current instance.</returns>
-    public Stream DetachStream()
+    internal Stream DetachStream()
     {
         var stream = new PooledMemoryStream(this);
 

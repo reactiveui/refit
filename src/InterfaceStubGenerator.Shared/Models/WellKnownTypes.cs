@@ -30,7 +30,7 @@ public class WellKnownTypes(Compilation compilation)
                 return fullName;
             }
 
-            throw new InvalidOperationException("Could not get name of type " + candidate.Name);
+            throw new InvalidOperationException($"Could not get name of type {candidate.Name}");
         }
     }
 
@@ -54,5 +54,5 @@ public class WellKnownTypes(Compilation compilation)
     /// <param name="typeFullName">Full name of the type.</param>
     /// <returns>The resolved named type symbol.</returns>
     private INamedTypeSymbol Get(string typeFullName) =>
-        TryGet(typeFullName) ?? throw new InvalidOperationException("Could not get type " + typeFullName);
+        TryGet(typeFullName) ?? throw new InvalidOperationException($"Could not get type {typeFullName}");
 }

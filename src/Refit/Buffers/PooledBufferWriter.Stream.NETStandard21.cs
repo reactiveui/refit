@@ -18,26 +18,6 @@ internal sealed partial class PooledBufferWriter
     /// <summary>An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool.</summary>
     internal sealed partial class PooledMemoryStream : Stream
     {
-        /// <summary>Asynchronously copies the remaining buffered bytes to the destination stream.</summary>
-        /// <param name="destination">The stream to copy the buffered bytes to.</param>
-        /// <param name="cancellationToken">A token to cancel the operation.</param>
-        /// <returns>A task representing the copy operation.</returns>
-        public Task CopyToInternalAsync(Stream destination, CancellationToken cancellationToken)
-        {
-            if (_pooledBuffer is null)
-            {
-                throw CreateObjectDisposedException();
-            }
-
-            var bytesAvailable = _length - _position;
-
-            var source = _pooledBuffer.AsMemory(_position, bytesAvailable);
-
-            _position += source.Length;
-
-            return destination.WriteAsync(source, cancellationToken).AsTask();
-        }
-
         /// <inheritdoc/>
         [System.Diagnostics.CodeAnalysis.SuppressMessage(
             "Roslynator",
@@ -90,6 +70,24 @@ internal sealed partial class PooledBufferWriter
             _position += bytesCopied;
 
             return bytesCopied;
+        }
+
+        /// <summary>Asynchronously copies the remaining buffered bytes to the destination stream.</summary>
+        /// <param name="destination">The stream to copy the buffered bytes to.</param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A task representing the copy operation.</returns>
+        internal Task CopyToInternalAsync(Stream destination, CancellationToken cancellationToken)
+        {
+            if (_pooledBuffer is null)
+            {
+                throw CreateObjectDisposedException();
+            }
+
+            var bytesAvailable = _length - _position;
+            var source = _pooledBuffer.AsMemory(_position, bytesAvailable);
+            _position += source.Length;
+
+            return destination.WriteAsync(source, cancellationToken).AsTask();
         }
     }
 }

@@ -67,7 +67,7 @@ public sealed class RelativePathResolutionLiveTests
     {
         using var context = Compile(out var interfaceType, out var generatedType);
         using var handler = new CapturingHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var requestBuilder = RequestBuilder.ForType(interfaceType, new RefitSettings { UrlResolution = UrlResolutionMode.Rfc3986 });
         var generatedApi = Activator.CreateInstance(generatedType, [client, requestBuilder])!;
 
@@ -91,7 +91,7 @@ public sealed class RelativePathResolutionLiveTests
     {
         using var context = Compile(out var interfaceType, out var generatedType);
         using var handler = new CapturingHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
 
         // The generated client, built from settings alone, rejects the relative path under legacy resolution.
         var generatedApi = Activator.CreateInstance(generatedType, [client, new RefitSettings()])!;
@@ -123,7 +123,7 @@ public sealed class RelativePathResolutionLiveTests
         if (!result.CompilesWithoutErrors)
         {
             throw new InvalidOperationException(
-                "Generated compilation failed: " + string.Join(Environment.NewLine, result.CompilationErrors));
+                $"Generated compilation failed: {string.Join(Environment.NewLine, result.CompilationErrors)}");
         }
 
         var (assembly, loadContext) = Fixture.EmitAndLoad(result);

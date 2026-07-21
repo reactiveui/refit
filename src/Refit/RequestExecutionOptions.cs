@@ -12,7 +12,7 @@ internal readonly struct RequestExecutionOptions : IEquatable<RequestExecutionOp
     /// <param name="shouldDisposeResponse">Whether the response should be disposed by the response processor.</param>
     /// <param name="bufferBody">Whether request content should be buffered before sending.</param>
     /// <param name="applyAuthorizationHeader">Whether to run the authorization-header value getter before sending.</param>
-    public RequestExecutionOptions(
+    internal RequestExecutionOptions(
         bool isApiResponse,
         bool shouldDisposeResponse,
         bool bufferBody,
@@ -25,16 +25,16 @@ internal readonly struct RequestExecutionOptions : IEquatable<RequestExecutionOp
     }
 
     /// <summary>Gets a value indicating whether the caller expects an API response wrapper.</summary>
-    public bool IsApiResponse { get; }
+    internal bool IsApiResponse { get; }
 
     /// <summary>Gets a value indicating whether the response should be disposed by the response processor.</summary>
-    public bool ShouldDisposeResponse { get; }
+    internal bool ShouldDisposeResponse { get; }
 
     /// <summary>Gets a value indicating whether request content should be buffered before sending.</summary>
-    public bool BufferBody { get; }
+    internal bool BufferBody { get; }
 
     /// <summary>Gets a value indicating whether the authorization-header getter should run before sending.</summary>
-    public bool ApplyAuthorizationHeader { get; }
+    internal bool ApplyAuthorizationHeader { get; }
 
     /// <inheritdoc/>
     public static bool operator ==(RequestExecutionOptions left, RequestExecutionOptions right) =>

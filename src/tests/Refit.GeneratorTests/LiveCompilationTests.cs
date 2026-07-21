@@ -71,10 +71,7 @@ public sealed class LiveCompilationTests
             .Single(type => type.IsClass && interfaceType.IsAssignableFrom(type));
 
         using var handler = new CapturingHandler();
-        using var client = new HttpClient(handler)
-        {
-            BaseAddress = new("https://example.test/base/")
-        };
+        using var client = HttpClientTestFactory.Create(handler, new("https://example.test/base/"));
         var settings = new RefitSettings();
         var requestBuilder = RequestBuilder.ForType(interfaceType, settings);
         var api = Activator.CreateInstance(generatedType, [client, requestBuilder])!;

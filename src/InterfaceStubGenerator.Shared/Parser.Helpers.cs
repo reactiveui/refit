@@ -65,7 +65,7 @@ internal static partial class Parser
     /// <param name="identifier">The simple identifier to escape.</param>
     /// <returns>The identifier, prefixed with <c>@</c> when it is a reserved keyword; otherwise the identifier itself.</returns>
     internal static string EscapeIdentifier(string identifier) =>
-        SyntaxFacts.GetKeywordKind(identifier) != SyntaxKind.None ? "@" + identifier : identifier;
+        SyntaxFacts.GetKeywordKind(identifier) != SyntaxKind.None ? $"@{identifier}" : identifier;
 
     /// <summary>Determines whether a method is decorated with a Refit HTTP method attribute.</summary>
     /// <param name="methodSymbol">The method symbol to inspect.</param>

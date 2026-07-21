@@ -94,7 +94,7 @@ internal static partial class Emitter
             if (parameter.Kind == RequestParameterKind.Property)
             {
                 var key = ToCSharpStringLiteral(parameter.PropertyKey);
-                AppendRequestProperty(sb, bodyIndent, requestLocal, parameter.Type, key, "@" + parameter.Name);
+                AppendRequestProperty(sb, bodyIndent, requestLocal, parameter.Type, key, $"@{parameter.Name}");
             }
         }
     }

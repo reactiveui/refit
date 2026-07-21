@@ -16,7 +16,7 @@ internal static class ITypeSymbolExtensions
         /// <param name="baseType">The base type to look for.</param>
         /// <param name="includeInterfaces">True to also consider implemented interfaces.</param>
         /// <returns>True if the type inherits from or equals the base type.</returns>
-        public bool InheritsFromOrEquals(ITypeSymbol baseType, bool includeInterfaces)
+        internal bool InheritsFromOrEquals(ITypeSymbol baseType, bool includeInterfaces)
         {
             if (type.InheritsFromOrEquals(baseType))
             {
@@ -43,7 +43,7 @@ internal static class ITypeSymbolExtensions
         /// <summary>Determines whether the type inherits from or equals the base type, ignoring interfaces.</summary>
         /// <param name="baseType">The base type to look for.</param>
         /// <returns>True if the type inherits from or equals the base type.</returns>
-        public bool InheritsFromOrEquals(ITypeSymbol baseType)
+        internal bool InheritsFromOrEquals(ITypeSymbol baseType)
         {
             var current = type;
             while (current is not null)

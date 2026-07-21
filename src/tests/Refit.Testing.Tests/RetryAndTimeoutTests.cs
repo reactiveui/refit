@@ -116,11 +116,8 @@ public sealed class RetryAndTimeoutTests
         const int clientTimeoutMilliseconds = 50;
         var handler = CreateDelayedHandler(TimeSpan.FromSeconds(injectedDelaySeconds));
 
-        using var client = new HttpClient(handler)
-        {
-            BaseAddress = new(BaseUrl),
-            Timeout = TimeSpan.FromMilliseconds(clientTimeoutMilliseconds),
-        };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseUrl));
+        client.Timeout = TimeSpan.FromMilliseconds(clientTimeoutMilliseconds);
         var api = RestService.For<IUserApi>(client);
 
         var error = await Assert.That(async () => _ = await api.GetUser(SampleUserId)).ThrowsExactly<ApiRequestException>();
@@ -136,11 +133,8 @@ public sealed class RetryAndTimeoutTests
         const int clientTimeoutSeconds = 30;
         var handler = CreateDelayedHandler(TimeSpan.FromMilliseconds(1));
 
-        using var client = new HttpClient(handler)
-        {
-            BaseAddress = new(BaseUrl),
-            Timeout = TimeSpan.FromSeconds(clientTimeoutSeconds),
-        };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseUrl));
+        client.Timeout = TimeSpan.FromSeconds(clientTimeoutSeconds);
         var api = RestService.For<IUserApi>(client);
 
         var user = await api.GetUser(SampleUserId);

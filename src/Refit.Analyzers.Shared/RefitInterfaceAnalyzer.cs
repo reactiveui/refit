@@ -126,7 +126,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <returns>The parsed option value.</returns>
     private static bool GetBooleanOption(AnalyzerConfigOptions options, string name, bool defaultValue)
     {
-        if (options.TryGetValue("build_property." + name, out var buildPropertyValue)
+        if (options.TryGetValue($"build_property.{name}", out var buildPropertyValue)
             && bool.TryParse(buildPropertyValue, out var buildPropertyParsed))
         {
             return buildPropertyParsed;

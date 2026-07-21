@@ -529,7 +529,7 @@ public static partial class GeneratedRequestRunner
             }
         }
 
-        AddRequestProperty<Type>(request, HttpRequestMessageOptions.InterfaceType, interfaceType);
+        AddRequestProperty(request, HttpRequestMessageOptions.InterfaceType, interfaceType);
 
 #if NET6_0_OR_GREATER
         request.Version = settings.Version;
@@ -571,9 +571,10 @@ public static partial class GeneratedRequestRunner
         }
         catch (Exception ex)
         {
+            var parameterType = value?.GetType().Name;
+            const string allowedTypes = "String, Stream, FileInfo, Byte array and anything that's JSON serializable";
             throw new ArgumentException(
-                $"Unexpected parameter type in a Multipart request. Parameter {fieldName} is of type {value?.GetType().Name}, "
-                    + "whereas allowed types are String, Stream, FileInfo, Byte array and anything that's JSON serializable",
+                $"Unexpected parameter type in a Multipart request. Parameter {fieldName} is of type {parameterType}, whereas allowed types are {allowedTypes}",
                 nameof(value),
                 ex);
         }

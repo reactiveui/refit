@@ -14,7 +14,7 @@ internal static class MethodArgumentCaptureAssertions
     /// <param name="request">The built request message to inspect.</param>
     /// <param name="expectedArguments">The expected argument values, in declared parameter order.</param>
     /// <returns>A task that represents the asynchronous assertion.</returns>
-    public static async Task AssertCapturedAsync(HttpRequestMessage request, params object?[] expectedArguments)
+    internal static async Task AssertCapturedAsync(HttpRequestMessage request, params object?[] expectedArguments)
     {
         var captured = GetCapturedArguments(request);
         await Assert.That(captured).IsNotNull();
@@ -24,7 +24,7 @@ internal static class MethodArgumentCaptureAssertions
     /// <summary>Asserts the request did not capture the method-arguments option.</summary>
     /// <param name="request">The built request message to inspect.</param>
     /// <returns>A task that represents the asynchronous assertion.</returns>
-    public static async Task AssertAbsentAsync(HttpRequestMessage request) =>
+    internal static async Task AssertAbsentAsync(HttpRequestMessage request) =>
         await Assert.That(GetCapturedArguments(request)).IsNull();
 
     /// <summary>Reads the captured argument array from the request options, or null when it was not captured.</summary>

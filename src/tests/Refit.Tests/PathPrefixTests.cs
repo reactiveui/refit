@@ -167,7 +167,7 @@ public class PathPrefixTests
     private static async Task<string> GeneratedPathAndQueryAsync<T>(Func<T, Task> call)
     {
         var handler = new TestHttpMessageHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.ForGenerated<T>(client, new RefitSettings());
 
         await call(api);

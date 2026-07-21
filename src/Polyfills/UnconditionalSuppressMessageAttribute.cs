@@ -13,8 +13,28 @@ namespace System.Diagnostics.CodeAnalysis;
     AllowMultiple = true,
     Inherited = false)]
 [ExcludeFromCodeCoverage]
-internal sealed class UnconditionalSuppressMessageAttribute(string category, string checkId) : Attribute
+internal sealed class UnconditionalSuppressMessageAttribute(string category, string checkId)
+    : Attribute, UnconditionalSuppressMessageAttribute.IMetadata
 {
+    /// <summary>Defines the analysis-required public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the diagnostic category.</summary>
+        string Category { get; }
+
+        /// <summary>Gets the diagnostic identifier.</summary>
+        string CheckId { get; }
+
+        /// <summary>Gets or sets the suppression justification.</summary>
+        string? Justification { get; set; }
+
+        /// <summary>Gets or sets the diagnostic scope.</summary>
+        string? Scope { get; set; }
+
+        /// <summary>Gets or sets the suppression target.</summary>
+        string? Target { get; set; }
+    }
+
     /// <summary>Gets the category for the suppressed diagnostic.</summary>
     public string Category { get; } = category;
 

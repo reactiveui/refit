@@ -14,10 +14,10 @@ internal sealed class GeneratedFactoryApiClient(HttpClient client, IRequestBuild
     : IGeneratedFactoryApi
 {
     /// <summary>Gets the HTTP client supplied to the factory.</summary>
-    public HttpClient Client { get; } = client;
+    internal HttpClient Client { get; } = client;
 
     /// <summary>Gets the request builder supplied to the factory.</summary>
-    public IRequestBuilder Builder { get; } = builder;
+    internal IRequestBuilder Builder { get; } = builder;
 
     /// <inheritdoc/>
     public Task Get() => Task.CompletedTask;

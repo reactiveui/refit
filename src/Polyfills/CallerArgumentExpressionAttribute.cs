@@ -13,8 +13,16 @@ namespace System.Runtime.CompilerServices;
 [ExcludeFromCodeCoverage]
 [DebuggerNonUserCode]
 [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
-internal sealed class CallerArgumentExpressionAttribute(string parameterName) : Attribute
+internal sealed class CallerArgumentExpressionAttribute(string parameterName)
+    : Attribute, CallerArgumentExpressionAttribute.IMetadata
 {
+    /// <summary>Defines the compiler-required public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the parameter whose source expression should be captured.</summary>
+        string ParameterName { get; }
+    }
+
     /// <summary>Gets the parameter whose source expression should be captured.</summary>
     public string ParameterName { get; } = parameterName;
 }

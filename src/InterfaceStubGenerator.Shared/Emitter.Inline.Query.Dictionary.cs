@@ -30,9 +30,9 @@ internal static partial class Emitter
         var dictionary = query.Dictionary!;
         var bodyIndent = Indent(MethodBodyIndentation);
         var guarded = parameter.CanBeNull;
-        var indent = guarded ? bodyIndent + "    " : bodyIndent;
-        var entryLocal = emission.QueryValueLocal + "_entry";
-        var keyLocal = emission.QueryValueLocal + "_key";
+        var indent = guarded ? $"{bodyIndent}    " : bodyIndent;
+        var entryLocal = $"{emission.QueryValueLocal}_entry";
+        var keyLocal = $"{emission.QueryValueLocal}_key";
         var valueLocal = emission.QueryValueLocal + ValueLocalSuffix;
 
         if (guarded)
@@ -44,7 +44,7 @@ internal static partial class Emitter
         _ = sb.Append(indent).Append(ForeachVarKeyword).Append(entryLocal).Append(" in @").Append(parameter.Name).AppendLine(")")
             .Append(indent).AppendLine("{");
 
-        var entryIndent = indent + "    ";
+        var entryIndent = $"{indent}    ";
         _ = sb.Append(entryIndent).Append("var ").Append(valueLocal).Append(" = ").Append(entryLocal).AppendLine(".Value;");
 
         var valueIndent = entryIndent;
@@ -53,7 +53,7 @@ internal static partial class Emitter
             // The reflection builder skips an entry whose value is null before it ever formats the key.
             _ = sb.Append(entryIndent).Append("if (").Append(valueLocal).AppendLine(NotNullCheckSuffix)
                 .Append(entryIndent).AppendLine("{");
-            valueIndent = entryIndent + "    ";
+            valueIndent = $"{entryIndent}    ";
         }
 
         var entry = new DictionaryEntrySite(entryLocal, keyLocal, valueLocal, valueIndent);
@@ -93,7 +93,7 @@ internal static partial class Emitter
         var (entryLocal, keyLocal, valueLocal, indent) = entry;
         var keyTypeOf = $"typeof({dictionary.KeyTypeName})";
         var customKey = EmitFormatUrlParameter($"{entryLocal}.Key", keyTypeOf, keyTypeOf, emission);
-        var fastKey = BuildFastFormatExpression(entryLocal + ".Key", dictionary.KeyFormat, emission);
+        var fastKey = BuildFastFormatExpression($"{entryLocal}.Key", dictionary.KeyFormat, emission);
         var keyExpression = fastKey is null
             ? customKey
             : $"{emission.UseDefaultFormattingLocal} ? ({fastKey}) : {customKey}";
@@ -102,7 +102,7 @@ internal static partial class Emitter
             .Append(indent).Append("if (!string.IsNullOrWhiteSpace(").Append(keyLocal).AppendLine("))")
             .Append(indent).AppendLine("{");
 
-        var innerIndent = indent + "    ";
+        var innerIndent = $"{indent}    ";
         if (dictionary.ValueProperties is { } valueProperties)
         {
             AppendDictionaryValueFlatten(sb, parameter, query, providerField, emission, entry, valueProperties);
@@ -146,12 +146,12 @@ internal static partial class Emitter
     {
         var dictionary = query.Dictionary!;
         var (_, keyLocal, valueLocal, entryIndent) = entry;
-        var indent = entryIndent + "    ";
+        var indent = $"{entryIndent}    ";
 
         var parentKeyExpression = keyLocal;
         if (dictionary.PrefixSegment is { } prefix)
         {
-            var parentKeyLocal = keyLocal + "_prefixed";
+            var parentKeyLocal = $"{keyLocal}_prefixed";
             _ = sb.Append(indent).Append("var ").Append(parentKeyLocal).Append(" = ")
                 .Append(ToCSharpStringLiteral(prefix)).Append(" + ").Append(keyLocal).AppendLine(";");
             parentKeyExpression = parentKeyLocal;

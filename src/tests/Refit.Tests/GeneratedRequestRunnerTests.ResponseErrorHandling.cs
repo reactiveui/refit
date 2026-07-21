@@ -49,7 +49,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendVoidAsyncRequiresBaseAddress()
     {
-        using var client = new HttpClient(new CapturingHandler());
+        using var client = HttpClientTestFactory.Create(new CapturingHandler());
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var exception = await Assert
@@ -350,7 +350,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncRequiresBaseAddress()
     {
-        using var client = new HttpClient(new CapturingHandler());
+        using var client = HttpClientTestFactory.Create(new CapturingHandler());
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var exception = await Assert

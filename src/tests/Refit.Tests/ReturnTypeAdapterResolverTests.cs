@@ -274,7 +274,7 @@ public sealed class ReturnTypeAdapterResolverTests
 
     /// <summary>A non-generic return shape surfaced by a closed adapter; no interface method returns it, so the
     /// generator never references the adapter.</summary>
-    private sealed class AdapterShape
+    public sealed class AdapterShape
     {
         /// <summary>Gets the shape id.</summary>
         public int Id { get; init; }
@@ -283,10 +283,22 @@ public sealed class ReturnTypeAdapterResolverTests
     /// <summary>A single-parameter generic return shape used by the generic adapters; no interface method returns it,
     /// so the generator never references the adapters.</summary>
     /// <typeparam name="T">The wrapped value type.</typeparam>
-    private sealed class Wrapped<T>
+    public sealed class Wrapped<T>
     {
         /// <summary>Gets the wrapped value.</summary>
         public T? Value { get; init; }
+    }
+
+    /// <summary>A two-parameter generic return shape used by the reordered adapter.</summary>
+    /// <typeparam name="TFirst">The first wrapped value type.</typeparam>
+    /// <typeparam name="TSecond">The second wrapped value type.</typeparam>
+    public sealed class Paired<TFirst, TSecond>
+    {
+        /// <summary>Gets the first wrapped value.</summary>
+        public TFirst? First { get; init; }
+
+        /// <summary>Gets the second wrapped value.</summary>
+        public TSecond? Second { get; init; }
     }
 
     /// <summary>A closed adapter surfacing <see cref="AdapterShape"/> as a string.</summary>
@@ -362,18 +374,6 @@ public sealed class ReturnTypeAdapterResolverTests
     {
         /// <inheritdoc/>
         public Wrapped<int> Adapt(Func<CancellationToken, Task<T>> invoke) => new();
-    }
-
-    /// <summary>A two-parameter generic return shape used by the reordered adapter.</summary>
-    /// <typeparam name="TFirst">The first wrapped value type.</typeparam>
-    /// <typeparam name="TSecond">The second wrapped value type.</typeparam>
-    private sealed class Paired<TFirst, TSecond>
-    {
-        /// <summary>Gets the first wrapped value.</summary>
-        public TFirst? First { get; init; }
-
-        /// <summary>Gets the second wrapped value.</summary>
-        public TSecond? Second { get; init; }
     }
 
     /// <summary>An open generic adapter whose wrapper reorders the adapter's type parameters.</summary>

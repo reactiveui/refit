@@ -253,7 +253,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
         foreach (var b in line)
         {
-            if (b != (byte)' ' && b != (byte)'\t')
+            if (b is not ((byte)' ' or (byte)'\t'))
             {
                 return false;
             }
@@ -284,7 +284,6 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     internal static JsonTypeInfo GetJsonTypeInfo(Type type, JsonSerializerOptions jsonSerializerOptions) =>
         jsonSerializerOptions.GetTypeInfo(type); // Returns non-null metadata for the requested type or throws; there is no null case to guard.
 
-#if NET11_0_OR_GREATER
     /// <summary>Gets the JSON type metadata for the given type from the supplied options.</summary>
     /// <typeparam name="T">The type to resolve metadata for.</typeparam>
     /// <param name="jsonSerializerOptions">The serializer options to consult.</param>
@@ -294,7 +293,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     internal static JsonTypeInfo<T> GetJsonTypeInfo<T>(JsonSerializerOptions jsonSerializerOptions) =>
+#if NET11_0_OR_GREATER
         jsonSerializerOptions.GetTypeInfo<T>();
+#else
+        (JsonTypeInfo<T>)GetJsonTypeInfo(typeof(T), jsonSerializerOptions);
 #endif
 #endif
 
@@ -306,12 +308,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal JsonTypeInfo<T> GetJsonTypeInfo<T>() =>
-#if NET11_0_OR_GREATER
-        GetJsonTypeInfo<T>(jsonSerializerOptions); // Returns the strongly typed metadata for the exact type T, never null.
-#else
-        (JsonTypeInfo<T>)GetJsonTypeInfo(typeof(T), jsonSerializerOptions); // GetTypeInfo(typeof(T)) is the exact JsonTypeInfo<T>, so the cast always succeeds.
-#endif
+    internal JsonTypeInfo<T> GetJsonTypeInfo<T>() => GetJsonTypeInfo<T>(jsonSerializerOptions);
 #endif
 
     /// <summary>Serializes the item to HTTP content using the supplied runtime type.</summary>
@@ -441,28 +438,15 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     internal IAsyncEnumerable<T?> DeserializeJsonArrayAsync<T>(Stream stream, CancellationToken cancellationToken)
     {
+        var options = jsonSerializerOptions;
 #if NET8_0_OR_GREATER
-        return jsonSerializerOptions.TypeInfoResolver is not null
-            ? JsonSerializer.DeserializeAsyncEnumerable<T>(stream, GetJsonTypeInfo<T>(), cancellationToken)
-            : DeserializeJsonArrayReflectionAsync<T>(stream, cancellationToken);
+        return options.TypeInfoResolver is not null
+            ? JsonSerializer.DeserializeAsyncEnumerable(stream, GetJsonTypeInfo<T>(options), cancellationToken)
+            : SystemTextJsonStreamingDeserializer.DeserializeJsonArrayReflectionAsync<T>(stream, options, cancellationToken);
 #else
-        return DeserializeJsonArrayReflectionAsync<T>(stream, cancellationToken);
+        return SystemTextJsonStreamingDeserializer.DeserializeJsonArrayReflectionAsync<T>(stream, options, cancellationToken);
 #endif
     }
-
-    /// <summary>Streams JSON array elements using reflection-based metadata.</summary>
-    /// <typeparam name="T">The element type to deserialize.</typeparam>
-    /// <param name="stream">The response body stream.</param>
-    /// <param name="cancellationToken">A token to cancel enumeration.</param>
-    /// <returns>An asynchronous sequence of deserialized elements.</returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal IAsyncEnumerable<T?> DeserializeJsonArrayReflectionAsync<T>(Stream stream, CancellationToken cancellationToken) =>
-        JsonSerializer.DeserializeAsyncEnumerable<T>(stream, jsonSerializerOptions, cancellationToken);
 
     /// <summary>Streams newline-delimited JSON values from the response body.</summary>
     /// <typeparam name="T">The element type to deserialize.</typeparam>
@@ -475,151 +459,17 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     internal IAsyncEnumerable<T?> DeserializeJsonLinesAsync<T>(Stream stream, CancellationToken cancellationToken)
     {
+        var options = jsonSerializerOptions;
 #if NET9_0_OR_GREATER
         // .NET 9 added the topLevelValues overload, which reads a stream of whitespace-separated
         // top-level JSON values - exactly the JSON Lines framing - without per-line buffering.
-        return jsonSerializerOptions.TypeInfoResolver is not null
-            ? JsonSerializer.DeserializeAsyncEnumerable<T>(stream, GetJsonTypeInfo<T>(), topLevelValues: true, cancellationToken)
-            : DeserializeJsonLinesTopLevelReflectionAsync<T>(stream, cancellationToken);
+        return options.TypeInfoResolver is not null
+            ? JsonSerializer.DeserializeAsyncEnumerable(stream, GetJsonTypeInfo<T>(options), topLevelValues: true, cancellationToken)
+            : SystemTextJsonStreamingDeserializer.DeserializeJsonLinesTopLevelReflectionAsync<T>(stream, options, cancellationToken);
 #else
-        return DeserializeJsonLinesManualAsync<T>(stream, cancellationToken);
+        return SystemTextJsonStreamingDeserializer.DeserializeJsonLinesManualAsync<T>(stream, options, cancellationToken);
 #endif
     }
-
-#if NET9_0_OR_GREATER
-    /// <summary>Streams top-level JSON values using reflection-based metadata.</summary>
-    /// <typeparam name="T">The element type to deserialize.</typeparam>
-    /// <param name="stream">The response body stream.</param>
-    /// <param name="cancellationToken">A token to cancel enumeration.</param>
-    /// <returns>An asynchronous sequence of deserialized values.</returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal IAsyncEnumerable<T?> DeserializeJsonLinesTopLevelReflectionAsync<T>(Stream stream, CancellationToken cancellationToken) =>
-        JsonSerializer.DeserializeAsyncEnumerable<T>(stream, topLevelValues: true, jsonSerializerOptions, cancellationToken);
-#else
-    /// <summary>Reads newline-delimited JSON from a stream using a pooled UTF-8 buffer, deserializing each line.</summary>
-    /// <typeparam name="T">The element type to deserialize.</typeparam>
-    /// <param name="stream">The response body stream.</param>
-    /// <param name="cancellationToken">A token to cancel enumeration.</param>
-    /// <returns>An asynchronous sequence of deserialized values.</returns>
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [ExcludeFromCodeCoverage] // async-iterator dispose-mode epilogue: the compiler-generated <>w__disposeMode false-edge cannot be exercised or removed.
-    internal async IAsyncEnumerable<T?> DeserializeJsonLinesManualAsync<T>(
-        Stream stream,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        // The initial pooled buffer, and the factor it grows by when a single line does not fit in it.
-        const int lineScanBufferSize = 4096;
-        const int lineScanBufferGrowthFactor = 2;
-
-        var buffer = ArrayPool<byte>.Shared.Rent(lineScanBufferSize);
-        var start = 0;
-        var end = 0;
-        try
-        {
-            while (true)
-            {
-                var newline = Array.IndexOf(buffer, (byte)'\n', start, end - start);
-                if (newline >= 0)
-                {
-                    var length = newline - start;
-                    if (!IsBlankLine(buffer, start, length))
-                    {
-                        yield return DeserializeLine<T>(buffer, start, length);
-                    }
-
-                    start = newline + 1;
-                    continue;
-                }
-
-                if (start > 0)
-                {
-                    Buffer.BlockCopy(buffer, start, buffer, 0, end - start);
-                    end -= start;
-                    start = 0;
-                }
-
-                if (end == buffer.Length)
-                {
-                    buffer = GrowLineScanBuffer(buffer, end, lineScanBufferGrowthFactor);
-                }
-
-#if NET8_0_OR_GREATER
-                var read = await stream
-                    .ReadAsync(buffer.AsMemory(end), cancellationToken)
-                    .ConfigureAwait(false);
-#else
-                var read = await stream
-                    .ReadAsync(buffer, end, buffer.Length - end, cancellationToken)
-                    .ConfigureAwait(false);
-#endif
-                if (read == 0)
-                {
-                    if (!IsBlankLine(buffer, start, end - start))
-                    {
-                        yield return DeserializeLine<T>(buffer, start, end - start);
-                    }
-
-                    yield break;
-                }
-
-                end += read;
-            }
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-    }
-
-    /// <summary>Deserializes a single buffered JSON line, trimming a trailing carriage return.</summary>
-    /// <typeparam name="T">The element type to deserialize.</typeparam>
-    /// <param name="buffer">The buffer holding the line bytes.</param>
-    /// <param name="start">The offset of the line.</param>
-    /// <param name="length">The length of the line.</param>
-    /// <returns>The deserialized value.</returns>
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal T? DeserializeLine<T>(byte[] buffer, int start, int length)
-    {
-        // DeserializeLine is only called for non-blank lines, so the span is never empty here.
-        var span = new ReadOnlySpan<byte>(buffer, start, length);
-        if (span[span.Length - 1] == (byte)'\r')
-        {
-            span = span.Slice(0, span.Length - 1);
-        }
-
-#if NET8_0_OR_GREATER
-        return jsonSerializerOptions.TypeInfoResolver is not null
-            ? JsonSerializer.Deserialize(span, GetJsonTypeInfo<T>())
-            : DeserializeLineReflection<T>(span);
-#else
-        return DeserializeLineReflection<T>(span);
-#endif
-    }
-
-    /// <summary>Deserializes a JSON line using reflection-based metadata.</summary>
-    /// <typeparam name="T">The element type to deserialize.</typeparam>
-    /// <param name="utf8Json">The UTF-8 encoded JSON value.</param>
-    /// <returns>The deserialized value.</returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal T? DeserializeLineReflection<T>(ReadOnlySpan<byte> utf8Json) =>
-        JsonSerializer.Deserialize<T>(utf8Json, jsonSerializerOptions);
-#endif
 
     /// <summary>Streams the JSON <c>data</c> payload of each server-sent event, yielding one deserialized value per event as it arrives.</summary>
     /// <typeparam name="T">The element type each event's <c>data</c> payload is deserialized to.</typeparam>
@@ -635,46 +485,15 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         Stream stream,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var parser = SseParser.Create(stream, DeserializeSseData<T>);
+        var options = jsonSerializerOptions;
+        var parser = SseParser.Create(
+            stream,
+            (eventType, data) => SystemTextJsonStreamingDeserializer.DeserializeSseData<T>(eventType, data, options));
         await foreach (var item in parser.EnumerateAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return item.Data;
         }
     }
-
-    /// <summary>Deserializes a single server-sent event's UTF-8 JSON <c>data</c> payload, using source-gen metadata when a resolver is configured.</summary>
-    /// <typeparam name="T">The element type to deserialize.</typeparam>
-    /// <param name="eventType">The event's <c>event</c> field; ignored because only the <c>data</c> payload is surfaced.</param>
-    /// <param name="data">The UTF-8 encoded JSON payload bytes.</param>
-    /// <returns>The deserialized value.</returns>
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal T? DeserializeSseData<T>(string eventType, ReadOnlySpan<byte> data)
-    {
-        _ = eventType;
-#if NET8_0_OR_GREATER
-        return jsonSerializerOptions.TypeInfoResolver is not null
-            ? JsonSerializer.Deserialize(data, GetJsonTypeInfo<T>())
-            : DeserializeSseDataReflection<T>(data);
-#else
-        return DeserializeSseDataReflection<T>(data);
-#endif
-    }
-
-    /// <summary>Deserializes a server-sent event payload using reflection-based metadata.</summary>
-    /// <typeparam name="T">The element type to deserialize.</typeparam>
-    /// <param name="utf8Json">The UTF-8 encoded JSON payload bytes.</param>
-    /// <returns>The deserialized value.</returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal T? DeserializeSseDataReflection<T>(ReadOnlySpan<byte> utf8Json) =>
-        JsonSerializer.Deserialize<T>(utf8Json, jsonSerializerOptions);
 
     /// <summary>Deserializes a buffered string using reflection-based metadata.</summary>
     /// <typeparam name="T">The type to deserialize.</typeparam>

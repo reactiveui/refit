@@ -281,6 +281,44 @@ public ref struct GeneratedQueryStringBuilder
 
         return written;
     }
+
+    /// <summary>Formats a span-formattable value into a stack buffer (growing a rented buffer when it overflows) and
+    /// appends it to the target, escaping the formatted span in place when requested.</summary>
+    /// <typeparam name="T">The span-formattable value type.</typeparam>
+    /// <param name="target">The buffer receiving the rendered value.</param>
+    /// <param name="value">The value to render.</param>
+    /// <param name="format">The compile-time format, or null for the default rendering.</param>
+    /// <param name="escape">Whether the formatted span is URI-data-escaped before it is appended.</param>
+    internal static void AppendFormattedValue<T>(ref ValueStringBuilder target, T value, string? format, bool escape)
+        where T : ISpanFormattable
+    {
+        Span<char> buffer = stackalloc char[FormatBufferLength];
+        char[]? rented = null;
+        try
+        {
+            var written = FormatWithGrowth(value, ref buffer, ref rented, format);
+
+            var formatted = (ReadOnlySpan<char>)buffer[..written];
+            if (escape)
+            {
+                // Percent-encode straight into the builder with no intermediate escaped string, on every target
+                // framework (the span overload of Uri.EscapeDataString only exists on net9+).
+                StringHelpers.AppendUriDataEscaped(ref target, formatted);
+                return;
+            }
+
+            // Copy into a reserved slice so the stack buffer is never captured by the builder (ref-safety), matching a
+            // verbatim span append with no intermediate string.
+            formatted.CopyTo(target.AppendSpan(written));
+        }
+        finally
+        {
+            if (rented is not null)
+            {
+                System.Buffers.ArrayPool<char>.Shared.Return(rented);
+            }
+        }
+    }
 #endif
 
     /// <summary>Appends the <c>?</c> or <c>&amp;</c> separator, materializing the text buffer on first use.</summary>
@@ -325,44 +363,6 @@ public ref struct GeneratedQueryStringBuilder
         _text.Append(keyEscaped || preEncoded ? name : StringHelpers.EscapeDataString(name));
         _text.Append('=');
         AppendFormattedValue(ref _text, value, format, escape: !preEncoded);
-    }
-
-    /// <summary>Formats a span-formattable value into a stack buffer (growing a rented buffer when it overflows) and
-    /// appends it to the target, escaping the formatted span in place when requested.</summary>
-    /// <typeparam name="T">The span-formattable value type.</typeparam>
-    /// <param name="target">The buffer receiving the rendered value.</param>
-    /// <param name="value">The value to render.</param>
-    /// <param name="format">The compile-time format, or null for the default rendering.</param>
-    /// <param name="escape">Whether the formatted span is URI-data-escaped before it is appended.</param>
-    internal readonly void AppendFormattedValue<T>(ref ValueStringBuilder target, T value, string? format, bool escape)
-        where T : ISpanFormattable
-    {
-        Span<char> buffer = stackalloc char[FormatBufferLength];
-        char[]? rented = null;
-        try
-        {
-            var written = FormatWithGrowth(value, ref buffer, ref rented, format);
-
-            var formatted = (ReadOnlySpan<char>)buffer[..written];
-            if (escape)
-            {
-                // Percent-encode straight into the builder with no intermediate escaped string, on every target
-                // framework (the span overload of Uri.EscapeDataString only exists on net9+).
-                StringHelpers.AppendUriDataEscaped(ref target, formatted);
-                return;
-            }
-
-            // Copy into a reserved slice so the stack buffer is never captured by the builder (ref-safety), matching a
-            // verbatim span append with no intermediate string.
-            formatted.CopyTo(target.AppendSpan(written));
-        }
-        finally
-        {
-            if (rented is not null)
-            {
-                System.Buffers.ArrayPool<char>.Shared.Return(rented);
-            }
-        }
     }
 
 #endif

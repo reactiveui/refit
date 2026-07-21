@@ -10,13 +10,13 @@ namespace Refit.NativeAotSmoke;
 internal sealed class NativeAotSmokeHandler : HttpMessageHandler
 {
     /// <summary>Gets a value indicating whether a POST body containing the expected payload was observed.</summary>
-    public bool SawPostBody { get; private set; }
+    internal bool SawPostBody { get; private set; }
 
     /// <summary>Gets a value indicating whether a URL-encoded form body was observed.</summary>
-    public bool SawFormBody { get; private set; }
+    internal bool SawFormBody { get; private set; }
 
     /// <summary>Gets a value indicating whether the generated query string matched the expected shape.</summary>
-    public bool SawExpectedQuery { get; private set; }
+    internal bool SawExpectedQuery { get; private set; }
 
     /// <inheritdoc/>
     protected override async Task<HttpResponseMessage> SendAsync(

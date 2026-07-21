@@ -58,12 +58,7 @@ internal static partial class Emitter
         int indentationLevel) =>
         !HasConstraintKeywords(typeParameter, isOverrideOrExplicitImplementation)
             ? string.Empty
-            : Indent(indentationLevel)
-                + "where "
-                + typeParameter.TypeName
-                + " : "
-                + BuildConstraintList(typeParameter, isOverrideOrExplicitImplementation)
-                + "\n";
+            : $"{Indent(indentationLevel)}where {typeParameter.TypeName} : {BuildConstraintList(typeParameter, isOverrideOrExplicitImplementation)}\n";
 
     /// <summary>Determines whether a type parameter has constraints that should be emitted.</summary>
     /// <param name="typeParameter">The type parameter constraint to inspect.</param>

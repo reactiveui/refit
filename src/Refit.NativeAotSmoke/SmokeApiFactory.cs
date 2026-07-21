@@ -14,7 +14,7 @@ internal static class SmokeApiFactory
     /// <param name="client">The <see cref="HttpClient"/> the implementation will use.</param>
     /// <param name="jsonOptions">The source-generated JSON serializer options.</param>
     /// <returns>An AOT-safe implementation of <see cref="INativeAotApi"/>.</returns>
-    public static INativeAotApi Create(HttpClient client, JsonSerializerOptions jsonOptions) =>
+    internal static INativeAotApi Create(HttpClient client, JsonSerializerOptions jsonOptions) =>
         RestService.ForGenerated<INativeAotApi>(
             client,
             new RefitSettings(new SystemTextJsonContentSerializer(jsonOptions)));

@@ -8,7 +8,7 @@ namespace RestApiforTest;
 /// request pipeline for the application. It defines methods for registering services with the dependency injection
 /// container and for specifying how HTTP requests are handled. This class is typically specified as the entry point
 /// for application startup in the program's host configuration.</remarks>
-internal sealed class Startup
+public sealed class Startup
 {
     /// <summary>Initializes a new instance of the Startup class with the specified application configuration settings.</summary>
     /// <param name="configuration">The application configuration settings to be used for configuring services and the app's request pipeline.

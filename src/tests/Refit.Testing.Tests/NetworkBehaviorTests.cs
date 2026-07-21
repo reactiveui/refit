@@ -111,7 +111,7 @@ public sealed class NetworkBehaviorTests
     /// <returns>The response produced by the handler.</returns>
     private static async Task<HttpResponseMessage> SendAsync(StubHttp handler, string url)
     {
-        using var client = new HttpClient(handler);
+        using var client = HttpClientTestFactory.Create(handler);
         return await client.GetAsync(new Uri(url));
     }
 }

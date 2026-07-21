@@ -18,21 +18,21 @@ internal static class ObservableTestHelpers
     /// <typeparam name="T">The observable value type.</typeparam>
     /// <param name="source">The source observable.</param>
     /// <returns>A timeout-wrapped observable.</returns>
-    public static IObservable<T> WithTimeout<T>(IObservable<T> source) =>
+    internal static IObservable<T> WithTimeout<T>(IObservable<T> source) =>
         new ExpireSignal<T>(source, DefaultTimeout, ThreadPoolSequencer.Instance);
 
     /// <summary>Awaits the timeout-wrapped source.</summary>
     /// <typeparam name="T">The observable value type.</typeparam>
     /// <param name="source">The source observable.</param>
     /// <returns>The final observable value.</returns>
-    public static Task<T> AwaitWithTimeout<T>(IObservable<T> source) =>
+    internal static Task<T> AwaitWithTimeout<T>(IObservable<T> source) =>
         Await(WithTimeout(source));
 
     /// <summary>Awaits the source through a concrete Primitives await signal.</summary>
     /// <typeparam name="T">The observable value type.</typeparam>
     /// <param name="source">The source observable.</param>
     /// <returns>The final observable value.</returns>
-    public static async Task<T> Await<T>(IObservable<T> source)
+    internal static async Task<T> Await<T>(IObservable<T> source)
     {
         AsyncSignal<T> signal = new();
         using var subscription = source.Subscribe(signal);

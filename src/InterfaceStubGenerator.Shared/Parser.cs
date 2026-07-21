@@ -26,7 +26,7 @@ internal static partial class Parser
     /// <param name="candidateInterfaces">The candidate interfaces.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The collected diagnostics and the model used to generate the stubs.</returns>
-    public static (
+    internal static (
         List<Diagnostic> diagnostics,
         ContextGenerationModel contextGenerationSpec) GenerateInterfaceStubs(
         CSharpCompilation compilation,

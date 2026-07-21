@@ -67,7 +67,7 @@ internal static partial class Emitter
     /// <summary>Emits the shared preserve attribute and factory registration code.</summary>
     /// <param name="model">The context generation model describing the interfaces.</param>
     /// <param name="addSource">Callback used to add generated source files.</param>
-    public static void EmitSharedCode(
+    internal static void EmitSharedCode(
         ContextGenerationModel model,
         Action<string, SourceText> addSource)
     {
@@ -84,7 +84,7 @@ internal static partial class Emitter
     /// <summary>Emits the generated implementation source for a single interface.</summary>
     /// <param name="model">The interface model to emit.</param>
     /// <returns>The generated source text for the interface implementation.</returns>
-    public static SourceText EmitInterface(InterfaceModel model)
+    internal static SourceText EmitInterface(InterfaceModel model)
     {
         var uniqueNames = new UniqueNameBuilder();
         uniqueNames.Reserve(model.MemberNames);
@@ -196,11 +196,7 @@ internal static partial class Emitter
         // This generator assembly always carries a name and version, so no placeholder fallback is reachable.
         var assemblyName = typeof(Emitter).Assembly.GetName();
         return
-            "[global::System.CodeDom.Compiler.GeneratedCodeAttribute("
-            + ToCSharpStringLiteral(assemblyName.Name!)
-            + ", "
-            + ToCSharpStringLiteral(assemblyName.Version!.ToString())
-            + ")]";
+            $"[global::System.CodeDom.Compiler.GeneratedCodeAttribute({ToCSharpStringLiteral(assemblyName.Name!)}, {ToCSharpStringLiteral(assemblyName.Version!.ToString())})]";
     }
 
     /// <summary>Escapes text for generated XML documentation comments.</summary>
@@ -502,7 +498,7 @@ internal static partial class Emitter
         // quotes with a single concat instead of allocating a builder and appending each character.
         if (!NeedsCSharpEscaping(value))
         {
-            return "\"" + value + "\"";
+            return $"\"{value}\"";
         }
 
         var builder = new PooledStringBuilder(value.Length + StringLiteralQuoteLength);
@@ -567,7 +563,7 @@ internal static partial class Emitter
         var visibility = property.IsExplicitInterface ? string.Empty : "public ";
         var annotation = supportsNullable && property.Annotation ? "?" : string.Empty;
         var explicitInterface = property.IsExplicitInterface
-            ? EnsureGlobalPrefix(property.ContainingType) + "."
+            ? $"{EnsureGlobalPrefix(property.ContainingType)}."
             : string.Empty;
         var getter = property.HasGetter ? " get;" : string.Empty;
         var setter = property.HasSetter ? " set;" : string.Empty;

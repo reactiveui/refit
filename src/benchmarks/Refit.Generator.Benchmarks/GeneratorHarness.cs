@@ -39,7 +39,7 @@ internal static class GeneratorHarness
     /// <summary>Builds a compilation for the source text.</summary>
     /// <param name="sourceText">The source text to compile.</param>
     /// <returns>The compilation.</returns>
-    public static CSharpCompilation BuildCompilation(string sourceText)
+    internal static CSharpCompilation BuildCompilation(string sourceText)
     {
         var references = new List<MetadataReference>();
         foreach (var assembly in GetAssemblyReferencesForCodegen())
@@ -62,7 +62,7 @@ internal static class GeneratorHarness
     /// <summary>Creates a compilation and a fresh (cold) generator driver for the source text.</summary>
     /// <param name="sourceText">The source text to compile and feed to the generator.</param>
     /// <returns>The compilation and generator driver.</returns>
-    public static (Compilation Compilation, CSharpGeneratorDriver Driver) CreateColdState(string sourceText)
+    internal static (Compilation Compilation, CSharpGeneratorDriver Driver) CreateColdState(string sourceText)
     {
         var compilation = BuildCompilation(sourceText);
         var driver = CSharpGeneratorDriver.Create(new InterfaceStubGeneratorV2().AsSourceGenerator());
@@ -72,7 +72,7 @@ internal static class GeneratorHarness
     /// <summary>Runs the generator once and primes the driver for an incremental (cached) re-run.</summary>
     /// <param name="sourceText">The source text to compile and feed to the generator.</param>
     /// <returns>The compilation and primed generator driver, with an unrelated type added to the compilation.</returns>
-    public static (Compilation Compilation, CSharpGeneratorDriver Driver) CreatePrimedState(string sourceText)
+    internal static (Compilation Compilation, CSharpGeneratorDriver Driver) CreatePrimedState(string sourceText)
     {
         var (compilation, driver) = CreateColdState(sourceText);
         driver = (CSharpGeneratorDriver)driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
@@ -86,7 +86,7 @@ internal static class GeneratorHarness
     /// <summary>Collects the syntactic candidates the generator's providers would select from a compilation.</summary>
     /// <param name="compilation">The compilation to scan.</param>
     /// <returns>The candidate interface methods and candidate interfaces.</returns>
-    public static (ImmutableArray<MethodDeclarationSyntax> Methods, ImmutableArray<InterfaceDeclarationSyntax> Interfaces)
+    internal static (ImmutableArray<MethodDeclarationSyntax> Methods, ImmutableArray<InterfaceDeclarationSyntax> Interfaces)
         CollectCandidates(CSharpCompilation compilation)
     {
         var methods = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>();
@@ -119,7 +119,7 @@ internal static class GeneratorHarness
     /// <param name="compilation">The compilation to parse.</param>
     /// <param name="candidates">The pre-collected syntactic candidates.</param>
     /// <returns>The context generation model produced by the parser.</returns>
-    public static ContextGenerationModel Parse(
+    internal static ContextGenerationModel Parse(
         CSharpCompilation compilation,
         (ImmutableArray<MethodDeclarationSyntax> Methods, ImmutableArray<InterfaceDeclarationSyntax> Interfaces) candidates) =>
         Parser.GenerateInterfaceStubs(
@@ -134,19 +134,19 @@ internal static class GeneratorHarness
     /// <summary>Resolves the Refit base HTTP method attribute symbol for a compilation.</summary>
     /// <param name="compilation">The compilation to resolve against.</param>
     /// <returns>The resolved attribute symbol.</returns>
-    public static INamedTypeSymbol GetHttpMethodBaseAttributeSymbol(CSharpCompilation compilation) =>
+    internal static INamedTypeSymbol GetHttpMethodBaseAttributeSymbol(CSharpCompilation compilation) =>
         compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
 
     /// <summary>Resolves <c>System.IFormattable</c> for a compilation.</summary>
     /// <param name="compilation">The compilation to resolve against.</param>
     /// <returns>The resolved symbol, or null when unavailable.</returns>
-    public static INamedTypeSymbol? GetFormattableSymbol(CSharpCompilation compilation) =>
+    internal static INamedTypeSymbol? GetFormattableSymbol(CSharpCompilation compilation) =>
         compilation.GetTypeByMetadataName("System.IFormattable");
 
     /// <summary>Collects the Refit method symbols declared across a compilation.</summary>
     /// <param name="compilation">The compilation to scan.</param>
     /// <returns>The Refit method symbols in declaration order.</returns>
-    public static List<IMethodSymbol> GetRefitMethodSymbols(CSharpCompilation compilation)
+    internal static List<IMethodSymbol> GetRefitMethodSymbols(CSharpCompilation compilation)
     {
         var httpAttribute = GetHttpMethodBaseAttributeSymbol(compilation);
         var (methods, _) = CollectCandidates(compilation);

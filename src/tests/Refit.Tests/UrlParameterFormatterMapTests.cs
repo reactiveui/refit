@@ -110,7 +110,7 @@ public class UrlParameterFormatterMapTests
     private static async Task<string> SendGeneratedAsync(RefitSettings settings, Func<IFormatterMapApi, Task<string>> call)
     {
         var handler = new TestHttpMessageHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.ForGenerated<IFormatterMapApi>(client, settings);
 
         _ = await call(api);

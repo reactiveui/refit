@@ -33,7 +33,7 @@ internal static class CollectionExtensions
         /// As with the built-in overload, <paramref name="valueFactory"/> runs outside the lock and may
         /// run more than once under contention; the first value inserted wins.
         /// </remarks>
-        public TValue GetOrAdd<TArg>(TKey key, Func<TKey, TArg, TValue> valueFactory, TArg arg) =>
+        internal TValue GetOrAdd<TArg>(TKey key, Func<TKey, TArg, TValue> valueFactory, TArg arg) =>
             dictionary.TryGetValue(key, out var existing)
                 ? existing
                 : dictionary.GetOrAdd(key, valueFactory(key, arg));
@@ -50,7 +50,7 @@ internal static class CollectionExtensions
         /// <param name="key">The key to add.</param>
         /// <param name="value">The value to add.</param>
         /// <returns><see langword="true"/> if the pair was added; <see langword="false"/> if the key was already present.</returns>
-        public bool TryAdd(TKey key, TValue value)
+        internal bool TryAdd(TKey key, TValue value)
         {
             if (dictionary.ContainsKey(key))
             {

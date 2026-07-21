@@ -10,7 +10,7 @@ internal static class DiagnosticDescriptors
 {
     /// <summary>Diagnostic reported when the Refit assembly is not referenced.</summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
-    public static readonly DiagnosticDescriptor RefitNotReferenced =
+    internal static readonly DiagnosticDescriptor RefitNotReferenced =
         new(
             "RF002",
             "Refit must be referenced",
@@ -21,7 +21,7 @@ internal static class DiagnosticDescriptors
 
     /// <summary>Diagnostic reported when a source-generation-only attribute is used on a method that cannot generate inline.</summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
-    public static readonly DiagnosticDescriptor SourceGenOnlyAttributeRequiresInlineRequest =
+    internal static readonly DiagnosticDescriptor SourceGenOnlyAttributeRequiresInlineRequest =
         new(
             "RF007",
             "Attribute requires generated request building",

@@ -313,7 +313,7 @@ internal static partial class Emitter
         {
             _ = sb.Append(bodyIndent).Append(IfParameterPrefix).Append(parameter.Name).AppendLine(NotNullCheckSuffix)
                 .Append(bodyIndent).AppendLine("{");
-            AppendScalarAddCall(sb, parameter, query, providerField, bodyIndent + "    ", emission);
+            AppendScalarAddCall(sb, parameter, query, providerField, $"{bodyIndent}    ", emission);
             _ = sb.Append(bodyIndent).AppendLine("}");
             return;
         }
@@ -341,7 +341,7 @@ internal static partial class Emitter
         if (query.Shape == QueryParameterShape.Flag)
         {
             // Scalar values are guarded by the outer null check, so the value is never null when formatted.
-            var flagValue = BuildFormattedValueExpression("@" + parameter.Name, false, parameter.Type, query, providerField, emission);
+            var flagValue = BuildFormattedValueExpression($"@{parameter.Name}", false, parameter.Type, query, providerField, emission);
             _ = sb.Append(indent).Append(emission.QueryBuilderLocal).Append(".AddFlag(").Append(flagValue).Append(", ")
                 .Append(preEncoded).AppendLine(");");
             return;
@@ -358,10 +358,10 @@ internal static partial class Emitter
             // A nullable value type writes the unwrapped .Value (span-formattable) on the fast path - the outer null
             // guard already ran - while the customized-formatter branch keeps the original value and declared type so
             // it matches the reflection builder's UrlParameterFormatter.Format call exactly.
-            var accessor = "@" + parameter.Name;
+            var accessor = $"@{parameter.Name}";
             var fastAccessor = query.ValueFormat.IsNullableValueType ? accessor + NullableValueAccess : accessor;
             var customExpression = BuildUrlFormatterCall(accessor, parameter.Type, providerField, emission);
-            var innerIndent = indent + "    ";
+            var innerIndent = $"{indent}    ";
             _ = sb.Append(indent).Append("if (").Append(emission.UseDefaultFormattingLocal).AppendLine(")")
                 .Append(indent).AppendLine("{")
                 .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".AddFormattedPreEscapedKey(").Append(key).Append(", ")
@@ -375,7 +375,7 @@ internal static partial class Emitter
             return;
         }
 
-        var valueExpression = BuildFormattedValueExpression("@" + parameter.Name, false, parameter.Type, query, providerField, emission);
+        var valueExpression = BuildFormattedValueExpression($"@{parameter.Name}", false, parameter.Type, query, providerField, emission);
         _ = sb.Append(indent).Append(emission.QueryBuilderLocal).Append(".AddPreEscapedKey(").Append(key).Append(", ").Append(valueExpression)
             .Append(", ").Append(preEncoded).AppendLine(");");
     }
@@ -411,7 +411,7 @@ internal static partial class Emitter
         // AddCollectionValueFormatted renders with the default format only.
         var fast = !isFlag && IsCollectionSpanFormattableFast(query);
         var guarded = parameter.CanBeNull;
-        var loopIndent = guarded ? bodyIndent + "    " : bodyIndent;
+        var loopIndent = guarded ? $"{bodyIndent}    " : bodyIndent;
 
         if (guarded)
         {
@@ -426,7 +426,7 @@ internal static partial class Emitter
 
         _ = sb.Append(loopIndent).Append(ForeachVarKeyword).Append(emission.QueryValueLocal).Append(" in @").Append(parameter.Name).AppendLine(")")
             .Append(loopIndent).AppendLine("{");
-        var itemIndent = loopIndent + "    ";
+        var itemIndent = $"{loopIndent}    ";
         if (fast)
         {
             AppendFastCollectionElement(sb, parameter, providerField, emission, itemIndent);
@@ -508,7 +508,7 @@ internal static partial class Emitter
         string itemIndent)
     {
         var customExpression = BuildUrlFormatterCall(emission.QueryValueLocal, parameter.Type, providerField, emission);
-        var innerIndent = itemIndent + "    ";
+        var innerIndent = $"{itemIndent}    ";
         _ = sb.Append(itemIndent).Append("if (").Append(emission.UseDefaultFormattingLocal).AppendLine(")")
             .Append(itemIndent).AppendLine("{")
             .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".AddCollectionValueFormatted(").Append(emission.QueryValueLocal).AppendLine(");")
@@ -533,7 +533,7 @@ internal static partial class Emitter
         var converter = query.Converter!;
         var bodyIndent = Indent(MethodBodyIndentation);
         var guarded = parameter.CanBeNull;
-        var indent = guarded ? bodyIndent + "    " : bodyIndent;
+        var indent = guarded ? $"{bodyIndent}    " : bodyIndent;
         var converterField = GetOrAddConverterField(converter.ConverterTypeName, emission);
 
         if (guarded)
@@ -631,12 +631,12 @@ internal static partial class Emitter
     internal sealed class EnumFormatterScope(UniqueNameBuilder uniqueNames)
     {
         /// <summary>Gets the emitted helper names keyed by enum type and compile-time format.</summary>
-        public Dictionary<(string TypeName, string? Format), string> Formatters { get; } = new();
+        internal Dictionary<(string TypeName, string? Format), string> Formatters { get; } = new();
 
         /// <summary>Gets the emitted cached converter field names keyed by converter type.</summary>
-        public Dictionary<string, string> Converters { get; } = new(StringComparer.Ordinal);
+        internal Dictionary<string, string> Converters { get; } = new(StringComparer.Ordinal);
 
         /// <summary>Gets the unique member name builder for the interface scope.</summary>
-        public UniqueNameBuilder UniqueNames { get; } = uniqueNames;
+        internal UniqueNameBuilder UniqueNames { get; } = uniqueNames;
     }
 }

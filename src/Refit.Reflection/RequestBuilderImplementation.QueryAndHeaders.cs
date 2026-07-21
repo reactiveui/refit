@@ -222,7 +222,7 @@ internal partial class RequestBuilderImplementation
         {
             if (string.Equals(parsed[i].Key, key, StringComparison.InvariantCultureIgnoreCase))
             {
-                parsed[i] = new(parsed[i].Key, parsed[i].Value + "," + value);
+                parsed[i] = new(parsed[i].Key, $"{parsed[i].Value},{value}");
                 return;
             }
         }

@@ -447,12 +447,11 @@ public static class RestService
     /// <returns>The generated-client exception.</returns>
     internal static InvalidOperationException CreateMissingGeneratedFactoryException(Type refitInterfaceType)
     {
-        var message =
-            refitInterfaceType.Name
-            + " doesn't look like a Refit interface. Make sure it has at least one "
-            + "method with a Refit HTTP method attribute, the Refit source generator is installed in the project, "
-            + "and your build produced the generated client. For Native AOT or trimmed apps, prefer generated clients "
-            + "plus source-generated System.Text.Json metadata.";
+        var message = string.Concat(
+            refitInterfaceType.Name,
+            " doesn't look like a Refit interface. Make sure it has at least one method with a Refit HTTP method attribute, ",
+            "the Refit source generator is installed in the project, and your build produced the generated client. ",
+            "For Native AOT or trimmed apps, prefer generated clients plus source-generated System.Text.Json metadata.");
 
         return new(message);
     }
