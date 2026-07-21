@@ -7,8 +7,8 @@ namespace Refit.Generator;
 internal static class RefitGeneratorStepName
 {
     /// <summary>The tracking name for the diagnostics reporting step.</summary>
-    public const string ReportDiagnostics = "ReportDiagnostics";
+    internal const string ReportDiagnostics = "ReportDiagnostics";
 
     /// <summary>The tracking name for the Refit stub building step.</summary>
-    public const string BuildRefit = "BuildRefit";
+    internal const string BuildRefit = "BuildRefit";
 }

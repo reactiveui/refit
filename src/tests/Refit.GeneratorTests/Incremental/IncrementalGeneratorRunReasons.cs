@@ -13,23 +13,23 @@ internal sealed record IncrementalGeneratorRunReasons(
     IncrementalStepRunReason ReportDiagnosticsStep)
 {
     /// <summary>The expected reasons for a brand-new generator run.</summary>
-    public static readonly IncrementalGeneratorRunReasons New =
+    internal static readonly IncrementalGeneratorRunReasons New =
         new(IncrementalStepRunReason.New, IncrementalStepRunReason.New);
 
     /// <summary>The expected reasons for a cached generator run.</summary>
     /// <remarks>The compilation step is always modified because a new compilation is passed each time.</remarks>
-    public static readonly IncrementalGeneratorRunReasons Cached =
+    internal static readonly IncrementalGeneratorRunReasons Cached =
         new(IncrementalStepRunReason.Cached, IncrementalStepRunReason.Unchanged);
 
     /// <summary>The expected reasons when both steps are modified.</summary>
-    public static readonly IncrementalGeneratorRunReasons Modified = Cached with
+    internal static readonly IncrementalGeneratorRunReasons Modified = Cached with
     {
         ReportDiagnosticsStep = IncrementalStepRunReason.Modified,
         BuildRefitStep = IncrementalStepRunReason.Modified
     };
 
     /// <summary>The expected reasons when only the source changed.</summary>
-    public static readonly IncrementalGeneratorRunReasons ModifiedSource = Cached with
+    internal static readonly IncrementalGeneratorRunReasons ModifiedSource = Cached with
     {
         ReportDiagnosticsStep = IncrementalStepRunReason.Unchanged,
         BuildRefitStep = IncrementalStepRunReason.Modified

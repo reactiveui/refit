@@ -30,7 +30,7 @@ internal static partial class Parser
         var assemblyScope = SanitizeAssemblyScope(assemblyName);
         var rawNamespace = assemblyScope.Length == 0
             ? prefixedNamespace
-            : prefixedNamespace + "." + assemblyScope;
+            : $"{prefixedNamespace}.{assemblyScope}";
         var parts = rawNamespace.Split('.');
         var builder = new StringBuilder(rawNamespace.Length);
 
@@ -118,7 +118,7 @@ internal static partial class Parser
         var normalized = builder.ToString();
         return SyntaxFacts.GetKeywordKind(normalized) != SyntaxKind.None
             || SyntaxFacts.GetContextualKeywordKind(normalized) != SyntaxKind.None
-            ? "_" + normalized
+            ? $"_{normalized}"
             : normalized;
     }
 }

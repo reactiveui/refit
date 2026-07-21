@@ -120,95 +120,95 @@ internal partial class RestMethodInfoInternal
     }
 
     /// <summary>Gets the interface type that declares the method.</summary>
-    public Type Type { get; }
+    internal Type Type { get; }
 
     /// <summary>Gets the reflected method information.</summary>
-    public MethodInfo MethodInfo { get; }
+    internal MethodInfo MethodInfo { get; }
 
     /// <summary>Gets the HTTP method used by the request.</summary>
-    public HttpMethod HttpMethod { get; }
+    internal HttpMethod HttpMethod { get; }
 
     /// <summary>Gets the relative URL path template for the method, including any client interface path prefix.</summary>
-    public string RelativePath { get; }
+    internal string RelativePath { get; }
 
     /// <summary>Gets the shared route prefix declared by the client interface's <see cref="PathPrefixAttribute"/>, or an empty string when none applies.</summary>
-    public string ClientPathPrefix { get; }
+    internal string ClientPathPrefix { get; }
 
     /// <summary>Gets a value indicating whether the request is a multipart request.</summary>
-    public bool IsMultipart { get; }
+    internal bool IsMultipart { get; }
 
     /// <summary>Gets the multipart boundary string used for multipart requests.</summary>
-    public string MultipartBoundary { get; }
+    internal string MultipartBoundary { get; }
 
     /// <summary>Gets the public metadata describing this REST method.</summary>
-    public RestMethodInfo RestMethodInfo { get; }
+    internal RestMethodInfo RestMethodInfo { get; }
 
     /// <summary>Gets the cancellation token parameter, or null when none is present.</summary>
-    public ParameterInfo? CancellationToken { get; }
+    internal ParameterInfo? CancellationToken { get; }
 
     /// <summary>Gets the URI escaping format used for query parameters.</summary>
-    public UriFormat QueryUriFormat { get; }
+    internal UriFormat QueryUriFormat { get; }
 
     /// <summary>Gets the per-call timeout in milliseconds from the method's <see cref="TimeoutAttribute"/>, or 0 when absent.</summary>
-    public int TimeoutMilliseconds { get; }
+    internal int TimeoutMilliseconds { get; }
 
     /// <summary>Gets the static headers associated with the method.</summary>
-    public Dictionary<string, string?> Headers { get; }
+    internal Dictionary<string, string?> Headers { get; }
 
     /// <summary>Gets the map of parameter indexes to header names.</summary>
-    public Dictionary<int, string> HeaderParameterMap { get; }
+    internal Dictionary<int, string> HeaderParameterMap { get; }
 
     /// <summary>Gets the map of parameter indexes to request property keys.</summary>
-    public Dictionary<int, string> PropertyParameterMap { get; }
+    internal Dictionary<int, string> PropertyParameterMap { get; }
 
     /// <summary>Gets the body parameter information, or null when there is no body parameter.</summary>
-    public Tuple<BodySerializationMethod, bool, int>? BodyParameterInfo { get; }
+    internal Tuple<BodySerializationMethod, bool, int>? BodyParameterInfo { get; }
 
     /// <summary>Gets the authorization parameter information, or null when there is no authorize parameter.</summary>
-    public Tuple<string, int>? AuthorizeParameterInfo { get; }
+    internal Tuple<string, int>? AuthorizeParameterInfo { get; }
 
     /// <summary>Gets the index of the <c>[Url]</c> parameter that supplies the absolute request URI, or a negative
     /// value when the method dispatches relative to the client base address.</summary>
-    public int UrlParameterInfo { get; }
+    internal int UrlParameterInfo { get; }
 
     /// <summary>Gets the map of parameter indexes to query string names.</summary>
-    public Dictionary<int, string> QueryParameterMap { get; }
+    internal Dictionary<int, string> QueryParameterMap { get; }
 
     /// <summary>Gets the map of parameter indexes to multipart attachment names.</summary>
-    public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; }
+    internal Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; }
 
     /// <summary>Gets the array of parameters excluding cancellation tokens.</summary>
-    public ParameterInfo[] ParameterInfoArray { get; }
+    internal ParameterInfo[] ParameterInfoArray { get; }
 
     /// <summary>Gets the map of parameter indexes to route parameter information.</summary>
-    public Dictionary<int, RestMethodParameterInfo> ParameterMap { get; }
+    internal Dictionary<int, RestMethodParameterInfo> ParameterMap { get; }
 
     /// <summary>Gets or sets the ordered fragments that make up the URL path.</summary>
-    public List<ParameterFragment> FragmentPath { get; set; }
+    internal List<ParameterFragment> FragmentPath { get; set; }
 
     /// <summary>Gets or sets the declared return type of the method.</summary>
-    public Type ReturnType { get; set; }
+    internal Type ReturnType { get; set; }
 
     /// <summary>Gets or sets the result type wrapped by the return type.</summary>
-    public Type ReturnResultType { get; set; }
+    internal Type ReturnResultType { get; set; }
 
     /// <summary>Gets or sets the type that the response content is deserialized into.</summary>
-    public Type DeserializedResultType { get; set; }
+    internal Type DeserializedResultType { get; set; }
 
     /// <summary>Gets a value indicating whether a registered <see cref="IReturnTypeAdapter{TReturn, TResult}"/> surfaces this method's return type.</summary>
-    public bool HasReturnTypeAdapter { get; }
+    internal bool HasReturnTypeAdapter { get; }
 
     /// <summary>Gets the Refit settings used when building the request.</summary>
-    public RefitSettings RefitSettings { get; }
+    internal RefitSettings RefitSettings { get; }
 
     /// <summary>Gets a value indicating whether the method returns an API response wrapper.</summary>
-    public bool IsApiResponse { get; }
+    internal bool IsApiResponse { get; }
 
     /// <summary>Gets a value indicating whether the response must be disposed by the caller.</summary>
-    public bool ShouldDisposeResponse { get; }
+    internal bool ShouldDisposeResponse { get; }
 
     /// <summary>Gets a value indicating whether the method has a header collection parameter.</summary>
-    public bool HasHeaderCollection => _headerCollectionParameterIndex >= 0;
+    internal bool HasHeaderCollection => _headerCollectionParameterIndex >= 0;
 
     /// <summary>Gets the name of the method.</summary>
     internal string Name => MethodInfo.Name;
@@ -226,12 +226,6 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets a flag per parameter indicating whether it carries <see cref="FormObjectAttribute"/> on a multipart
     /// method, indexed to match <see cref="ParameterInfoArray"/>; a shared empty array for non-multipart methods.</summary>
     internal bool[] ParameterFormObjectFlags { get; }
-
-    /// <summary>Determines whether the parameter at the given index is the header collection parameter.</summary>
-    /// <param name="index">The parameter index to test.</param>
-    /// <returns><see langword="true"/> when the parameter is the header collection parameter; otherwise <see langword="false"/>.</returns>
-    public bool HeaderCollectionAt(int index) =>
-        _headerCollectionParameterIndex >= 0 && _headerCollectionParameterIndex == index;
 
     /// <summary>Removes cancellation-token parameters from a reflected parameter array.</summary>
     /// <param name="parameters">The reflected method parameters.</param>
@@ -513,6 +507,12 @@ internal partial class RestMethodInfoInternal
     /// <returns>The parameter matching regular expression.</returns>
     internal static Regex ParameterRegex() => _parameterRegexValue;
 #endif
+
+    /// <summary>Determines whether the parameter at the given index is the header collection parameter.</summary>
+    /// <param name="index">The parameter index to test.</param>
+    /// <returns><see langword="true"/> when the parameter is the header collection parameter; otherwise <see langword="false"/>.</returns>
+    internal bool HeaderCollectionAt(int index) =>
+        _headerCollectionParameterIndex >= 0 && _headerCollectionParameterIndex == index;
 
     /// <summary>Builds the map of parameter indexes to multipart attachment names.</summary>
     /// <returns>A map of parameter indexes to attachment name pairs.</returns>

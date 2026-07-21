@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Composition.Hosting;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
@@ -27,11 +28,16 @@ internal static class CodeFixFixture
     /// <summary>The in-memory document name used for code-fix test compilations.</summary>
     private const string DefaultTestFileName = "Test.cs";
 
+    /// <summary>The MEF host that creates the shared Refit code-fix provider.</summary>
+    private static readonly CompositionHost CodeFixProviderHost = new ContainerConfiguration()
+        .WithPart<RefitInterfaceCodeFixProvider>()
+        .CreateContainer();
+
     /// <summary>Applies the first available code fix for a diagnostic ID.</summary>
     /// <param name="source">The source to fix.</param>
     /// <param name="diagnosticId">The diagnostic ID to fix.</param>
     /// <returns>The updated source.</returns>
-    public static async Task<string> ApplyFirstFix(string source, string diagnosticId)
+    internal static async Task<string> ApplyFirstFix(string source, string diagnosticId)
     {
         using var workspace = new AdhocWorkspace();
         var project = workspace
@@ -47,15 +53,14 @@ internal static class CodeFixFixture
         var diagnostics = await compilation
             .WithAnalyzers([new RefitInterfaceAnalyzer()])
             .GetAnalyzerDiagnosticsAsync();
+        var compilerDiagnostics = string.Join(", ", compilation.GetDiagnostics().Select(static x => x.ToString()));
+        var analyzerDiagnostics = string.Join(", ", diagnostics.Select(static x => x.ToString()));
         var diagnostic = diagnostics.SingleOrDefault(x => x.Id == diagnosticId)
                          ?? throw new InvalidOperationException(
-                             "Expected diagnostic was not produced. Compiler diagnostics: "
-                             + string.Join(", ", compilation.GetDiagnostics().Select(static x => x.ToString()))
-                             + ". Analyzer diagnostics: "
-                             + string.Join(", ", diagnostics.Select(static x => x.ToString())));
+                             $"Expected diagnostic was not produced. Compiler diagnostics: {compilerDiagnostics}. Analyzer diagnostics: {analyzerDiagnostics}");
 
         var actions = new List<CodeAction>();
-        var provider = new RefitInterfaceCodeFixProvider();
+        var provider = GetCodeFixProvider();
         var context = new CodeFixContext(
             document,
             diagnostic,
@@ -81,14 +86,14 @@ internal static class CodeFixFixture
 
     /// <summary>Gets the fix-all provider from the Refit code-fix provider.</summary>
     /// <returns>The fix-all provider.</returns>
-    public static FixAllProvider? GetFixAllProvider() =>
-        new RefitInterfaceCodeFixProvider().GetFixAllProvider();
+    internal static FixAllProvider? GetFixAllProvider() =>
+        GetCodeFixProvider().GetFixAllProvider();
 
     /// <summary>Applies the forward-slash helper directly at the first occurrence of the marker.</summary>
     /// <param name="source">The source to update.</param>
     /// <param name="marker">The source marker used to create the diagnostic span.</param>
     /// <returns>The updated source.</returns>
-    public static async Task<string> UseForwardSlashesDirectly(string source, string marker)
+    internal static async Task<string> UseForwardSlashesDirectly(string source, string marker)
     {
         var document = CreateDocument(source);
         var diagnostic = CreateDiagnostic("RF003", source, marker);
@@ -101,7 +106,7 @@ internal static class CodeFixFixture
     /// <param name="source">The source to update.</param>
     /// <param name="marker">The source marker used to create the diagnostic span.</param>
     /// <returns>The updated source.</returns>
-    public static async Task<string> UseHeaderCollectionTypeDirectly(string source, string marker)
+    internal static async Task<string> UseHeaderCollectionTypeDirectly(string source, string marker)
     {
         var document = CreateDocument(source);
         var diagnostic = CreateDiagnostic("RF005", source, marker);
@@ -147,6 +152,11 @@ internal static class CodeFixFixture
             .AddMetadataReferences(GetMetadataReferences())
             .AddDocument(DefaultTestFileName, SourceText.From(source));
     }
+
+    /// <summary>Gets the code-fix provider through its configured MEF shared export.</summary>
+    /// <returns>The Refit code-fix provider.</returns>
+    private static CodeFixProvider GetCodeFixProvider() =>
+        CodeFixProviderHost.GetExport<CodeFixProvider>();
 
     /// <summary>Creates a diagnostic over the first occurrence of a marker string.</summary>
     /// <param name="diagnosticId">The diagnostic ID.</param>

@@ -63,7 +63,7 @@ public partial class RequestBuilderTests
 
         var fixture = new RequestBuilderImplementation<ICancellableMethods>();
         var func = fixture.BuildRestResultFuncForMethod(nameof(ICancellableMethods.GetWithCancellationAndReturn));
-        using var client = new HttpClient(handler) { BaseAddress = new(ApiBaseUrlWithSlash) };
+        using var client = HttpClientTestFactory.Create(handler, new(ApiBaseUrlWithSlash));
 
         var result = await (Task<string>)func(client, [CancellationToken.None])!;
 

@@ -11,20 +11,22 @@ public static class Issue2056And2058Demo
     /// <summary>The number of items requested in the large payload validation.</summary>
     private const int LargePayloadItemCount = 2000;
 
+    /// <summary>The shared HTTP client used by the in-memory issue demonstration.</summary>
+    private static readonly HttpClient _httpClient = new(
+        new CustomerIdHeaderHandler(new DemoBackendHandler()))
+    { BaseAddress = new("https://demo.local") };
+
+    /// <summary>The shared Refit API backed by <see cref="_httpClient"/>.</summary>
+    private static readonly IIssueDemoApi _api = RestService.For<IIssueDemoApi>(
+        _httpClient,
+        new RefitSettings { ContentSerializer = new NewtonsoftJsonContentSerializer() });
+
     /// <summary>Runs both issue validations against an in-memory backend.</summary>
     /// <returns>A task that completes when both validations have run.</returns>
     public static async Task RunAsync()
     {
-        using var httpClient = new HttpClient(
-            new CustomerIdHeaderHandler(new DemoBackendHandler()))
-        { BaseAddress = new("https://demo.local") };
-
-        var api = RestService.For<IIssueDemoApi>(
-            httpClient,
-            new RefitSettings { ContentSerializer = new NewtonsoftJsonContentSerializer() });
-
-        await ValidateIssue2056Async(api).ConfigureAwait(false);
-        await ValidateIssue2058Async(api).ConfigureAwait(false);
+        await ValidateIssue2056Async(_api).ConfigureAwait(false);
+        await ValidateIssue2058Async(_api).ConfigureAwait(false);
     }
 
     /// <summary>Validates that per-request customer id headers are not shared across concurrent requests.</summary>

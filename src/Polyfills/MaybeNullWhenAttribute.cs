@@ -12,8 +12,16 @@ namespace System.Diagnostics.CodeAnalysis;
 [ExcludeFromCodeCoverage]
 [DebuggerNonUserCode]
 [AttributeUsage(AttributeTargets.Parameter)]
-internal sealed class MaybeNullWhenAttribute(bool returnValue) : Attribute
+internal sealed class MaybeNullWhenAttribute(bool returnValue)
+    : Attribute, MaybeNullWhenAttribute.IMetadata
 {
+    /// <summary>Defines the nullable-analysis public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the return value for which the parameter may be null.</summary>
+        bool ReturnValue { get; }
+    }
+
     /// <summary>Gets the return value condition under which the parameter may be null.</summary>
     public bool ReturnValue { get; } = returnValue;
 }

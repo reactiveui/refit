@@ -40,7 +40,7 @@ public sealed class MultipartFormattableValueFormattingTests
         var fixture = new RequestBuilderImplementation<IRunscopeApi>(settings);
         var func = fixture.BuildRestResultFuncForMethod(nameof(IRunscopeApi.UploadFormattableValues));
         var handler = new MultipartCapturingHttpMessageHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new("https://api/") };
+        using var client = HttpClientTestFactory.Create(handler, new("https://api/"));
         await (Task)func(client, [Guid.NewGuid(), DateTimeOffset.UnixEpoch])!;
 
         return handler.Parts.First(static part => part.Name == "id").Body;

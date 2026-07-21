@@ -40,7 +40,7 @@ internal static partial class Emitter
     {
         var memberIndent = Indent(MethodMemberIndentation);
         var bodyIndent = Indent(MethodBodyIndentation);
-        var caseIndent = bodyIndent + "    ";
+        var caseIndent = $"{bodyIndent}    ";
         var format = valueFormat.Format;
 
         _ = memberSb.AppendLine()

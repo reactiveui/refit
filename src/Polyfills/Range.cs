@@ -27,45 +27,19 @@ internal readonly struct Range : IEquatable<Range>
     }
 
     /// <summary>Gets a <see cref="Range"/> that represents the entire sequence.</summary>
-    public static Range All => new(Index.Start, Index.End);
+    internal static Range All => new(Index.Start, Index.End);
 
     /// <summary>Gets the inclusive start index.</summary>
-    public Index Start { get; }
+    internal Index Start { get; }
 
     /// <summary>Gets the exclusive end index.</summary>
-    public Index End { get; }
-
-    /// <summary>Creates a <see cref="Range"/> that starts at the specified index and ends at <see cref="Index.End"/>.</summary>
-    /// <param name="start">The inclusive start index.</param>
-    /// <returns>The created <see cref="Range"/>.</returns>
-    public static Range StartAt(Index start) => new(start, Index.End);
-
-    /// <summary>Creates a <see cref="Range"/> that starts at <see cref="Index.Start"/> and ends at the specified index.</summary>
-    /// <param name="end">The exclusive end index.</param>
-    /// <returns>The created <see cref="Range"/>.</returns>
-    public static Range EndAt(Index end) => new(Index.Start, end);
+    internal Index End { get; }
 
     /// <inheritdoc/>
     public static bool operator ==(Range left, Range right) => left.Equals(right);
 
     /// <inheritdoc/>
     public static bool operator !=(Range left, Range right) => !left.Equals(right);
-
-    /// <summary>Calculates the start offset and length for a sequence of the given length.</summary>
-    /// <param name="length">The sequence length.</param>
-    /// <returns>The offset and length represented by the range.</returns>
-    public (int Offset, int Length) GetOffsetAndLength(int length)
-    {
-        var start = Start.GetOffset(length);
-        var end = End.GetOffset(length);
-
-        if ((uint)end > (uint)length || (uint)start > (uint)end)
-        {
-            throw new ArgumentOutOfRangeException(nameof(length));
-        }
-
-        return (start, end - start);
-    }
 
     /// <inheritdoc/>
     public bool Equals(Range other) => Start.Equals(other.Start) && End.Equals(other.End);
@@ -77,6 +51,32 @@ internal readonly struct Range : IEquatable<Range>
     public override int GetHashCode() => HashCode.Combine(Start, End);
 
     /// <inheritdoc/>
-    public override string ToString() => Start.ToString() + ".." + End.ToString();
+    public override string ToString() => $"{Start}..{End}";
+
+    /// <summary>Creates a <see cref="Range"/> that starts at the specified index and ends at <see cref="Index.End"/>.</summary>
+    /// <param name="start">The inclusive start index.</param>
+    /// <returns>The created <see cref="Range"/>.</returns>
+    internal static Range StartAt(Index start) => new(start, Index.End);
+
+    /// <summary>Creates a <see cref="Range"/> that starts at <see cref="Index.Start"/> and ends at the specified index.</summary>
+    /// <param name="end">The exclusive end index.</param>
+    /// <returns>The created <see cref="Range"/>.</returns>
+    internal static Range EndAt(Index end) => new(Index.Start, end);
+
+    /// <summary>Calculates the start offset and length for a sequence of the given length.</summary>
+    /// <param name="length">The sequence length.</param>
+    /// <returns>The offset and length represented by the range.</returns>
+    internal (int Offset, int Length) GetOffsetAndLength(int length)
+    {
+        var start = Start.GetOffset(length);
+        var end = End.GetOffset(length);
+
+        if ((uint)end > (uint)length || (uint)start > (uint)end)
+        {
+            throw new ArgumentOutOfRangeException(nameof(length));
+        }
+
+        return (start, end - start);
+    }
 }
 #endif

@@ -44,7 +44,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Initializes a new instance of the <see cref="FormValueMultimap"/> class from a source object.</summary>
     /// <param name="source">The source object or dictionary to convert into form entries.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    public FormValueMultimap(object source, RefitSettings settings)
+    internal FormValueMultimap(object source, RefitSettings settings)
         : this(source, settings, null)
     {
     }
@@ -78,7 +78,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     }
 
     /// <summary>Gets a key for each entry. If multiple entries share the same key, the key is returned multiple times.</summary>
-    public IEnumerable<string?> Keys => GetKeys();
+    internal IEnumerable<string?> Keys => GetKeys();
 
     /// <summary>Returns an enumerator over the form key/value entries.</summary>
     /// <returns>An enumerator over the entries.</returns>

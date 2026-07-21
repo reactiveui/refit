@@ -419,7 +419,7 @@ public class QueryObjectFlatteningTests
     private static async Task<string> SendGeneratedAsync(RefitSettings settings, Func<IQueryObjectApi, Task<string>> call)
     {
         var handler = new TestHttpMessageHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.ForGenerated<IQueryObjectApi>(client, settings);
 
         _ = await call(api);

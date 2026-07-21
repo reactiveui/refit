@@ -29,6 +29,6 @@ internal partial class RestMethodInfoInternal
         var trimmedPath = path.TrimStart('/');
         return trimmedPath.Length == 0
             ? trimmedPrefix
-            : trimmedPrefix + "/" + trimmedPath;
+            : $"{trimmedPrefix}/{trimmedPath}";
     }
 }

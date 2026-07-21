@@ -19,8 +19,16 @@ namespace System.Diagnostics.CodeAnalysis;
     AttributeTargets.Struct,
     Inherited = false)]
 [ExcludeFromCodeCoverage]
-internal sealed class DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes memberTypes) : Attribute
+internal sealed class DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes memberTypes)
+    : Attribute, DynamicallyAccessedMembersAttribute.IMetadata
 {
+    /// <summary>Defines the trimming-required public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the dynamically accessed member categories.</summary>
+        DynamicallyAccessedMemberTypes MemberTypes { get; }
+    }
+
     /// <summary>Gets the member types that are dynamically accessed.</summary>
     public DynamicallyAccessedMemberTypes MemberTypes { get; } = memberTypes;
 }

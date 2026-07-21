@@ -7,8 +7,8 @@ namespace Refit.GeneratorTests.Incremental;
 internal static class RefitGeneratorStepName
 {
     /// <summary>The name of the diagnostics reporting step.</summary>
-    public const string ReportDiagnostics = "ReportDiagnostics";
+    internal const string ReportDiagnostics = "ReportDiagnostics";
 
     /// <summary>The name of the Refit build step.</summary>
-    public const string BuildRefit = "BuildRefit";
+    internal const string BuildRefit = "BuildRefit";
 }

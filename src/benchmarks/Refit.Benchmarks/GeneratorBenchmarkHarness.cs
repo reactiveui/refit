@@ -34,7 +34,7 @@ internal static class GeneratorBenchmarkHarness
     /// <summary>Creates a compilation for the source text and a generator driver for it.</summary>
     /// <param name="sourceText">The source text to compile and feed to the generator.</param>
     /// <returns>The compilation and generator driver.</returns>
-    public static (Compilation Compilation, CSharpGeneratorDriver Driver) Create(string sourceText)
+    internal static (Compilation Compilation, CSharpGeneratorDriver Driver) Create(string sourceText)
     {
         var references = new List<MetadataReference>();
         foreach (var assembly in GetAssemblyReferencesForCodegen())
@@ -61,7 +61,7 @@ internal static class GeneratorBenchmarkHarness
     /// <summary>Runs the generator once and primes the driver for an incremental (cached) re-run.</summary>
     /// <param name="sourceText">The source text to compile and feed to the generator.</param>
     /// <returns>The compilation and primed generator driver.</returns>
-    public static (Compilation Compilation, CSharpGeneratorDriver Driver) CreatePrimedForCachedRun(
+    internal static (Compilation Compilation, CSharpGeneratorDriver Driver) CreatePrimedForCachedRun(
         string sourceText)
     {
         var (compilation, driver) = Create(sourceText);

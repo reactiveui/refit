@@ -89,17 +89,17 @@ internal static partial class Emitter
     {
         var settingsLocal = emission.SettingsLocal;
         var bodyIndent = Indent(MethodBodyIndentation);
-        var inner = bodyIndent + "    ";
+        var inner = $"{bodyIndent}    ";
         var fields = bodyParameter.FormFields!.Value.AsArray();
-        var bodyExpr = "@" + bodyParameter.Name;
+        var bodyExpr = $"@{bodyParameter.Name}";
         var entriesLocal = locals.New("______formEntries");
 
         // Nullable reference annotations are a C# 8 feature; older consumers get the unannotated types, which also match
         // the .NET Framework/netstandard FormUrlEncodedContent constructor signature. The generated code stays
         // compilable down to the C# 7.3 floor (explicit KeyValuePair construction, != null guards - no C# 9 syntax).
         var nullable = supportsNullable ? "?" : string.Empty;
-        var kvpType = "global::System.Collections.Generic.KeyValuePair<string" + nullable + ", string" + nullable + ">";
-        var site = new FormUnrollSite(bodyExpr, entriesLocal, inner, "new " + kvpType, locals);
+        var kvpType = $"global::System.Collections.Generic.KeyValuePair<string{nullable}, string{nullable}>";
+        var site = new FormUnrollSite(bodyExpr, entriesLocal, inner, $"new {kvpType}", locals);
 
         var adds = new PooledStringBuilder();
         foreach (var field in fields)
@@ -137,11 +137,11 @@ internal static partial class Emitter
     {
         var indent = site.Indentation;
         var valueLocal = site.Locals.New("______formValue");
-        var keyExpr = "global::Refit.GeneratedRequestRunner.BuildQueryKey("
-            + emission.SettingsLocal + ", "
-            + ToCSharpStringLiteral(field.PropertyName) + ", "
-            + ToNullableCSharpStringLiteral(field.ExplicitName) + ", "
-            + ToNullableCSharpStringLiteral(field.PrefixSegment) + ")";
+        var propertyNameLiteral = ToCSharpStringLiteral(field.PropertyName);
+        var explicitNameLiteral = ToNullableCSharpStringLiteral(field.ExplicitName);
+        var prefixSegmentLiteral = ToNullableCSharpStringLiteral(field.PrefixSegment);
+        var keyExpr =
+            $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {propertyNameLiteral}, {explicitNameLiteral}, {prefixSegmentLiteral})";
 
         _ = sb.Append(indent).Append("var ").Append(valueLocal).Append(" = ").Append(site.BodyExpr).Append(".@").Append(field.PropertyName).AppendLine(";");
 
@@ -155,7 +155,7 @@ internal static partial class Emitter
         }
 
         // "!= null" (not the C# 9 "is not null" pattern) keeps the emitted null guard compilable down to C# 7.3.
-        var childIndent = indent + "    ";
+        var childIndent = $"{indent}    ";
         _ = sb.Append(indent).Append("if (").Append(valueLocal).AppendLine(" != null)")
             .Append(indent).AppendLine("{");
         AppendFormEntryAdd(sb, in site, childIndent, keyExpr, valueExpr);

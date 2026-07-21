@@ -14,7 +14,7 @@ internal static class RequestBuilderTestExtensions
         /// <param name="methodName">The name of the interface method to build a request for.</param>
         /// <param name="baseAddress">The base address used by the test HTTP client.</param>
         /// <returns>A factory that maps a parameter array to a task producing the request message.</returns>
-        public Func<object[], Task<HttpRequestMessage>> BuildRequestFactoryForMethod(
+        internal Func<object[], Task<HttpRequestMessage>> BuildRequestFactoryForMethod(
             string methodName,
             string baseAddress = "http://api/")
         {
@@ -36,7 +36,7 @@ internal static class RequestBuilderTestExtensions
         /// <param name="returnContent">Optional response content the handler returns.</param>
         /// <param name="baseAddress">The base address used by the test HTTP client.</param>
         /// <returns>A factory that maps a parameter array to a task producing the handler that observed the request.</returns>
-        public Func<object[], Task<TestHttpMessageHandler>> RunRequest(
+        internal Func<object[], Task<TestHttpMessageHandler>> RunRequest(
             string methodName,
             string? returnContent = null,
             string baseAddress = "http://api/")

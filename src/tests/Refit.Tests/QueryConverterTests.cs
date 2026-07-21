@@ -101,7 +101,7 @@ public class QueryConverterTests
     private static async Task<string> SendAsync(RefitSettings settings, Func<IConverterApi, Task<string>> call)
     {
         var handler = new TestHttpMessageHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.ForGenerated<IConverterApi>(client, settings);
 
         _ = await call(api);

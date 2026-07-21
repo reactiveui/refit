@@ -14,20 +14,20 @@ internal static class HttpContentExtensions
         /// <summary>Loads the content into a buffer, ignoring the cancellation token.</summary>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
         /// <returns>A task representing the buffering operation.</returns>
-        public Task LoadIntoBufferAsync(CancellationToken cancellationToken) =>
+        internal Task LoadIntoBufferAsync(CancellationToken cancellationToken) =>
             httpContent.LoadIntoBufferAsync();
 
 #if !NET6_0_OR_GREATER
         /// <summary>Reads the content as a stream, ignoring the cancellation token.</summary>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
         /// <returns>A task producing the content stream.</returns>
-        public Task<Stream> ReadAsStreamAsync(CancellationToken cancellationToken) =>
+        internal Task<Stream> ReadAsStreamAsync(CancellationToken cancellationToken) =>
             httpContent.ReadAsStreamAsync();
 
         /// <summary>Reads the content as a string, ignoring the cancellation token.</summary>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
         /// <returns>A task producing the content string.</returns>
-        public Task<string> ReadAsStringAsync(CancellationToken cancellationToken) =>
+        internal Task<string> ReadAsStringAsync(CancellationToken cancellationToken) =>
             httpContent.ReadAsStringAsync();
 #endif
     }

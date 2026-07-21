@@ -24,7 +24,7 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Initializes a new instance of the <c>ValueStringBuilder</c> struct using an initial stack buffer.</summary>
     /// <param name="initialBuffer">The initial buffer to write into.</param>
-    public ValueStringBuilder(Span<char> initialBuffer)
+    internal ValueStringBuilder(Span<char> initialBuffer)
     {
         _arrayToReturnToPool = null;
         _chars = initialBuffer;
@@ -33,7 +33,7 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Initializes a new instance of the <c>ValueStringBuilder</c> struct using a pooled buffer of the given capacity.</summary>
     /// <param name="initialCapacity">The initial capacity to rent.</param>
-    public ValueStringBuilder(int initialCapacity)
+    internal ValueStringBuilder(int initialCapacity)
     {
         _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
         _chars = _arrayToReturnToPool;
@@ -41,7 +41,7 @@ internal ref struct ValueStringBuilder
     }
 
     /// <summary>Gets or sets the number of characters currently in the builder.</summary>
-    public int Length
+    internal int Length
     {
         readonly get => _pos;
         set
@@ -53,10 +53,10 @@ internal ref struct ValueStringBuilder
     }
 
     /// <summary>Gets the total capacity of the current buffer.</summary>
-    public readonly int Capacity => _chars.Length;
+    internal readonly int Capacity => _chars.Length;
 
     /// <summary>Gets the underlying storage of the builder.</summary>
-    public readonly Span<char> RawChars => _chars;
+    internal readonly Span<char> RawChars => _chars;
 
     /// <summary>Gets the DebuggerDisplay attribute.</summary>
     /// <remarks>ToString() clears the builder, so we need a side-effect free debugger display.</remarks>
@@ -67,7 +67,7 @@ internal ref struct ValueStringBuilder
     /// <summary>Gets a reference to the character at the specified index.</summary>
     /// <param name="index">The zero-based index of the character.</param>
     /// <returns>A reference to the character at the index.</returns>
-    public ref char this[int index]
+    internal ref char this[int index]
     {
         get
         {
@@ -76,9 +76,17 @@ internal ref struct ValueStringBuilder
         }
     }
 
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        var s = _chars[.._pos].ToString();
+        Dispose();
+        return s;
+    }
+
     /// <summary>Ensures the builder can hold at least the requested number of characters.</summary>
     /// <param name="capacity">The required capacity.</param>
-    public void EnsureCapacity(int capacity)
+    internal void EnsureCapacity(int capacity)
     {
         // This is not expected to be called this with negative capacity
         Debug.Assert(capacity >= 0, "Capacity must not be negative.");
@@ -99,12 +107,12 @@ internal ref struct ValueStringBuilder
     /// the explicit method call, and write eg "fixed (char* c = builder)".
     /// </summary>
     /// <returns>A reference to the first character of the builder.</returns>
-    public readonly ref char GetPinnableReference() => ref MemoryMarshal.GetReference(_chars);
+    internal readonly ref char GetPinnableReference() => ref MemoryMarshal.GetReference(_chars);
 
     /// <summary>Get a pinnable reference to the builder.</summary>
     /// <param name="terminate">Ensures that the builder has a null char after <see cref="Length"/>.</param>
     /// <returns>A reference to the first character of the builder.</returns>
-    public ref char GetPinnableReference(bool terminate)
+    internal ref char GetPinnableReference(bool terminate)
     {
         if (terminate)
         {
@@ -115,18 +123,10 @@ internal ref struct ValueStringBuilder
         return ref MemoryMarshal.GetReference(_chars);
     }
 
-    /// <inheritdoc/>
-    public override string ToString()
-    {
-        var s = _chars[.._pos].ToString();
-        Dispose();
-        return s;
-    }
-
     /// <summary>Returns a span around the contents of the builder.</summary>
     /// <param name="terminate">Ensures that the builder has a null char after <see cref="Length"/>.</param>
     /// <returns>A span over the contents of the builder.</returns>
-    public ReadOnlySpan<char> AsSpan(bool terminate)
+    internal ReadOnlySpan<char> AsSpan(bool terminate)
     {
         if (terminate)
         {
@@ -139,24 +139,24 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Returns a span over the current contents of the builder.</summary>
     /// <returns>A span over the contents of the builder.</returns>
-    public readonly ReadOnlySpan<char> AsSpan() => _chars[.._pos];
+    internal readonly ReadOnlySpan<char> AsSpan() => _chars[.._pos];
 
     /// <summary>Returns a span over the contents from the given start index to the end.</summary>
     /// <param name="start">The start index.</param>
     /// <returns>A span over the requested portion of the builder.</returns>
-    public readonly ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
+    internal readonly ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
 
     /// <summary>Returns a span over the contents at the given start index with the given length.</summary>
     /// <param name="start">The start index.</param>
     /// <param name="length">The length of the span.</param>
     /// <returns>A span over the requested portion of the builder.</returns>
-    public readonly ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
+    internal readonly ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
 
     /// <summary>Attempts to copy the contents of the builder into the destination span.</summary>
     /// <param name="destination">The destination span.</param>
     /// <param name="charsWritten">When this method returns, contains the number of characters copied.</param>
     /// <returns><see langword="true"/> if the contents were copied; otherwise, <see langword="false"/>.</returns>
-    public bool TryCopyTo(Span<char> destination, out int charsWritten)
+    internal bool TryCopyTo(Span<char> destination, out int charsWritten)
     {
         if (_chars[.._pos].TryCopyTo(destination))
         {
@@ -174,7 +174,7 @@ internal ref struct ValueStringBuilder
     /// <param name="index">The index at which to insert.</param>
     /// <param name="value">The character to insert.</param>
     /// <param name="count">The number of times to insert the character.</param>
-    public void Insert(int index, char value, int count)
+    internal void Insert(int index, char value, int count)
     {
         if (_pos > _chars.Length - count)
         {
@@ -190,7 +190,7 @@ internal ref struct ValueStringBuilder
     /// <summary>Inserts a string at the given index.</summary>
     /// <param name="index">The index at which to insert.</param>
     /// <param name="s">The string to insert.</param>
-    public void Insert(int index, string? s)
+    internal void Insert(int index, string? s)
     {
         if (s is null)
         {
@@ -217,7 +217,7 @@ internal ref struct ValueStringBuilder
     /// <summary>Appends a single character to the builder.</summary>
     /// <param name="c">The character to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(char c)
+    internal void Append(char c)
     {
         var pos = _pos;
         var chars = _chars;
@@ -235,7 +235,7 @@ internal ref struct ValueStringBuilder
     /// <summary>Appends a string to the builder.</summary>
     /// <param name="s">The string to append.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Append(string? s)
+    internal void Append(string? s)
     {
         if (s is null)
         {
@@ -259,7 +259,7 @@ internal ref struct ValueStringBuilder
     /// <summary>Appends a character repeated a number of times.</summary>
     /// <param name="c">The character to append.</param>
     /// <param name="count">The number of times to append the character.</param>
-    public void Append(char c, int count)
+    internal void Append(char c, int count)
     {
         if (_pos > _chars.Length - count)
         {
@@ -277,7 +277,7 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Appends the characters of a span to the builder.</summary>
     /// <param name="value">The characters to append.</param>
-    public void Append(ReadOnlySpan<char> value)
+    internal void Append(ReadOnlySpan<char> value)
     {
         var pos = _pos;
         if (pos > _chars.Length - value.Length)
@@ -293,7 +293,7 @@ internal ref struct ValueStringBuilder
     /// <param name="length">The number of characters to reserve.</param>
     /// <returns>A writable span for the reserved characters.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Span<char> AppendSpan(int length)
+    internal Span<char> AppendSpan(int length)
     {
         var origPos = _pos;
         if (origPos > _chars.Length - length)
@@ -307,7 +307,7 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Returns any rented buffer to the pool and resets the builder.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Dispose()
+    internal void Dispose()
     {
         var toReturn = _arrayToReturnToPool;
         this = default; // for safety, to avoid using pooled array if this instance is erroneously appended to again

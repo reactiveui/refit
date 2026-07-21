@@ -65,7 +65,7 @@ internal static partial class Parser
         // every integer width, decimal, float, double) through System_Double - so a range check covers them all
         // in one comparison. string and DateTime sit just outside that block.
         static bool IsScalarSpecialType(SpecialType specialType) =>
-            (specialType >= SpecialType.System_Boolean && specialType <= SpecialType.System_Double)
+            specialType is >= SpecialType.System_Boolean and <= SpecialType.System_Double
             || specialType == SpecialType.System_String
             || specialType == SpecialType.System_DateTime;
 
@@ -402,7 +402,7 @@ internal static partial class Parser
             string.Empty,
             BodyBufferMode.None)
         {
-            HeaderValuePrefix = scheme + " ",
+            HeaderValuePrefix = $"{scheme} ",
         };
 
     /// <summary>Builds an unsupported request parameter model.</summary>

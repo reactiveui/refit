@@ -25,13 +25,13 @@ public class AuthenticatedClientHandlerTests
     private const string BaseUrl = "http://api";
 
     /// <summary>Fully qualified URL of the authenticated endpoint.</summary>
-    private const string AuthUrl = BaseUrl + "/auth";
+    private const string AuthUrl = $"{BaseUrl}/auth";
 
     /// <summary>Name of the HTTP authorization header.</summary>
     private const string AuthorizationHeader = "Authorization";
 
     /// <summary>Authorization header value carrying the bearer token.</summary>
-    private const string BearerTokenValue = "Bearer " + TokenValue;
+    private const string BearerTokenValue = $"Bearer {TokenValue}";
 
     /// <summary>Authorization header value carrying the refreshed bearer token.</summary>
     private const string BearerTokenValue2 = "Bearer tokenValue2";

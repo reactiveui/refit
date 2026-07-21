@@ -41,7 +41,7 @@ public sealed class ReflectionPropertyHelpersTests
     }
 
     /// <summary>A type whose properties span the readable and non-public-getter shapes.</summary>
-    private sealed class PropertyShapes
+    public sealed class PropertyShapes
     {
         /// <summary>Gets or sets a readable public property that is returned.</summary>
         public string? Readable { get; set; }

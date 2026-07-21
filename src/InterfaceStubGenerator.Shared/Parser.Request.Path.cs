@@ -118,7 +118,7 @@ internal static partial class Parser
         string urlName,
         in LooseParameterContext context)
     {
-        var prefix = urlName + ".";
+        var prefix = $"{urlName}.";
         var bindings = new List<PathObjectBindingModel>();
         var occurrences = context.ParameterLocations.Occurrences;
         for (var index = 0; index < occurrences.Length; index++)

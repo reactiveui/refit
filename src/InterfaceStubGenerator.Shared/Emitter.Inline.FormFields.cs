@@ -63,8 +63,7 @@ internal static partial class Emitter
 
         // The getter lambda degrades to the consumer's language version: 'static' is C# 9 and the 'object?' cast
         // annotation is C# 8, so both are omitted below those versions to keep generation compilable at the C# 7.3 floor.
-        var getterOpen = ">(" + (supportsStaticLambdas ? "static " : string.Empty)
-            + "body => (" + (supportsNullable ? "object?" : "object") + ")body.@";
+        var getterOpen = $">({(supportsStaticLambdas ? "static " : string.Empty)}body => ({(supportsNullable ? "object?" : "object")})body.@";
 
         var elements = BuildFormFieldElements(fields, bodyType, elementIndent, getterOpen);
 

@@ -57,7 +57,7 @@ public sealed class MultipartPartRoutingTests
         var fixture = new RequestBuilderImplementation<IMultipartPartRoutingApi>();
         var func = fixture.BuildRestResultFuncForMethod(method);
         var handler = new MultipartCapturingHttpMessageHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new("http://api/") };
+        using var client = HttpClientTestFactory.Create(handler, new("http://api/"));
         await (Task)func(client, args)!;
         return handler;
     }

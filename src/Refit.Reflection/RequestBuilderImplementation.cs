@@ -94,11 +94,11 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         _interfaceHttpMethods = dict;
     }
 
-    /// <summary>Gets the Refit interface type this builder targets.</summary>
-    public Type TargetType { get; }
-
     /// <inheritdoc/>
     public RefitSettings Settings => _settings;
+
+    /// <summary>Gets the Refit interface type this builder targets.</summary>
+    internal Type TargetType { get; }
 
     /// <inheritdoc/>
     [RequiresUnreferencedCode("Building request delegates from reflected method metadata requires generic method metadata to be available at runtime.")]
@@ -475,7 +475,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     internal Func<HttpClient, object[], object?> BuildAdapterFuncForMethodGeneric<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
-        var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
+        var builder = this;
+        var taskFunc = builder.BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
         // This runs only when HasReturnTypeAdapter already matched an adapter for this exact return type and adapter
         // set, so ResolveClosedAdapterType resolves the same match and never returns null here.
@@ -576,7 +577,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     internal Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
-        var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
+        var builder = this;
+        var taskFunc = builder.BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
         return (client, paramList) =>
             new FromAsyncSignal<T?>(ct =>
@@ -612,8 +614,11 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         Justification = "The second type parameter is required so this factory matches the two-type-argument shape invoked reflectively by BuildResultFuncForMethod.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     internal Func<HttpClient, object[], IAsyncEnumerable<T?>> BuildAsyncEnumerableFuncForMethod<T, TBody>(
-        RestMethodInfoInternal restMethod) =>
-        (client, paramList) => ExecuteAsyncEnumerableRequestAsync<T>(client, restMethod, paramList);
+        RestMethodInfoInternal restMethod)
+    {
+        var builder = this;
+        return (client, paramList) => builder.ExecuteAsyncEnumerableRequestAsync<T>(client, restMethod, paramList);
+    }
 
     /// <summary>Builds a task invocation delegate for a method.</summary>
     /// <typeparam name="T">The result type returned to the caller.</typeparam>
@@ -628,7 +633,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     internal Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
-        var ret = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
+        var builder = this;
+        var ret = builder.BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
         return (client, paramList) =>
             restMethod.CancellationToken is not null
@@ -649,7 +655,8 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     internal Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
-        var ret = BuildTaskFuncForMethod<T, TBody>(restMethod);
+        var builder = this;
+        var ret = builder.BuildTaskFuncForMethod<T, TBody>(restMethod);
 
         return (client, paramList) => new(ret(client, paramList));
     }

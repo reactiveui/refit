@@ -198,10 +198,11 @@ internal partial class RequestBuilderImplementation
         object[] paramList,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        var builder = this;
         var methodCt = GetMethodCancellationToken(restMethod, paramList);
         var linked = CancellationTokenSource.CreateLinkedTokenSource(methodCt, cancellationToken);
 
-        await foreach (var item in StreamAsyncEnumerableRequestAsync<T>(client, restMethod, paramList, linked)
+        await foreach (var item in builder.StreamAsyncEnumerableRequestAsync<T>(client, restMethod, paramList, linked)
             .ConfigureAwait(false))
         {
             yield return item;

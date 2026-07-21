@@ -15,10 +15,10 @@ internal sealed class GeneratedSettingsFactoryApiClient(
     RefitSettings settings) : IGeneratedSettingsFactoryApi
 {
     /// <summary>Gets the HTTP client supplied to the factory.</summary>
-    public HttpClient Client { get; } = client;
+    internal HttpClient Client { get; } = client;
 
     /// <summary>Gets the settings supplied to the factory.</summary>
-    public RefitSettings Settings { get; } = settings;
+    internal RefitSettings Settings { get; } = settings;
 
     /// <inheritdoc/>
     public Task Get() => Task.CompletedTask;

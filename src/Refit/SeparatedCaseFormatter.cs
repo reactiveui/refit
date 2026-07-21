@@ -16,7 +16,7 @@ internal static class SeparatedCaseFormatter
     /// <param name="key">The identifier to format.</param>
     /// <param name="separator">The character inserted between words.</param>
     /// <returns>The lower-case, separator-delimited form of <paramref name="key"/>.</returns>
-    public static string Format(string key, char separator)
+    internal static string Format(string key, char separator)
     {
         if (string.IsNullOrEmpty(key))
         {

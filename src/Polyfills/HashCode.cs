@@ -15,7 +15,7 @@ namespace System;
 /// compared, so it needs no equality members.
 /// </remarks>
 [Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-internal ref struct HashCode
+internal ref partial struct HashCode
 {
     /// <summary>The second prime multiplier.</summary>
     private const int Prime2 = -2_048_144_777;
@@ -57,7 +57,7 @@ internal ref struct HashCode
     /// <typeparam name="T1">The first value type.</typeparam>
     /// <param name="value1">The first value.</param>
     /// <returns>The combined hash code.</returns>
-    public static int Combine<T1>(T1 value1)
+    internal static int Combine<T1>(T1 value1)
     {
         HashCode hashCode = default;
         hashCode.Add(value1);
@@ -70,7 +70,7 @@ internal ref struct HashCode
     /// <param name="value1">The first value.</param>
     /// <param name="value2">The second value.</param>
     /// <returns>The combined hash code.</returns>
-    public static int Combine<T1, T2>(T1 value1, T2 value2)
+    internal static int Combine<T1, T2>(T1 value1, T2 value2)
     {
         HashCode hashCode = default;
         hashCode.Add(value1);
@@ -86,7 +86,7 @@ internal ref struct HashCode
     /// <param name="value2">The second value.</param>
     /// <param name="value3">The third value.</param>
     /// <returns>The combined hash code.</returns>
-    public static int Combine<T1, T2, T3>(T1 value1, T2 value2, T3 value3)
+    internal static int Combine<T1, T2, T3>(T1 value1, T2 value2, T3 value3)
     {
         HashCode hashCode = default;
         hashCode.Add(value1);
@@ -105,7 +105,7 @@ internal ref struct HashCode
     /// <param name="value3">The third value.</param>
     /// <param name="value4">The fourth value.</param>
     /// <returns>The combined hash code.</returns>
-    public static int Combine<T1, T2, T3, T4>(T1 value1, T2 value2, T3 value3, T4 value4)
+    internal static int Combine<T1, T2, T3, T4>(T1 value1, T2 value2, T3 value3, T4 value4)
     {
         HashCode hashCode = default;
         hashCode.Add(value1);
@@ -118,13 +118,13 @@ internal ref struct HashCode
     /// <summary>Adds a value to the hash code.</summary>
     /// <typeparam name="T">The value type.</typeparam>
     /// <param name="value">The value.</param>
-    public void Add<T>(T value) => Add(value, EqualityComparer<T>.Default);
+    internal void Add<T>(T value) => Add(value, EqualityComparer<T>.Default);
 
     /// <summary>Adds a value to the hash code using the specified comparer.</summary>
     /// <typeparam name="T">The value type.</typeparam>
     /// <param name="value">The value.</param>
     /// <param name="comparer">The equality comparer.</param>
-    public void Add<T>(T value, IEqualityComparer<T>? comparer)
+    internal void Add<T>(T value, IEqualityComparer<T>? comparer)
     {
         var hashCode = value is null ? 0 : (comparer?.GetHashCode(value) ?? value.GetHashCode());
         Add(hashCode);
@@ -132,7 +132,7 @@ internal ref struct HashCode
 
     /// <summary>Returns the final hash code.</summary>
     /// <returns>The final hash code.</returns>
-    public readonly int ToHashCode()
+    internal readonly int ToHashCode()
     {
         var hash = _count == 0 ? Prime5 : _hash;
         hash += _count * BytesPerQueuedValue;
@@ -143,9 +143,6 @@ internal ref struct HashCode
         hash ^= (int)((uint)hash >> AvalancheShift3);
         return hash;
     }
-
-    /// <inheritdoc/>
-    public override readonly int GetHashCode() => ToHashCode();
 
     /// <summary>Mixes one queued value into the hash.</summary>
     /// <param name="hash">The current hash.</param>

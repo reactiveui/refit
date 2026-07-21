@@ -9,8 +9,22 @@ namespace System.Diagnostics.CodeAnalysis;
 /// <param name="message">A message describing the dynamic code requirement.</param>
 [ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Constructor | AttributeTargets.Method, Inherited = false)]
-internal sealed class RequiresDynamicCodeAttribute(string message) : Attribute
+internal sealed class RequiresDynamicCodeAttribute(string message)
+    : Attribute, RequiresDynamicCodeAttribute.IMetadata
 {
+    /// <summary>Defines the runtime-required public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the dynamic-code requirement message.</summary>
+        string Message { get; }
+
+        /// <summary>Gets or sets whether static members are excluded.</summary>
+        bool ExcludeStatics { get; set; }
+
+        /// <summary>Gets or sets an optional information URL.</summary>
+        string? Url { get; set; }
+    }
+
     /// <summary>Gets the message describing the dynamic code requirement.</summary>
     public string Message { get; } = message;
 

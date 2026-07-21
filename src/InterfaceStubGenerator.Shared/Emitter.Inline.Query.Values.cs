@@ -68,7 +68,7 @@ internal static partial class Emitter
         }
 
         return BuildPathValueExpressionCore(
-            "@" + parameter.Name,
+            $"@{parameter.Name}",
             parameter.Type,
             parameter.ValueFormat,
             parameter.CanBeNull,

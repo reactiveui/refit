@@ -95,7 +95,7 @@ internal static class SystemTextJsonQueryFlattener
             return;
         }
 
-        FlattenObject(propertyValue, key + ".", ref builder, settings, options, depth + 1);
+        FlattenObject(propertyValue, $"{key}.", ref builder, settings, options, depth + 1);
     }
 
     /// <summary>Formats one value through the configured URL parameter formatter.</summary>

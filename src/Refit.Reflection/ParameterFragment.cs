@@ -13,30 +13,30 @@ namespace Refit;
 internal readonly record struct ParameterFragment(string? Value, int ArgumentIndex, int PropertyIndex, bool IsOptional = false)
 {
     /// <summary>Gets a value indicating whether the fragment is a constant string.</summary>
-    public bool IsConstant => Value is not null;
+    internal bool IsConstant => Value is not null;
 
     /// <summary>Gets a value indicating whether the fragment is a dynamic route value.</summary>
-    public bool IsDynamicRoute => ArgumentIndex >= 0 && PropertyIndex < 0;
+    internal bool IsDynamicRoute => ArgumentIndex >= 0 && PropertyIndex < 0;
 
     /// <summary>Gets a value indicating whether the fragment is a property of a parameter object.</summary>
-    public bool IsObjectProperty => ArgumentIndex >= 0 && PropertyIndex >= 0;
+    internal bool IsObjectProperty => ArgumentIndex >= 0 && PropertyIndex >= 0;
 
     /// <summary>Creates a constant URL fragment.</summary>
     /// <param name="value">The constant string value.</param>
     /// <returns>A constant fragment.</returns>
-    public static ParameterFragment Constant(string value) => new(value, -1, -1);
+    internal static ParameterFragment Constant(string value) => new(value, -1, -1);
 
     /// <summary>Creates a dynamic route fragment bound to a parameter.</summary>
     /// <param name="index">The parameter index supplying the value.</param>
     /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
     /// <returns>A dynamic route fragment.</returns>
-    public static ParameterFragment Dynamic(int index, bool isOptional = false) => new(null, index, -1, isOptional);
+    internal static ParameterFragment Dynamic(int index, bool isOptional = false) => new(null, index, -1, isOptional);
 
     /// <summary>Creates a dynamic fragment bound to a property of a parameter object.</summary>
     /// <param name="index">The parameter index supplying the object.</param>
     /// <param name="propertyIndex">The property index within the parameter object.</param>
     /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
     /// <returns>A dynamic object property fragment.</returns>
-    public static ParameterFragment DynamicObject(int index, int propertyIndex, bool isOptional = false) =>
+    internal static ParameterFragment DynamicObject(int index, int propertyIndex, bool isOptional = false) =>
         new(null, index, propertyIndex, isOptional);
 }

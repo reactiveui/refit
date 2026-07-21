@@ -19,10 +19,10 @@ internal sealed record InlineValueFormatModel(
     /// <summary>Gets a value indicating whether the value is a non-nullable, unformatted integer whose
     /// <c>ISpanFormattable</c> output is inherently URL-safe (digits and <c>-</c>), so generated path code can format it
     /// straight into a stack buffer with no intermediate string and no escaping. Only set for net6+ consumers.</summary>
-    public bool IsUrlSafeSpanFormattable { get; init; }
+    internal bool IsUrlSafeSpanFormattable { get; init; }
 
     /// <summary>Gets a value indicating whether the value is a non-nullable <c>ISpanFormattable</c> that generated path
     /// code can format into a stack buffer and escape span-to-string without the intermediate formatted string. Only set
     /// for net10+ consumers, where <c>Uri.EscapeDataString(ReadOnlySpan&lt;char&gt;)</c> exists.</summary>
-    public bool IsSpanFormattableEscapable { get; init; }
+    internal bool IsSpanFormattableEscapable { get; init; }
 }

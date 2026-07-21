@@ -44,7 +44,7 @@ internal static class GeneratorCorpus
     ];
 
     /// <summary>Gets a single small CRUD interface: the common "one client, a handful of methods" case.</summary>
-    public static string Small { get; } =
+    internal static string Small { get; } =
         Preamble +
         """
         public sealed class Widget
@@ -73,13 +73,13 @@ internal static class GeneratorCorpus
         """;
 
     /// <summary>Gets a mid-sized corpus exercising query, path, header, and body binding across several interfaces.</summary>
-    public static string Medium { get; } = BuildMedium();
+    internal static string Medium { get; } = BuildMedium();
 
     /// <summary>Gets a large multi-interface, multi-method corpus for cold-run and throughput measurement.</summary>
-    public static string Large { get; } = BuildLarge();
+    internal static string Large { get; } = BuildLarge();
 
     /// <summary>Gets a query-heavy corpus exercising scalar, collection, object, and converter query bindings.</summary>
-    public static string QueryHeavy { get; } =
+    internal static string QueryHeavy { get; } =
         Preamble +
         """
         using System.Runtime.Serialization;
@@ -121,7 +121,7 @@ internal static class GeneratorCorpus
         """;
 
     /// <summary>Gets a multipart-heavy corpus exercising stream, byte-array, string, and typed multipart parts.</summary>
-    public static string MultipartHeavy { get; } =
+    internal static string MultipartHeavy { get; } =
         Preamble +
         """
         using System.IO;
@@ -149,7 +149,7 @@ internal static class GeneratorCorpus
     /// <summary>Gets the corpus source text for a given size.</summary>
     /// <param name="size">The corpus size.</param>
     /// <returns>The corpus source text.</returns>
-    public static string SourceFor(CorpusSize size) => size switch
+    internal static string SourceFor(CorpusSize size) => size switch
     {
         CorpusSize.Small => Small,
         CorpusSize.Medium => Medium,
@@ -232,7 +232,7 @@ internal static class GeneratorCorpus
 
         for (var i = 0; i < LargeInterfaceCount; i++)
         {
-            var route = "/res" + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var route = string.Create(System.Globalization.CultureInfo.InvariantCulture, $"/res{i}");
             _ = builder.Append("public interface IResource").Append(i).Append("Api\n{\n");
             for (var m = 0; m < LargeMethodsPerInterface; m++)
             {

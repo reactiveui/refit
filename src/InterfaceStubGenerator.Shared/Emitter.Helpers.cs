@@ -99,10 +99,10 @@ internal static partial class Emitter
         {
             ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
-            ReturnTypeInfo.AsyncEnumerable => (false, ReturnStatementPrefix, string.Empty),
-            ReturnTypeInfo.Observable => (false, ReturnStatementPrefix, string.Empty),
-            ReturnTypeInfo.RequestMessage => (false, ReturnStatementPrefix, string.Empty),
-            ReturnTypeInfo.Return => (false, ReturnStatementPrefix, string.Empty),
+            ReturnTypeInfo.AsyncEnumerable
+            or ReturnTypeInfo.Observable
+            or ReturnTypeInfo.RequestMessage
+            or ReturnTypeInfo.Return => (false, ReturnStatementPrefix, string.Empty),
             ReturnTypeInfo.SyncVoid => (false, string.Empty, string.Empty),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(returnTypeInfo),
@@ -324,8 +324,8 @@ internal static partial class Emitter
 
         var containingType = methodModel.ContainingType;
         return containingType.StartsWith(GlobalPrefix, StringComparison.Ordinal)
-            ? containingType + "."
-            : GlobalPrefix + containingType + ".";
+            ? $"{containingType}."
+            : $"{GlobalPrefix}{containingType}.";
     }
 
     /// <summary>Builds the generated method parameter list.</summary>

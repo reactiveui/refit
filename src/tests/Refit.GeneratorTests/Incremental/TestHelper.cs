@@ -137,7 +137,7 @@ internal static class TestHelper
         string interfaceName,
         IncrementalStepRunReason expectedReason)
     {
-        var qualifiedSuffix = "." + interfaceName;
+        var qualifiedSuffix = $".{interfaceName}";
         var interfaceOutput = driver
             .GetRunResult()
             .Results[0]

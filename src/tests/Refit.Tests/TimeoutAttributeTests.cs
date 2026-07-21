@@ -18,7 +18,7 @@ public sealed class TimeoutAttributeTests
     public async Task SourceGenVoidTimeoutCancelsSlowResponse()
     {
         using var handler = new DelayingHttpMessageHandler(Timeout.InfiniteTimeSpan);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.For<ITimeoutApi>(client);
 
         await Assert.That(() => api.GetVoidShortTimeout()).Throws<OperationCanceledException>();
@@ -30,7 +30,7 @@ public sealed class TimeoutAttributeTests
     public async Task SourceGenValueTimeoutCancelsSlowResponse()
     {
         using var handler = new DelayingHttpMessageHandler(Timeout.InfiniteTimeSpan);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.For<ITimeoutApi>(client);
 
         await Assert.That(() => (Task)api.GetStringShortTimeout()).Throws<OperationCanceledException>();
@@ -42,7 +42,7 @@ public sealed class TimeoutAttributeTests
     public async Task SourceGenVoidTimeoutAllowsFastResponse()
     {
         using var handler = new DelayingHttpMessageHandler(TimeSpan.Zero);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.For<ITimeoutApi>(client);
 
         await api.GetVoidLongTimeout();
@@ -56,7 +56,7 @@ public sealed class TimeoutAttributeTests
     public async Task SourceGenValueTimeoutAllowsFastResponse()
     {
         using var handler = new DelayingHttpMessageHandler(TimeSpan.Zero);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.For<ITimeoutApi>(client);
 
         var result = await api.GetStringLongTimeout();
@@ -70,7 +70,7 @@ public sealed class TimeoutAttributeTests
     public async Task SourceGenCallerCancellationCancelsAlongsideTimeout()
     {
         using var handler = new DelayingHttpMessageHandler(Timeout.InfiniteTimeSpan);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.For<ITimeoutApi>(client);
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
@@ -88,7 +88,7 @@ public sealed class TimeoutAttributeTests
         var fixture = new RequestBuilderImplementation<ITimeoutApi>();
         var factory = fixture.BuildRestResultFuncForMethod(nameof(ITimeoutApi.GetVoidShortTimeout));
         using var handler = new DelayingHttpMessageHandler(Timeout.InfiniteTimeSpan);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
 
         await Assert.That(() => (Task)factory(client, [])!).Throws<OperationCanceledException>();
     }
@@ -101,7 +101,7 @@ public sealed class TimeoutAttributeTests
         var fixture = new RequestBuilderImplementation<ITimeoutApi>();
         var factory = fixture.BuildRestResultFuncForMethod(nameof(ITimeoutApi.GetStringShortTimeout));
         using var handler = new DelayingHttpMessageHandler(Timeout.InfiniteTimeSpan);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
 
         await Assert.That(() => (Task)factory(client, [])!).Throws<OperationCanceledException>();
     }
@@ -114,7 +114,7 @@ public sealed class TimeoutAttributeTests
         var fixture = new RequestBuilderImplementation<ITimeoutApi>();
         var factory = fixture.BuildRestResultFuncForMethod(nameof(ITimeoutApi.GetStringLongTimeout));
         using var handler = new DelayingHttpMessageHandler(TimeSpan.Zero);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
 
         var result = await (Task<string?>)factory(client, [])!;
 
@@ -129,7 +129,7 @@ public sealed class TimeoutAttributeTests
         var fixture = new RequestBuilderImplementation<ITimeoutApi>();
         var factory = fixture.BuildRestResultFuncForMethod(nameof(ITimeoutApi.GetStringLongTimeoutCancellable));
         using var handler = new DelayingHttpMessageHandler(Timeout.InfiniteTimeSpan);
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
