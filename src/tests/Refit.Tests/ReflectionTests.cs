@@ -544,7 +544,7 @@ public sealed class ReflectionTests
         };
         var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
 
-        await service.GetGenericParameter<string>("10", "Empty");
+        await service.GetGenericParameter("10", "Empty");
         await formatter.AssertNoOutstandingAssertions();
     }
 }

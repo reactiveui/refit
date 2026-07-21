@@ -226,7 +226,7 @@ internal static partial class Emitter
                 foreach (var binding in bindings)
                 {
                     var bindingValue = BuildPathValueExpressionCore(
-                        "@" + parameter.Name + "." + binding.PropertyClrName,
+                        $"@{parameter.Name}.{binding.PropertyClrName}",
                         binding.PropertyType,
                         binding.ValueFormat,
                         binding.PropertyCanBeNull,

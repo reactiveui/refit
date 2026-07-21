@@ -15,7 +15,7 @@ internal static partial class RequestExecutionHelpers
     /// <summary>Throws when a client cannot build relative generated requests.</summary>
     /// <param name="client">The HTTP client to inspect.</param>
     /// <exception cref="InvalidOperationException">Thrown when no base address is configured.</exception>
-    public static void ThrowIfBaseAddressMissing(HttpClient client)
+    internal static void ThrowIfBaseAddressMissing(HttpClient client)
     {
         if (client.BaseAddress is not null)
         {
@@ -30,7 +30,7 @@ internal static partial class RequestExecutionHelpers
     /// <param name="cancellationToken">The already-resolved effective cancellation token for the request.</param>
     /// <returns>The token the request should run against, and the timeout source to dispose once the request completes
     /// (null when no timeout was applied).</returns>
-    public static (CancellationToken Token, CancellationTokenSource? TimeoutSource) CreateTimeoutToken(
+    internal static (CancellationToken Token, CancellationTokenSource? TimeoutSource) CreateTimeoutToken(
         int timeoutMilliseconds,
         CancellationToken cancellationToken)
     {
@@ -53,7 +53,7 @@ internal static partial class RequestExecutionHelpers
     /// <param name="timeoutMilliseconds">The per-call timeout in milliseconds; values that are not positive disable it.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>A task that completes when the request finishes.</returns>
-    public static async Task SendVoidAsync(
+    internal static async Task SendVoidAsync(
         HttpClient client,
         HttpRequestMessage request,
         RefitSettings settings,
@@ -114,7 +114,7 @@ internal static partial class RequestExecutionHelpers
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "TBody is intentionally passed explicitly by generated and reflection callers for ApiResponse<T> body deserialization.")]
-    public static async Task<T?> SendAndProcessResponseAsync<T, TBody>(
+    internal static async Task<T?> SendAndProcessResponseAsync<T, TBody>(
         HttpClient client,
         HttpRequestMessage request,
         RefitSettings settings,
@@ -184,7 +184,7 @@ internal static partial class RequestExecutionHelpers
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
-    public static IAsyncEnumerable<T?> StreamResponseAsync<T>(
+    internal static IAsyncEnumerable<T?> StreamResponseAsync<T>(
         HttpClient client,
         HttpRequestMessage request,
         RefitSettings settings,
@@ -216,7 +216,7 @@ internal static partial class RequestExecutionHelpers
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="cancellationToken">A token to cancel the token getter.</param>
     /// <returns>A task that completes when the header has been updated.</returns>
-    public static async Task AddAuthorizationHeaderFromGetterAsync(
+    internal static async Task AddAuthorizationHeaderFromGetterAsync(
         HttpRequestMessage request,
         RefitSettings settings,
         CancellationToken cancellationToken)
@@ -669,24 +669,24 @@ internal static partial class RequestExecutionHelpers
         }
 
         /// <summary>Gets a value indicating whether the send produced a response.</summary>
-        public bool HasResponse { get; }
+        internal bool HasResponse { get; }
 
         /// <summary>Gets the response, or null when the send failed.</summary>
-        public HttpResponseMessage? Response { get; }
+        internal HttpResponseMessage? Response { get; }
 
         /// <summary>Gets the captured failure result, valid only when <see cref="HasResponse"/> is false.</summary>
-        public T? FailureResult { get; }
+        internal T? FailureResult { get; }
 
         /// <summary>Creates a successful result wrapping the given response.</summary>
         /// <param name="response">The response produced by the send.</param>
         /// <returns>A result indicating a response is present.</returns>
-        public static SendResult<T> FromResponse(HttpResponseMessage response) =>
+        internal static SendResult<T> FromResponse(HttpResponseMessage response) =>
             new(true, response, default);
 
         /// <summary>Creates a failed result wrapping the captured failure value.</summary>
         /// <param name="failureResult">The captured failure result.</param>
         /// <returns>A result indicating the send failed.</returns>
-        public static SendResult<T> FromFailure(T? failureResult) =>
+        internal static SendResult<T> FromFailure(T? failureResult) =>
             new(false, null, failureResult);
     }
 }

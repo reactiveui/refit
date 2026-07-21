@@ -540,15 +540,15 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Get(url + "/"),
+                Route.Get($"{url}/"),
                 Reply.Json("{ }")
             },
             {
-                Route.Get(url + "/"),
+                Route.Get($"{url}/"),
                 Reply.Json("{ }")
             },
             {
-                Route.Get(url + "/"),
+                Route.Get($"{url}/"),
                 Reply.Json("{ }")
             },
         };

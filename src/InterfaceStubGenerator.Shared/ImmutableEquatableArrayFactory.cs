@@ -15,14 +15,14 @@ internal static class ImmutableEquatableArrayFactory
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter is intentionally specified explicitly by callers.")]
-    public static ImmutableEquatableArray<T> Empty<T>()
+    internal static ImmutableEquatableArray<T> Empty<T>()
         where T : IEquatable<T> => ImmutableEquatableArray<T>.Empty;
 
     /// <summary>Wraps an array without another copy.</summary>
     /// <param name="values">The values to wrap.</param>
     /// <typeparam name="T">The element type.</typeparam>
     /// <returns>An immutable equatable array over <paramref name="values"/>.</returns>
-    public static ImmutableEquatableArray<T> FromArray<T>(T[] values)
+    internal static ImmutableEquatableArray<T> FromArray<T>(T[] values)
         where T : IEquatable<T> =>
         values.Length == 0 ? Empty<T>() : new(values);
 
@@ -30,7 +30,7 @@ internal static class ImmutableEquatableArrayFactory
     /// <param name="values">The values to copy.</param>
     /// <typeparam name="T">The element type.</typeparam>
     /// <returns>An immutable equatable array containing <paramref name="values"/>.</returns>
-    public static ImmutableEquatableArray<T> FromList<T>(List<T> values)
+    internal static ImmutableEquatableArray<T> FromList<T>(List<T> values)
         where T : IEquatable<T>
     {
         if (values.Count == 0)

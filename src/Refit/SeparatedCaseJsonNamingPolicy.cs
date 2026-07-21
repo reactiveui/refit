@@ -11,10 +11,10 @@ namespace Refit;
 internal sealed class SeparatedCaseJsonNamingPolicy(char separator) : JsonNamingPolicy
 {
     /// <summary>Gets a policy that renders names in snake_case.</summary>
-    public static JsonNamingPolicy Snake { get; } = new SeparatedCaseJsonNamingPolicy('_');
+    internal static JsonNamingPolicy Snake { get; } = new SeparatedCaseJsonNamingPolicy('_');
 
     /// <summary>Gets a policy that renders names in kebab-case.</summary>
-    public static JsonNamingPolicy Kebab { get; } = new SeparatedCaseJsonNamingPolicy('-');
+    internal static JsonNamingPolicy Kebab { get; } = new SeparatedCaseJsonNamingPolicy('-');
 
     /// <inheritdoc/>
     public override string ConvertName(string name) => SeparatedCaseFormatter.Format(name, separator);

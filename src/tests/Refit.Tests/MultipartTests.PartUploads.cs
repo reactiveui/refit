@@ -423,7 +423,7 @@ public partial class MultipartTests
 
         var fixture = new RequestBuilderImplementation<IRunscopeApi>();
         var factory = fixture.BuildRestResultFuncForMethod(nameof(IRunscopeApi.UploadHttpContents));
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
 
         var task = (Task)factory(client, [new List<HttpContent> { first, second }])!;
         await task;

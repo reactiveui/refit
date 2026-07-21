@@ -36,20 +36,20 @@ public partial class DefaultUrlParameterFormatterTests
             .IsEqualTo(string.Empty);
     }
 
-    /// <summary>A non-formattable value whose <see cref="ToString"/> supplies the rendered text.</summary>
-    private sealed class NonFormattableValue
-    {
-        /// <inheritdoc/>
-        public override string ToString() => "custom-text";
-    }
-
     /// <summary>A non-formattable value whose <see cref="ToString"/> returns null, exercising the empty fallback.</summary>
-    private sealed class NullToStringValue
+    public sealed class NullToStringValue
     {
         /// <summary>Gets the backing text, left null so <see cref="ToString"/> yields the empty-string fallback.</summary>
         public string? Text { get; init; }
 
         /// <inheritdoc/>
         public override string? ToString() => Text;
+    }
+
+    /// <summary>A non-formattable value whose <see cref="ToString"/> supplies the rendered text.</summary>
+    private sealed class NonFormattableValue
+    {
+        /// <inheritdoc/>
+        public override string ToString() => "custom-text";
     }
 }

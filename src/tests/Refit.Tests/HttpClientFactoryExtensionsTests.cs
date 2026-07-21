@@ -579,30 +579,4 @@ public partial class HttpClientFactoryExtensionsTests
         /// <summary>Gets or sets the content serializer injected into the Refit settings.</summary>
         public SystemTextJsonContentSerializer? Serializer { get; set; }
     }
-
-    /// <summary>HTTP handler that records the final authorization header it receives.</summary>
-    private sealed class RecordingHandler : HttpMessageHandler
-    {
-        /// <summary>Gets the authorization parameter observed by the handler.</summary>
-        public string? AuthorizationParameter { get; private set; }
-
-        /// <summary>Gets the request URI observed by the handler.</summary>
-        public Uri? RequestUri { get; private set; }
-
-        /// <summary>Gets the powered-by header observed by the handler.</summary>
-        public string? PoweredByHeader { get; private set; }
-
-        /// <inheritdoc />
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            AuthorizationParameter = request.Headers.Authorization?.Parameter;
-            RequestUri = request.RequestUri;
-            PoweredByHeader = request.Headers.TryGetValues(PoweredByHeaderName, out var values)
-                ? values.FirstOrDefault()
-                : null;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
-        }
-    }
 }

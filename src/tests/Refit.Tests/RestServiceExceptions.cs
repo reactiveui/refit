@@ -79,7 +79,7 @@ public class RestServiceExceptions
     {
         var repoPath = new RepoPath("some/repo dir");
         using var handler = new TestHttpMessageHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         _ = await RestService.ForGenerated<IRoundTripNotString>(client).GetValue(repoPath);
         var generatedUri = handler.RequestMessage!.RequestUri!.PathAndQuery;
 

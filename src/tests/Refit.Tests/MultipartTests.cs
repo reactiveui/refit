@@ -398,11 +398,10 @@ public partial class MultipartTests
 
         // compute resource name suffix
         var relativeName =
-            "."
-            + relativeFilePath
+            $".{relativeFilePath
                 .Replace('\\', namespaceSeparator)
                 .Replace('/', namespaceSeparator)
-                .Replace(' ', '_');
+                .Replace(' ', '_')}";
 
         // get resource stream
         var fullName = Array.Find(

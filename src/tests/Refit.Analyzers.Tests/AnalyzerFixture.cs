@@ -27,14 +27,14 @@ internal static class AnalyzerFixture
     /// <param name="body">The interface body source.</param>
     /// <param name="generatedRequestBuilding">The value forced for the <c>RefitGeneratedRequestBuilding</c> option, or <see langword="null"/> to use the default.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
-    public static Task<ImmutableArray<Diagnostic>> RunForBody(string body, bool? generatedRequestBuilding = null) =>
+    internal static Task<ImmutableArray<Diagnostic>> RunForBody(string body, bool? generatedRequestBuilding = null) =>
         Run(BuildBodySource(body), generatedRequestBuilding);
 
     /// <summary>Runs the Refit interface analyzer over a complete source string.</summary>
     /// <param name="source">The source to analyze.</param>
     /// <param name="generatedRequestBuilding">The value forced for the <c>RefitGeneratedRequestBuilding</c> option, or <see langword="null"/> to use the default.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
-    public static Task<ImmutableArray<Diagnostic>> Run(string source, bool? generatedRequestBuilding = null)
+    internal static Task<ImmutableArray<Diagnostic>> Run(string source, bool? generatedRequestBuilding = null)
     {
         var analyzerOptions = generatedRequestBuilding is null
             ? null
@@ -55,7 +55,7 @@ internal static class AnalyzerFixture
     /// <param name="optionKey">The bare analyzer-config option key.</param>
     /// <param name="optionValue">The analyzer-config option value.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
-    public static Task<ImmutableArray<Diagnostic>> RunForBodyWithAnalyzerConfigOption(string body, string optionKey, string optionValue) =>
+    internal static Task<ImmutableArray<Diagnostic>> RunForBodyWithAnalyzerConfigOption(string body, string optionKey, string optionValue) =>
         Analyze(
             BuildBodySource(body),
             new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider(optionKey, optionValue)));
@@ -63,7 +63,7 @@ internal static class AnalyzerFixture
     /// <summary>Runs the Refit interface analyzer over source without referencing Refit.</summary>
     /// <param name="source">The source to analyze.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
-    public static Task<ImmutableArray<Diagnostic>> RunWithoutRefitReference(string source)
+    internal static Task<ImmutableArray<Diagnostic>> RunWithoutRefitReference(string source)
     {
         var compilation = CreateLibrary(source, includeRefitReference: false);
         var analyzer = new RefitInterfaceAnalyzer();

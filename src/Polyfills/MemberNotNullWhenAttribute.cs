@@ -13,8 +13,19 @@ namespace System.Diagnostics.CodeAnalysis;
 [ExcludeFromCodeCoverage]
 [DebuggerNonUserCode]
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]
-internal sealed class MemberNotNullWhenAttribute(bool returnValue, params string[] members) : Attribute
+internal sealed class MemberNotNullWhenAttribute(bool returnValue, params string[] members)
+    : Attribute, MemberNotNullWhenAttribute.IMetadata
 {
+    /// <summary>Defines the nullable-analysis public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the return value for which the members are non-null.</summary>
+        bool ReturnValue { get; }
+
+        /// <summary>Gets the members that are non-null.</summary>
+        string[] Members { get; }
+    }
+
     /// <summary>Gets the return value condition under which the members are non-null.</summary>
     public bool ReturnValue { get; } = returnValue;
 

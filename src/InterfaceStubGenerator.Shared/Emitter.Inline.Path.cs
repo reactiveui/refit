@@ -16,7 +16,7 @@ internal static partial class Emitter
     /// <c>ReadOnlySpan</c> overload accepts via the array-to-span conversion. The array element type is inferred from the
     /// tuple values rather than stated, so no nullable reference annotation is emitted into a pre-C# 8 consumer.</remarks>
     internal static string WrapPathReplacements(string tuples, bool supportsCollectionExpressions) =>
-        supportsCollectionExpressions ? ", [" + tuples + "]" : ", new[] { " + tuples + " }";
+        supportsCollectionExpressions ? $", [{tuples}]" : $", new[] {{ {tuples} }}";
 
     /// <summary>Determines whether any path parameter passes its value through pre-encoded.</summary>
     /// <param name="request">The parsed request model.</param>
@@ -124,7 +124,7 @@ internal static partial class Emitter
         var template = ToCSharpStringLiteral(request.Path);
         var settingsLocal = emission.SettingsLocal;
         var allowUnmatched = $"{settingsLocal}.AllowUnmatchedRouteParameters";
-        var valueExpression = "@" + pathParameter.Value.Name;
+        var valueExpression = $"@{pathParameter.Value.Name}";
         _ = parameterInfoNames.TryGetValue(pathParameter.Value.Name, out var providerField);
         const string runner = "global::Refit.GeneratedRequestRunner.BuildRequestPath";
 

@@ -78,7 +78,7 @@ internal static partial class Emitter
         UniqueNameBuilder locals)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
-        var valueExpression = "@" + parameter.Name;
+        var valueExpression = $"@{parameter.Name}";
 
         // A reference-typed enumerable adds one part per element; a null collection contributes no parts, matching the
         // reflection builder's skip of a null parameter value.
@@ -89,7 +89,7 @@ internal static partial class Emitter
                 .Append(bodyIndent).AppendLine("{")
                 .Append(bodyIndent).Append("    foreach (var ").Append(elementLocal).Append(" in ").Append(valueExpression).AppendLine(")")
                 .Append(bodyIndent).AppendLine("    {");
-            AppendMultipartAdd(sb, part, settingsLocal, contentLocal, elementLocal, bodyIndent + "        ");
+            AppendMultipartAdd(sb, part, settingsLocal, contentLocal, elementLocal, $"{bodyIndent}        ");
             _ = sb.Append(bodyIndent).AppendLine("    }")
                 .Append(bodyIndent).AppendLine("}");
             return;
@@ -100,7 +100,7 @@ internal static partial class Emitter
         {
             _ = sb.Append(bodyIndent).Append("if (").Append(valueExpression).AppendLine(" != null)")
                 .Append(bodyIndent).AppendLine("{");
-            AppendMultipartAdd(sb, part, settingsLocal, contentLocal, valueExpression, bodyIndent + "    ");
+            AppendMultipartAdd(sb, part, settingsLocal, contentLocal, valueExpression, $"{bodyIndent}    ");
             _ = sb.Append(bodyIndent).AppendLine("}");
             return;
         }

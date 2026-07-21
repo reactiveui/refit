@@ -142,7 +142,7 @@ public sealed class ExternAliasTests
             """;
 
         var generated = await RunAndAssertNoErrors(consumer);
-        await Assert.That(generated).Contains(AliasedWidgetQualifiedName + "[]");
+        await Assert.That(generated).Contains($"{AliasedWidgetQualifiedName}[]");
     }
 
     /// <summary>Verifies a nullable extern-aliased enum query parameter qualifies its underlying type as <c>alias::</c>.</summary>

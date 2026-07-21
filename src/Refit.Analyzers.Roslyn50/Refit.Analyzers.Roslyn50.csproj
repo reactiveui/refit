@@ -31,6 +31,7 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Adapters.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Aliases.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.PathParameterLocations.Public.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Parameters.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.ParameterKinds.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.HttpMethod.cs" LinkBase="InterfaceStubGenerator.Shared"/>
@@ -43,6 +44,8 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.InlineEligibility.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\DiagnosticDescriptors.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArray.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArray.Public.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\IImmutableEquatableArrayEnumerable.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArrayExtensions.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArrayFactory.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\ITypeSymbolExtensions.cs" LinkBase="InterfaceStubGenerator.Shared"/>

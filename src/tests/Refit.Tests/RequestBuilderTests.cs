@@ -13,7 +13,7 @@ public partial class RequestBuilderTests
     private const string ApiBaseUrl = "http://api";
 
     /// <summary>The base API address with a trailing slash used as an <see cref="HttpClient.BaseAddress"/>.</summary>
-    private const string ApiBaseUrlWithSlash = ApiBaseUrl + "/";
+    private const string ApiBaseUrlWithSlash = $"{ApiBaseUrl}/";
 
     /// <summary>The name of the cancellable GET method exercised by the cancellation tests.</summary>
     private const string GetWithCancellationMethod = "GetWithCancellation";

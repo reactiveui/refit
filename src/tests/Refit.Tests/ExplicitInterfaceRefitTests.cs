@@ -21,7 +21,7 @@ public class ExplicitInterfaceRefitTests
     private const string BaseUrl = "http://foo";
 
     /// <summary>Fully qualified URL of the resource endpoint.</summary>
-    private const string ResourceUrl = BaseUrl + "/resource";
+    private const string ResourceUrl = $"{BaseUrl}/resource";
 
     /// <summary>Plain text content returned by the stubbed responses.</summary>
     private const string HelloContent = "hello";

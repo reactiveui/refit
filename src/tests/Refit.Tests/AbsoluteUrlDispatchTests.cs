@@ -39,7 +39,7 @@ public class AbsoluteUrlDispatchTests
     [Test]
     public async Task QueryParametersAppendToAbsoluteUrl()
     {
-        const string expected = AbsoluteUrl + "?token=abc";
+        const string expected = $"{AbsoluteUrl}?token=abc";
 
         var generated = await SendGeneratedAsync(static api => api.GetAbsoluteWithQuery(AbsoluteUrl, "abc"));
         var reflected = await ReflectAsync(nameof(IUrlDispatchApi.GetAbsoluteWithQuery), AbsoluteUrl, "abc");
@@ -53,8 +53,8 @@ public class AbsoluteUrlDispatchTests
     [Test]
     public async Task QueryParametersAppendToAbsoluteUrlThatAlreadyHasAQuery()
     {
-        const string urlWithQuery = AbsoluteUrl + "?existing=1";
-        const string expected = urlWithQuery + "&token=abc";
+        const string urlWithQuery = $"{AbsoluteUrl}?existing=1";
+        const string expected = $"{urlWithQuery}&token=abc";
 
         var generated = await SendGeneratedAsync(static api => api.GetAbsoluteWithQuery(urlWithQuery, "abc"));
         var reflected = await ReflectAsync(nameof(IUrlDispatchApi.GetAbsoluteWithQuery), urlWithQuery, "abc");
@@ -153,7 +153,7 @@ public class AbsoluteUrlDispatchTests
     private static async Task<TestHttpMessageHandler> SendGeneratedAsync(Func<IUrlDispatchApi, Task<string>> call)
     {
         var handler = new TestHttpMessageHandler();
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
         var api = RestService.ForGenerated<IUrlDispatchApi>(client, new RefitSettings());
 
         _ = await call(api);

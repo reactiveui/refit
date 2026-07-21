@@ -410,25 +410,25 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     internal readonly record struct StandardHttpMethodCandidates
     {
         /// <summary>Gets the methods decorated with <c>DeleteAttribute</c>.</summary>
-        public ImmutableArray<MethodDeclarationSyntax> DeleteMethods { get; init; }
+        internal ImmutableArray<MethodDeclarationSyntax> DeleteMethods { get; init; }
 
         /// <summary>Gets the methods decorated with <c>GetAttribute</c>.</summary>
-        public ImmutableArray<MethodDeclarationSyntax> GetMethods { get; init; }
+        internal ImmutableArray<MethodDeclarationSyntax> GetMethods { get; init; }
 
         /// <summary>Gets the methods decorated with <c>HeadAttribute</c>.</summary>
-        public ImmutableArray<MethodDeclarationSyntax> HeadMethods { get; init; }
+        internal ImmutableArray<MethodDeclarationSyntax> HeadMethods { get; init; }
 
         /// <summary>Gets the methods decorated with <c>OptionsAttribute</c>.</summary>
-        public ImmutableArray<MethodDeclarationSyntax> OptionsMethods { get; init; }
+        internal ImmutableArray<MethodDeclarationSyntax> OptionsMethods { get; init; }
 
         /// <summary>Gets the methods decorated with <c>PatchAttribute</c>.</summary>
-        public ImmutableArray<MethodDeclarationSyntax> PatchMethods { get; init; }
+        internal ImmutableArray<MethodDeclarationSyntax> PatchMethods { get; init; }
 
         /// <summary>Gets the methods decorated with <c>PostAttribute</c>.</summary>
-        public ImmutableArray<MethodDeclarationSyntax> PostMethods { get; init; }
+        internal ImmutableArray<MethodDeclarationSyntax> PostMethods { get; init; }
 
         /// <summary>Gets the methods decorated with <c>PutAttribute</c>.</summary>
-        public ImmutableArray<MethodDeclarationSyntax> PutMethods { get; init; }
+        internal ImmutableArray<MethodDeclarationSyntax> PutMethods { get; init; }
     }
 
     /// <summary>The generator options visible through analyzer config.</summary>

@@ -29,7 +29,7 @@ internal static partial class Emitter
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         var guarded = parameter.CanBeNull;
-        var indent = guarded ? bodyIndent + "    " : bodyIndent;
+        var indent = guarded ? $"{bodyIndent}    " : bodyIndent;
 
         if (guarded)
         {
@@ -46,8 +46,8 @@ internal static partial class Emitter
         // A Nullable<T> query object holds its underlying struct behind .Value; the != null guard above is the HasValue
         // check, so the deref is always safe here. A reference-type object flattens directly off the parameter.
         var accessExpr = query.ValueFormat.IsNullableValueType
-            ? "@" + parameter.Name + NullableValueAccess
-            : "@" + parameter.Name;
+            ? $"@{parameter.Name}{NullableValueAccess}"
+            : $"@{parameter.Name}";
         var scope = new ObjectFlattenScope(accessExpr, null, query.NestingDelimiter, string.Empty, indent);
         AppendObjectPropertyList(sb, context, query.ObjectProperties!.Value, scope, emission);
 
@@ -74,11 +74,11 @@ internal static partial class Emitter
     {
         foreach (var property in properties)
         {
-            var valueLocal = emission.QueryValueLocal + scope.LocalSuffix + "_" + property.ClrName;
+            var valueLocal = $"{emission.QueryValueLocal}{scope.LocalSuffix}_{property.ClrName}";
             var keyExpression = scope.ParentKeyExpr is { } parentKey
                 ? BuildNestedKeyExpression(property, parentKey, scope.Delimiter, emission)
                 : BuildQueryObjectKeyExpression(property, emission);
-            var site = new QueryPropertySite(valueLocal, keyExpression, context.PreEncoded, scope.Indentation + "    ");
+            var site = new QueryPropertySite(valueLocal, keyExpression, context.PreEncoded, $"{scope.Indentation}    ");
 
             if (property.Nested is { } children)
             {
@@ -148,22 +148,22 @@ internal static partial class Emitter
         in InlineValueEmission emission)
     {
         var indent = site.Indentation;
-        var entryLocal = site.ValueLocal + "_entry";
+        var entryLocal = $"{site.ValueLocal}_entry";
         var entryValueLocal = site.ValueLocal + ValueLocalSuffix;
-        var entryKeyLocal = site.ValueLocal + "_entrykey";
+        var entryKeyLocal = $"{site.ValueLocal}_entrykey";
 
         var loopIndent = indent;
         if (property.CanBeNull)
         {
             _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NotNullCheckSuffix)
                 .Append(indent).AppendLine("{");
-            loopIndent = indent + "    ";
+            loopIndent = $"{indent}    ";
         }
 
         _ = sb.Append(loopIndent).Append(ForeachVarKeyword).Append(entryLocal).Append(" in ").Append(site.ValueLocal).AppendLine(")")
             .Append(loopIndent).AppendLine("{");
 
-        var entryIndent = loopIndent + "    ";
+        var entryIndent = $"{loopIndent}    ";
         _ = sb.Append(entryIndent).Append("var ").Append(entryValueLocal).Append(" = ").Append(entryLocal).AppendLine(".Value;");
 
         var valueIndent = entryIndent;
@@ -171,7 +171,7 @@ internal static partial class Emitter
         {
             _ = sb.Append(entryIndent).Append("if (").Append(entryValueLocal).AppendLine(NotNullCheckSuffix)
                 .Append(entryIndent).AppendLine("{");
-            valueIndent = entryIndent + "    ";
+            valueIndent = $"{entryIndent}    ";
         }
 
         var (entryKeyExpression, valueExpression) = BuildDictionaryEntryExpressions(entryLocal, entryValueLocal, dictionary, property, context, emission);
@@ -220,7 +220,7 @@ internal static partial class Emitter
     {
         var keyTypeOf = $"typeof({dictionary.KeyTypeName})";
         var customKey = EmitFormatUrlParameter($"{entryLocal}.Key", keyTypeOf, keyTypeOf, emission);
-        var fastKey = BuildFastFormatExpression(entryLocal + ".Key", dictionary.KeyFormat, emission);
+        var fastKey = BuildFastFormatExpression($"{entryLocal}.Key", dictionary.KeyFormat, emission);
         var entryKeyExpression = fastKey is null
             ? customKey
             : $"{emission.UseDefaultFormattingLocal} ? ({fastKey}) : {customKey}";
@@ -251,9 +251,9 @@ internal static partial class Emitter
         in InlineValueEmission emission)
     {
         var indent = scope.Indentation;
-        var innerIndent = indent + "    ";
-        var keyLocal = site.ValueLocal + "_key";
-        var childSuffix = scope.LocalSuffix + "_" + property.ClrName;
+        var innerIndent = $"{indent}    ";
+        var keyLocal = $"{site.ValueLocal}_key";
+        var childSuffix = $"{scope.LocalSuffix}_{property.ClrName}";
 
         _ = sb.Append(indent).AppendLine("{")
             .Append(innerIndent).Append("var ").Append(site.ValueLocal).Append(" = ").Append(scope.AccessExpr)
@@ -262,7 +262,9 @@ internal static partial class Emitter
 
         // A nullable value-type nested object holds its underlying struct behind .Value; a reference type flattens off
         // the value directly. The null check above still runs against the value itself.
-        var childAccess = property.NestedThroughValue ? site.ValueLocal + NullableValueAccess : site.ValueLocal;
+        var childAccess = property.NestedThroughValue
+            ? string.Concat(site.ValueLocal, NullableValueAccess)
+            : site.ValueLocal;
 
         if (!property.CanBeNull)
         {
@@ -281,14 +283,14 @@ internal static partial class Emitter
                 .Append(innerIndent).AppendLine("}")
                 .Append(innerIndent).AppendLine("else")
                 .Append(innerIndent).AppendLine("{");
-            AppendObjectPropertyList(sb, context, children, new(childAccess, keyLocal, scope.Delimiter, childSuffix, innerIndent + "    "), emission);
+            AppendObjectPropertyList(sb, context, children, new(childAccess, keyLocal, scope.Delimiter, childSuffix, $"{innerIndent}    "), emission);
             _ = sb.Append(innerIndent).AppendLine("}").Append(indent).AppendLine("}");
             return;
         }
 
         _ = sb.Append(innerIndent).Append("if (").Append(site.ValueLocal).AppendLine(NotNullCheckSuffix)
             .Append(innerIndent).AppendLine("{");
-        AppendObjectPropertyList(sb, context, children, new(childAccess, keyLocal, scope.Delimiter, childSuffix, innerIndent + "    "), emission);
+        AppendObjectPropertyList(sb, context, children, new(childAccess, keyLocal, scope.Delimiter, childSuffix, $"{innerIndent}    "), emission);
         _ = sb.Append(innerIndent).AppendLine("}").Append(indent).AppendLine("}");
     }
 
@@ -343,7 +345,7 @@ internal static partial class Emitter
         in InlineValueEmission emission)
     {
         var indent = site.Indentation;
-        var keyLocal = site.ValueLocal + "_key";
+        var keyLocal = $"{site.ValueLocal}_key";
         _ = sb.Append(indent).Append("var ").Append(keyLocal).Append(" = ").Append(site.KeyExpression).AppendLine(";");
 
         var bodySite = site with { KeyExpression = keyLocal };
@@ -362,14 +364,14 @@ internal static partial class Emitter
                 .Append(indent).AppendLine("}")
                 .Append(indent).AppendLine("else")
                 .Append(indent).AppendLine("{");
-            AppendCollectionPropertyBody(sb, context, property, collection, bodySite with { Indentation = indent + "    " }, emission);
+            AppendCollectionPropertyBody(sb, context, property, collection, bodySite with { Indentation = $"{indent}    " }, emission);
             _ = sb.Append(indent).AppendLine("}");
             return;
         }
 
         _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NotNullCheckSuffix)
             .Append(indent).AppendLine("{");
-        AppendCollectionPropertyBody(sb, context, property, collection, bodySite with { Indentation = indent + "    " }, emission);
+        AppendCollectionPropertyBody(sb, context, property, collection, bodySite with { Indentation = $"{indent}    " }, emission);
         _ = sb.Append(indent).AppendLine("}");
     }
 
@@ -391,9 +393,9 @@ internal static partial class Emitter
     {
         var indent = site.Indentation;
         var formatExpression = BuildCollectionFormatExpression(collection.CollectionFormatValue, context.ParameterCollectionFormat, emission);
-        var elementLocal = site.ValueLocal + "_e";
+        var elementLocal = $"{site.ValueLocal}_e";
         var elementExpression = BuildFastCollectionElementExpression(elementLocal, property.ValueFormat, collection, emission);
-        var innerIndent = indent + "    ";
+        var innerIndent = $"{indent}    ";
 
         _ = sb.Append(indent).Append("if (").Append(emission.UseDefaultFormattingLocal).AppendLine(")")
             .Append(indent).AppendLine("{")
@@ -477,7 +479,7 @@ internal static partial class Emitter
         {
             _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NotNullCheckSuffix)
                 .Append(indent).AppendLine("{");
-            AppendObjectQueryPropertyValue(sb, parameter, property, site with { Indentation = indent + "    " }, providerField, emission);
+            AppendObjectQueryPropertyValue(sb, parameter, property, site with { Indentation = $"{indent}    " }, providerField, emission);
             _ = sb.Append(indent).AppendLine("}");
             return;
         }
@@ -491,7 +493,7 @@ internal static partial class Emitter
             .Append(indent).AppendLine("else")
             .Append(indent).AppendLine("{");
 
-        AppendObjectQueryPropertyValue(sb, parameter, property, site with { Indentation = indent + "    " }, providerField, emission);
+        AppendObjectQueryPropertyValue(sb, parameter, property, site with { Indentation = $"{indent}    " }, providerField, emission);
 
         _ = sb.Append(indent).AppendLine("}");
     }
@@ -566,7 +568,7 @@ internal static partial class Emitter
         // The form-url-encoded formatter applies the property format; a null result omits the pair entirely, and only
         // the surviving string reaches the URL parameter formatter.
         var indent = site.Indentation;
-        var formattedLocal = site.ValueLocal + "_formatted";
+        var formattedLocal = $"{site.ValueLocal}_formatted";
         var formatLiteral = ToNullableCSharpStringLiteral(property.PropertyFormat);
         var formExpression =
             $"{emission.SettingsLocal}.FormUrlEncodedParameterFormatter.Format({site.ValueLocal}, {formatLiteral})";

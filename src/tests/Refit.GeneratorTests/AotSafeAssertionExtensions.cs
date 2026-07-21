@@ -19,7 +19,7 @@ internal static class AotSafeAssertionExtensions
         /// <summary>Asserts collection equivalence with the element type's default comparer.</summary>
         /// <param name="expected">The expected element sequence.</param>
         /// <returns>The chained collection-equivalency assertion.</returns>
-        public IsEquivalentToAssertion<TCollection, TItem> IsCollectionEqualTo(
+        internal IsEquivalentToAssertion<TCollection, TItem> IsCollectionEqualTo(
             IEnumerable<TItem> expected) =>
             source.IsEquivalentTo(expected, EqualityComparer<TItem>.Default);
     }

@@ -9,8 +9,19 @@ namespace System.Diagnostics.CodeAnalysis;
 /// <param name="message">The message describing why the code is required.</param>
 [ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Event, Inherited = false)]
-internal sealed class RequiresUnreferencedCodeAttribute(string message) : Attribute
+internal sealed class RequiresUnreferencedCodeAttribute(string message)
+    : Attribute, RequiresUnreferencedCodeAttribute.IMetadata
 {
+    /// <summary>Defines the trimming-required public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the trimming requirement message.</summary>
+        string Message { get; }
+
+        /// <summary>Gets or sets an optional information URL.</summary>
+        string? Url { get; set; }
+    }
+
     /// <summary>Gets the message describing why the code is required.</summary>
     public string Message { get; } = message;
 

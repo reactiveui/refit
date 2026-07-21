@@ -131,9 +131,9 @@ internal static partial class Parser
     internal static string AliasedDisplay(ITypeSymbol type, in InterfaceGenerationContext context) =>
         type switch
         {
-            IArrayTypeSymbol array => AliasedDisplay(array.ElementType, context) + "[]",
+            IArrayTypeSymbol array => $"{AliasedDisplay(array.ElementType, context)}[]",
             INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable =>
-                AliasedDisplay(nullable.TypeArguments[0], context) + "?",
+                $"{AliasedDisplay(nullable.TypeArguments[0], context)}?",
             INamedTypeSymbol named => AliasedNamedDisplay(named, context),
             _ => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
         };
@@ -150,7 +150,8 @@ internal static partial class Parser
             _ = context.ExternAliases.Add(alias);
         }
 
-        var name = (alias ?? "global") + "::" + named.ToDisplayString(AliasQualifiedNameFormat);
+        var effectiveAlias = alias ?? "global";
+        var name = $"{effectiveAlias}::{named.ToDisplayString(AliasQualifiedNameFormat)}";
         if (named.TypeArguments.IsEmpty)
         {
             return name;
@@ -162,6 +163,6 @@ internal static partial class Parser
             arguments[i] = AliasedDisplay(named.TypeArguments[i], context);
         }
 
-        return name + "<" + string.Join(", ", arguments) + ">";
+        return $"{name}<{string.Join(", ", arguments)}>";
     }
 }

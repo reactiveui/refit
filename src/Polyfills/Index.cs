@@ -34,16 +34,16 @@ internal readonly struct Index : IEquatable<Index>
     }
 
     /// <summary>Gets an <see cref="Index"/> that points to the start of a sequence.</summary>
-    public static Index Start => new(0);
+    internal static Index Start => new(0);
 
     /// <summary>Gets an <see cref="Index"/> that points just past the end of a sequence.</summary>
-    public static Index End => new(0, true);
+    internal static Index End => new(0, true);
 
     /// <summary>Gets the index value.</summary>
-    public int Value { get; }
+    internal int Value { get; }
 
     /// <summary>Gets a value indicating whether the index is from the end of the sequence.</summary>
-    public bool IsFromEnd { get; }
+    internal bool IsFromEnd { get; }
 
     /// <summary>Implicitly converts an <see cref="int"/> to an <see cref="Index"/> from the start.</summary>
     /// <param name="value">The zero-based index from the start.</param>
@@ -55,21 +55,6 @@ internal readonly struct Index : IEquatable<Index>
     /// <inheritdoc/>
     public static bool operator !=(Index left, Index right) => !left.Equals(right);
 
-    /// <summary>Creates an <see cref="Index"/> from the start of a sequence.</summary>
-    /// <param name="value">The zero-based index from the start.</param>
-    /// <returns>The created <see cref="Index"/>.</returns>
-    public static Index FromStart(int value) => new(value);
-
-    /// <summary>Creates an <see cref="Index"/> from the end of a sequence.</summary>
-    /// <param name="value">The zero-based index from the end.</param>
-    /// <returns>The created <see cref="Index"/>.</returns>
-    public static Index FromEnd(int value) => new(value, true);
-
-    /// <summary>Calculates the zero-based offset for a sequence of the given length.</summary>
-    /// <param name="length">The sequence length.</param>
-    /// <returns>The zero-based offset from the start of the sequence.</returns>
-    public int GetOffset(int length) => IsFromEnd ? length - Value : Value;
-
     /// <inheritdoc/>
     public bool Equals(Index other) => Value == other.Value && IsFromEnd == other.IsFromEnd;
 
@@ -80,6 +65,21 @@ internal readonly struct Index : IEquatable<Index>
     public override int GetHashCode() => HashCode.Combine(Value, IsFromEnd);
 
     /// <inheritdoc/>
-    public override string ToString() => IsFromEnd ? "^" + Value.ToString() : Value.ToString();
+    public override string ToString() => IsFromEnd ? $"^{Value}" : Value.ToString();
+
+    /// <summary>Creates an <see cref="Index"/> from the start of a sequence.</summary>
+    /// <param name="value">The zero-based index from the start.</param>
+    /// <returns>The created <see cref="Index"/>.</returns>
+    internal static Index FromStart(int value) => new(value);
+
+    /// <summary>Creates an <see cref="Index"/> from the end of a sequence.</summary>
+    /// <param name="value">The zero-based index from the end.</param>
+    /// <returns>The created <see cref="Index"/>.</returns>
+    internal static Index FromEnd(int value) => new(value, true);
+
+    /// <summary>Calculates the zero-based offset for a sequence of the given length.</summary>
+    /// <param name="length">The sequence length.</param>
+    /// <returns>The zero-based offset from the start of the sequence.</returns>
+    internal int GetOffset(int length) => IsFromEnd ? length - Value : Value;
 }
 #endif

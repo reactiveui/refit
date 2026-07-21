@@ -15,7 +15,7 @@ internal static class ImmutableEquatableArrayExtensions
     {
         /// <summary>Creates an immutable equatable array from a list.</summary>
         /// <returns>An immutable equatable array containing the list values.</returns>
-        public ImmutableEquatableArray<T> ToImmutableEquatableArray() =>
+        internal ImmutableEquatableArray<T> ToImmutableEquatableArray() =>
             values is null
                 ? ImmutableEquatableArrayFactory.Empty<T>()
                 : ImmutableEquatableArrayFactory.FromList(values);

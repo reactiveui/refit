@@ -15,7 +15,7 @@ internal static class IncrementalValuesProviderExtensions
     {
         /// <summary>Registers an output node into an <see cref="IncrementalGeneratorInitializationContext"/> to output diagnostics.</summary>
         /// <param name="diagnostics">The input <see cref="IncrementalValuesProvider{TValues}"/> sequence of diagnostics.</param>
-        public void ReportDiagnostics(
+        internal void ReportDiagnostics(
             in IncrementalValueProvider<ImmutableEquatableArray<Diagnostic>> diagnostics) =>
             context.RegisterSourceOutput(
                 diagnostics,
@@ -29,7 +29,7 @@ internal static class IncrementalValuesProviderExtensions
 
         /// <summary>Registers an implementation source output for the provided mappers.</summary>
         /// <param name="model">The interfaces stubs.</param>
-        public void EmitSource(
+        internal void EmitSource(
             in IncrementalValuesProvider<InterfaceModel> model) =>
             context.RegisterImplementationSourceOutput(
                 model,

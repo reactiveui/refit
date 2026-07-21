@@ -29,7 +29,7 @@ internal readonly record struct RequestModel(
     ImmutableEquatableArray<RequestParameterModel> Parameters)
 {
     /// <summary>Gets an empty model used for non-Refit method placeholders.</summary>
-    public static RequestModel Empty { get; } = new(
+    internal static RequestModel Empty { get; } = new(
         string.Empty,
         string.Empty,
         string.Empty,
@@ -44,19 +44,19 @@ internal readonly record struct RequestModel(
     /// <summary>Gets a value indicating whether the method is a <c>[Multipart]</c> request whose form parts are
     /// constructed inline. When set, the generated method builds a <c>MultipartFormDataContent</c> as the request body
     /// instead of following the normal single-body path.</summary>
-    public bool IsMultipart { get; init; }
+    internal bool IsMultipart { get; init; }
 
     /// <summary>Gets the multipart boundary text, used only when <see cref="IsMultipart"/> is set. Mirrors the
     /// reflection builder's boundary selection: the <c>[Multipart(boundary)]</c> argument, or the attribute default.</summary>
-    public string MultipartBoundary { get; init; } = string.Empty;
+    internal string MultipartBoundary { get; init; } = string.Empty;
 
     /// <summary>Gets the <c>System.UriFormat</c> value from the method's <c>[QueryUriFormat]</c> attribute, or null when
     /// absent. When set, the built path and query are re-encoded with this mode, matching the reflection builder's final
     /// <c>Uri.GetComponents(PathAndQuery, QueryUriFormat)</c> pass.</summary>
-    public int? QueryUriFormat { get; init; }
+    internal int? QueryUriFormat { get; init; }
 
     /// <summary>Gets the per-call timeout in milliseconds from the method's <c>[Timeout]</c> attribute, or 0 when absent.
     /// The value is emitted into the generated send call and layered onto the request's effective cancellation token,
     /// mirroring the reflection builder's <c>RestMethodInfoInternal.TimeoutMilliseconds</c>.</summary>
-    public int TimeoutMilliseconds { get; init; }
+    internal int TimeoutMilliseconds { get; init; }
 }

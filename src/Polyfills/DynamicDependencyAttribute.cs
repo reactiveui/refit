@@ -8,7 +8,8 @@ namespace System.Diagnostics.CodeAnalysis;
 /// <summary>Polyfill of the DynamicDependency attribute for older target frameworks.</summary>
 [ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method, AllowMultiple = true)]
-internal sealed class DynamicDependencyAttribute : Attribute
+internal sealed class DynamicDependencyAttribute
+    : Attribute, DynamicDependencyAttribute.IMetadata
 {
     /// <summary>Initializes a new instance of the <see cref="DynamicDependencyAttribute"/> class.</summary>
     /// <param name="memberTypes">The member types to preserve.</param>
@@ -26,6 +27,19 @@ internal sealed class DynamicDependencyAttribute : Attribute
     {
         MemberSignature = memberSignature;
         Type = type;
+    }
+
+    /// <summary>Defines the trimming-required public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the member categories that form the dependency.</summary>
+        DynamicallyAccessedMemberTypes MemberTypes { get; }
+
+        /// <summary>Gets the type that owns the dependency.</summary>
+        Type? Type { get; }
+
+        /// <summary>Gets the dependent member signature.</summary>
+        string? MemberSignature { get; }
     }
 
     /// <summary>Gets the member types that must be preserved.</summary>

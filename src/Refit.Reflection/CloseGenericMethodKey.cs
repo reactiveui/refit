@@ -18,10 +18,10 @@ internal readonly struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKe
     }
 
     /// <summary>Gets the open generic method definition.</summary>
-    public MethodInfo OpenMethodInfo { get; }
+    internal MethodInfo OpenMethodInfo { get; }
 
     /// <summary>Gets the type arguments used to close the method.</summary>
-    public Type[] Types { get; }
+    internal Type[] Types { get; }
 
     /// <summary>Determines whether this key equals another key by open method definition and type arguments.</summary>
     /// <param name="other">The key to compare against.</param>

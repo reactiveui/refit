@@ -40,11 +40,11 @@ public sealed class StubHttpCoverageTests
             { Route.For(HttpMethod.Options, "/options"), Reply.Status(HttpStatusCode.OK) },
         };
 
-        await Assert.That((await SendAsync(handler, HttpMethod.Put, BaseUrl + "/put")).StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That((await SendAsync(handler, HttpMethod.Delete, BaseUrl + "/delete")).StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That((await SendAsync(handler, HttpMethod.Patch, BaseUrl + "/patch")).StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That((await SendAsync(handler, HttpMethod.Head, BaseUrl + "/head")).StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That((await SendAsync(handler, HttpMethod.Options, BaseUrl + "/options")).StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That((await SendAsync(handler, HttpMethod.Put, $"{BaseUrl}/put")).StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That((await SendAsync(handler, HttpMethod.Delete, $"{BaseUrl}/delete")).StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That((await SendAsync(handler, HttpMethod.Patch, $"{BaseUrl}/patch")).StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That((await SendAsync(handler, HttpMethod.Head, $"{BaseUrl}/head")).StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That((await SendAsync(handler, HttpMethod.Options, $"{BaseUrl}/options")).StatusCode).IsEqualTo(HttpStatusCode.OK);
         await handler.VerifyAllCalledAsync();
     }
 
@@ -55,7 +55,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { Route.Get("/j"), Reply.Json("{\"ok\":true}", HttpStatusCode.Created) } };
 
-        var response = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/j");
+        var response = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/j");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Created);
         await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("application/json");
@@ -68,7 +68,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { Route.Get("/t"), Reply.Text("<b>hi</b>", "text/html") } };
 
-        var response = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/t");
+        var response = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/t");
 
         await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("text/html");
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("<b>hi</b>");
@@ -81,7 +81,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { Route.Get("/c"), Reply.Content(new StringContent("raw-bytes")) } };
 
-        var response = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/c");
+        var response = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/c");
 
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("raw-bytes");
     }
@@ -131,7 +131,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { Route.Get("/none"), Reply.Status(HttpStatusCode.OK) } };
 
-        _ = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/none");
+        _ = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/none");
 
         await Assert.That(await handler.LastRequestBodyAsync<NewUser>()).IsNull();
     }
@@ -166,7 +166,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { Route.Get(PlaceholderRoute), Reply.Status(HttpStatusCode.OK) } };
 
-        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/a/"))
+        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/a/"))
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -177,7 +177,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { Route.Get(PlaceholderRoute), Reply.Status(HttpStatusCode.OK) } };
 
-        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/a/1/extra"))
+        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/a/1/extra"))
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -188,7 +188,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { Route.Get(PlaceholderRoute), Reply.Status(HttpStatusCode.OK) } };
 
-        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/b/1"))
+        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/b/1"))
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -199,7 +199,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "/q", Query = [("a", "1")] }, Reply.Status(HttpStatusCode.OK) } };
 
-        var response = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/q?a=1&&b=2");
+        var response = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/q?a=1&&b=2");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -211,7 +211,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "/q", ExactQueryParams = [("a", "1")] }, Reply.Status(HttpStatusCode.OK) } };
 
-        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/q?a=2"))
+        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/q?a=2"))
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -253,7 +253,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = "/empty", Body = string.Empty }, Reply.Status(HttpStatusCode.OK) } };
 
-        var response = await SendAsync(handler, HttpMethod.Post, BaseUrl + "/empty");
+        var response = await SendAsync(handler, HttpMethod.Post, $"{BaseUrl}/empty");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -267,7 +267,7 @@ public sealed class StubHttpCoverageTests
         content.Headers.Add("Content-Language", "en");
         var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = "/h", Headers = [("Content-Language", "en")] }, Reply.Status(HttpStatusCode.OK) } };
 
-        var response = await SendAsync(handler, HttpMethod.Post, BaseUrl + "/h", content);
+        var response = await SendAsync(handler, HttpMethod.Post, $"{BaseUrl}/h", content);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -279,7 +279,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "/q", Query = [("flag", string.Empty)] }, Reply.Status(HttpStatusCode.OK) } };
 
-        var response = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/q?flag&a=1");
+        var response = await SendAsync(handler, HttpMethod.Get, $"{BaseUrl}/q?flag&a=1");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -291,7 +291,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = "/raw" }, Reply.Status(HttpStatusCode.OK) } };
 
-        _ = await SendAsync(handler, HttpMethod.Post, BaseUrl + "/raw", new ByteArrayContent("{\"Login\":\"z\"}"u8.ToArray()));
+        _ = await SendAsync(handler, HttpMethod.Post, $"{BaseUrl}/raw", new ByteArrayContent("{\"Login\":\"z\"}"u8.ToArray()));
 
         var sent = await handler.RequestBodyAsync<NewUser>(0);
         await Assert.That(sent!.Login).IsEqualTo("z");
@@ -328,7 +328,7 @@ public sealed class StubHttpCoverageTests
     {
         var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = "/u" }, Reply.Status(HttpStatusCode.OK) } };
 
-        var response = await SendAsync(handler, HttpMethod.Post, BaseUrl + "/u", new ThrowingContent());
+        var response = await SendAsync(handler, HttpMethod.Post, $"{BaseUrl}/u", new ThrowingContent());
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(await handler.LastRequestBodyAsync<NewUser>()).IsNull();
@@ -346,7 +346,7 @@ public sealed class StubHttpCoverageTests
         string url,
         HttpContent? content = null)
     {
-        using var client = new HttpClient(handler);
+        using var client = HttpClientTestFactory.Create(handler);
         using var request = new HttpRequestMessage(method, url) { Content = content };
         return await client.SendAsync(request);
     }

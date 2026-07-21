@@ -7,29 +7,29 @@ namespace Refit.Analyzers;
 internal static class DiagnosticIds
 {
     /// <summary>Diagnostic for a Refit member missing a valid HTTP method attribute.</summary>
-    public const string InvalidRefitMember = "RF001";
+    internal const string InvalidRefitMember = "RF001";
 
     /// <summary>Diagnostic reported when a Refit route contains a backslash.</summary>
-    public const string InvalidRouteBackslash = "RF003";
+    internal const string InvalidRouteBackslash = "RF003";
 
     /// <summary>Diagnostic reported when a Refit method has more than one cancellation token.</summary>
-    public const string MultipleCancellationTokens = "RF004";
+    internal const string MultipleCancellationTokens = "RF004";
 
     /// <summary>Diagnostic reported when a header collection parameter uses an unsupported type.</summary>
-    public const string InvalidHeaderCollectionParameter = "RF005";
+    internal const string InvalidHeaderCollectionParameter = "RF005";
 
     /// <summary>Diagnostic reported when a Refit method falls back to the reflection request builder and is not compatible with generated-only registration.</summary>
-    public const string GeneratedRequestBuildingFallback = "RF006";
+    internal const string GeneratedRequestBuildingFallback = "RF006";
 
     /// <summary>Diagnostic reported when a Refit method declares more than one <c>[HeaderCollection]</c> parameter.</summary>
-    public const string MultipleHeaderCollections = "RF008";
+    internal const string MultipleHeaderCollections = "RF008";
 
     /// <summary>Diagnostic reported when a Refit method declares more than one <c>[Authorize]</c> parameter.</summary>
-    public const string MultipleAuthorizeParameters = "RF009";
+    internal const string MultipleAuthorizeParameters = "RF009";
 
     /// <summary>Diagnostic reported when a Refit method declares more than one <c>[Body]</c> parameter.</summary>
-    public const string MultipleBodyParameters = "RF011";
+    internal const string MultipleBodyParameters = "RF011";
 
     /// <summary>Diagnostic reported when a multipart Refit method also declares a <c>[Body]</c> parameter.</summary>
-    public const string MultipartBodyParameter = "RF012";
+    internal const string MultipartBodyParameter = "RF012";
 }

@@ -60,7 +60,7 @@ internal static partial class Emitter
         const string suffix = " }";
         if (parameters.Length == 0)
         {
-            return prefix + "}";
+            return $"{prefix}}}";
         }
 
         var length = prefix.Length + suffix.Length + ((parameters.Length - 1) * ListSeparatorLength);

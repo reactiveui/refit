@@ -301,7 +301,7 @@ public class StreamingResponseTests
         var bigGap = new string(' ', bufferExceedingGapLength);
 
         // Includes a whitespace-only line (skipped), a line larger than the read buffer, CRLF endings, and no final newline.
-        var payload = "{\"id\":1}\r\n   \r\n{" + bigGap + "\"id\":2}\r\n{\"id\":3}";
+        var payload = $"{{\"id\":1}}\r\n   \r\n{{{bigGap}\"id\":2}}\r\n{{\"id\":3}}";
         var fixture = CreateFixture(
             "application/x-jsonlines",
             payload,
@@ -444,7 +444,7 @@ public class StreamingResponseTests
     {
         var (builder, _) = CreateReflectionBuilder("[]");
         var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArray));
-        using var clientWithoutBaseAddress = new HttpClient(new StubHttp());
+        using var clientWithoutBaseAddress = HttpClientTestFactory.Create(new StubHttp());
 
         await Assert.That(() => EnumerateAsync((IAsyncEnumerable<StreamItem?>)func(clientWithoutBaseAddress, [])!))
             .Throws<InvalidOperationException>();

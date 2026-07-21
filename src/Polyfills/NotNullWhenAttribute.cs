@@ -12,8 +12,16 @@ namespace System.Diagnostics.CodeAnalysis;
 [ExcludeFromCodeCoverage]
 [DebuggerNonUserCode]
 [AttributeUsage(AttributeTargets.Parameter)]
-internal sealed class NotNullWhenAttribute(bool returnValue) : Attribute
+internal sealed class NotNullWhenAttribute(bool returnValue)
+    : Attribute, NotNullWhenAttribute.IMetadata
 {
+    /// <summary>Defines the nullable-analysis public metadata contract.</summary>
+    internal interface IMetadata
+    {
+        /// <summary>Gets the return value for which the parameter is not null.</summary>
+        bool ReturnValue { get; }
+    }
+
     /// <summary>Gets the return value for which the parameter is guaranteed not null.</summary>
     public bool ReturnValue { get; } = returnValue;
 }

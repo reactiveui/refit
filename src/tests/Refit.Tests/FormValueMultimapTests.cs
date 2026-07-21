@@ -582,7 +582,7 @@ public partial class FormValueMultimapTests
     /// <summary>Formats the value carried by the <see cref="DeepNode"/> at the given depth.</summary>
     /// <param name="depth">The zero-based depth of the node.</param>
     /// <returns>The depth-tagged value.</returns>
-    private static string DeepNodeValue(int depth) => "v" + depth.ToString(CultureInfo.InvariantCulture);
+    private static string DeepNodeValue(int depth) => $"v{depth.ToString(CultureInfo.InvariantCulture)}";
 
     /// <summary>Test fixture with simple string properties used to verify object property loading.</summary>
     public class ObjectTestClass

@@ -169,7 +169,7 @@ public sealed class StubHttpTests
             },
         };
 
-        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, QueryUrl + "?a=2"))
+        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, $"{QueryUrl}?a=2"))
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -186,7 +186,7 @@ public sealed class StubHttpTests
             },
         };
 
-        var response = await SendAsync(handler, HttpMethod.Get, QueryUrl + "?key%2C=value%2C");
+        var response = await SendAsync(handler, HttpMethod.Get, $"{QueryUrl}?key%2C=value%2C");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -221,7 +221,7 @@ public sealed class StubHttpTests
             },
         };
 
-        var response = await SendAsync(handler, HttpMethod.Get, QueryUrl + "?enums=k0%2Ck1");
+        var response = await SendAsync(handler, HttpMethod.Get, $"{QueryUrl}?enums=k0%2Ck1");
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -257,7 +257,7 @@ public sealed class StubHttpTests
             },
         };
 
-        using var client = new HttpClient(handler);
+        using var client = HttpClientTestFactory.Create(handler);
         using var withHeader = new HttpRequestMessage(HttpMethod.Get, "https://api/h");
         withHeader.Headers.Add("X-Refit", "99");
         var ok = await client.SendAsync(withHeader);
@@ -337,7 +337,7 @@ public sealed class StubHttpTests
             },
         };
 
-        using var client = new HttpClient(handler);
+        using var client = HttpClientTestFactory.Create(handler);
         using var flagged = new HttpRequestMessage(HttpMethod.Get, "https://api/w");
         flagged.Headers.Add("X-Flag", "1");
 
@@ -388,7 +388,7 @@ public sealed class StubHttpTests
 
         for (var i = 0; i < callCount; i++)
         {
-            _ = await SendAsync(handler, HttpMethod.Get, "https://api/" + i);
+            _ = await SendAsync(handler, HttpMethod.Get, $"https://api/{i}");
         }
 
         await handler.VerifyAllCalledAsync();
@@ -517,7 +517,7 @@ public sealed class StubHttpTests
                 Reply.Status(HttpStatusCode.OK)
             },
         };
-        using var client = new HttpClient(handler);
+        using var client = HttpClientTestFactory.Create(handler);
 
         // Fire-and-forget: the request only lands after a delay, so a synchronous verify would fail.
         _ = Task.Run(async () =>
@@ -561,7 +561,7 @@ public sealed class StubHttpTests
         string url,
         HttpContent? content = null)
     {
-        using var client = new HttpClient(handler);
+        using var client = HttpClientTestFactory.Create(handler);
         using var request = new HttpRequestMessage(method, url) { Content = content };
         return await client.SendAsync(request);
     }

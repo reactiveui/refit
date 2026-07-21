@@ -100,7 +100,7 @@ public sealed class EscapedIdentifierBindingTests
             if (!result.CompilesWithoutErrors)
             {
                 throw new InvalidOperationException(
-                    "Generated compilation failed: " + string.Join(Environment.NewLine, result.CompilationErrors));
+                    $"Generated compilation failed: {string.Join(Environment.NewLine, result.CompilationErrors)}");
             }
 
             var (assembly, loadContext) = Fixture.EmitAndLoad(result);

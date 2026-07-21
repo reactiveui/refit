@@ -357,7 +357,7 @@ public partial class RequestBuilderTests
         var factory = fixture.RunRequest("PostAValueType", "true");
         const int valueTypeId = 7;
         var guid = Guid.NewGuid();
-        var expected = "\"" + guid + "\"";
+        var expected = $"\"{guid}\"";
         var output = await factory([valueTypeId, guid]);
 
         await Assert.That(output.SendContent).IsEqualTo(expected);

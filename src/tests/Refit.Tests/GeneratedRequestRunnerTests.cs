@@ -237,7 +237,7 @@ public partial class GeneratedRequestRunnerTests
             Hidden = "ignored"
         };
 
-        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent<DeclaredFormBody>(
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(
             settings,
             body);
 
@@ -388,7 +388,7 @@ public partial class GeneratedRequestRunnerTests
         // The generated path for a complex body emits the reflection content overload; the reflection request builder
         // wraps the same FormValueMultimap directly. Both must produce identical wire content.
         var generated = await GeneratedRequestRunner
-            .CreateUrlEncodedBodyContent<NestedParityForm>(settings, body)
+            .CreateUrlEncodedBodyContent(settings, body)
             .ReadAsStringAsync();
         var reflection = await new FormUrlEncodedContent(new FormValueMultimap(body, settings))
             .ReadAsStringAsync();

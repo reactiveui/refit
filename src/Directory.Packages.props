@@ -5,25 +5,25 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Shared Version Variables">
-    <PrimitivesVersion>6.0.0</PrimitivesVersion>
+    <PrimitivesVersion>7.0.0</PrimitivesVersion>
     <TUnitVersion>1.59.0</TUnitVersion>
 
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>3.26.0</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>3.33.0</SharpAnalyzersVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
     <AspNetVersion>8.0.28</AspNetVersion>
-    <AspNetVersion Condition="$(TargetFramework.StartsWith('net9'))">9.0.17</AspNetVersion>
-    <AspNetVersion Condition="$(TargetFramework.StartsWith('net10'))">10.0.9</AspNetVersion>
+    <AspNetVersion Condition="$(TargetFramework.StartsWith('net9'))">9.0.18</AspNetVersion>
+    <AspNetVersion Condition="$(TargetFramework.StartsWith('net10'))">10.0.10</AspNetVersion>
 
-    <MicrosoftExtensionsVersion>10.0.9</MicrosoftExtensionsVersion>
-    <SystemTextJsonVersion>10.0.9</SystemTextJsonVersion>
+    <MicrosoftExtensionsVersion>10.0.10</MicrosoftExtensionsVersion>
+    <SystemTextJsonVersion>10.0.10</SystemTextJsonVersion>
 
     <MicrosoftCodeAnalysisAnalyzersVersion>5.6.0</MicrosoftCodeAnalysisAnalyzersVersion>
     <MicrosoftCodeAnalysisWorkspacesVersion>4.14.0</MicrosoftCodeAnalysisWorkspacesVersion>
 
-    <SourceLinkVersion>10.0.300</SourceLinkVersion>
+    <SourceLinkVersion>10.0.301</SourceLinkVersion>
     <ThreadingAnalyzersVersion>18.7.23</ThreadingAnalyzersVersion>
     <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>

@@ -9,7 +9,7 @@ namespace Refit.Generator;
 /// <remarks>The emitter builds many transient fragment strings. Backing accumulation with a pooled <c>char[]</c> lets the
 /// underlying buffer be reused across emissions instead of allocating fresh <see cref="System.Text.StringBuilder"/>
 /// chunks each time. The final <see cref="ToString"/> returns the buffer to the pool, so an instance is single-use.</remarks>
-internal sealed class PooledStringBuilder
+internal sealed partial class PooledStringBuilder
 {
     /// <summary>The default rented capacity, sized to hold a typical generated statement block without growing.</summary>
     private const int DefaultCapacity = 256;
@@ -42,19 +42,19 @@ internal sealed class PooledStringBuilder
     private int _pos;
 
     /// <summary>Initializes a new instance of the <see cref="PooledStringBuilder"/> class.</summary>
-    public PooledStringBuilder()
+    internal PooledStringBuilder()
         : this(DefaultCapacity)
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="PooledStringBuilder"/> class with an initial capacity.</summary>
     /// <param name="capacity">The initial buffer capacity to rent.</param>
-    public PooledStringBuilder(int capacity) => _buffer = RentBuffer(Math.Max(capacity, DefaultCapacity));
+    internal PooledStringBuilder(int capacity) => _buffer = RentBuffer(Math.Max(capacity, DefaultCapacity));
 
     /// <summary>Appends a string.</summary>
     /// <param name="value">The string to append, or null.</param>
     /// <returns>This builder, for chaining.</returns>
-    public PooledStringBuilder Append(string? value)
+    internal PooledStringBuilder Append(string? value)
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -70,12 +70,12 @@ internal sealed class PooledStringBuilder
     /// <summary>Appends the invariant decimal rendering of a 32-bit integer.</summary>
     /// <param name="value">The value to append.</param>
     /// <returns>This builder, for chaining.</returns>
-    public PooledStringBuilder Append(int value) => Append(value.ToString(CultureInfo.InvariantCulture));
+    internal PooledStringBuilder Append(int value) => Append(value.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>Appends a single character.</summary>
     /// <param name="value">The character to append.</param>
     /// <returns>This builder, for chaining.</returns>
-    public PooledStringBuilder Append(char value)
+    internal PooledStringBuilder Append(char value)
     {
         EnsureCapacity(_pos + 1);
         _buffer[_pos] = value;
@@ -88,7 +88,7 @@ internal sealed class PooledStringBuilder
     /// <returns>This builder, for chaining.</returns>
     /// <remarks>Copies buffer to buffer so a nested fragment builder's content joins this one without materializing an
     /// intermediate string. The source is drained (its buffer returned to the pool), matching <see cref="ToString"/>.</remarks>
-    public PooledStringBuilder Append(PooledStringBuilder other)
+    internal PooledStringBuilder Append(PooledStringBuilder other)
     {
         if (other._pos != 0)
         {
@@ -107,23 +107,11 @@ internal sealed class PooledStringBuilder
     /// <summary>Appends a string followed by a line terminator.</summary>
     /// <param name="value">The string to append, or null.</param>
     /// <returns>This builder, for chaining.</returns>
-    public PooledStringBuilder AppendLine(string? value) => Append(value).Append(NewLine);
+    internal PooledStringBuilder AppendLine(string? value) => Append(value).Append(NewLine);
 
     /// <summary>Appends a line terminator.</summary>
     /// <returns>This builder, for chaining.</returns>
-    public PooledStringBuilder AppendLine() => Append(NewLine);
-
-    /// <summary>Materializes the accumulated content into a string and returns the pooled buffer.</summary>
-    /// <returns>The accumulated string.</returns>
-    public override string ToString()
-    {
-        var result = _pos == 0 ? string.Empty : new string(_buffer, 0, _pos);
-        var toReturn = _buffer;
-        _buffer = [];
-        _pos = 0;
-        ReturnBuffer(toReturn);
-        return result;
-    }
+    internal PooledStringBuilder AppendLine() => Append(NewLine);
 
     /// <summary>Ensures the backing buffer can hold at least the requested number of characters.</summary>
     /// <param name="required">The required total capacity.</param>

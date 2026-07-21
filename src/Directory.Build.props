@@ -82,6 +82,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)tests\HttpClientTestFactory.cs" Link="Testing\HttpClientTestFactory.cs"/>
     <None Include="$(MSBuildThisFileDirectory)testconfig.json">
       <Link>$(AssemblyName).testconfig.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -109,8 +110,10 @@
   </ItemGroup>
 
   <!-- net8.0 has every other shim natively but lacks OverloadResolutionPriority (added in net9.0).
-       The net4* leg already pulls this in via the Polyfills\*.cs glob above. -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+       Only Refit.HttpClientFactory uses the attribute; compiling the shim into consumers that already
+       reference Refit would create a duplicate compiler-recognized type. The net4* leg already pulls
+       this in via the Polyfills\*.cs glob above. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' and '$(MSBuildProjectName)' == 'Refit.HttpClientFactory'">
     <Compile Include="$(MSBuildThisFileDirectory)Polyfills\OverloadResolutionPriorityAttribute.cs" Link="Polyfills\OverloadResolutionPriorityAttribute.cs"/>
   </ItemGroup>
 

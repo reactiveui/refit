@@ -21,9 +21,13 @@ internal sealed class GeneratedOnlyRequestBuilder : IRequestBuilder
     public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
         string methodName,
         Type[]? parameterTypes = null,
-        Type[]? genericArgumentTypes = null) =>
+        Type[]? genericArgumentTypes = null)
+    {
+        var methodContext =
+            $"This Refit client was created with the generated-only API, but the generated client needs the reflection request builder for '{methodName}'.";
         throw new NotSupportedException(
-            "This Refit client was created with the generated-only API, but the generated client "
-            + $"needs the reflection request builder for '{methodName}'. Enable generated request "
-            + "building for this method or use RestService.For when reflection is acceptable.");
+            string.Concat(
+                methodContext,
+                " Enable generated request building for this method or use RestService.For when reflection is acceptable."));
+    }
 }

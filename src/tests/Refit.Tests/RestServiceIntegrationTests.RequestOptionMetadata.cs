@@ -23,7 +23,7 @@ public partial class RestServiceIntegrationTests
         // Generated path: RestService.For<T> dispatches through the source-generated client, which emits the two
         // request options as compile-time literals with no runtime reflection.
         var handler = new TestHttpMessageHandler("{}");
-        using var client = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
+        using var client = HttpClientTestFactory.Create(handler, new(BaseUrl));
         var generatedFixture = RestService.For<IGitHubApi>(client);
 
         _ = await generatedFixture.GetUser(SampleUserName);

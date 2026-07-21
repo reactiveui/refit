@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
-using System.Composition;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -14,7 +13,6 @@ namespace Refit.CodeFixes;
 
 /// <summary>Provides safe code fixes for Refit interface analyzer diagnostics.</summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(RefitInterfaceCodeFixProvider))]
-[Shared]
 public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
 {
     /// <summary>The title for the route slash code fix.</summary>
