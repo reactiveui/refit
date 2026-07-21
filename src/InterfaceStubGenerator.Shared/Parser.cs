@@ -567,32 +567,32 @@ internal static partial class Parser
                 switch (member)
                 {
                     case IMethodSymbol method when IsDisposeMethod(method, disposableInterfaceSymbol):
-                        {
-                            hasDispose = true;
-                            break;
-                        }
+                    {
+                        hasDispose = true;
+                        break;
+                    }
 
                     case IMethodSymbol method when IsRefitMethod(method, context.HttpMethodBaseAttributeSymbol):
-                        {
-                            derivedRefitMethods.Add(method);
-                            break;
-                        }
+                    {
+                        derivedRefitMethods.Add(method);
+                        break;
+                    }
 
                     case IMethodSymbol method:
-                        {
-                            // Each inherited interface contributes its own members once across AllInterfaces, so a method
-                            // symbol never repeats here and no per-method de-duplication is needed.
-                            derivedNonRefitMethods.Add(method);
-                            break;
-                        }
+                    {
+                        // Each inherited interface contributes its own members once across AllInterfaces, so a method
+                        // symbol never repeats here and no per-method de-duplication is needed.
+                        derivedNonRefitMethods.Add(method);
+                        break;
+                    }
 
                     case IPropertySymbol property
                         when IsEmittableProperty(property)
                             && (seenInheritedProperties ??= new(SymbolEqualityComparer.Default)).Add(property):
-                        {
-                            inheritedProperties.Add(property);
-                            break;
-                        }
+                    {
+                        inheritedProperties.Add(property);
+                        break;
+                    }
                 }
             }
         }
