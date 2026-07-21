@@ -76,9 +76,11 @@ internal static partial class Emitter
         {
             var valueLocal = $"{emission.QueryValueLocal}{scope.LocalSuffix}_{property.ClrName}";
             var keyExpression = scope.ParentKeyExpr is { } parentKey
-                ? BuildNestedKeyExpression(property, parentKey, scope.Delimiter, emission)
+                ? BuildNestedKeyExpression(property, parentKey, scope.Delimiter, emission, context)
                 : BuildQueryObjectKeyExpression(property, emission);
-            var site = new QueryPropertySite(valueLocal, keyExpression, context.PreEncoded, $"{scope.Indentation}    ");
+
+            var pairCall = context.PreEscapedKeys ? ".AddPreEscapedKey(" : AddQueryPairCall;
+            var site = new QueryPropertySite(valueLocal, keyExpression, context.PreEncoded, $"{scope.Indentation}    ", pairCall);
 
             if (property.Nested is { } children)
             {
@@ -182,7 +184,7 @@ internal static partial class Emitter
             .Append(valueIndent).Append("if (!string.IsNullOrWhiteSpace(").Append(entryKeyLocal).AppendLine("))")
             .Append(valueIndent).AppendLine("{")
             .Append(valueIndent).Append("    ").Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(" + ").Append(ToCSharpStringLiteral(scope.Delimiter))
+            .Append(site.AddPairCall).Append(site.KeyExpression).Append(" + ").Append(ToCSharpStringLiteral(scope.Delimiter))
             .Append(" + ").Append(entryKeyLocal).Append(", ").Append(valueExpression).Append(", ")
             .Append(context.PreEncoded).AppendLine(");")
             .Append(valueIndent).AppendLine("}");
@@ -279,7 +281,7 @@ internal static partial class Emitter
             _ = sb.Append(innerIndent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
                 .Append(innerIndent).AppendLine("{")
                 .Append(innerIndent).Append("    ").Append(emission.QueryBuilderLocal)
-                .Append(AddQueryPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
+                .Append(site.AddPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
                 .Append(innerIndent).AppendLine("}")
                 .Append(innerIndent).AppendLine("else")
                 .Append(innerIndent).AppendLine("{");
@@ -299,12 +301,14 @@ internal static partial class Emitter
     /// <param name="parentKeyExpr">The runtime key expression (a local) of the enclosing object.</param>
     /// <param name="delimiter">The nesting delimiter.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <param name="context">The enclosing parameter, provider field, and collection-format context.</param>
     /// <returns>The composed key expression: parent key, delimiter, this property's own prefix, then its name.</returns>
     internal static string BuildNestedKeyExpression(
         QueryObjectPropertyModel property,
         string parentKeyExpr,
         string delimiter,
-        in InlineValueEmission emission)
+        in InlineValueEmission emission,
+        in QueryObjectContext context)
     {
         var prefixExpr = $"{parentKeyExpr} + {ToCSharpStringLiteral(delimiter + (property.PrefixSegment ?? string.Empty))}";
 
@@ -314,8 +318,10 @@ internal static partial class Emitter
             return $"{prefixExpr} + {ToCSharpStringLiteral(alias)}";
         }
 
-        var formatterCall =
-            $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {ToCSharpStringLiteral(property.ClrName)}, null, {prefixExpr})";
+        var propertyNameExpr = ToCSharpStringLiteral(property.ClrName);
+        var formatterCall = context.PreEscapedKeys
+            ? $"{prefixExpr} + {propertyNameExpr}"
+            : $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {propertyNameExpr}, null, {prefixExpr})";
 
         // A [JsonPropertyName] name is honored only when the runtime setting is enabled.
         return property.SerializerName is { } serializerName
@@ -360,7 +366,7 @@ internal static partial class Emitter
             _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
                 .Append(indent).AppendLine("{")
                 .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-                .Append(AddQueryPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
+                .Append(site.AddPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
                 .Append(indent).AppendLine("}")
                 .Append(indent).AppendLine("else")
                 .Append(indent).AppendLine("{");
@@ -487,7 +493,7 @@ internal static partial class Emitter
         _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
             .Append(indent).AppendLine("{")
             .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(EmptyValueArgument)
+            .Append(site.AddPairCall).Append(site.KeyExpression).Append(EmptyValueArgument)
             .Append(site.PreEncoded).AppendLine(");")
             .Append(indent).AppendLine("}")
             .Append(indent).AppendLine("else")
@@ -544,7 +550,7 @@ internal static partial class Emitter
             : $"{emission.UseDefaultFormattingLocal} ? ({fastExpression}) : {customExpression}";
 
         _ = sb.Append(site.Indentation).Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(", ").Append(valueExpression).Append(", ")
+            .Append(site.AddPairCall).Append(site.KeyExpression).Append(", ").Append(valueExpression).Append(", ")
             .Append(site.PreEncoded).AppendLine(");");
     }
 
@@ -581,7 +587,7 @@ internal static partial class Emitter
             .Append(indent).Append("if (").Append(formattedLocal).AppendLine(NotNullCheckSuffix)
             .Append(indent).AppendLine("{")
             .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(", ")
+            .Append(site.AddPairCall).Append(site.KeyExpression).Append(", ")
             .Append(emission.UseDefaultFormattingLocal).Append(" ? ").Append(formattedLocal)
             .Append(" : ").Append(customExpression)
             .Append(", ").Append(site.PreEncoded).AppendLine(");")
@@ -647,5 +653,100 @@ internal static partial class Emitter
         var clrName = ToCSharpStringLiteral(property.ClrName);
         var prefix = ToNullableCSharpStringLiteral(property.PrefixSegment);
         return $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {clrName}, null, {prefix})";
+    }
+
+    /// <summary>Appends the statements that iterate a <c>[Query(CollectionFormat.Indexed)]</c> collection,
+    /// flattening each element's properties under an indexed key prefix: <c>key[0].Prop=val</c>.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="parameter">The parameter model.</param>
+    /// <param name="query">The query-binding metadata.</param>
+    /// <param name="providerField">The cached attribute-provider field name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    internal static void AppendIndexedCollectionQueryStatements(
+        PooledStringBuilder sb,
+        in RequestParameterModel parameter,
+        QueryParameterModel query,
+        string providerField,
+        in InlineValueEmission emission)
+    {
+        var bodyIndent = Indent(MethodBodyIndentation);
+        var guarded = parameter.CanBeNull;
+        var outerIndent = guarded ? bodyIndent + "    " : bodyIndent;
+
+        if (guarded)
+        {
+            _ = sb.Append(bodyIndent).Append(IfParameterPrefix).Append(parameter.Name).AppendLine(NotNullCheckSuffix)
+                .Append(bodyIndent).AppendLine("{");
+        }
+
+        // Wrap in a block so the index local is scoped to this parameter and cannot clash with other parameters.
+        var idxLocal = emission.QueryValueLocal + "_idx";
+        var blockIndent = outerIndent + "    ";
+        var foreachIndent = blockIndent + "    ";
+
+        _ = sb.Append(outerIndent).AppendLine("{")
+            .Append(blockIndent).Append("var ").Append(idxLocal).AppendLine(" = 0;")
+            .Append(blockIndent).Append(ForeachVarKeyword).Append(emission.QueryValueLocal)
+                .Append(" in @").Append(parameter.Name).AppendLine(")")
+            .Append(blockIndent).AppendLine("{");
+
+        AppendIndexedElement(sb, parameter, query, providerField, idxLocal, foreachIndent, emission);
+
+        _ = sb.Append(foreachIndent).Append(idxLocal).AppendLine("++;")
+            .Append(blockIndent).AppendLine("}") // close foreach body
+            .Append(outerIndent).AppendLine("}"); // close wrapper block
+
+        if (!guarded)
+        {
+            return;
+        }
+
+        _ = sb.Append(bodyIndent).AppendLine("}");
+    }
+
+    /// <summary>Appends one element's optional null guard, indexed key declaration, and flattened property statements.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="parameter">The enclosing parameter model.</param>
+    /// <param name="query">The query-binding metadata whose <c>ObjectProperties</c> describes each element's shape.</param>
+    /// <param name="providerField">The cached attribute-provider field name.</param>
+    /// <param name="idxLocal">The generated index counter local name.</param>
+    /// <param name="foreachIndent">The indentation inside the foreach body.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    internal static void AppendIndexedElement(
+        PooledStringBuilder sb,
+        in RequestParameterModel parameter,
+        QueryParameterModel query,
+        string providerField,
+        string idxLocal,
+        string foreachIndent,
+        in InlineValueEmission emission)
+    {
+        var keyLocal = $"{emission.QueryValueLocal}_key";
+        var itemIndent = foreachIndent;
+
+        _ = sb.Append(itemIndent).Append("var ").Append(keyLocal).Append(" = ")
+            .Append("$").Append('"').Append(query.Key)
+            .Append("[{").Append(idxLocal).Append(".ToString(global::System.Globalization.CultureInfo.InvariantCulture)").Append("}]").Append('"').AppendLine(";");
+
+        if (query.ElementCanBeNull)
+        {
+            _ = sb.Append(foreachIndent).Append("if (").Append(emission.QueryValueLocal).AppendLine(NotNullCheckSuffix)
+                .Append(foreachIndent).AppendLine("{");
+            itemIndent = foreachIndent + "    ";
+        }
+
+        // Flatten the element's properties under the indexed key; pass null as collection format so nested
+        // collection properties fall back to settings default instead of inheriting Indexed.
+        // PreEscapedKeys tells every leaf property to use AddPreEscapedKey so the brackets in the key are not re-encoded.
+        var context = new QueryObjectContext(parameter, providerField, null, ToLowerInvariantString(query.PreEncoded), true);
+        var scope = new ObjectFlattenScope(emission.QueryValueLocal, keyLocal, query.NestingDelimiter, "_" + parameter.Name, itemIndent);
+        AppendObjectPropertyList(sb, context, query.ObjectProperties!.Value, scope, emission);
+
+        if (!query.ElementCanBeNull)
+        {
+            return;
+        }
+
+        _ = sb.Append(foreachIndent).AppendLine("}");
     }
 }

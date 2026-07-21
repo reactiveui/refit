@@ -157,6 +157,16 @@ internal partial class RequestBuilderImplementation
             return;
         }
 
+        var parameterCollectionFormat = attr.IsCollectionFormatSpecified
+            ? attr.CollectionFormat
+            : (CollectionFormat?)null;
+
+        if (attr.IsCollectionFormatSpecified
+            && TryAppendIndexedCollectionQuery(queryParamsToAdd, param, attr, restMethod.QueryParameterMap[i], parameterCollectionFormat))
+        {
+            return;
+        }
+
         if (DoNotConvertToQueryMap(param))
         {
             AppendQueryParameter(
@@ -168,9 +178,6 @@ internal partial class RequestBuilderImplementation
             return;
         }
 
-        var parameterCollectionFormat = attr.IsCollectionFormatSpecified
-            ? attr.CollectionFormat
-            : (CollectionFormat?)null;
         var queryMap = BuildQueryMap(param, attr.Delimiter, parameterInfo, parameterCollectionFormat);
         for (var queryMapIndex = 0; queryMapIndex < queryMap.Count; queryMapIndex++)
         {
@@ -397,6 +404,72 @@ internal partial class RequestBuilderImplementation
                     param,
                     GetCachedAttributeProvider(parameterInfo),
                     parameterInfo.ParameterType)));
+    }
+
+    /// <summary>Checks whether the parameter is a <c>CollectionFormat.Indexed</c> collection, and if so appends
+    /// its indexed-prefix query pairs and returns <see langword="true"/>.</summary>
+    /// <param name="queryParamsToAdd">The list receiving query parameters.</param>
+    /// <param name="param">The parameter value.</param>
+    /// <param name="attr">The query attribute governing key naming.</param>
+    /// <param name="paramKey">The base query key for the parameter.</param>
+    /// <param name="parameterCollectionFormat">The resolved collection format, or null to use the settings default.</param>
+    /// <returns><see langword="true"/> when the parameter was handled as a Indexed collection.</returns>
+    internal bool TryAppendIndexedCollectionQuery(
+        List<QueryParameterEntry> queryParamsToAdd,
+        object param,
+        QueryAttribute attr,
+        string paramKey,
+        CollectionFormat? parameterCollectionFormat)
+    {
+        if (parameterCollectionFormat != CollectionFormat.Indexed
+            || param is string
+            || param is IDictionary
+            || param is not IEnumerable collection
+            || DoNotConvertToQueryMap(param))
+        {
+            return false;
+        }
+
+        AppendIndexedCollectionParameters(queryParamsToAdd, collection, attr, paramKey);
+        return true;
+    }
+
+    /// <summary>Expands a <c>[Query(CollectionFormat.Indexed)]</c> collection into indexed-prefix query pairs,
+    /// producing <c>key[0].Prop=val&amp;key[1].Prop=val</c> for each element's flattened properties.</summary>
+    /// <param name="queryParamsToAdd">The list receiving query parameters.</param>
+    /// <param name="collection">The enumerable parameter value.</param>
+    /// <param name="attr">The query attribute governing key naming.</param>
+    /// <param name="paramKey">The base query key for the parameter.</param>
+    internal void AppendIndexedCollectionParameters(
+        List<QueryParameterEntry> queryParamsToAdd,
+        IEnumerable collection,
+        QueryAttribute attr,
+        string paramKey)
+    {
+        var index = 0;
+        foreach (var item in collection)
+        {
+            if (item is null)
+            {
+                index++;
+                continue;
+            }
+
+            var indexedKey = $"{paramKey}[{index}]";
+
+            var queryMap = BuildQueryMap(item, attr.Delimiter);
+            for (var j = 0; j < queryMap.Count; j++)
+            {
+                var kvp = queryMap[j];
+                var valueType = kvp.Value?.GetType() ?? typeof(object);
+                queryParamsToAdd.Add(new(
+                    indexedKey + attr.Delimiter + kvp.Key,
+                    GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, valueType, valueType),
+                    KeyPreEscaped: true));
+            }
+
+            index++;
+        }
     }
 
     /// <summary>Formats an enumerable value according to the effective collection format and appends each result to a

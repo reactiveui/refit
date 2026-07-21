@@ -170,6 +170,8 @@ internal static partial class Parser
         var returnTypeAdapterInterface = ResolveReturnTypeAdapterInterface(compilation);
         var returnTypeAdapters = DiscoverReturnTypeAdapters(compilation, returnTypeAdapterInterface, cancellationToken);
 
+        var indexedCollectionFormatValue = ResolveIndexedCollectionFormatValue(compilation);
+
         return new InterfaceGenerationContext(
             diagnostics,
             preserveAttributeDisplayName,
@@ -190,7 +192,8 @@ internal static partial class Parser
             [],
             new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default),
             new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default),
-            new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default));
+            new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default),
+            indexedCollectionFormatValue);
     }
 
     /// <summary>Collects the interfaces with Refit methods, declared or inherited, into a single map.</summary>

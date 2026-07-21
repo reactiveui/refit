@@ -91,6 +91,7 @@ Refit.CamelCaseUrlParameterKeyFormatter.Format(string! key) -> string!
 Refit.CollectionFormat
 Refit.CollectionFormat.Csv = 1 -> Refit.CollectionFormat
 Refit.CollectionFormat.Multi = 5 -> Refit.CollectionFormat
+Refit.CollectionFormat.Indexed = 6 -> Refit.CollectionFormat
 Refit.CollectionFormat.Pipes = 4 -> Refit.CollectionFormat
 Refit.CollectionFormat.RefitParameterFormatter = 0 -> Refit.CollectionFormat
 Refit.CollectionFormat.Ssv = 2 -> Refit.CollectionFormat

@@ -38,6 +38,8 @@ namespace Refit.Generator;
 /// <param name="FormattableClassificationCache">A pass-wide cache mapping a value type symbol to whether it implements
 /// <c>IFormattable</c> and <c>ISpanFormattable</c>, shared across every interface so the interface walk (which materializes a
 /// fresh public <c>AllInterfaces</c> array on each access) runs once per distinct type rather than once per parameter occurrence.</param>
+/// <param name="IndexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c> resolved once from the
+/// compilation, or <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
 /// <param name="PathPrefix">The shared route prefix declared by the interface being processed via <c>[PathPrefix]</c>,
 /// prepended to every method's relative path, or an empty string when the interface declares none.</param>
 internal readonly record struct InterfaceGenerationContext(
@@ -61,4 +63,5 @@ internal readonly record struct InterfaceGenerationContext(
     Dictionary<ISymbol, string?> AssemblyAliasCache,
     Dictionary<ISymbol, string> QualifiedTypeCache,
     Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)> FormattableClassificationCache,
+    int? IndexedCollectionFormatValue = null,
     string PathPrefix = "");

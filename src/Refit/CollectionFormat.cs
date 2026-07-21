@@ -22,5 +22,10 @@ public enum CollectionFormat
     Pipes,
 
     /// <summary>Multiple parameter instances.</summary>
-    Multi
+    Multi,
+
+    /// <summary>A collection of objects expanded with an indexed key prefix: <c>key[0].Prop=val&amp;key[1].Prop=val</c>.
+    /// Applies to <see cref="System.Collections.Generic.IEnumerable{T}"/> parameters whose element type has public
+    /// readable properties. Mirrors the OpenAPI 3 <c>Indexed</c> serialization style.</summary>
+    Indexed
 }

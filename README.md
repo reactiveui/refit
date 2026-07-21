@@ -574,6 +574,39 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     });
 ```
 
+#### Indexed object collections (DeepObject / OpenAPI deepObject style)
+
+Use `CollectionFormat.Indexed` to expand a collection of objects into indexed key–value pairs, where each element's
+properties are flattened under the parameter name followed by the element index and the property name:
+
+```
+items[0].Id=1&items[0].Value=a&items[1].Id=2
+```
+
+This matches the OpenAPI 3 `deepObject` serialization style and is useful for APIs that expect an ordered list of
+objects in the query string.
+
+```csharp
+public class OrderItem
+{
+    public int ProductId { get; set; }
+    public int Quantity  { get; set; }
+}
+
+[Get("/orders")]
+Task<Order> GetOrders([Query(CollectionFormat.Indexed)] IReadOnlyList<OrderItem> items);
+
+GetOrders(new[] {
+    new OrderItem { ProductId = 1, Quantity = 2 },
+    new OrderItem { ProductId = 5, Quantity = 1 }
+})
+>>> "/orders?items[0].ProductId=1&items[0].Quantity=2&items[1].ProductId=5&items[1].Quantity=1"
+```
+
+Property names honor `[AliasAs]`, `[JsonPropertyName]` (when `RefitSettings.HonorContentSerializerPropertyNamesInQuery`
+is set) and `[Query(Prefix)]`, exactly like a normal `[Query]` object parameter. Null elements in the collection are
+skipped and the index counter still advances so the remaining indices remain stable.
+
 #### Unescape Querystring parameters
 
 Use the `QueryUriFormat` attribute to specify if the query parameters should be url escaped
