@@ -170,6 +170,8 @@ internal static partial class Parser
         var returnTypeAdapterInterface = ResolveReturnTypeAdapterInterface(compilation);
         var returnTypeAdapters = DiscoverReturnTypeAdapters(compilation, returnTypeAdapterInterface, cancellationToken);
 
+        var indexedCollectionFormatValue = ResolveIndexedCollectionFormatValue(compilation);
+
         return new InterfaceGenerationContext(
             diagnostics,
             preserveAttributeDisplayName,
@@ -190,7 +192,8 @@ internal static partial class Parser
             [],
             new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default),
             new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default),
-            new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default));
+            new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default),
+            indexedCollectionFormatValue);
     }
 
     /// <summary>Collects the interfaces with Refit methods, declared or inherited, into a single map.</summary>
@@ -564,32 +567,32 @@ internal static partial class Parser
                 switch (member)
                 {
                     case IMethodSymbol method when IsDisposeMethod(method, disposableInterfaceSymbol):
-                    {
-                        hasDispose = true;
-                        break;
-                    }
+                        {
+                            hasDispose = true;
+                            break;
+                        }
 
                     case IMethodSymbol method when IsRefitMethod(method, context.HttpMethodBaseAttributeSymbol):
-                    {
-                        derivedRefitMethods.Add(method);
-                        break;
-                    }
+                        {
+                            derivedRefitMethods.Add(method);
+                            break;
+                        }
 
                     case IMethodSymbol method:
-                    {
-                        // Each inherited interface contributes its own members once across AllInterfaces, so a method
-                        // symbol never repeats here and no per-method de-duplication is needed.
-                        derivedNonRefitMethods.Add(method);
-                        break;
-                    }
+                        {
+                            // Each inherited interface contributes its own members once across AllInterfaces, so a method
+                            // symbol never repeats here and no per-method de-duplication is needed.
+                            derivedNonRefitMethods.Add(method);
+                            break;
+                        }
 
                     case IPropertySymbol property
                         when IsEmittableProperty(property)
                             && (seenInheritedProperties ??= new(SymbolEqualityComparer.Default)).Add(property):
-                    {
-                        inheritedProperties.Add(property);
-                        break;
-                    }
+                        {
+                            inheritedProperties.Add(property);
+                            break;
+                        }
                 }
             }
         }

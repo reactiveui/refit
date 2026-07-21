@@ -289,36 +289,27 @@ internal static partial class Parser
                 BuildValueFormat(elementType!, format, formattableSymbol, context))
             : null;
 
-    /// <summary>Determines whether <paramref name="collectionFormatValue"/> is the underlying integer value of
-    /// <c>CollectionFormat.Indexed</c> by resolving the enum member from the compilation rather than comparing
-    /// against a hardcoded literal, so the check stays correct if the enum is ever reordered.</summary>
-    /// <param name="collectionFormatValue">The collection format value from the attribute, or null.</param>
-    /// <param name="context">The generation context supplying the compilation.</param>
-    /// <returns><see langword="true"/> when the value matches <c>CollectionFormat.Indexed</c>.</returns>
-    internal static bool IsIndexedCollectionFormat(int? collectionFormatValue, in InterfaceGenerationContext context)
+    /// <summary>Resolves the underlying integer value of <c>CollectionFormat.Indexed</c> from the compilation once
+    /// per generation pass, so per-parameter checks are a direct integer comparison rather than a symbol lookup.</summary>
+    /// <param name="compilation">The compilation to resolve against.</param>
+    /// <returns>The integer value, or <see langword="null"/> when the type cannot be found.</returns>
+    internal static int? ResolveIndexedCollectionFormatValue(Compilation compilation)
     {
-        if (collectionFormatValue is null)
-        {
-            return false;
-        }
-
-        // Resolve the CollectionFormat enum type from the compilation and find the Indexed member's constant value.
-        // This avoids hardcoding the integer and stays correct if the enum is ever reordered.
-        var collectionFormatType = context.Compilation?.GetTypeByMetadataName(CollectionFormatTypeName);
+        var collectionFormatType = compilation.GetTypeByMetadataName(CollectionFormatTypeName);
         if (collectionFormatType is null)
         {
-            return false;
+            return null;
         }
 
         foreach (var member in collectionFormatType.GetMembers())
         {
             if (member is IFieldSymbol { HasConstantValue: true, Name: IndexedMemberName } field)
             {
-                return collectionFormatValue == (int)field.ConstantValue!;
+                return (int)field.ConstantValue!;
             }
         }
 
-        return false;
+        return null;
     }
 
     /// <summary>Builds the query model for a <c>[Query(CollectionFormat.Indexed)]</c> parameter whose element type
@@ -341,7 +332,7 @@ internal static partial class Parser
         INamedTypeSymbol? formattableSymbol,
         in InterfaceGenerationContext context)
     {
-        if (!IsIndexedCollectionFormat(data.CollectionFormatValue, context))
+        if (data.CollectionFormatValue.HasValue && data.CollectionFormatValue != context.IndexedCollectionFormatValue)
         {
             return null;
         }
