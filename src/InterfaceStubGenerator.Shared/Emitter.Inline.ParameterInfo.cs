@@ -144,6 +144,12 @@ internal static partial class Emitter
                 continue;
             }
 
+            if (parameter.Attributes.Count == 0)
+            {
+                dict.Add(parameter.Name, "global::Refit.GeneratedParameterAttributeProvider.Empty");
+                continue;
+            }
+
             var parameterInfoFieldName = GetParameterInfoFieldName(parameter.Name, uniqueNames);
             dict.Add(parameter.Name, parameterInfoFieldName);
             BuildParameterInfoField(parameter, declaredMethod, parameterInfoFieldName, paramInfoSb);

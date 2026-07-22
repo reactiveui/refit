@@ -45,9 +45,6 @@ namespace Refit.Implementation
                 Client = client;
                 _settings = settings;
             }
-            /// <summary>Cached attribute provider for the generated GetUser method's user parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
-
             /// <inheritdoc />
             public global::System.IObservable<global::System.Net.Http.HttpResponseMessage> GetUser(string @user)
             {
@@ -55,7 +52,7 @@ namespace Refit.Implementation
                 global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
                 {
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, [((7, 13), refitUseDefaultFormatting ? (@user) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @user, ______userAttributeProvider, typeof(string)))]), refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, [((7, 13), refitUseDefaultFormatting ? (@user) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @user, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]), refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUser");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users/{user}");
