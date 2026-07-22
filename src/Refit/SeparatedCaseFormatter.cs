@@ -2,8 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Text;
-
 namespace Refit;
 
 /// <summary>Converts PascalCase/camelCase identifiers into a lower-case, separator-delimited form (e.g. snake_case or kebab-case).</summary>
@@ -23,7 +21,7 @@ internal static class SeparatedCaseFormatter
             return key;
         }
 
-        var builder = new StringBuilder(key.Length + SeparatorCapacityHeadroom);
+        var builder = new ValueStringBuilder(key.Length + SeparatorCapacityHeadroom);
         for (var i = 0; i < key.Length; i++)
         {
             var current = key[i];
@@ -31,14 +29,14 @@ internal static class SeparatedCaseFormatter
             {
                 if (i > 0 && NeedsSeparatorBefore(key, i))
                 {
-                    _ = builder.Append(separator);
+                    builder.Append(separator);
                 }
 
-                _ = builder.Append(char.ToLowerInvariant(current));
+                builder.Append(char.ToLowerInvariant(current));
             }
             else
             {
-                _ = builder.Append(current);
+                builder.Append(current);
             }
         }
 
