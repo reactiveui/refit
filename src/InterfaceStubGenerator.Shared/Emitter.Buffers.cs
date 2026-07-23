@@ -26,67 +26,6 @@ internal static partial class Emitter
     private delegate void GeneratedStringAction<in TState>(Span<char> destination, TState state);
 #endif
 
-    /// <summary>Concatenates populated source fragments without allocating a trimmed array.</summary>
-    /// <param name="parts">The source fragments.</param>
-    /// <param name="count">The populated fragment count.</param>
-    /// <returns>The concatenated source.</returns>
-    internal static string ConcatParts(string[] parts, int count)
-    {
-        var length = 0;
-        for (var i = 0; i < count; i++)
-        {
-            length += parts[i].Length;
-        }
-
-        return CreateGeneratedString(
-            length,
-            (Parts: parts, Count: count),
-            static (destination, state) =>
-            {
-                var position = 0;
-                for (var i = 0; i < state.Count; i++)
-                {
-                    AppendText(destination, state.Parts[i], ref position);
-                }
-            });
-    }
-
-    /// <summary>Joins populated source fragments without allocating a trimmed array.</summary>
-    /// <param name="parts">The source fragments.</param>
-    /// <param name="count">The populated fragment count.</param>
-    /// <param name="separator">The separator text.</param>
-    /// <returns>The joined source.</returns>
-    internal static string JoinParts(string[] parts, int count, string separator)
-    {
-        if (count == 0)
-        {
-            return string.Empty;
-        }
-
-        var length = separator.Length * (count - 1);
-        for (var i = 0; i < count; i++)
-        {
-            length += parts[i].Length;
-        }
-
-        return CreateGeneratedString(
-            length,
-            (Parts: parts, Count: count, Separator: separator),
-            static (destination, state) =>
-            {
-                var position = 0;
-                for (var i = 0; i < state.Count; i++)
-                {
-                    if (i > 0)
-                    {
-                        AppendText(destination, state.Separator, ref position);
-                    }
-
-                    AppendText(destination, state.Parts[i], ref position);
-                }
-            });
-    }
-
     /// <summary>Builds a generated indentation string.</summary>
     /// <param name="level">The indentation level.</param>
     /// <returns>The generated indentation.</returns>

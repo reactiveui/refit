@@ -13,12 +13,13 @@ internal static partial class Emitter
     /// </summary>
     private const int KeywordConstraintCount = 5;
 
-    /// <summary>Builds the generic type constraint clauses for the given type parameters.</summary>
+    /// <summary>Appends the generic type constraint clauses for the given type parameters.</summary>
+    /// <param name="builder">The buffer accumulating the interface source.</param>
     /// <param name="typeParameters">The type parameter constraints to emit.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
     /// <param name="indentationLevel">The generated indentation level.</param>
-    /// <returns>The generated type constraint clauses.</returns>
-    internal static string BuildConstraints(
+    internal static void AppendConstraints(
+        PooledStringBuilder builder,
         ImmutableEquatableArray<TypeConstraint> typeParameters,
         bool isOverrideOrExplicitImplementation,
         int indentationLevel)
@@ -26,39 +27,39 @@ internal static partial class Emitter
         // The overwhelmingly common case is a non-generic method: skip the array allocation entirely.
         if (typeParameters.Count == 0)
         {
-            return string.Empty;
+            return;
         }
 
-        var parts = new string[typeParameters.Count];
-        var count = 0;
         for (var i = 0; i < typeParameters.Count; i++)
         {
-            var source = BuildConstraintsForTypeParameter(
+            AppendConstraintsForTypeParameter(
+                builder,
                 typeParameters[i],
                 isOverrideOrExplicitImplementation,
                 indentationLevel);
-            if (source.Length != 0)
-            {
-                parts[count] = source;
-                count++;
-            }
         }
-
-        return count == 0 ? string.Empty : ConcatParts(parts, count);
     }
 
-    /// <summary>Builds the constraint clause for a single type parameter.</summary>
+    /// <summary>Appends the constraint clause for a single type parameter.</summary>
+    /// <param name="builder">The buffer accumulating the interface source.</param>
     /// <param name="typeParameter">The type parameter constraint to emit.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
     /// <param name="indentationLevel">The generated indentation level.</param>
-    /// <returns>The generated type constraint clause, or an empty string.</returns>
-    internal static string BuildConstraintsForTypeParameter(
+    internal static void AppendConstraintsForTypeParameter(
+        PooledStringBuilder builder,
         in TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation,
-        int indentationLevel) =>
-        !HasConstraintKeywords(typeParameter, isOverrideOrExplicitImplementation)
-            ? string.Empty
-            : $"{Indent(indentationLevel)}where {typeParameter.TypeName} : {BuildConstraintList(typeParameter, isOverrideOrExplicitImplementation)}\n";
+        int indentationLevel)
+    {
+        if (!HasConstraintKeywords(typeParameter, isOverrideOrExplicitImplementation))
+        {
+            return;
+        }
+
+        _ = builder.Append(Indent(indentationLevel)).Append("where ").Append(typeParameter.TypeName).Append(" : ");
+        AppendConstraintList(builder, typeParameter, isOverrideOrExplicitImplementation);
+        _ = builder.AppendLine();
+    }
 
     /// <summary>Determines whether a type parameter has constraints that should be emitted.</summary>
     /// <param name="typeParameter">The type parameter constraint to inspect.</param>
@@ -77,63 +78,67 @@ internal static partial class Emitter
                                                            (knownConstraints & KnownTypeConstraint.New) != 0));
     }
 
-    /// <summary>Builds the comma-separated constraint list for a type parameter.</summary>
+    /// <summary>Appends the comma-separated constraint list for a type parameter.</summary>
+    /// <param name="builder">The buffer accumulating the interface source.</param>
     /// <param name="typeParameter">The type parameter constraint to inspect.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
-    /// <returns>The generated constraint list.</returns>
-    internal static string BuildConstraintList(
+    internal static void AppendConstraintList(
+        PooledStringBuilder builder,
         in TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation)
     {
-        var parts = new string[typeParameter.Constraints.Count + KeywordConstraintCount];
-        var count = 0;
         var knownConstraints = typeParameter.KnownTypeConstraint;
-        AddConstraint(parts, "class", (knownConstraints & KnownTypeConstraint.Class) != 0, ref count);
+        var addComma = false;
+        AddConstraint(builder, "class", (knownConstraints & KnownTypeConstraint.Class) != 0, ref addComma);
         AddConstraint(
-            parts,
+            builder,
             "unmanaged",
             (knownConstraints & KnownTypeConstraint.Unmanaged) != 0 && !isOverrideOrExplicitImplementation,
-            ref count);
-        AddConstraint(parts, "struct", (knownConstraints & KnownTypeConstraint.Struct) != 0, ref count);
+            ref addComma);
+        AddConstraint(builder, "struct", (knownConstraints & KnownTypeConstraint.Struct) != 0, ref addComma);
         AddConstraint(
-            parts,
+            builder,
             "notnull",
             (knownConstraints & KnownTypeConstraint.NotNull) != 0 && !isOverrideOrExplicitImplementation,
-            ref count);
+            ref addComma);
 
         if (!isOverrideOrExplicitImplementation)
         {
             foreach (var constraint in typeParameter.Constraints)
             {
-                AddConstraint(parts, constraint, true, ref count);
+                AddConstraint(builder, constraint, true, ref addComma);
             }
         }
 
         AddConstraint(
-            parts,
+            builder,
             "new()",
             (knownConstraints & KnownTypeConstraint.New) != 0 && !isOverrideOrExplicitImplementation,
-            ref count);
-        return JoinParts(parts, count, ", ");
+            ref addComma);
     }
 
     /// <summary>Adds one constraint keyword when the condition is true.</summary>
-    /// <param name="parts">The target constraint buffer.</param>
+    /// <param name="builder">The buffer accumulating the interface source.</param>
     /// <param name="keyword">The constraint keyword.</param>
     /// <param name="condition">Whether the keyword should be emitted.</param>
-    /// <param name="count">The populated part count.</param>
+    /// <param name="addComma">Whether a comma should be prepended.</param>
     internal static void AddConstraint(
-        string[] parts,
+        PooledStringBuilder builder,
         string keyword,
         bool condition,
-        ref int count)
+        ref bool addComma)
     {
         if (!condition)
         {
             return;
         }
 
-        parts[count] = keyword;
-        count++;
+        if (addComma)
+        {
+            _ = builder.Append(", ");
+        }
+
+        addComma = true;
+        _ = builder.Append(keyword);
     }
 }
