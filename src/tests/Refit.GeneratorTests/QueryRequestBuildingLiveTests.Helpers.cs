@@ -287,7 +287,10 @@ public sealed partial class QueryRequestBuildingLiveTests
                 Task<string> IndexedListSearch([Query(CollectionFormat.Indexed)] List<int>? items);
 
                 [Get("/indexedNameWithSerialized")]
-                Task<string> indexedNameWithSerialized([Query(CollectionFormat.Indexed)] List<Name>? items);
+                Task<string> indexedNameWithSerialized([Query(CollectionFormat.Indexed)] List<Name> items);
+
+                [Get("/indexedSimpleType")]
+                Task<string> IndexedSimpleType([Query(CollectionFormat.Indexed)] Item item);
             }
             """;
 
@@ -305,7 +308,7 @@ public sealed partial class QueryRequestBuildingLiveTests
             if (!result.CompilesWithoutErrors)
             {
                 throw new InvalidOperationException(
-                    "Generated compilation failed: " + string.Join(Environment.NewLine, result.CompilationErrors));
+                    $"Generated compilation failed: {string.Join(Environment.NewLine, result.CompilationErrors)}");
             }
 
             var (assembly, loadContext) = Fixture.EmitAndLoad(result);

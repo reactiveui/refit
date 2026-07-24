@@ -35,13 +35,16 @@ internal static partial class Parser
     /// <param name="returnTypeAdapterInterface">The resolved <c>Refit.IReturnTypeAdapter`2</c> symbol, or null.</param>
     /// <param name="returnTypeAdapters">The discovered <c>IReturnTypeAdapter</c> implementations, so the analyzer agrees
     /// with the generator that an adapter-backed return type is inline-eligible.</param>
+    /// <param name="indexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c> resolved once from the
+    /// compilation, or <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
     /// <returns><see langword="true"/> when the method's request is inline-eligible.</returns>
     internal static bool CanBuildRequestInline(
         IMethodSymbol methodSymbol,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         INamedTypeSymbol? formattableSymbol,
         INamedTypeSymbol? returnTypeAdapterInterface,
-        INamedTypeSymbol[] returnTypeAdapters)
+        INamedTypeSymbol[] returnTypeAdapters,
+        int? indexedCollectionFormatValue = null)
     {
         if (FindHttpMethodAttribute(methodSymbol, httpMethodBaseAttributeSymbol) is null)
         {
@@ -69,7 +72,8 @@ internal static partial class Parser
             ExternAliases: [],
             AssemblyAliasCache: new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default),
             QualifiedTypeCache: new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default),
-            FormattableClassificationCache: new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default));
+            FormattableClassificationCache: new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default),
+            IndexedCollectionFormatValue: indexedCollectionFormatValue);
         return ParseRequest(methodSymbol, ClassifyInlineReturnShape(methodSymbol.ReturnType), context)
             .CanGenerateInline;
     }

@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -113,7 +112,8 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
                     formattableInterface,
                     returnTypeAdapterInterface,
                     returnTypeAdapters,
-                    reportGeneratedRequestBuildingFallback),
+                    reportGeneratedRequestBuildingFallback,
+                    Refit.Generator.Parser.ResolveIndexedCollectionFormatValue(context.Compilation)),
                 symbolContext.ReportDiagnostic,
                 symbolContext.CancellationToken),
             SymbolKind.NamedType);
@@ -230,7 +230,8 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
                 httpMethodAttribute,
                 analysis.FormattableInterface,
                 analysis.ReturnTypeAdapterInterface,
-                analysis.ReturnTypeAdapters))
+                analysis.ReturnTypeAdapters,
+                analysis.IndexedCollectionFormatValue))
         {
             return;
         }
@@ -618,11 +619,14 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <param name="ReturnTypeAdapterInterface">The <c>Refit.IReturnTypeAdapter`2</c> symbol, if available.</param>
     /// <param name="ReturnTypeAdapters">The discovered <c>IReturnTypeAdapter</c> implementations, kept in lockstep with the generator.</param>
     /// <param name="ReportGeneratedRequestBuildingFallback">Whether the RF006 fallback diagnostic is enabled.</param>
+    /// /// <param name="IndexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c> resolved once from the
+    /// compilation, or <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
     private readonly record struct CompilationAnalysisState(
         INamedTypeSymbol HttpMethodAttribute,
         INamedTypeSymbol DisposableInterface,
         INamedTypeSymbol? FormattableInterface,
         INamedTypeSymbol? ReturnTypeAdapterInterface,
         INamedTypeSymbol[] ReturnTypeAdapters,
-        bool ReportGeneratedRequestBuildingFallback);
+        bool ReportGeneratedRequestBuildingFallback,
+        int? IndexedCollectionFormatValue = null);
 }

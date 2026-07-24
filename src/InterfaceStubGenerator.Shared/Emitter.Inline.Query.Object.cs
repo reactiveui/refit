@@ -671,7 +671,7 @@ internal static partial class Emitter
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         var guarded = parameter.CanBeNull;
-        var outerIndent = guarded ? bodyIndent + "    " : bodyIndent;
+        var outerIndent = guarded ? $"{bodyIndent}    " : bodyIndent;
 
         if (guarded)
         {
@@ -680,9 +680,9 @@ internal static partial class Emitter
         }
 
         // Wrap in a block so the index local is scoped to this parameter and cannot clash with other parameters.
-        var idxLocal = emission.QueryValueLocal + "_idx";
-        var blockIndent = outerIndent + "    ";
-        var foreachIndent = blockIndent + "    ";
+        var idxLocal = $"{emission.QueryValueLocal}_idx";
+        var blockIndent = $"{outerIndent}    ";
+        var foreachIndent = $"{blockIndent}    ";
 
         _ = sb.Append(outerIndent).AppendLine("{")
             .Append(blockIndent).Append("var ").Append(idxLocal).AppendLine(" = 0;")
@@ -732,14 +732,14 @@ internal static partial class Emitter
         {
             _ = sb.Append(foreachIndent).Append("if (").Append(emission.QueryValueLocal).AppendLine(NotNullCheckSuffix)
                 .Append(foreachIndent).AppendLine("{");
-            itemIndent = foreachIndent + "    ";
+            itemIndent = $"{foreachIndent}    ";
         }
 
         // Flatten the element's properties under the indexed key; pass null as collection format so nested
         // collection properties fall back to settings default instead of inheriting Indexed.
         // PreEscapedKeys tells every leaf property to use AddPreEscapedKey so the brackets in the key are not re-encoded.
         var context = new QueryObjectContext(parameter, providerField, null, ToLowerInvariantString(query.PreEncoded), true);
-        var scope = new ObjectFlattenScope(emission.QueryValueLocal, keyLocal, query.NestingDelimiter, "_" + parameter.Name, itemIndent);
+        var scope = new ObjectFlattenScope(emission.QueryValueLocal, keyLocal, query.NestingDelimiter, $"_{parameter.Name}", itemIndent);
         AppendObjectPropertyList(sb, context, query.ObjectProperties!.Value, scope, emission);
 
         if (!query.ElementCanBeNull)

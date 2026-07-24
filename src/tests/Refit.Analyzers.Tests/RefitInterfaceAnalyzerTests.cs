@@ -255,6 +255,12 @@ public sealed class RefitInterfaceAnalyzerTests
     {
         var diagnostics = await AnalyzerFixture.RunForBody(
             """
+            public sealed class Filter
+            {
+                [AliasAs("n")] public string? Name { get; set; }
+                public int Count { get; set; }
+            }
+
             [Get("/users")]
             Task<string> List();
 
@@ -285,6 +291,9 @@ public sealed class RefitInterfaceAnalyzerTests
 
             [Get("/stream")]
             IObservable<string> Observe();
+
+            [Get("/filters")]
+            Task<string> Search([Query(CollectionFormat.Indexed)] List<Filter>? filters);
             """);
 
         await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))

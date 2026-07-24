@@ -277,7 +277,7 @@ public sealed partial class QueryRequestBuildingLiveTests
         const string typeName = "Refit.LiveQuery.Item";
         await harness.AssertParityAsync(indexedSearchMethodName, [null], "/base/indexed");
         var item0 = harness.CreateApiValue(typeName, (id, 1), (value, "a"));
-        var indexedList = harness.CreateApiList(typeName, item0);
+        var indexedList = harness.CreateApiList(typeName, item0, null);
         await harness.AssertParityAsync(indexedSearchMethodName, [indexedList], $"/base/indexed?{parameter}[0].{id}=1&{parameter}[0].{value}=a");
 
         const string indexedSearchWithListIntMethodName = "IndexedListSearch";
@@ -293,6 +293,9 @@ public sealed partial class QueryRequestBuildingLiveTests
         var nameSerialized = harness.CreateApiValue(typeNameSerialized, (name, "John"), (lastName, "Doe"));
         var indexedNameSerialized = harness.CreateApiList(typeNameSerialized, nameSerialized);
         await harness.AssertParityAsync(indexedSearchSerialized, [indexedNameSerialized], $"/base/indexedNameWithSerialized?{parameter}[0].{jsonPropertyName}=John&{parameter}[0].{lastName}=Doe");
+
+        const string indexedSimpleType = "IndexedSimpleType";
+        await harness.AssertParityAsync(indexedSimpleType, [item0], $"/base/indexedSimpleType?{id}=1&{value}=a");
     }
 
     /// <summary>Verifies a custom URL parameter formatter still runs for every generated value.</summary>
