@@ -31,14 +31,6 @@ internal static partial class Emitter
     internal static string BuildParameterTypeListForTesting(ImmutableEquatableArray<ParameterModel> parameters) =>
         BuildParameterTypeList(parameters);
 
-    /// <summary>Joins populated source fragments without allocating a trimmed array.</summary>
-    /// <param name="parts">The source fragments.</param>
-    /// <param name="count">The populated fragment count.</param>
-    /// <param name="separator">The separator text.</param>
-    /// <returns>The joined source.</returns>
-    internal static string JoinPartsForTesting(string[] parts, int count, string separator) =>
-        JoinParts(parts, count, separator);
-
     /// <summary>Determines whether a type parameter has constraints that should be emitted.</summary>
     /// <param name="typeParameter">The type parameter constraint to inspect.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>

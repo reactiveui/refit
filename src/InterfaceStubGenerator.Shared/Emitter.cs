@@ -114,7 +114,6 @@ internal static partial class Emitter
         string requestBuilderFieldName,
         string settingsFieldName)
     {
-        var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
         var requestBuilderFieldType = model.SupportsNullable
             ? "global::Refit.IRequestBuilder?"
             : "global::Refit.IRequestBuilder";
@@ -128,16 +127,20 @@ internal static partial class Emitter
             .AppendLine("    /// <summary>Contains generated Refit implementation types.</summary>")
             .Append("    internal partial class ").Append(model.GeneratedClassName).AppendLine()
             .AppendLine("    {")
-            .Append("        /// <summary>Generated Refit implementation for ").Append(ToXmlDocumentationText(model.InterfaceDisplayName)).AppendLine(".</summary>")
-            .Append(typeParameterDocs).Append("        ").Append(GeneratedCodeAttribute).AppendLine()
+            .Append("        /// <summary>Generated Refit implementation for ").Append(ToXmlDocumentationText(model.InterfaceDisplayName)).AppendLine(".</summary>");
+        AppendTypeParameterDocumentation(builder, model.Constraints, ClassMemberIndentation);
+        _ = builder
+            .Append("        ").Append(GeneratedCodeAttribute).AppendLine()
             .AppendLine("        [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]")
             .AppendLine("        [global::System.Diagnostics.DebuggerNonUserCode]")
             .Append("        [").Append(model.PreserveAttributeDisplayName).AppendLine("]")
             .AppendLine("        [global::System.Reflection.Obfuscation(Exclude=true)]")
             .AppendLine("        [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]")
             .Append("        private sealed class ").Append(model.Ns).Append(model.ClassDeclaration).AppendLine()
-            .Append("            : ").Append(model.InterfaceDisplayName).AppendLine()
-            .Append(BuildConstraints(model.Constraints, false, ClassMemberIndentation)).AppendLine("        {")
+            .Append("            : ").Append(model.InterfaceDisplayName).AppendLine();
+        AppendConstraints(builder, model.Constraints, false, ClassMemberIndentation);
+        _ = builder
+            .AppendLine("        {")
             .AppendLine("            /// <summary>The request builder used to create Refit method delegates.</summary>")
             .Append("            private readonly ").Append(requestBuilderFieldType).Append(" ").Append(requestBuilderFieldName).AppendLine(";")
             .AppendLine()
@@ -400,27 +403,25 @@ internal static partial class Emitter
         return true;
     }
 
-    /// <summary>Builds documentation for generated type parameters.</summary>
+    /// <summary>Appends documentation for generated type parameters.</summary>
+    /// <param name="builder">The buffer accumulating the interface's generated member source.</param>
     /// <param name="typeParameters">The parsed type parameter constraints.</param>
     /// <param name="indentationLevel">The generated indentation level.</param>
-    /// <returns>The generated type parameter documentation.</returns>
-    internal static string BuildTypeParameterDocumentation(
+    internal static void AppendTypeParameterDocumentation(
+        PooledStringBuilder builder,
         ImmutableEquatableArray<TypeConstraint> typeParameters,
         int indentationLevel)
     {
         if (typeParameters.Count == 0)
         {
-            return string.Empty;
+            return;
         }
 
-        var parts = new string[typeParameters.Count];
         var indentation = Indent(indentationLevel);
         for (var i = 0; i < typeParameters.Count; i++)
         {
-            parts[i] = $"{indentation}/// <typeparam name=\"{typeParameters[i].DeclaredName}\">The generated interface type parameter.</typeparam>\n";
+            _ = builder.Append(indentation).Append("/// <typeparam name=\"").Append(typeParameters[i].DeclaredName).AppendLine("\">The generated interface type parameter.</typeparam>");
         }
-
-        return ConcatParts(parts, parts.Length);
     }
 
     /// <summary>Appends the generated interface property implementations into the member buffer.</summary>

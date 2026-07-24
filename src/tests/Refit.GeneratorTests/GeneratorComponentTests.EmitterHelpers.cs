@@ -276,15 +276,6 @@ public static partial class GeneratorComponentTests
                 .IsEqualTo("typeof(string), typeof(global::System.Int32)");
         }
 
-        /// <summary>Verifies source fragment joining avoids extra separators for empty input.</summary>
-        /// <returns>A task representing the asynchronous test.</returns>
-        [Test]
-        public async Task JoinParts_HandlesEmptyAndPopulatedParts()
-        {
-            await Assert.That(Emitter.JoinPartsForTesting([], 0, ", ")).IsEqualTo(string.Empty);
-            await Assert.That(Emitter.JoinPartsForTesting(["a", "b", "ignored"], PopulatedPartCount, ", ")).IsEqualTo("a, b");
-        }
-
         /// <summary>Verifies candidate method combining preserves standard and custom methods.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
