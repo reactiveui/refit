@@ -598,4 +598,80 @@ internal static partial class Emitter
 
             """);
     }
+
+    /// <summary>Represents a handler for interpolated strings.</summary>
+    internal sealed class InterpolatedStringHandler
+    {
+        /// <summary>The internal string builder used to accumulate the interpolated string content.</summary>
+        private readonly PooledStringBuilder _builder;
+
+        /// <summary>Indicates if the handler has any content.</summary>
+        private bool _hasContent;
+
+        /// <summary>Initializes a new instance of the <see cref="InterpolatedStringHandler"/> class.</summary>
+        internal InterpolatedStringHandler()
+        {
+            _builder = new();
+        }
+
+        /// <summary>Appends a c# expression to the interpolated string.</summary>
+        /// <param name="expression">The C# expression.</param>
+        /// <returns>The interpolated string handler.</returns>
+        internal InterpolatedStringHandler AppendExpression(string expression)
+        {
+            Initialize();
+            _ = _builder.Append('{').Append(expression).Append('}');
+            return this;
+        }
+
+        /// <summary>Appends a literal.</summary>
+        /// <param name="literal">The literal string.</param>
+        /// <returns>The interpolated string handler.</returns>
+        internal InterpolatedStringHandler AppendLiteral(string literal)
+        {
+            Initialize();
+            if (!NeedsCSharpEscaping(literal))
+            {
+                _ = _builder.Append(literal);
+                return this;
+            }
+
+            foreach (var c in literal)
+            {
+                AppendEscapedCharacter(_builder, c);
+            }
+
+            return this;
+        }
+
+        /// <summary>Builds the final interpolated string representation.</summary>
+        /// <returns>The interpolated string.</returns>
+        internal string Build() => _builder.Append('"').ToString();
+
+        /// <summary>Builds the final raw string representation.</summary>
+        /// <returns>The raw string.</returns>
+        internal string BuildRaw() => _builder.ToString();
+
+        /// <summary>Appends the specified raw string to the handler.</summary>
+        /// <param name="raw">The raw string.</param>
+        /// <returns>The interpolated string handler.</returns>
+        internal InterpolatedStringHandler FromRaw(string raw)
+        {
+            _ = _builder.Append(raw);
+            _hasContent = true;
+            return this;
+        }
+
+        /// <summary>Initializes the handler if it has not been initialized.</summary>
+        private void Initialize()
+        {
+            if (_hasContent)
+            {
+                return;
+            }
+
+            _hasContent = true;
+            _ = _builder.Append('$').Append('"');
+        }
+    }
 }
