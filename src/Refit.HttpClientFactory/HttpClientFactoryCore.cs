@@ -48,7 +48,7 @@ internal static class HttpClientFactoryCore
         _ = services.AddSingleton(
             settingsType,
             provider => Activator.CreateInstance(
-                typeof(SettingsFor<>).MakeGenericType(refitInterfaceType)!,
+                typeof(SettingsFor<>).MakeGenericType(refitInterfaceType),
                 settings?.Invoke(provider))!);
 
         // register RequestBuilder
@@ -165,7 +165,7 @@ internal static class HttpClientFactoryCore
             settingsType,
             serviceKey,
             (provider, _) => Activator.CreateInstance(
-                typeof(SettingsFor<>).MakeGenericType(refitInterfaceType)!,
+                typeof(SettingsFor<>).MakeGenericType(refitInterfaceType),
                 settings?.Invoke(provider))!);
 
         // register RequestBuilder

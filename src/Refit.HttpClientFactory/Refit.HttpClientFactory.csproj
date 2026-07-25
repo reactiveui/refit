@@ -11,6 +11,7 @@
     <Compile Include="..\Shared\AuthenticatedHttpClientHandler.cs" Link="Shared\AuthenticatedHttpClientHandler.cs" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Refit.HttpClientFactory.Tests" />
     <ProjectReference Include="..\Refit\Refit.csproj" PrivateAssets="Analyzers" />
     <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>

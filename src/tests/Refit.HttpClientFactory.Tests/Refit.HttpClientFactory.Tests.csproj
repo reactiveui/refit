@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>$(RefitTestTargets)</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="TUnit" />
+    <ProjectReference Include="..\..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" Aliases="RefitHttpClientFactory" />
+    <ProjectReference Include="..\..\Refit\Refit.csproj" />
+  </ItemGroup>
+</Project>

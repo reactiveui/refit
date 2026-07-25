@@ -51,7 +51,7 @@ public sealed partial class QueryRequestBuildingLiveTests
             LastContent = request.Content is null
                 ? null
                 : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            return new HttpResponseMessage(HttpStatusCode.OK)
+            return new(HttpStatusCode.OK)
             {
                 Content = new StringContent("\"done\"", Encoding.UTF8, "application/json")
             };
@@ -59,14 +59,12 @@ public sealed partial class QueryRequestBuildingLiveTests
     }
 
     /// <summary>Hosts one compiled generated client plus the reflection builder for parity assertions.</summary>
-    /// <param name="context">The collectible load context holding the compiled assembly.</param>
     /// <param name="handler">The capturing message handler.</param>
     /// <param name="client">The HTTP client shared by both request paths.</param>
     /// <param name="interfaceType">The compiled Refit interface type.</param>
     /// <param name="generatedApi">The generated client instance.</param>
     /// <param name="requestBuilder">The reflection request builder for the compiled interface.</param>
     private sealed class LiveQueryHarness(
-        CollectibleAssemblyLoadContext context,
         CapturingHandler handler,
         HttpClient client,
         Type interfaceType,
@@ -311,17 +309,12 @@ public sealed partial class QueryRequestBuildingLiveTests
                     $"Generated compilation failed: {string.Join(Environment.NewLine, result.CompilationErrors)}");
             }
 
-            var (assembly, loadContext) = Fixture.EmitAndLoad(result);
-            var interfaceType = assembly.GetType("Refit.LiveQuery.ILiveQueryApi", throwOnError: true)!;
-            var generatedType = assembly
-                .GetTypes()
-                .Single(type => type.IsClass && interfaceType.IsAssignableFrom(type));
-
+            var interfaceType = typeof(Refit.LiveQuery.LiveQueryApi.ILiveQueryApi);
             var handler = new CapturingHandler();
             var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
             var requestBuilder = RequestBuilder.ForType(interfaceType, settings);
-            var generatedApi = Activator.CreateInstance(generatedType, [client, requestBuilder])!;
-            return new(loadContext, handler, client, interfaceType, generatedApi, requestBuilder);
+            var generatedApi = RestService.For(interfaceType, client, requestBuilder);
+            return new(handler, client, interfaceType, generatedApi, requestBuilder);
         }
 
         /// <summary>Creates a compiled scenario enum value from its underlying value.</summary>
@@ -441,7 +434,6 @@ public sealed partial class QueryRequestBuildingLiveTests
         {
             client.Dispose();
             handler.Dispose();
-            context.Dispose();
         }
     }
 }

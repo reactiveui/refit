@@ -81,9 +81,8 @@ internal static partial class Parser
     /// <summary>Classifies a return type into the shape buckets inline eligibility distinguishes.</summary>
     /// <param name="returnType">The declared return type.</param>
     /// <returns>The return shape; unsupported shapes map to <see cref="ReturnTypeInfo.Return"/>.</returns>
-    internal static ReturnTypeInfo ClassifyInlineReturnShape(ITypeSymbol returnType)
-    {
-        return returnType is not INamedTypeSymbol namedType
+    internal static ReturnTypeInfo ClassifyInlineReturnShape(ITypeSymbol returnType) =>
+        returnType is not INamedTypeSymbol namedType
             ? ReturnTypeInfo.Return
             : namedType.MetadataName switch
             {
@@ -94,7 +93,6 @@ internal static partial class Parser
                 "IObservable`1" when IsInNamespace(namedType, "System") => ReturnTypeInfo.Observable,
                 _ => ReturnTypeInfo.Return
             };
-    }
 
     /// <summary>Determines whether a type is <c>System.Net.Http.HttpRequestMessage</c>, the type argument of the
     /// build-and-return <c>Task&lt;HttpRequestMessage&gt;</c> shape.</summary>

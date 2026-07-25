@@ -52,15 +52,12 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
     /// <summary>Gets the preferred serialized name for the given enum field.</summary>
     /// <param name="field">The enum field to inspect.</param>
     /// <returns>The preferred serialized name.</returns>
-    internal static string GetPreferredSerializedName(FieldInfo field)
-    {
 #if NET9_0_OR_GREATER
-        var enumMemberNameAttribute = field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>();
-        return enumMemberNameAttribute?.Name ?? ToCamelCase(field.Name);
+    internal static string GetPreferredSerializedName(FieldInfo field) =>
+        field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>()?.Name ?? ToCamelCase(field.Name);
 #else
-        return ToCamelCase(field.Name);
+    internal static string GetPreferredSerializedName(FieldInfo field) => ToCamelCase(field.Name);
 #endif
-    }
 
     /// <summary>Converts the given value to camelCase.</summary>
     /// <param name="value">The value to convert.</param>
@@ -205,7 +202,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
             if (reader.TokenType is JsonTokenType.String or JsonTokenType.PropertyName)
             {
                 var value = reader.GetString();
-                if (string.IsNullOrWhiteSpace(value))
+                if (value is null || string.IsNullOrWhiteSpace(value))
                 {
                     throw new JsonException($"Cannot convert an empty value to {typeof(TEnum)}.");
                 }

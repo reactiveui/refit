@@ -1,6 +1,8 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Security.Cryptography;
+using System.Text;
 using Refit;
 
 namespace Meow;
@@ -48,7 +50,9 @@ public static class Issue2056And2058Demo
         var mismatchCount = 0;
         for (var i = 0; i < responses.Length; i++)
         {
-            if (responses[i].Expected.ToString() != responses[i].Actual)
+            if (!CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(responses[i].Expected.ToString()),
+                Encoding.UTF8.GetBytes(responses[i].Actual ?? string.Empty)))
             {
                 mismatchCount++;
             }

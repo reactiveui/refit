@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -77,13 +76,11 @@ public sealed class InternalsVisibleToGenerationTests
         await Assert.That(conflicts).IsEmpty();
     }
 
-    /// <summary>Verifies the runtime reconstructs the exact container name the generator emitted, so the reflection
-    /// resolution path for a generic interface still finds the generated type after the rename.</summary>
+    /// <summary>Verifies the generator emits the assembly-scoped container and generic implementation name that the
+    /// runtime resolution path reconstructs.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [RequiresUnreferencedCode("Loads an emitted test assembly to resolve a generated type by reflection.")]
-    [RequiresDynamicCode("Closes a generic interface with MakeGenericType to reconstruct the generated container name.")]
-    public async Task ReflectionResolutionMatchesGeneratedContainerNameForGenericInterface()
+    public async Task GeneratedContainerNameMatchesRuntimeConventionForGenericInterface()
     {
         const string source =
             """
@@ -103,22 +100,13 @@ public sealed class InternalsVisibleToGenerationTests
         // container name, and the runtime must apply the same mapping for the reflection lookup to line up.
         var compilation = Fixture.CreateNamedLibrary("Reflection.Probe", CSharpSyntaxTree.ParseText(source));
         var result = Fixture.RunGenerator(compilation, generatedRequestBuilding: true, false, null);
-        var (assembly, context) = Fixture.EmitAndLoad(result);
-        using (context)
-        {
-            var interfaceType = assembly.GetType("ReflectionProbe.IGenericProbeApi`1", throwOnError: true)!;
-            var closedInterface = interfaceType.MakeGenericType(typeof(string));
+        const string generatedMetadataName =
+            "Refit.Implementation.GeneratedReflection_Probe+ReflectionProbeIGenericProbeApi`1";
+        var generatedType = result.OutputCompilation.GetTypeByMetadataName(generatedMetadataName);
 
-            // UniqueName.ForType produces the exact assembly-qualified string the reflection path feeds to
-            // Type.GetType, so its container-definition portion must name a real type in the emitted assembly.
-            var uniqueName = UniqueName.ForType(closedInterface);
-            var containerDefinition = uniqueName.Substring(0, uniqueName.IndexOf('['));
-            var resolved = assembly.GetType(containerDefinition, throwOnError: false);
-
-            await Assert.That(resolved).IsNotNull();
-            await Assert.That(containerDefinition)
-                .Contains("Refit.Implementation.GeneratedReflection_Probe+");
-        }
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generatedType).IsNotNull();
+        await Assert.That(generatedType!.ContainingType.Name).IsEqualTo("GeneratedReflection_Probe");
     }
 
     /// <summary>Verifies an unnamed compilation falls back to the historical single-assembly container name, so

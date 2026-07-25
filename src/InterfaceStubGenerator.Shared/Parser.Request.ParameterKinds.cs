@@ -530,7 +530,7 @@ internal static partial class Parser
     /// <returns>The source expression, or <c>"null"</c> when the value is null.</returns>
     internal static string ConstantValueToString(TypedConstant argument, in InterfaceGenerationContext context)
     {
-        var result = string.Empty;
+        string? result = string.Empty;
 
         if (!argument.IsNull)
         {
@@ -545,7 +545,7 @@ internal static partial class Parser
             };
         }
 
-        return result.Length > 0 ? result : "null";
+        return result is { Length: > 0 } ? result : "null";
     }
 
     /// <summary>Renders an array-valued attribute argument as a C# array-creation expression.</summary>

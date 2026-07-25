@@ -255,7 +255,7 @@ internal partial class RequestBuilderImplementation
         {
             // A field with no resolvable name cannot be a valid form-data part (the framework rejects an empty
             // content-disposition name), so it is skipped rather than allowed to throw mid-request.
-            if (string.IsNullOrWhiteSpace(field.Key))
+            if (field.Key is null || string.IsNullOrWhiteSpace(field.Key))
             {
                 continue;
             }

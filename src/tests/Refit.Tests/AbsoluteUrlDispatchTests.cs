@@ -39,10 +39,11 @@ public class AbsoluteUrlDispatchTests
     [Test]
     public async Task QueryParametersAppendToAbsoluteUrl()
     {
-        const string expected = $"{AbsoluteUrl}?token=abc";
+        const string token = "abc";
+        const string expected = $"{AbsoluteUrl}?token={token}";
 
-        var generated = await SendGeneratedAsync(static api => api.GetAbsoluteWithQuery(AbsoluteUrl, "abc"));
-        var reflected = await ReflectAsync(nameof(IUrlDispatchApi.GetAbsoluteWithQuery), AbsoluteUrl, "abc");
+        var generated = await SendGeneratedAsync(static api => api.GetAbsoluteWithQuery(AbsoluteUrl, token));
+        var reflected = await ReflectAsync(nameof(IUrlDispatchApi.GetAbsoluteWithQuery), AbsoluteUrl, token);
 
         await Assert.That(generated.RequestMessage!.RequestUri!.AbsoluteUri).IsEqualTo(expected);
         await Assert.That(reflected.RequestUri!.AbsoluteUri).IsEqualTo(expected);
@@ -53,11 +54,12 @@ public class AbsoluteUrlDispatchTests
     [Test]
     public async Task QueryParametersAppendToAbsoluteUrlThatAlreadyHasAQuery()
     {
+        const string token = "abc";
         const string urlWithQuery = $"{AbsoluteUrl}?existing=1";
-        const string expected = $"{urlWithQuery}&token=abc";
+        const string expected = $"{urlWithQuery}&token={token}";
 
-        var generated = await SendGeneratedAsync(static api => api.GetAbsoluteWithQuery(urlWithQuery, "abc"));
-        var reflected = await ReflectAsync(nameof(IUrlDispatchApi.GetAbsoluteWithQuery), urlWithQuery, "abc");
+        var generated = await SendGeneratedAsync(static api => api.GetAbsoluteWithQuery(urlWithQuery, token));
+        var reflected = await ReflectAsync(nameof(IUrlDispatchApi.GetAbsoluteWithQuery), urlWithQuery, token);
 
         await Assert.That(generated.RequestMessage!.RequestUri!.AbsoluteUri).IsEqualTo(expected);
         await Assert.That(reflected.RequestUri!.AbsoluteUri).IsEqualTo(expected);
@@ -152,9 +154,9 @@ public class AbsoluteUrlDispatchTests
     /// <returns>The handler that captured the request.</returns>
     private static async Task<TestHttpMessageHandler> SendGeneratedAsync(Func<IUrlDispatchApi, Task<string>> call)
     {
-        var handler = new TestHttpMessageHandler();
+        TestHttpMessageHandler handler = new();
         using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
-        var api = RestService.ForGenerated<IUrlDispatchApi>(client, new RefitSettings());
+        var api = RestService.ForGenerated<IUrlDispatchApi>(client, new());
 
         _ = await call(api);
 

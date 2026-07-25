@@ -553,6 +553,7 @@ dotnet_diagnostic.CA5367.severity = error # Do not serialize types with pointer 
 dotnet_diagnostic.S1075.severity = none # Hardcoded URI — canonical SourceLink hosts are the point
 dotnet_diagnostic.S2436.severity = none # Too many generic parameters — needed for the projector overload
 dotnet_diagnostic.S4036.severity = none # PATH-relative process spawn — benchmark only, trusted env
+dotnet_diagnostic.S8969.severity = none # Null-forgiving operators preserve intent across target-framework nullable annotations
 
 ###################
 # Microsoft .NET Runtime Obsoletions (SYSLIB0xxx)

@@ -214,13 +214,14 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="value">The value expression (a parameter accessor or a foreach element local).</param>
     /// <param name="fieldName">The C# string literal for the part's field name.</param>
-    internal static void AppendSerializedMultipartArgument(PooledStringBuilder sb, string settingsLocal, string value, string fieldName)
-    {
-        // A sealed/value part is JSON-serialized under its field name, matching AddSerializedMultipartItem's
-        // serializer fallback. The declared type drives ToHttpContent<T>, so the serialized form matches; a
-        // serialization failure is wrapped in the same descriptive ArgumentException the reflection builder raises.
-        _ = sb.Append("global::Refit.GeneratedRequestRunner.SerializeMultipartPart(").Append(settingsLocal)
+    /// <remarks>A sealed/value part is JSON-serialized under its field name, matching AddSerializedMultipartItem's
+    /// serializer fallback. The declared type drives ToHttpContent&lt;T&gt;, so the serialized form matches; a
+    /// serialization failure is wrapped in the same descriptive ArgumentException the reflection builder raises.</remarks>
+    internal static void AppendSerializedMultipartArgument(
+        PooledStringBuilder sb,
+        string settingsLocal,
+        string value,
+        string fieldName) => _ = sb.Append("global::Refit.GeneratedRequestRunner.SerializeMultipartPart(").Append(settingsLocal)
             .Append(", ").Append(value).Append(", ").Append(fieldName).Append("), ")
             .Append(fieldName).AppendLine(");");
-    }
 }

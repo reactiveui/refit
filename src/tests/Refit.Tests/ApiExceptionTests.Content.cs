@@ -98,7 +98,7 @@ public sealed partial class ApiExceptionTests
     [Test]
     public async Task MaxExceptionContentLengthTruncatesErrorBody()
     {
-        using var response = CreateErrorResponse(new string('a', LongBodyLength));
+        using var response = CreateErrorResponse(new('a', LongBodyLength));
         var settings = new RefitSettings { MaxExceptionContentLength = MaxContentLength };
 
         var exception = await ApiException.Create(
@@ -115,7 +115,7 @@ public sealed partial class ApiExceptionTests
     [Test]
     public async Task MaxExceptionContentLengthUnsetReadsFullBody()
     {
-        using var response = CreateErrorResponse(new string('a', LongBodyLength));
+        using var response = CreateErrorResponse(new('a', LongBodyLength));
 
         var exception = await ApiException.Create(
             response.RequestMessage!,
@@ -132,7 +132,7 @@ public sealed partial class ApiExceptionTests
     public async Task MaxExceptionContentLengthZeroReturnsEmptyContent()
     {
         const int bodyLength = 100;
-        using var response = CreateErrorResponse(new string('a', bodyLength));
+        using var response = CreateErrorResponse(new('a', bodyLength));
         var settings = new RefitSettings { MaxExceptionContentLength = 0 };
 
         var exception = await ApiException.Create(
@@ -150,7 +150,7 @@ public sealed partial class ApiExceptionTests
     public async Task MaxExceptionContentLengthLargerThanBodyReadsEntireBody()
     {
         const int bodyLength = 10;
-        using var response = CreateErrorResponse(new string('a', bodyLength));
+        using var response = CreateErrorResponse(new('a', bodyLength));
         var settings = new RefitSettings { MaxExceptionContentLength = LongBodyLength };
 
         var exception = await ApiException.Create(

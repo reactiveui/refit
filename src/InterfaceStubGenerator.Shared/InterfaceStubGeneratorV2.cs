@@ -214,9 +214,8 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <returns>The combined candidates.</returns>
     internal static ImmutableArray<MethodDeclarationSyntax> CombineStandardHttpMethodCandidates(
         in StandardHttpMethodCandidates candidates)
-    {
 #if ROSLYN_5
-        return
+        =>
         [
             ..candidates.DeleteMethods,
             ..candidates.GetMethods,
@@ -227,6 +226,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             ..candidates.PutMethods
         ];
 #else
+    {
         var count =
             candidates.DeleteMethods.Length
             + candidates.GetMethods.Length
@@ -244,8 +244,8 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         builder.AddRange(candidates.PostMethods);
         builder.AddRange(candidates.PutMethods);
         return builder.MoveToImmutable();
-#endif
     }
+#endif
 
     /// <summary>Combines built-in and potential custom HTTP method candidates.</summary>
     /// <param name="combined">The built-in and custom candidate arrays.</param>
@@ -253,10 +253,10 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     internal static ImmutableArray<MethodDeclarationSyntax> CombineCandidateMethods(
         (ImmutableArray<MethodDeclarationSyntax> StandardMethods,
         ImmutableArray<MethodDeclarationSyntax> CustomMethods) combined)
-    {
 #if ROSLYN_5
-        return [.. combined.StandardMethods, .. combined.CustomMethods];
+        => [.. combined.StandardMethods, .. combined.CustomMethods];
 #else
+    {
         if (combined.StandardMethods.IsEmpty)
         {
             return combined.CustomMethods;
@@ -272,8 +272,8 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         builder.AddRange(combined.StandardMethods);
         builder.AddRange(combined.CustomMethods);
         return builder.MoveToImmutable();
-#endif
     }
+#endif
 
     /// <summary>Determines whether syntax might be a method using a custom Refit HTTP method attribute.</summary>
     /// <param name="syntax">The syntax node to inspect.</param>

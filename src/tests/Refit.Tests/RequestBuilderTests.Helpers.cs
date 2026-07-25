@@ -322,6 +322,30 @@ public partial class RequestBuilderTests
     public Task SetHeaderWithoutValidationDropsContentHeaderWithoutContent() =>
         HeaderValidationScenarios.DropsContentHeaderWithoutContentWithoutValidation(RequestBuilderImplementation.SetHeader, ApiBaseUrlWithSlash);
 
+    /// <summary>Verifies indexed query maps format null and populated property values through their runtime types.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task IndexedQueryMapFormatsNullAndPopulatedValues()
+    {
+        const string populated = "populated";
+        var builder = new RequestBuilderImplementation<IDummyHttpApi>();
+        var entries = new List<QueryParameterEntry>();
+        var values = new[]
+        {
+            new QuerySerializationObject(),
+            new QuerySerializationObject { SerializedNull = populated },
+        };
+
+        builder.AppendIndexedCollectionParameters(
+            entries,
+            values,
+            new(CollectionFormat.Indexed),
+            "items");
+
+        await Assert.That(entries.Exists(static entry => entry.Value is null or "")).IsTrue();
+        await Assert.That(entries.Exists(static entry => entry.Value == populated)).IsTrue();
+    }
+
     /// <summary>A complex query value expanded into nested query-string keys.</summary>
     private sealed class NestedQueryValue
     {

@@ -61,7 +61,7 @@ internal static partial class Emitter
             : string.Empty;
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
 
-        return new InlineMethodFragments(
+        return new(
             requestPrologueSource,
             httpMethodFieldSource,
             httpMethodExpression,

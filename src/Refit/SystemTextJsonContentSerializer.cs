@@ -174,16 +174,14 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    public T? DeserializeFromString<T>(string content)
-    {
 #if NET8_0_OR_GREATER
-        return jsonSerializerOptions.TypeInfoResolver is not null
+    public T? DeserializeFromString<T>(string content) =>
+        jsonSerializerOptions.TypeInfoResolver is not null
             ? JsonSerializer.Deserialize(content, GetJsonTypeInfo<T>())
             : DeserializeFromStringReflection<T>(content);
 #else
-        return DeserializeFromStringReflection<T>(content);
+    public T? DeserializeFromString<T>(string content) => DeserializeFromStringReflection<T>(content);
 #endif
-    }
 
     /// <inheritdoc/>
     [SuppressMessage(
@@ -223,19 +221,17 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="type">The declared type to inspect.</param>
     /// <param name="jsonSerializerOptions">The serializer options to consult for type metadata.</param>
     /// <returns><see langword="true"/> if the type is polymorphic; otherwise <see langword="false"/>.</returns>
-    internal static bool DeclaredTypeIsPolymorphic(Type type, JsonSerializerOptions jsonSerializerOptions)
-    {
 #if NET8_0_OR_GREATER
-        return type.IsDefined(typeof(JsonPolymorphicAttribute), false)
+    internal static bool DeclaredTypeIsPolymorphic(Type type, JsonSerializerOptions jsonSerializerOptions) =>
+        type.IsDefined(typeof(JsonPolymorphicAttribute), false)
             || type.IsDefined(typeof(JsonDerivedTypeAttribute), false)
             || (jsonSerializerOptions.TypeInfoResolver is not null
                 && GetJsonTypeInfo(type, jsonSerializerOptions).PolymorphismOptions is not null);
 #else
-        _ = jsonSerializerOptions;
-        return type.IsDefined(typeof(JsonPolymorphicAttribute), false)
+    internal static bool DeclaredTypeIsPolymorphic(Type type, JsonSerializerOptions jsonSerializerOptions) =>
+        type.IsDefined(typeof(JsonPolymorphicAttribute), false)
             || type.IsDefined(typeof(JsonDerivedTypeAttribute), false);
 #endif
-    }
 
 #if !NET9_0_OR_GREATER
     /// <summary>Determines whether a buffered line is blank, ignoring a trailing carriage return and treating spaces and tabs as blank.</summary>
@@ -315,16 +311,14 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="item">The item to serialize.</param>
     /// <param name="runtimeType">The runtime type to serialize the item as.</param>
     /// <returns>The serialized HTTP content.</returns>
-    internal JsonContent ToHttpContentRuntimeTyped(object item, Type runtimeType)
-    {
 #if NET8_0_OR_GREATER
-        return jsonSerializerOptions.TypeInfoResolver is not null
+    internal JsonContent ToHttpContentRuntimeTyped(object item, Type runtimeType) =>
+        jsonSerializerOptions.TypeInfoResolver is not null
             ? JsonContent.Create(item, GetJsonTypeInfo(runtimeType, jsonSerializerOptions))
             : ToHttpContentRuntimeReflection(item, runtimeType);
 #else
-        return ToHttpContentRuntimeReflection(item, runtimeType);
+    internal JsonContent ToHttpContentRuntimeTyped(object item, Type runtimeType) => ToHttpContentRuntimeReflection(item, runtimeType);
 #endif
-    }
 
     /// <summary>Serializes the item by runtime type using reflection-based metadata (used when the options provide no resolver).</summary>
     /// <param name="item">The item to serialize.</param>
@@ -366,16 +360,14 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal byte[] SerializeToUtf8Bytes<T>(T item)
-    {
 #if NET8_0_OR_GREATER
-        return jsonSerializerOptions.TypeInfoResolver is not null
+    internal byte[] SerializeToUtf8Bytes<T>(T item) =>
+        jsonSerializerOptions.TypeInfoResolver is not null
             ? JsonSerializer.SerializeToUtf8Bytes(item, GetJsonTypeInfo<T>())
             : SerializeToUtf8BytesReflection(item);
 #else
-        return SerializeToUtf8BytesReflection(item);
+    internal byte[] SerializeToUtf8Bytes<T>(T item) => SerializeToUtf8BytesReflection(item);
 #endif
-    }
 
     /// <summary>Serializes an item to UTF-8 JSON bytes using reflection-based metadata.</summary>
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
@@ -398,9 +390,9 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
+#if NET8_0_OR_GREATER
     internal void SerializeToWriter<T>(T item, Utf8JsonWriter writer)
     {
-#if NET8_0_OR_GREATER
         if (jsonSerializerOptions.TypeInfoResolver is not null)
         {
             JsonSerializer.Serialize(writer, item, GetJsonTypeInfo<T>());
@@ -409,10 +401,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         {
             SerializeToWriterReflection(item, writer);
         }
-#else
-        SerializeToWriterReflection(item, writer);
-#endif
     }
+#else
+    internal void SerializeToWriter<T>(T item, Utf8JsonWriter writer) => SerializeToWriterReflection(item, writer);
+#endif
 
     /// <summary>Writes an item to a <see cref="Utf8JsonWriter"/> using reflection-based metadata.</summary>
     /// <typeparam name="T">The type of the item being serialized.</typeparam>

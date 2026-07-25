@@ -172,7 +172,7 @@ internal static partial class Parser
 
         var indexedCollectionFormatValue = ResolveIndexedCollectionFormatValue(compilation);
 
-        return new InterfaceGenerationContext(
+        return new(
             diagnostics,
             preserveAttributeDisplayName,
             generatedClassName,

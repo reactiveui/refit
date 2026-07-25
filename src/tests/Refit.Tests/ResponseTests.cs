@@ -232,7 +232,7 @@ public sealed partial class ResponseTests
                 Reply.From(req => expectedResponse)
             },
         };
-        var localFixture = localHandler.CreateClient<IMyAliasService>(BaseAddress, new RefitSettings(
+        var localFixture = localHandler.CreateClient<IMyAliasService>(BaseAddress, new(
             new SystemTextJsonContentSerializer(_caseSensitiveSerializerOptions)));
 
         var actualException = await Assert.That(localFixture.GetTestObject).ThrowsExactly<ValidationApiException>();

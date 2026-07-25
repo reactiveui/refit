@@ -5,6 +5,10 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
+#if NET6_0_OR_GREATER
+using System.Security.Cryptography;
+using System.Text;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -68,7 +72,7 @@ public sealed partial class StubHttp
                 continue;
             }
 
-            if (!string.Equals(expectedSegment, actualSegments[i], StringComparison.Ordinal))
+            if (!FixedTimeEquals(expectedSegment, actualSegments[i]))
             {
                 return false;
             }
@@ -153,15 +157,40 @@ public sealed partial class StubHttp
     {
         var present = TryGetHeader(request.Headers, name, out var actual) ||
             (request.Content is not null && TryGetHeader(request.Content.Headers, name, out actual));
-        return present && string.Equals(actual, value, StringComparison.Ordinal);
+        return present && FixedTimeEquals(actual, value);
     }
+
+    /// <summary>Compares non-secret route data without timing-dependent equality.</summary>
+    /// <param name="left">The optional left value.</param>
+    /// <param name="right">The right value.</param>
+    /// <returns><see langword="true"/> when the UTF-8 representations match.</returns>
+#if NET6_0_OR_GREATER
+    private static bool FixedTimeEquals(string left, string right)
+    {
+        var leftBytes = Encoding.UTF8.GetBytes(left);
+        var rightBytes = Encoding.UTF8.GetBytes(right);
+        return CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
+    }
+#else
+    private static bool FixedTimeEquals(string left, string right)
+    {
+        var difference = left.Length ^ right.Length;
+        var length = Math.Min(left.Length, right.Length);
+        for (var i = 0; i < length; i++)
+        {
+            difference |= left[i] ^ right[i];
+        }
+
+        return difference == 0;
+    }
+#endif
 
     /// <summary>Gets the combined value of a named header, if present.</summary>
     /// <param name="headers">The header collection to search.</param>
     /// <param name="name">The header name.</param>
     /// <param name="value">The comma-joined header value when found.</param>
     /// <returns><see langword="true"/> when the header exists.</returns>
-    private static bool TryGetHeader(HttpHeaders headers, string name, out string? value)
+    private static bool TryGetHeader(HttpHeaders headers, string name, out string value)
     {
         if (headers.TryGetValues(name, out var values))
         {
@@ -169,7 +198,7 @@ public sealed partial class StubHttp
             return true;
         }
 
-        value = null;
+        value = string.Empty;
         return false;
     }
 

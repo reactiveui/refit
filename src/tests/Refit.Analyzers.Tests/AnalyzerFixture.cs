@@ -58,7 +58,7 @@ internal static class AnalyzerFixture
     internal static Task<ImmutableArray<Diagnostic>> RunForBodyWithAnalyzerConfigOption(string body, string optionKey, string optionValue) =>
         Analyze(
             BuildBodySource(body),
-            new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider(optionKey, optionValue)));
+            new([], new TestAnalyzerConfigOptionsProvider(optionKey, optionValue)));
 
     /// <summary>Runs the Refit interface analyzer over source without referencing Refit.</summary>
     /// <param name="source">The source to analyze.</param>

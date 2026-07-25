@@ -112,7 +112,7 @@ public sealed class MultipartRequestBuildingLiveTests
         await harness.AssertParityAsync("UploadFlag", static () => [true]);
         await harness.AssertParityAsync(
             "UploadReport",
-            () => [harness.CreateApiValue("Refit.LiveMultipart.Report", ("Title", "Q3"), ("Score", ReportScore))]);
+            () => [harness.CreateApiValue("Refit.LiveMultipart.LiveMultipartApi+Report", ("Title", "Q3"), ("Score", ReportScore))]);
     }
 
     /// <summary>Verifies the compiled generated client flattens an opt-in <c>[FormObject]</c> parameter into one text
@@ -127,7 +127,7 @@ public sealed class MultipartRequestBuildingLiveTests
 
         var snapshot = await harness.InvokeGeneratedAsync(
             "UploadProfile",
-            () => [harness.CreateApiValue("Refit.LiveMultipart.Profile", ("Name", ProfileName), ("Age", ProfileAge))]);
+            () => [harness.CreateApiValue("Refit.LiveMultipart.LiveMultipartApi+Profile", ("Name", ProfileName), ("Age", ProfileAge))]);
 
         // The generated client routes [FormObject] through the reflection request builder, which flattens the model into
         // one text part per property instead of a single serialized part. Asserting the parts here (not just parity)
@@ -146,7 +146,7 @@ public sealed class MultipartRequestBuildingLiveTests
 
         await harness.AssertParityAsync(
             "UploadProfile",
-            () => [harness.CreateApiValue("Refit.LiveMultipart.Profile", ("Name", ProfileName), ("Age", ProfileAge))]);
+            () => [harness.CreateApiValue("Refit.LiveMultipart.LiveMultipartApi+Profile", ("Name", ProfileName), ("Age", ProfileAge))]);
     }
 
     /// <summary>Verifies a header, request property and path parameter never become multipart parts.</summary>
@@ -166,14 +166,12 @@ public sealed class MultipartRequestBuildingLiveTests
     }
 
     /// <summary>Hosts one compiled generated client plus the reflection builder for multipart parity assertions.</summary>
-    /// <param name="context">The collectible load context holding the compiled assembly.</param>
     /// <param name="handler">The capturing message handler.</param>
     /// <param name="client">The HTTP client shared by both request paths.</param>
     /// <param name="interfaceType">The compiled Refit interface type.</param>
     /// <param name="generatedApi">The generated client instance.</param>
     /// <param name="requestBuilder">The reflection request builder for the compiled interface.</param>
     private sealed class LiveMultipartHarness(
-        CollectibleAssemblyLoadContext context,
         CapturingMultipartHandler handler,
         HttpClient client,
         Type interfaceType,
@@ -293,17 +291,12 @@ public sealed class MultipartRequestBuildingLiveTests
                     $"Generated compilation failed: {string.Join(Environment.NewLine, result.CompilationErrors)}");
             }
 
-            var (assembly, loadContext) = Fixture.EmitAndLoad(result);
-            var interfaceType = assembly.GetType("Refit.LiveMultipart.ILiveMultipartApi", throwOnError: true)!;
-            var generatedType = assembly
-                .GetTypes()
-                .Single(type => type.IsClass && interfaceType.IsAssignableFrom(type));
-
+            var interfaceType = typeof(Refit.LiveMultipart.LiveMultipartApi.ILiveMultipartApi);
             var handler = new CapturingMultipartHandler();
             var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
-            var requestBuilder = RequestBuilder.ForType(interfaceType, new RefitSettings());
-            var generatedApi = Activator.CreateInstance(generatedType, [client, requestBuilder])!;
-            return new(loadContext, handler, client, interfaceType, generatedApi, requestBuilder);
+            var requestBuilder = RequestBuilder.ForType(interfaceType, new());
+            var generatedApi = RestService.For(interfaceType, client, requestBuilder);
+            return new(handler, client, interfaceType, generatedApi, requestBuilder);
         }
 
         /// <summary>Creates an instance of a compiled scenario type with the given properties assigned.</summary>
@@ -381,7 +374,6 @@ public sealed class MultipartRequestBuildingLiveTests
         {
             client.Dispose();
             handler.Dispose();
-            context.Dispose();
             foreach (var path in _tempFiles)
             {
                 File.Delete(path);
@@ -426,7 +418,7 @@ public sealed class MultipartRequestBuildingLiveTests
             }
 
             _snapshot = new(boundary, parts);
-            return new HttpResponseMessage(HttpStatusCode.OK)
+            return new(HttpStatusCode.OK)
             {
                 Content = new StringContent("\"done\"", Encoding.UTF8, "application/json"),
             };

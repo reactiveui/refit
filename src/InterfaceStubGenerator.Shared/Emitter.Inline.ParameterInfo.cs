@@ -19,10 +19,7 @@ internal static partial class Emitter
     /// <param name="sb">The target builder.</param>
     /// <param name="separator">The separator to append.</param>
     /// <returns>The same builder for chaining.</returns>
-    internal static PooledStringBuilder AppendSeparator(int i, PooledStringBuilder sb, string separator = ", ")
-    {
-        return i <= 0 ? sb : sb.Append(separator);
-    }
+    internal static PooledStringBuilder AppendSeparator(int i, PooledStringBuilder sb, string separator = ", ") => i <= 0 ? sb : sb.Append(separator);
 
     /// <summary>Appends a value, prefixed by a separator for all but the first element.</summary>
     /// <param name="value">The value to append.</param>
@@ -30,10 +27,7 @@ internal static partial class Emitter
     /// <param name="sb">The target builder.</param>
     /// <param name="separator">The separator to append before the value.</param>
     /// <returns>The same builder for chaining.</returns>
-    internal static PooledStringBuilder AppendJoining(string value, int i, PooledStringBuilder sb, string separator = ", ")
-    {
-        return AppendSeparator(i, sb, separator).Append(value);
-    }
+    internal static PooledStringBuilder AppendJoining(string value, int i, PooledStringBuilder sb, string separator = ", ") => AppendSeparator(i, sb, separator).Append(value);
 
     /// <summary>Appends a C# attribute construction expression to the builder.</summary>
     /// <param name="attribute">The attribute model to render.</param>
