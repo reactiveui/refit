@@ -6,14 +6,14 @@
 
   <PropertyGroup Label="Shared Version Variables">
     <PrimitivesVersion>7.0.0</PrimitivesVersion>
-    <TUnitVersion>1.59.0</TUnitVersion>
+    <TUnitVersion>1.61.38</TUnitVersion>
 
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>3.33.0</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>3.38.1</SharpAnalyzersVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
-    <AspNetVersion>8.0.28</AspNetVersion>
+    <AspNetVersion>8.0.29</AspNetVersion>
     <AspNetVersion Condition="$(TargetFramework.StartsWith('net9'))">9.0.18</AspNetVersion>
     <AspNetVersion Condition="$(TargetFramework.StartsWith('net10'))">10.0.10</AspNetVersion>
 
@@ -46,8 +46,9 @@
   <ItemGroup Label="Analyzers">
     <PackageVersion Include="StyleSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="PerformanceSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
+    <PackageVersion Include="SecuritySharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.29.0.143774"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.30.0.144632"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0"/>
   </ItemGroup>

@@ -170,7 +170,7 @@ internal partial class RequestBuilderImplementation
     /// blank key is skipped, and keys that match case-insensitively are joined with commas under the first-seen key.</remarks>
     internal static void ParseQueryStringInto(string? queryString, ref List<QueryParameterEntry>? queryParamsToAdd)
     {
-        if (string.IsNullOrEmpty(queryString))
+        if (queryString is not { Length: > 0 })
         {
             return;
         }
@@ -485,7 +485,7 @@ internal partial class RequestBuilderImplementation
             var keyType = key.GetType();
             var formattedKey = GeneratedRequestRunner.FormatUrlParameter(_settings, key, GetCachedAttributeProvider(keyType), keyType);
 
-            if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
+            if (formattedKey is null || string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
             {
                 continue;
             }

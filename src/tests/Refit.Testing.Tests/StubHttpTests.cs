@@ -249,22 +249,28 @@ public sealed class StubHttpTests
     [Test]
     public async Task HeaderMatcherRequiresHeader()
     {
+        const string HeaderName = "X-Refit";
+        const string HeaderUrl = "https://api/h";
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Template = "*", Headers = [("X-Refit", "99")], Reusable = true },
+                new RouteMatcher { Template = "*", Headers = [(HeaderName, "99")], Reusable = true },
                 Reply.Status(HttpStatusCode.OK)
             },
         };
 
         using var client = HttpClientTestFactory.Create(handler);
-        using var withHeader = new HttpRequestMessage(HttpMethod.Get, "https://api/h");
-        withHeader.Headers.Add("X-Refit", "99");
+        using var withHeader = new HttpRequestMessage(HttpMethod.Get, HeaderUrl);
+        withHeader.Headers.Add(HeaderName, "99");
         var ok = await client.SendAsync(withHeader);
 
         await Assert.That(ok.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
-        using var without = new HttpRequestMessage(HttpMethod.Get, "https://api/h");
+        using var wrong = new HttpRequestMessage(HttpMethod.Get, HeaderUrl);
+        wrong.Headers.Add(HeaderName, "98");
+        await Assert.That(async () => _ = await client.SendAsync(wrong)).ThrowsExactly<InvalidOperationException>();
+
+        using var without = new HttpRequestMessage(HttpMethod.Get, HeaderUrl);
         await Assert.That(async () => _ = await client.SendAsync(without)).ThrowsExactly<InvalidOperationException>();
     }
 
@@ -329,21 +335,35 @@ public sealed class StubHttpTests
     [Test]
     public async Task WherePredicateGatesMatch()
     {
+        const string AsyncHeader = "X-Async";
+        const string FlagHeader = "X-Flag";
+        const string WhereUrl = "https://api/w";
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Template = "*", Where = static request => request.Headers.Contains("X-Flag"), Reusable = true },
+                new RouteMatcher
+                {
+                    Template = "*",
+                    Where = static request => request.Headers.Contains(FlagHeader),
+                    WhereAsync = static request => Task.FromResult(request.Headers.Contains(AsyncHeader)),
+                    Reusable = true
+                },
                 Reply.Status(HttpStatusCode.OK)
             },
         };
 
         using var client = HttpClientTestFactory.Create(handler);
-        using var flagged = new HttpRequestMessage(HttpMethod.Get, "https://api/w");
-        flagged.Headers.Add("X-Flag", "1");
+        using var flagged = new HttpRequestMessage(HttpMethod.Get, WhereUrl);
+        flagged.Headers.Add(FlagHeader, "1");
+        flagged.Headers.Add(AsyncHeader, "1");
 
         await Assert.That((await client.SendAsync(flagged)).StatusCode).IsEqualTo(HttpStatusCode.OK);
 
-        using var plain = new HttpRequestMessage(HttpMethod.Get, "https://api/w");
+        using var syncOnly = new HttpRequestMessage(HttpMethod.Get, WhereUrl);
+        syncOnly.Headers.Add(FlagHeader, "1");
+        await Assert.That(async () => _ = await client.SendAsync(syncOnly)).ThrowsExactly<InvalidOperationException>();
+
+        using var plain = new HttpRequestMessage(HttpMethod.Get, WhereUrl);
         await Assert.That(async () => _ = await client.SendAsync(plain)).ThrowsExactly<InvalidOperationException>();
     }
 

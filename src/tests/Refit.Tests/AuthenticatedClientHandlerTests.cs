@@ -628,15 +628,17 @@ public class AuthenticatedClientHandlerTests
             },
         };
         var httpClient = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
+        const string getterToken = "token-from-getter";
+        const string parameterToken = "token-from-parameter";
 
         var settings = new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("token-from-getter")
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(getterToken)
         };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
 
-        var result = await fixture.GetAuthenticatedWithTokenInMethod("token-from-parameter");
+        var result = await fixture.GetAuthenticatedWithTokenInMethod(parameterToken);
 
         await handler.VerifyAllCalledAsync();
         await Assert.That(result).IsEqualTo("Ok");

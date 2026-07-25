@@ -220,11 +220,12 @@ public partial class MultipartTests
 
         try
         {
-            await using var stream = GetTestFileStream(TestFilePath);
-            await using var outStream = File.OpenWrite(fileName);
-            await stream.CopyToAsync(outStream);
-            await outStream.FlushAsync();
-            outStream.Close();
+            await using (var stream = GetTestFileStream(TestFilePath))
+            await using (var outStream = File.OpenWrite(fileName))
+            {
+                await stream.CopyToAsync(outStream);
+                await outStream.FlushAsync();
+            }
 
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             await fixture.UploadFileInfo(

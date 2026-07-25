@@ -90,14 +90,11 @@ internal static class EnumHelpers
         /// <summary>Parses an enum field name while using the generic overload on supported targets.</summary>
         /// <param name="name">The enum field name.</param>
         /// <returns>The parsed enum value.</returns>
-        internal static TEnum ParseName(string name)
-        {
 #if NET8_0_OR_GREATER
-            return Enum.Parse<TEnum>(name, ignoreCase: false);
+        internal static TEnum ParseName(string name) => Enum.Parse<TEnum>(name, ignoreCase: false);
 #else
-            return (TEnum)Enum.Parse(typeof(TEnum), name, false);
+        internal static TEnum ParseName(string name) => (TEnum)Enum.Parse(typeof(TEnum), name, false);
 #endif
-        }
 
         /// <summary>Reads a numeric enum value using the correct signedness for the enum backing type.</summary>
         /// <param name="reader">The reader positioned on the numeric token.</param>

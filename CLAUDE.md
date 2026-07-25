@@ -139,6 +139,12 @@ dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f
 - `RefitEmitGeneratedCodeMarkers=false` is used by generated-code compliance tests so analyzers treat generator output as normal source.
 - Keep generated source compatible with the repository `.editorconfig`; avoid broad `#pragma warning disable`.
 
+### Generator performance
+
+Settle generator perf with benchmarks and EventPipe traces, never by inspection or a hunch that "it's already optimal" — build overall (whole-generator) and micro (per-component) benchmarks and let the traces show where the real cost is before optimizing. Context, not a verdict that nothing can improve: the generator already uses `ForAttributeWithMetadataName`, value-equatable `readonly record struct` models + `ImmutableEquatableArray` (incremental caching depends on this), `PooledStringBuilder`, multi-slot Roslyn constants (`#if ROSLYN_5_OR_GREATER` for 5.0-only APIs), and incremental-cache regression tests.
+
+Generator / incremental-pipeline benchmarks go in their own BenchmarkDotNet project (`src/benchmarks/Refit.Generator.Benchmarks`), separate from the runtime `Refit.Benchmarks`, built on the existing BenchmarkDotNet setup — never a bespoke driver. Profile with BenchmarkDotNet's native `[EventPipeProfiler(EventPipeProfile.GcVerbose|CpuSampling)]` diagnoser — EventPipe is the right lens for a Roslyn generator, whereas `[MemoryDiagnoser]` is a weak signal for whole-generator runs. Widening a generator member `private` -> `internal` (with `InternalsVisibleTo`) to micro-benchmark it is fine. Name benchmark classes for the component under test (parser, emitter, query/path building), not the measurement type.
+
 Useful validation:
 
 ```bash

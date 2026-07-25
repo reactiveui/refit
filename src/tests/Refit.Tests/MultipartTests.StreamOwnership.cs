@@ -52,7 +52,7 @@ public partial class MultipartTests
         await using var callerStream = new MemoryStream(_ownershipStreamBytes);
 
         var handler = await UploadThroughGeneratedBuilderAsync(
-            api => api.UploadStreamPart(new StreamPart(callerStream, StreamPartFileName, PdfMediaType)));
+            api => api.UploadStreamPart(new(callerStream, StreamPartFileName, PdfMediaType)));
         handler.RequestMessage!.Dispose();
 
         await Assert.That(callerStream.CanRead).IsTrue();

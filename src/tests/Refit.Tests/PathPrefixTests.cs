@@ -168,7 +168,7 @@ public class PathPrefixTests
     {
         var handler = new TestHttpMessageHandler();
         using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
-        var api = RestService.ForGenerated<T>(client, new RefitSettings());
+        var api = RestService.ForGenerated<T>(client, new());
 
         await call(api);
 

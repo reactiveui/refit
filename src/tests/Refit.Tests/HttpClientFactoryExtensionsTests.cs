@@ -410,7 +410,7 @@ public partial class HttpClientFactoryExtensionsTests
 
         var generated = await Assert.That(resolved).IsTypeOf<GeneratedSettingsFactoryApiClient>();
         await Assert.That(generated!.Settings).IsSameReferenceAs(settings);
-        await Assert.That(generated.Client.BaseAddress).IsEqualTo(new Uri("http://generated/"));
+        await Assert.That(generated.Client.BaseAddress).IsEqualTo(new("http://generated/"));
     }
 
     /// <summary>Verifies the settings-factory overload of the generated-only DI helper resolves settings from the provider (#2170).</summary>

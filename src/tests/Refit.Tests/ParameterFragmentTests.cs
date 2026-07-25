@@ -38,11 +38,8 @@ public sealed class ParameterFragmentTests
     /// the negative-argument-index short-circuit of the object-property predicate.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task ConstantFragmentIsNotObjectProperty()
-    {
-        // ArgumentIndex is negative for a constant, so the first condition short-circuits false.
+    public async Task ConstantFragmentIsNotObjectProperty() =>
         await Assert.That(ParameterFragment.Constant("segment").IsObjectProperty).IsFalse();
-    }
 
     /// <summary>Verifies an object-property fragment (both a parameter and a property index) is classified as an
     /// object property and nothing else.</summary>

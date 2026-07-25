@@ -104,7 +104,7 @@ public sealed class ValueStringBuilderTests
         const int totalLength = 20;
         var text = BuildAcrossTwoGrowths(totalLength);
 
-        await Assert.That(text).IsEqualTo(new string('a', totalLength));
+        await Assert.That(text).IsEqualTo(new('a', totalLength));
     }
 
     /// <summary>Verifies the enumerable peek helper distinguishes empty, single, and multi-item sequences.</summary>

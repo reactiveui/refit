@@ -34,7 +34,7 @@ public sealed class ReflectionQueryMapCachingTests
 
         var handler = new TestHttpMessageHandler();
         using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
-        var generated = RestService.ForGenerated<IReflectionCachingQueryApi>(client, new RefitSettings());
+        var generated = RestService.ForGenerated<IReflectionCachingQueryApi>(client, new());
         _ = await generated.Flatten(query);
         var generatedUri = handler.RequestMessage!.RequestUri!.PathAndQuery;
 

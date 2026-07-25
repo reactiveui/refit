@@ -61,7 +61,7 @@ internal static partial class Emitter
             isTopLevel,
             interfaceModel,
             uniqueNames,
-            new GeneratedFieldNames(requestBuilderFieldName, settingsFieldName),
+            new(requestBuilderFieldName, settingsFieldName),
             new(uniqueNames));
         return builder.ToString();
     }

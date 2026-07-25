@@ -111,7 +111,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
     /// <summary>Wraps this handler in a fresh <see cref="RefitSettings"/> that routes requests through it.</summary>
     /// <returns>New settings whose handler factory returns this handler.</returns>
-    public RefitSettings ToSettings() => ToSettings(new RefitSettings());
+    public RefitSettings ToSettings() => ToSettings(new());
 
     /// <summary>Points an existing <see cref="RefitSettings"/> at this handler and adopts its content serializer.</summary>
     /// <param name="baseSettings">
@@ -144,7 +144,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(string hostUrl) => CreateClient<T>(hostUrl, new RefitSettings());
+    T>(string hostUrl) => CreateClient<T>(hostUrl, new());
 
     /// <summary>
     /// Creates a Refit implementation of <typeparamref name="T"/> whose HTTP requests are routed through this
@@ -180,7 +180,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The interface type is intentionally specified explicitly by the caller, matching RestService.ForGenerated<T>.")]
-    public T CreateGeneratedClient<T>(string hostUrl) => CreateGeneratedClient<T>(hostUrl, new RefitSettings());
+    public T CreateGeneratedClient<T>(string hostUrl) => CreateGeneratedClient<T>(hostUrl, new());
 
     /// <summary>
     /// Creates a source-generated Refit implementation of <typeparamref name="T"/> whose HTTP requests are
@@ -361,15 +361,13 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="request">The incoming request.</param>
     /// <param name="cancellationToken">A token to cancel body reads.</param>
     /// <returns><see langword="true"/> when the request matches.</returns>
-    private static async Task<bool> MatchesAsync(RouteMatcher route, HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        return (route.Method is null || request.Method == route.Method)
+    private static async Task<bool> MatchesAsync(RouteMatcher route, HttpRequestMessage request, CancellationToken cancellationToken) =>
+        (route.Method is null || request.Method == route.Method)
             && MatchesTemplate(route.Template, request.RequestUri)
             && MatchesQuery(route, request.RequestUri)
             && (route.Headers is null || MatchesHeaders(request, route.Headers))
             && await MatchesBodyAsync(route, request, cancellationToken).ConfigureAwait(false)
             && await MatchesPredicatesAsync(route, request).ConfigureAwait(false);
-    }
 
     /// <summary>Applies the synchronous and asynchronous request predicates, if any.</summary>
     /// <param name="route">The candidate route.</param>
@@ -382,15 +380,15 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <summary>Cancels the token source, using the async cancellation path where the framework provides it.</summary>
     /// <param name="source">The token source to cancel.</param>
     /// <returns>A task that completes once cancellation has been requested.</returns>
+#if NET8_0_OR_GREATER
+    private static Task CancelAsync(CancellationTokenSource source) => source.CancelAsync();
+#else
     private static Task CancelAsync(CancellationTokenSource source)
     {
-#if NET8_0_OR_GREATER
-        return source.CancelAsync();
-#else
         source.Cancel();
         return Task.CompletedTask;
-#endif
     }
+#endif
 
     /// <summary>Builds the configured response for a matched route.</summary>
     /// <param name="response">The matched reply.</param>
