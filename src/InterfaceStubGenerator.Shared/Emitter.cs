@@ -631,12 +631,6 @@ internal static partial class Emitter
         internal InterpolatedStringHandler AppendLiteral(string literal)
         {
             Initialize();
-            if (!NeedsCSharpEscaping(literal))
-            {
-                _ = _builder.Append(literal);
-                return this;
-            }
-
             foreach (var c in literal)
             {
                 AppendEscapedCharacter(_builder, c);
