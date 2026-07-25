@@ -119,11 +119,12 @@ internal static partial class Emitter
     /// <summary>Appends one escaped C# string-literal character.</summary>
     /// <param name="builder">The target builder.</param>
     /// <param name="character">The character to append.</param>
+    /// <param name="isInterpolated">Indicates whether the character is part of an interpolated string.</param>
     [SuppressMessage(
         "Maintainability",
         "SST1442:A function has too many direct branch points",
         Justification = "A compact switch avoids a dictionary or repeated helper calls on the generator hot path.")]
-    internal static void AppendEscapedCharacter(PooledStringBuilder builder, char character) =>
+    internal static void AppendEscapedCharacter(PooledStringBuilder builder, char character, bool isInterpolated) =>
         _ = character switch
         {
             '\\' => builder.Append(@"\\"),
@@ -136,6 +137,8 @@ internal static partial class Emitter
             '\r' => builder.Append(@"\r"),
             '\t' => builder.Append(@"\t"),
             '\v' => builder.Append(@"\v"),
+            '{' when isInterpolated => builder.Append("{{"),
+            '}' when isInterpolated => builder.Append("}}"),
 
             // Line terminators that would break out of a regular C# string literal (CS1010).
             '\u0085' => builder.Append(@"\u0085"),

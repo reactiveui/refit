@@ -506,7 +506,7 @@ internal static partial class Emitter
         _ = builder.Append('"');
         foreach (var c in value)
         {
-            AppendEscapedCharacter(builder, c);
+            AppendEscapedCharacter(builder, c, false);
         }
 
         _ = builder.Append('"');
@@ -633,7 +633,7 @@ internal static partial class Emitter
             Initialize();
             foreach (var c in literal)
             {
-                AppendEscapedCharacter(_builder, c);
+                AppendEscapedCharacter(_builder, c, true);
             }
 
             return this;
