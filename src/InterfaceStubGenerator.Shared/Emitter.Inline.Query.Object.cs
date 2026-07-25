@@ -310,22 +310,26 @@ internal static partial class Emitter
         in InlineValueEmission emission,
         in QueryObjectContext context)
     {
-        var prefixExpr = $"{parentKeyExpr} + {ToCSharpStringLiteral(delimiter + (property.PrefixSegment ?? string.Empty))}";
+        var interpolatedString = new InterpolatedStringBuilder()
+            .AppendExpression(parentKeyExpr)
+            .AppendLiteral(delimiter)
+            .AppendLiteral(property.PrefixSegment ?? string.Empty);
 
         // An [AliasAs] name always wins and bypasses the key formatter.
         if (property.ExplicitName is { } alias)
         {
-            return $"{prefixExpr} + {ToCSharpStringLiteral(alias)}";
+            return interpolatedString.AppendLiteral(alias).Build();
         }
 
-        var propertyNameExpr = ToCSharpStringLiteral(property.ClrName);
+        var rawStringLiteral = interpolatedString.BuildRaw();
+        const string methodCalled = "global::Refit.GeneratedRequestRunner.BuildQueryKey";
         var formatterCall = context.PreEscapedKeys
-            ? $"{prefixExpr} + {propertyNameExpr}"
-            : $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {propertyNameExpr}, null, {prefixExpr})";
+            ? new InterpolatedStringBuilder().FromRaw(rawStringLiteral).AppendLiteral(property.ClrName).Build()
+            : $"{methodCalled}({emission.SettingsLocal}, {ToCSharpStringLiteral(property.ClrName)}, null, {new InterpolatedStringBuilder().FromRaw(rawStringLiteral).Build()})";
 
         // A [JsonPropertyName] name is honored only when the runtime setting is enabled.
         return property.SerializerName is { } serializerName
-            ? $"{emission.SettingsLocal}.{HonorSerializerNamesFlag} ? ({prefixExpr} + {ToCSharpStringLiteral(serializerName)}) : ({formatterCall})"
+            ? $"{emission.SettingsLocal}.{HonorSerializerNamesFlag} ? ({new InterpolatedStringBuilder().FromRaw(rawStringLiteral).AppendLiteral(serializerName).Build()}) : ({formatterCall})"
             : formatterCall;
     }
 
