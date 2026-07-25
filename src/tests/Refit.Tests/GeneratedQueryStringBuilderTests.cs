@@ -39,6 +39,20 @@ public sealed class GeneratedQueryStringBuilderTests
         await Assert.That(result).IsEqualTo(Path);
     }
 
+    /// <summary>Verifies escaped keys and values match the framework for reserved ASCII and non-ASCII text.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddEscapesKeyAndValueLikeFramework()
+    {
+        const string name = "filter name/café";
+        const string value = "tea & café 🍵";
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.Add(name, value, false);
+
+        var expected = $"{Path}?{Uri.EscapeDataString(name)}={Uri.EscapeDataString(value)}";
+        await Assert.That(builder.Build()).IsEqualTo(expected);
+    }
+
     /// <summary>Verifies a null flag name omits the flag, leaving the path unchanged.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

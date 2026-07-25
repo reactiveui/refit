@@ -150,7 +150,7 @@ public ref struct GeneratedQueryStringBuilder
         }
 
         AppendSeparator();
-        _text.Append(preEncoded ? name : StringHelpers.EscapeDataString(name));
+        AppendQueryComponent(name, preEncoded);
     }
 
     /// <summary>Starts a collection-valued parameter fed by <see cref="AddCollectionValue(string?)"/> calls and finished by <see cref="EndCollection"/>.</summary>
@@ -343,9 +343,9 @@ public ref struct GeneratedQueryStringBuilder
     internal void AppendPair(string name, string value, bool keyEscaped, bool preEncoded)
     {
         AppendSeparator();
-        _text.Append(keyEscaped || preEncoded ? name : StringHelpers.EscapeDataString(name));
+        AppendQueryComponent(name, keyEscaped || preEncoded);
         _text.Append('=');
-        _text.Append(preEncoded ? value : StringHelpers.EscapeDataString(value));
+        AppendQueryComponent(value, preEncoded);
     }
 
 #if NET6_0_OR_GREATER
@@ -360,10 +360,28 @@ public ref struct GeneratedQueryStringBuilder
         where T : ISpanFormattable
     {
         AppendSeparator();
-        _text.Append(keyEscaped || preEncoded ? name : StringHelpers.EscapeDataString(name));
+        AppendQueryComponent(name, keyEscaped || preEncoded);
         _text.Append('=');
         AppendFormattedValue(ref _text, value, format, escape: !preEncoded);
     }
 
 #endif
+
+    /// <summary>Appends one query key or value, percent-encoding directly into the query buffer when required.</summary>
+    /// <param name="value">The query component to append.</param>
+    /// <param name="appendVerbatim">Whether the component is already encoded and can be copied verbatim.</param>
+    private void AppendQueryComponent(string value, bool appendVerbatim)
+    {
+        if (appendVerbatim)
+        {
+            _text.Append(value);
+            return;
+        }
+
+#if NET8_0_OR_GREATER
+        StringHelpers.AppendUriDataEscaped(ref _text, value.AsSpan());
+#else
+        _text.Append(StringHelpers.EscapeDataString(value));
+#endif
+    }
 }

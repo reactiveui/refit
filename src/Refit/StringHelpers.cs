@@ -119,16 +119,17 @@ internal static class StringHelpers
     }
 
 #if NET8_0_OR_GREATER
-    /// <summary>Percent-encodes a formatted span per RFC 3986 straight into the target, with no intermediate string.</summary>
+    /// <summary>Percent-encodes a span per RFC 3986 straight into the target, with no intermediate string.</summary>
     /// <param name="target">The buffer receiving the escaped text.</param>
-    /// <param name="span">The invariant-formatted value to escape.</param>
-    /// <remarks>Span-formattable values render as ASCII under the invariant culture, which this escapes in place. A
-    /// non-ASCII character (never produced by the routed value types) defers to the framework escaper so the UTF-8
-    /// percent-encoding matches <see cref="Uri.EscapeDataString(string)"/> exactly.</remarks>
+    /// <param name="span">The URI data component to escape.</param>
+    /// <remarks>ASCII text is escaped in place. A non-ASCII character defers to the framework escaper so UTF-8
+    /// percent-encoding and invalid-surrogate behavior match <see cref="Uri.EscapeDataString(string)"/> exactly.</remarks>
     internal static void AppendUriDataEscaped(ref ValueStringBuilder target, scoped ReadOnlySpan<char> span)
     {
-        foreach (var c in span)
+        var firstCharacterToEscape = -1;
+        for (var i = 0; i < span.Length; i++)
         {
+            var c = span[i];
             if (c > MaxAsciiChar)
             {
 #if NET9_0_OR_GREATER
@@ -138,10 +139,23 @@ internal static class StringHelpers
 #endif
                 return;
             }
+
+            if (firstCharacterToEscape < 0 && !IsUriUnreserved(c))
+            {
+                firstCharacterToEscape = i;
+            }
         }
 
-        foreach (var c in span)
+        if (firstCharacterToEscape < 0)
         {
+            target.Append(span);
+            return;
+        }
+
+        target.Append(span[..firstCharacterToEscape]);
+        for (var i = firstCharacterToEscape; i < span.Length; i++)
+        {
+            var c = span[i];
             if (IsUriUnreserved(c))
             {
                 target.Append(c);
