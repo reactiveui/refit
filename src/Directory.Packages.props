@@ -9,7 +9,7 @@
     <TUnitVersion>1.59.0</TUnitVersion>
 
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>3.33.0</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>3.38.1</SharpAnalyzersVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
@@ -46,6 +46,7 @@
   <ItemGroup Label="Analyzers">
     <PackageVersion Include="StyleSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="PerformanceSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
+    <PackageVersion Include="SecuritySharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.29.0.143774"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
