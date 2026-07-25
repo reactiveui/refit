@@ -92,7 +92,7 @@ public class QueryConverterTests
     /// <param name="call">The interface method to invoke.</param>
     /// <returns>The generated request's path and query.</returns>
     private static Task<string> SendAsync(Func<IConverterApi, Task<string>> call) =>
-        SendAsync(new RefitSettings(), call);
+        SendAsync(new(), call);
 
     /// <summary>Sends one request through the generated client with the given settings and returns its relative URI.</summary>
     /// <param name="settings">The settings to build the client with.</param>

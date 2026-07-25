@@ -94,7 +94,7 @@ public sealed class StubHttpCoverageTests
         var handler = new StubHttp { { Route.Post("/users"), Reply.With(new User(1, "created")) } };
         var api = handler.CreateClient<IUserApi>(BaseUrl);
 
-        _ = await api.CreateUser(new NewUser("bob"));
+        _ = await api.CreateUser(new("bob"));
 
         var sent = await handler.RequestBodyAsync<NewUser>(0);
         await Assert.That(sent!.Login).IsEqualTo("bob");
@@ -109,7 +109,7 @@ public sealed class StubHttpCoverageTests
         var handler = new StubHttp { { Route.Post("/users"), Reply.With(new User(1, "created")) } };
         var api = handler.CreateClient<IUserApi>(BaseUrl);
 
-        _ = await api.CreateUser(new NewUser("bob"));
+        _ = await api.CreateUser(new("bob"));
 
         await Assert.That(() => handler.RequestBodyAsync<NewUser>(NegativeIndex)).ThrowsExactly<ArgumentOutOfRangeException>();
     }

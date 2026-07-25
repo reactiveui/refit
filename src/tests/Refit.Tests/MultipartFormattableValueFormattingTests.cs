@@ -27,7 +27,7 @@ public sealed class MultipartFormattableValueFormattingTests
     [Test]
     public async Task DefaultFormatterYieldsNonEmptyPart()
     {
-        var body = await CaptureIdPartBody(new RefitSettings());
+        var body = await CaptureIdPartBody(new());
 
         await Assert.That(body).IsNotEmpty();
     }

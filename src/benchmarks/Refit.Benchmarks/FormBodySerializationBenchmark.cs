@@ -105,7 +105,7 @@ public class FormBodySerializationBenchmark
             entries.Add(new("Roles", role));
         }
 
-        return new FormUrlEncodedContent(entries);
+        return new(entries);
     }
 
     /// <summary>Reads the buffered content synchronously for the one-time correctness gate.</summary>

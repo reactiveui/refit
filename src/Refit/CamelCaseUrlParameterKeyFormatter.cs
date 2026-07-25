@@ -9,10 +9,9 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
     /// <summary>Formats the specified key.</summary>
     /// <param name="key">The key.</param>
     /// <returns>The camelCase form of the key.</returns>
-    public string Format(string key)
-    {
 #if NETCOREAPP
-        return string.IsNullOrEmpty(key) || !char.IsUpper(key[0])
+    public string Format(string key) =>
+        string.IsNullOrEmpty(key) || !char.IsUpper(key[0])
             ? key
             : string.Create(
                 key.Length,
@@ -23,6 +22,8 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
                     FixCasing(chars);
                 });
 #else
+    public string Format(string key)
+    {
         if (string.IsNullOrEmpty(key) || !char.IsUpper(key[0]))
         {
             return key;
@@ -31,8 +32,8 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
         char[] chars = key.ToCharArray();
         FixCasing(chars);
         return new(chars);
-#endif
     }
+#endif
 
     /// <summary>Lowercases the leading uppercase run of characters in place.</summary>
     /// <param name="chars">The characters to adjust.</param>

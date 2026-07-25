@@ -102,7 +102,7 @@ public static class UniqueName
     /// the source generator's sanitization so the reconstructed container name matches the emitted one byte-for-byte.</returns>
     internal static string SanitizeAssemblyName(string? assemblyName)
     {
-        if (string.IsNullOrEmpty(assemblyName))
+        if (assemblyName is not { Length: > 0 })
         {
             return string.Empty;
         }

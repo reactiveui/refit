@@ -1,12 +1,15 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+extern alias RefitAnalyzers;
+
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Refit.Generator;
 
@@ -189,6 +192,8 @@ public static class Fixture
         bool disableSourceGenerator,
         CSharpParseOptions? parseOptions)
     {
+        AssertInlineEligibilityParsersAgree(compilation);
+
         var generator = new InterfaceStubGeneratorV2();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [generator.AsSourceGenerator()],
@@ -203,34 +208,6 @@ public static class Fixture
             out var generatorDiagnostics);
 
         return new(driver, outputCompilation, generatorDiagnostics);
-    }
-
-    /// <summary>Emits a generated output compilation and loads it into a collectible assembly context.</summary>
-    /// <param name="result">The generator result to emit.</param>
-    /// <returns>The loaded assembly and load context.</returns>
-    [RequiresUnreferencedCode("Loading an emitted test assembly from a stream requires runtime metadata for referenced types.")]
-    public static (Assembly Assembly, CollectibleAssemblyLoadContext Context) EmitAndLoad(
-        GeneratorTestResult result)
-    {
-        ArgumentNullException.ThrowIfNull(result);
-
-        using var stream = new MemoryStream();
-        var emitResult = result.OutputCompilation.Emit(stream);
-        if (!emitResult.Success)
-        {
-            var errors = string.Join(
-                Environment.NewLine,
-                emitResult.Diagnostics
-                    .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
-                    .Select(static diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}"));
-            throw new InvalidOperationException(
-                $"Failed to emit generated compilation:{Environment.NewLine}{errors}");
-        }
-
-        stream.Position = 0;
-        var context = new CollectibleAssemblyLoadContext();
-        var assembly = context.LoadFromStream(stream);
-        return (assembly, context);
     }
 
     /// <summary>Verifies generator output for type declarations within a namespace.</summary>
@@ -349,6 +326,61 @@ public static class Fixture
     /// <returns>A shared <see cref="MetadataReference"/> for the path, created once and reused across tests.</returns>
     public static MetadataReference GetMetadataReference(string path) =>
         _metadataReferenceCache.GetOrAdd(path, static p => MetadataReference.CreateFromFile(p));
+
+    /// <summary>Checks the generator and analyzer copies of request classification against every source method.</summary>
+    /// <param name="compilation">The compilation containing the request-shape corpus.</param>
+    private static void AssertInlineEligibilityParsersAgree(CSharpCompilation compilation)
+    {
+        var httpMethodAttribute = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")
+            ?? throw new InvalidOperationException("The test compilation does not reference Refit.HttpMethodAttribute.");
+        var formattable = compilation.GetTypeByMetadataName("System.IFormattable");
+
+        var generatorAdapterInterface = Parser.ResolveReturnTypeAdapterInterface(compilation);
+        var generatorAdapters = Parser.DiscoverReturnTypeAdapters(
+            compilation,
+            generatorAdapterInterface,
+            CancellationToken.None);
+        var generatorIndexedFormat = Parser.ResolveIndexedCollectionFormatValue(compilation);
+
+        var analyzerAdapterInterface = RefitAnalyzers::Refit.Generator.Parser.ResolveReturnTypeAdapterInterface(compilation);
+        var analyzerAdapters = RefitAnalyzers::Refit.Generator.Parser.DiscoverReturnTypeAdapters(
+            compilation,
+            analyzerAdapterInterface,
+            CancellationToken.None);
+        var analyzerIndexedFormat = RefitAnalyzers::Refit.Generator.Parser.ResolveIndexedCollectionFormatValue(compilation);
+
+        foreach (var syntaxTree in compilation.SyntaxTrees)
+        {
+            var semanticModel = compilation.GetSemanticModel(syntaxTree);
+            foreach (var declaration in syntaxTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>())
+            {
+                if (semanticModel.GetDeclaredSymbol(declaration) is not IMethodSymbol method)
+                {
+                    continue;
+                }
+
+                var generatorResult = Parser.CanBuildRequestInline(
+                    method,
+                    httpMethodAttribute,
+                    formattable,
+                    generatorAdapterInterface,
+                    generatorAdapters,
+                    generatorIndexedFormat);
+                var analyzerResult = RefitAnalyzers::Refit.Generator.Parser.CanBuildRequestInline(
+                    method,
+                    httpMethodAttribute,
+                    formattable,
+                    analyzerAdapterInterface,
+                    analyzerAdapters,
+                    analyzerIndexedFormat);
+
+                if (generatorResult != analyzerResult)
+                {
+                    throw new InvalidOperationException($"Generator and analyzer request classification disagree for '{method.ToDisplayString()}'.");
+                }
+            }
+        }
+    }
 
     /// <summary>Gets the assemblies referenced when compiling generated code.</summary>
     /// <returns>The distinct, non-dynamic assemblies to reference.</returns>

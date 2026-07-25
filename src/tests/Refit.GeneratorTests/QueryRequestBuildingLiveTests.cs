@@ -37,7 +37,7 @@ public sealed partial class QueryRequestBuildingLiveTests
     private const string ExpandedMethodName = "Expanded";
 
     /// <summary>The full name of the compiled scenario enum type.</summary>
-    private const string SearchSortTypeName = "Refit.LiveQuery.SearchSort";
+    private const string SearchSortTypeName = "Refit.LiveQuery.LiveQueryApi+SearchSort";
 
     /// <summary>A value with a space and a slash, exercising percent-encoding of both reserved characters.</summary>
     private const string EscapableValue = "a b/c";
@@ -97,7 +97,7 @@ public sealed partial class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        var info = harness.CreateApiValue("Refit.LiveQuery.RouteInfo", ("Slug", EscapableValue), ("Version", DocRevision));
+        var info = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+RouteInfo", ("Slug", EscapableValue), ("Version", DocRevision));
         _ = await harness.AssertParityAsync("DottedPath", [info], "/base/docs/a%20b%2Fc/rev/7");
 
         // Only Slug binds to the path; Version is a residual property flattened into the query, exactly as the
@@ -116,12 +116,12 @@ public sealed partial class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        var customer = harness.CreateApiValue("Refit.LiveQuery.NestedCustomer", ("Id", EscapableValue));
-        var order = harness.CreateApiValue("Refit.LiveQuery.NestedOrder", ("Customer", customer), ("Note", "hi"));
+        var customer = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+NestedCustomer", ("Id", EscapableValue));
+        var order = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+NestedOrder", ("Customer", customer), ("Note", "hi"));
         _ = await harness.AssertParityAsync("NestedPath", [order], "/base/orders/a%20b%2Fc?Note=hi");
 
         // A null intermediate short-circuits the chain to an empty segment, matching the reflection builder's walk.
-        var missing = harness.CreateApiValue("Refit.LiveQuery.NestedOrder", ("Customer", null), ("Note", "x"));
+        var missing = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+NestedOrder", ("Customer", null), ("Note", "x"));
         _ = await harness.AssertParityAsync("NestedPath", [missing], "/base/orders/?Note=x");
     }
 
@@ -135,7 +135,7 @@ public sealed partial class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        var token = harness.CreateApiValue("Refit.LiveQuery.RouteToken", ("Value", EscapableValue));
+        var token = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+RouteToken", ("Value", EscapableValue));
         _ = await harness.AssertParityAsync("TokenPath", [token], "/base/token/a%20b%2Fc");
     }
 
@@ -163,8 +163,8 @@ public sealed partial class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        var bounds = harness.CreateApiValue("Refit.LiveQuery.Bounds", ("Min", WindowMin), ("Max", WindowMax));
-        var query = harness.CreateApiValue("Refit.LiveQuery.RangeQuery", ("Window", bounds));
+        var bounds = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+Bounds", ("Min", WindowMin), ("Max", WindowMax));
+        var query = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+RangeQuery", ("Window", bounds));
         _ = await harness.AssertParityAsync("RangeSearch", [query], "/base/range?Window=1..9");
     }
 
@@ -180,7 +180,7 @@ public sealed partial class QueryRequestBuildingLiveTests
         using var harness = LiveQueryHarness.Create();
 
         // A present nullable struct flattens its underlying properties; parity guards the exact key order and encoding.
-        var point = harness.CreateApiValue("Refit.LiveQuery.GeoPoint", ("Name", "peak"), ("Lat", RawDouble));
+        var point = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+GeoPoint", ("Name", "peak"), ("Lat", RawDouble));
         _ = await harness.AssertParityAsync("NullableStructQuery", [point], null);
 
         // A null nullable-struct parameter contributes no query pairs, matching the reflection builder.
@@ -197,8 +197,8 @@ public sealed partial class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        var facet = harness.CreateApiValue("Refit.LiveQuery.Facet", ("Name", "blue"), ("Count", WindowMin));
-        var facets = harness.CreateStringKeyedDictionary("Refit.LiveQuery.Facet", ("color", facet));
+        var facet = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+Facet", ("Name", "blue"), ("Count", WindowMin));
+        var facets = harness.CreateStringKeyedDictionary("Refit.LiveQuery.LiveQueryApi+Facet", ("color", facet));
         _ = await harness.AssertParityAsync("Facets", [facets], "/base/facets?color.Name=blue&color.Count=1");
     }
 
@@ -215,15 +215,15 @@ public sealed partial class QueryRequestBuildingLiveTests
         using var harness = LiveQueryHarness.Create();
 
         // An explicit [Body] on the QUERY verb: the generated request uses the custom verb and carries the body.
-        var payload = harness.CreateApiValue("Refit.LiveQuery.CreatePayload", ("Name", "report"));
+        var payload = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+CreatePayload", ("Name", "report"));
         var generated = await harness.InvokeGeneratedAsync("QueryDocuments", [payload], "/base/documents");
         await Assert.That(generated.Method.Method).IsEqualTo(queryVerb);
         await Assert.That(harness.LastCapturedContent).IsNotNull();
         _ = await harness.AssertParityAsync("QueryDocuments", [payload], "/base/documents");
 
         // The verb is not body-capable for an un-attributed complex parameter yet, so both paths flatten it into the query.
-        var bounds = harness.CreateApiValue("Refit.LiveQuery.Bounds", ("Min", WindowMin), ("Max", WindowMax));
-        var filter = harness.CreateApiValue("Refit.LiveQuery.RangeQuery", ("Window", bounds));
+        var bounds = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+Bounds", ("Min", WindowMin), ("Max", WindowMax));
+        var filter = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+RangeQuery", ("Window", bounds));
         var rows = await harness.AssertParityAsync("QueryRows", [filter], "/base/rows?Window=1..9");
         await Assert.That(rows.Method.Method).IsEqualTo(queryVerb);
     }
@@ -274,10 +274,10 @@ public sealed partial class QueryRequestBuildingLiveTests
         const string value = "Value";
         const string parameter = "items";
         const string indexedSearchMethodName = "IndexedSearch";
-        const string typeName = "Refit.LiveQuery.Item";
+        const string typeName = "Refit.LiveQuery.LiveQueryApi+Item";
         await harness.AssertParityAsync(indexedSearchMethodName, [null], "/base/indexed");
         var item0 = harness.CreateApiValue(typeName, (id, 1), (value, "a"));
-        var indexedList = harness.CreateApiList(typeName, item0);
+        var indexedList = harness.CreateApiList(typeName, item0, null);
         await harness.AssertParityAsync(indexedSearchMethodName, [indexedList], $"/base/indexed?{parameter}[0].{id}=1&{parameter}[0].{value}=a");
 
         const string indexedSearchWithListIntMethodName = "IndexedListSearch";
@@ -288,11 +288,14 @@ public sealed partial class QueryRequestBuildingLiveTests
         const string name = "FirstName";
         const string jsonPropertyName = "First%20Name";
         const string lastName = "LastName";
-        const string indexedSearchSerialized = "indexedNameWithSerialized";
-        const string typeNameSerialized = "Refit.LiveQuery.Name";
+        const string indexedSearchSerialized = "IndexedNameWithSerialized";
+        const string typeNameSerialized = "Refit.LiveQuery.LiveQueryApi+Name";
         var nameSerialized = harness.CreateApiValue(typeNameSerialized, (name, "John"), (lastName, "Doe"));
         var indexedNameSerialized = harness.CreateApiList(typeNameSerialized, nameSerialized);
         await harness.AssertParityAsync(indexedSearchSerialized, [indexedNameSerialized], $"/base/indexedNameWithSerialized?{parameter}[0].{jsonPropertyName}=John&{parameter}[0].{lastName}=Doe");
+
+        const string indexedSimpleType = "IndexedSimpleType";
+        await harness.AssertParityAsync(indexedSimpleType, [item0], $"/base/indexedSimpleType?{id}=1&{value}=a");
     }
 
     /// <summary>Verifies a custom URL parameter formatter still runs for every generated value.</summary>
@@ -319,7 +322,7 @@ public sealed partial class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        var payload = harness.CreateApiValue("Refit.LiveQuery.CreatePayload", ("Name", "Widget"));
+        var payload = harness.CreateApiValue("Refit.LiveQuery.LiveQueryApi+CreatePayload", ("Name", "Widget"));
         _ = await harness.AssertParityAsync("Create", [payload, "new"], "/base/create?tag=new");
 
         await Assert.That(harness.LastCapturedContent).IsNotNull();

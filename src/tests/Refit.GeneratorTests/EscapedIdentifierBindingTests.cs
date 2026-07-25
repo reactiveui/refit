@@ -55,13 +55,11 @@ public sealed class EscapedIdentifierBindingTests
     }
 
     /// <summary>Builds, loads and invokes the escaped-identifier interface through the generated request path.</summary>
-    /// <param name="context">The load context owning the compiled assembly.</param>
     /// <param name="handler">The capturing handler that records each outgoing request.</param>
     /// <param name="client">The HTTP client the generated stub sends through.</param>
     /// <param name="interfaceType">The compiled escaped-identifier interface type.</param>
     /// <param name="generatedApi">The generated stub instance.</param>
     private sealed class LiveHarness(
-        CollectibleAssemblyLoadContext context,
         CapturingHandler handler,
         HttpClient client,
         Type interfaceType,
@@ -103,17 +101,11 @@ public sealed class EscapedIdentifierBindingTests
                     $"Generated compilation failed: {string.Join(Environment.NewLine, result.CompilationErrors)}");
             }
 
-            var (assembly, loadContext) = Fixture.EmitAndLoad(result);
-            var interfaceType = assembly.GetType("Refit.EscapedIdentifierLive.IEscapedIdentifierLiveApi", throwOnError: true)!;
-            var generatedType = assembly
-                .GetTypes()
-                .Single(type => type.IsClass && interfaceType.IsAssignableFrom(type));
-
+            var interfaceType = typeof(Refit.EscapedIdentifierLive.IEscapedIdentifierLiveApi);
             var capturingHandler = new CapturingHandler();
             var httpClient = new HttpClient(capturingHandler) { BaseAddress = new(BaseAddress) };
-            var requestBuilder = RequestBuilder.ForType(interfaceType, new RefitSettings());
-            var generatedApi = Activator.CreateInstance(generatedType, [httpClient, requestBuilder])!;
-            return new(loadContext, capturingHandler, httpClient, interfaceType, generatedApi);
+            var generatedApi = RestService.For(interfaceType, httpClient, RequestBuilder.ForType(interfaceType, new()));
+            return new(capturingHandler, httpClient, interfaceType, generatedApi);
         }
 
         /// <summary>Invokes a generated method and returns the request it produced.</summary>
@@ -133,7 +125,6 @@ public sealed class EscapedIdentifierBindingTests
         {
             client.Dispose();
             handler.Dispose();
-            context.Dispose();
         }
     }
 

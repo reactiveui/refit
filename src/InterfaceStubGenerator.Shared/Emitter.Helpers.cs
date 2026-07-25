@@ -235,16 +235,15 @@ internal static partial class Emitter
         var asyncKeyword = isAsync ? "async " : string.Empty;
         var explicitInterface = BuildExplicitInterfacePrefix(methodModel, isExplicitInterface);
         var methodIndent = Indent(MethodMemberIndentation);
-        var constraints = BuildConstraints(methodModel.Constraints, isDerivedExplicitImpl || isExplicitInterface, MethodBodyIndentation);
 
         _ = builder
             .AppendLine()
             .Append(methodIndent).AppendLine("/// <inheritdoc />")
             .Append(methodAttributes).Append(methodIndent).Append(visibility).Append(asyncKeyword)
             .Append(methodModel.ReturnType).Append(' ').Append(explicitInterface).Append(methodModel.DeclaredMethod)
-            .Append('(').Append(BuildParameterList(methodModel.Parameters, supportsNullable)).Append(')').AppendLine()
-            .Append(constraints)
-            .Append(methodIndent).Append('{').AppendLine();
+            .Append('(').Append(BuildParameterList(methodModel.Parameters, supportsNullable)).Append(')').AppendLine();
+        AppendConstraints(builder, methodModel.Constraints, isDerivedExplicitImpl || isExplicitInterface, MethodBodyIndentation);
+        _ = builder.Append(methodIndent).Append('{').AppendLine();
     }
 
     /// <summary>Builds the method signature, constraints, and opening brace.</summary>

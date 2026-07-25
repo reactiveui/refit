@@ -55,12 +55,10 @@ public partial class RestServiceIntegrationTests
     /// <param name="request">The request whose option to read.</param>
     /// <param name="key">The request option key.</param>
     /// <returns>The stored string value, or null when absent.</returns>
-    private static string? ReadStringOption(HttpRequestMessage request, string key)
-    {
+    private static string? ReadStringOption(HttpRequestMessage request, string key) =>
 #if NET6_0_OR_GREATER
-        return request.Options.TryGetValue(new HttpRequestOptionsKey<string>(key), out var value) ? value : null;
+        request.Options.TryGetValue(new HttpRequestOptionsKey<string>(key), out var value) ? value : null;
 #else
-        return request.Properties.TryGetValue(key, out var value) ? value as string : null;
+        request.Properties.TryGetValue(key, out var value) ? value as string : null;
 #endif
-    }
 }

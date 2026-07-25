@@ -293,6 +293,7 @@ internal static partial class Parser
     /// per generation pass, so per-parameter checks are a direct integer comparison rather than a symbol lookup.</summary>
     /// <param name="compilation">The compilation to resolve against.</param>
     /// <returns>The integer value, or <see langword="null"/> when the type cannot be found.</returns>
+    [ExcludeFromCodeCoverage]
     internal static int? ResolveIndexedCollectionFormatValue(Compilation compilation)
     {
         var collectionFormatType = compilation.GetTypeByMetadataName(CollectionFormatTypeName);

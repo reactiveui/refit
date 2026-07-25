@@ -419,7 +419,7 @@ public class ApiException : ApiExceptionBase
             total += read;
         }
 
-        return new string(buffer, 0, total);
+        return new(buffer, 0, total);
     }
 
     /// <summary>Builds the exception message from the status code and reason phrase.</summary>
@@ -432,18 +432,17 @@ public class ApiException : ApiExceptionBase
     /// <summary>Reads the request body string captured before sending, if request-content capture was enabled.</summary>
     /// <param name="request">The request message that carries the captured content option.</param>
     /// <returns>The captured request content, or <see langword="null"/> when none was captured.</returns>
-    internal static string? GetCapturedRequestContent(HttpRequestMessage request)
-    {
 #if NET6_0_OR_GREATER
-        return request.Options.TryGetValue(
+    internal static string? GetCapturedRequestContent(HttpRequestMessage request) =>
+        request.Options.TryGetValue(
             new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.RequestContent),
             out var captured)
             ? captured
             : null;
 #else
-        return request.Properties.TryGetValue(HttpRequestMessageOptions.RequestContent, out var captured)
+    internal static string? GetCapturedRequestContent(HttpRequestMessage request) =>
+        request.Properties.TryGetValue(HttpRequestMessageOptions.RequestContent, out var captured)
             ? captured as string
             : null;
 #endif
-    }
 }

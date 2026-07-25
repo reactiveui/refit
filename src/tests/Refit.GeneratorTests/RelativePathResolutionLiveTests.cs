@@ -65,11 +65,12 @@ public sealed class RelativePathResolutionLiveTests
     [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
     public async Task Rfc3986RelativePathMatchesReflection()
     {
-        using var context = Compile(out var interfaceType, out var generatedType);
+        var interfaceType = typeof(Refit.LiveResolution.IResolutionApi);
         using var handler = new CapturingHandler();
         using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
-        var requestBuilder = RequestBuilder.ForType(interfaceType, new RefitSettings { UrlResolution = UrlResolutionMode.Rfc3986 });
-        var generatedApi = Activator.CreateInstance(generatedType, [client, requestBuilder])!;
+        var settings = new RefitSettings { UrlResolution = UrlResolutionMode.Rfc3986 };
+        var requestBuilder = RequestBuilder.ForType(interfaceType, settings);
+        var generatedApi = RestService.For(interfaceType, client, requestBuilder);
 
         await AssertParityAsync(interfaceType, generatedApi, requestBuilder, client, handler, RelativeMethod, SampleId);
         await AssertParityAsync(interfaceType, generatedApi, requestBuilder, client, handler, RootedMethod, SampleId);
@@ -89,12 +90,12 @@ public sealed class RelativePathResolutionLiveTests
     [RequiresDynamicCode("Builds the reflection request delegate for parity comparison.")]
     public async Task LegacyRejectsNoLeadingSlashLikeReflection()
     {
-        using var context = Compile(out var interfaceType, out var generatedType);
+        var interfaceType = typeof(Refit.LiveResolution.IResolutionApi);
         using var handler = new CapturingHandler();
         using var client = HttpClientTestFactory.Create(handler, new(BaseAddress));
 
         // The generated client, built from settings alone, rejects the relative path under legacy resolution.
-        var generatedApi = Activator.CreateInstance(generatedType, [client, new RefitSettings()])!;
+        var generatedApi = RestService.ForGenerated(interfaceType, client, new());
         ArgumentException? generatedRejection = null;
         try
         {
@@ -108,29 +109,8 @@ public sealed class RelativePathResolutionLiveTests
         await Assert.That(generatedRejection).IsNotNull();
 
         // The reflection request builder rejects the same interface under legacy resolution.
-        await Assert.That(() => RequestBuilder.ForType(interfaceType, new RefitSettings()))
+        await Assert.That(() => RequestBuilder.ForType(interfaceType, new()))
             .Throws<ArgumentException>();
-    }
-
-    /// <summary>Compiles the scenario interface and loads it into a collectible context.</summary>
-    /// <param name="interfaceType">The compiled Refit interface type.</param>
-    /// <param name="generatedType">The generated client type.</param>
-    /// <returns>The collectible load context holding the compiled assembly.</returns>
-    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
-    private static CollectibleAssemblyLoadContext Compile(out Type interfaceType, out Type generatedType)
-    {
-        var result = Fixture.RunGenerator(ApiSource, generatedRequestBuilding: true);
-        if (!result.CompilesWithoutErrors)
-        {
-            throw new InvalidOperationException(
-                $"Generated compilation failed: {string.Join(Environment.NewLine, result.CompilationErrors)}");
-        }
-
-        var (assembly, loadContext) = Fixture.EmitAndLoad(result);
-        interfaceType = assembly.GetType("Refit.LiveResolution.IResolutionApi", throwOnError: true)!;
-        var resolvedInterface = interfaceType;
-        generatedType = assembly.GetTypes().Single(type => type.IsClass && resolvedInterface.IsAssignableFrom(type));
-        return loadContext;
     }
 
     /// <summary>Invokes a method on the generated client and returns the captured request.</summary>

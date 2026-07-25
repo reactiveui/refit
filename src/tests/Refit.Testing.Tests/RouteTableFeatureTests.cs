@@ -62,7 +62,7 @@ public sealed class RouteTableFeatureTests
         await Assert.That(user.Login).IsEqualTo(SampleLogin);
 
         // A request no specific route matches falls through to the fallback.
-        var response = await api.CreateUserResponse(new NewUser("mona"));
+        var response = await api.CreateUserResponse(new("mona"));
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Accepted);
 
         // The fallback is a background default, not a required expectation.
@@ -103,7 +103,7 @@ public sealed class RouteTableFeatureTests
         };
 
         var api = handler.CreateClient<IUserApi>(BaseUrl);
-        _ = await api.CreateUser(new NewUser("mona"));
+        _ = await api.CreateUser(new("mona"));
 
         var sent = await handler.LastRequestBodyAsync<NewUser>();
 
@@ -126,7 +126,7 @@ public sealed class RouteTableFeatureTests
         };
 
         var api = handler.CreateClient<IUserApi>(BaseUrl);
-        using var response = await api.CreateUserResponse(new NewUser("lee"));
+        using var response = await api.CreateUserResponse(new("lee"));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Created);
     }

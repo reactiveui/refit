@@ -101,7 +101,7 @@ public class QueryObjectFlatteningTests
     {
         var query = new DerivedRecordWithProperty("queryName");
 
-        var generated = await SendGeneratedAsync(new RefitSettings(), api => api.FlattenDeclared(query));
+        var generated = await SendGeneratedAsync(new(), api => api.FlattenDeclared(query));
         var reflected = await new RequestBuilderImplementation<IQueryObjectApi>()
             .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenDeclared))([query]);
 
@@ -250,7 +250,7 @@ public class QueryObjectFlatteningTests
         const double Lng = 2.5;
         var query = new NullableNestedStructQueryObject { Name = "here", Location = new GeoPoint(Lat, Lng) };
 
-        var generated = await SendGeneratedAsync(new RefitSettings(), api => api.FlattenNullableNestedStruct(query));
+        var generated = await SendGeneratedAsync(new(), api => api.FlattenNullableNestedStruct(query));
         var reflected = await new RequestBuilderImplementation<IQueryObjectApi>()
             .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenNullableNestedStruct))([query]);
 
@@ -264,7 +264,7 @@ public class QueryObjectFlatteningTests
     {
         var query = new NullableNestedStructQueryObject { Name = "here", Location = null };
 
-        var generated = await SendGeneratedAsync(new RefitSettings(), api => api.FlattenNullableNestedStruct(query));
+        var generated = await SendGeneratedAsync(new(), api => api.FlattenNullableNestedStruct(query));
         var reflected = await new RequestBuilderImplementation<IQueryObjectApi>()
             .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenNullableNestedStruct))([query]);
 
@@ -282,7 +282,7 @@ public class QueryObjectFlatteningTests
         query.Tags["b"] = "2";
         query.Counts["x"] = Count;
 
-        var generated = await SendGeneratedAsync(new RefitSettings(), api => api.FlattenDictionaryProperty(query));
+        var generated = await SendGeneratedAsync(new(), api => api.FlattenDictionaryProperty(query));
         var reflected = await new RequestBuilderImplementation<IQueryObjectApi>()
             .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenDictionaryProperty))([query]);
 
@@ -384,7 +384,7 @@ public class QueryObjectFlatteningTests
     [Test]
     public async Task NullQueryObjectEmitsNoQueryString()
     {
-        var generated = await SendGeneratedAsync(new RefitSettings(), static api => api.FlattenObject(null!));
+        var generated = await SendGeneratedAsync(new(), static api => api.FlattenObject(null!));
         var reflected = await new RequestBuilderImplementation<IQueryObjectApi>()
             .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenObject))([null!]);
 
@@ -439,7 +439,7 @@ public class QueryObjectFlatteningTests
         Func<object[], Task<HttpRequestMessage>> reflectionFactory,
         object argument)
     {
-        var generated = await SendGeneratedAsync(new RefitSettings(), call);
+        var generated = await SendGeneratedAsync(new(), call);
         var reflected = await reflectionFactory([argument]);
 
         await Assert.That(generated).IsEqualTo(expectedPathAndQuery);

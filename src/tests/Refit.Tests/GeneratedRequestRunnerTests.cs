@@ -361,7 +361,7 @@ public partial class GeneratedRequestRunnerTests
 
         // SystemTextJson takes the generated descriptor path; the recording serializer forces the reflection path.
         var descriptor = await GeneratedRequestRunner
-            .CreateUrlEncodedBodyContent(new RefitSettings(new SystemTextJsonContentSerializer()), body, fields)
+            .CreateUrlEncodedBodyContent(new(new SystemTextJsonContentSerializer()), body, fields)
             .ReadAsStringAsync();
         var reflection = await GeneratedRequestRunner
             .CreateUrlEncodedBodyContent(CreateSettings(), body, fields)

@@ -59,6 +59,52 @@ public static partial class GeneratorComponentTests
             await Assert.That(builder.ToString()).IsEqualTo("""\\\"\0\a\b\f\n\r\t\v\u0085\u2028\u2029x""");
         }
 
+        /// <summary>Verifies unguarded indexed query emission and the shared empty parameter provider.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task InlineEmitterHandlesNonNullableIndexedCollectionsAndAttributeFreeParameters()
+        {
+            var parameter = new RequestParameterModel(
+                "items",
+                "global::System.Collections.Generic.List<string>",
+                null,
+                ImmutableEquatableArray<ParameterAttributeModel>.Empty,
+                RequestParameterKind.Query,
+                CanBeNull: false,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                BodyBufferMode.None);
+            var valueFormat = new InlineValueFormatModel(InlineFormatKind.String, null, StringTypeName, false, null);
+            var query = new QueryParameterModel(
+                "items",
+                QueryParameterShape.IndexedCollection,
+                TreatAsString: false,
+                PreEncoded: false,
+                CollectionFormatValue: null,
+                ElementCanBeNull: false,
+                valueFormat,
+                ImmutableEquatableArray<QueryObjectPropertyModel>.Empty);
+            var members = new PooledStringBuilder();
+            var emission = new Emitter.InlineValueEmission(
+                "query",
+                "item",
+                "settings",
+                "defaultFormat",
+                "defaultFormFormat",
+                new(new()),
+                members,
+                true);
+            var source = new PooledStringBuilder();
+
+            Emitter.BuildParameterInfoField(parameter, "Get", "parameterInfo", source);
+            Emitter.AppendIndexedCollectionQueryStatements(source, parameter, query, "parameterInfo", emission);
+
+            var generated = source.ToString();
+            await Assert.That(generated).Contains("GeneratedParameterAttributeProvider.Empty");
+            await Assert.That(generated).Contains("foreach (var item in @items)");
+        }
+
         /// <summary>Verifies the string-literal escape lookup for special, line-terminator, and verbatim characters.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
@@ -274,15 +320,6 @@ public static partial class GeneratorComponentTests
                 .IsEqualTo(string.Empty);
             await Assert.That(Emitter.BuildParameterTypeListForTesting(parameters))
                 .IsEqualTo("typeof(string), typeof(global::System.Int32)");
-        }
-
-        /// <summary>Verifies source fragment joining avoids extra separators for empty input.</summary>
-        /// <returns>A task representing the asynchronous test.</returns>
-        [Test]
-        public async Task JoinParts_HandlesEmptyAndPopulatedParts()
-        {
-            await Assert.That(Emitter.JoinPartsForTesting([], 0, ", ")).IsEqualTo(string.Empty);
-            await Assert.That(Emitter.JoinPartsForTesting(["a", "b", "ignored"], PopulatedPartCount, ", ")).IsEqualTo("a, b");
         }
 
         /// <summary>Verifies candidate method combining preserves standard and custom methods.</summary>

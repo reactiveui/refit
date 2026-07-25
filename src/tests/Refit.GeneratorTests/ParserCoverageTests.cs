@@ -558,7 +558,7 @@ public sealed class ParserCoverageTests
         var candidateMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToImmutableArray();
         var candidateInterfaces = root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToImmutableArray();
         var compilation = (CSharpCompilation)Fixture.CreateLibrary(syntaxTree)
-            .WithOptions(new CSharpCompilationOptions(
+            .WithOptions(new(
                 OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: NullableContextOptions.Enable));
 

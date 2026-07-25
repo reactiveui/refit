@@ -546,14 +546,11 @@ public static partial class GeneratedRequestRunner
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Generated callers specify the declared property type to avoid call-site boxing.")]
-    public static void AddRequestProperty<TValue>(HttpRequestMessage request, string key, TValue value)
-    {
 #if NET6_0_OR_GREATER
-        request.Options.Set(new(key), value);
+    public static void AddRequestProperty<TValue>(HttpRequestMessage request, string key, TValue value) => request.Options.Set(new(key), value);
 #else
-        request.Properties[key] = value;
+    public static void AddRequestProperty<TValue>(HttpRequestMessage request, string key, TValue value) => request.Properties[key] = value;
 #endif
-    }
 
     /// <summary>Serializes a multipart part through the content serializer, wrapping a failure with the same descriptive
     /// argument exception the reflection request builder raises for an unserializable part.</summary>
@@ -717,14 +714,11 @@ public static partial class GeneratedRequestRunner
     /// <param name="request">The request to modify.</param>
     /// <param name="key">The property key.</param>
     /// <param name="value">The pre-boxed property value.</param>
-    internal static void AddBoxedRequestProperty(HttpRequestMessage request, string key, object value)
-    {
 #if NET6_0_OR_GREATER
-        request.Options.Set(new(key), value);
+    internal static void AddBoxedRequestProperty(HttpRequestMessage request, string key, object value) => request.Options.Set(new(key), value);
 #else
-        request.Properties[key] = value;
+    internal static void AddBoxedRequestProperty(HttpRequestMessage request, string key, object value) => request.Properties[key] = value;
 #endif
-    }
 
     /// <summary>Serializes a non-special body value through the configured content serializer.</summary>
     /// <typeparam name="TBody">The declared body type.</typeparam>

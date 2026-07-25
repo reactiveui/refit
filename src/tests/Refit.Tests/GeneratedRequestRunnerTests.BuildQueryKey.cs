@@ -14,7 +14,7 @@ public partial class GeneratedRequestRunnerTests
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task UsesDefaultUrlParameterKeyFormattingIsTrueForPristineDefault() =>
-        await Assert.That(GeneratedRequestRunner.UsesDefaultUrlParameterKeyFormatting(new RefitSettings())).IsTrue();
+        await Assert.That(GeneratedRequestRunner.UsesDefaultUrlParameterKeyFormatting(new())).IsTrue();
 
     /// <summary>Verifies a custom key formatter disables the constant-key fast path.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -40,7 +40,7 @@ public partial class GeneratedRequestRunnerTests
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task BuildQueryKeyUsesClrNameByDefault() =>
-        await Assert.That(GeneratedRequestRunner.BuildQueryKey(new RefitSettings(), QueryKeyClrName, null, null))
+        await Assert.That(GeneratedRequestRunner.BuildQueryKey(new(), QueryKeyClrName, null, null))
             .IsEqualTo(QueryKeyClrName);
 
     /// <summary>Verifies the CLR property name passes through a custom key formatter.</summary>
@@ -69,14 +69,14 @@ public partial class GeneratedRequestRunnerTests
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task BuildQueryKeyPrependsPrefixSegment() =>
-        await Assert.That(GeneratedRequestRunner.BuildQueryKey(new RefitSettings(), "Zip", null, "Addr."))
+        await Assert.That(GeneratedRequestRunner.BuildQueryKey(new(), "Zip", null, "Addr."))
             .IsEqualTo("Addr.Zip");
 
     /// <summary>Verifies the prefix segment is prepended to an alias as well as to a formatted CLR name.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task BuildQueryKeyPrependsPrefixSegmentToAlias() =>
-        await Assert.That(GeneratedRequestRunner.BuildQueryKey(new RefitSettings(), "Zip", "postcode", "Addr-"))
+        await Assert.That(GeneratedRequestRunner.BuildQueryKey(new(), "Zip", "postcode", "Addr-"))
             .IsEqualTo("Addr-postcode");
 
     /// <summary>A key formatter that upper-cases keys, used to prove the formatter is consulted.</summary>

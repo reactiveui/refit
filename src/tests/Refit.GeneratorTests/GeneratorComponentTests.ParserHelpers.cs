@@ -4,6 +4,7 @@
 
 using System.Collections.Generic;
 
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
 using Refit.Generator;
@@ -160,6 +161,68 @@ public static partial class GeneratorComponentTests
 
             // A type in the global namespace matches no dotted name.
             await Assert.That(Parser.IsInNamespace(root, "System")).IsFalse();
+        }
+
+        /// <summary>Verifies URL-safe span formatting checks symbol availability, format strings, and special-type bounds.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task ComputeSpanFormattableTiers_ClassifiesSupportedTypesAndFormats()
+        {
+            var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(string.Empty));
+            var httpMethodAttribute = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")!;
+            var context = new InterfaceGenerationContext(
+                [],
+                string.Empty,
+                string.Empty,
+                null,
+                httpMethodAttribute,
+                compilation.GetTypeByMetadataName("System.IFormattable"),
+                null,
+                SupportsSpanEscape: true,
+                GeneratedRequestBuilding: true,
+                EmitGeneratedCodeMarkers: false,
+                SupportsNullable: true,
+                SupportsStaticLambdas: true,
+                SupportsCollectionExpressions: true,
+                compilation,
+                null,
+                [],
+                [],
+                new(SymbolEqualityComparer.Default),
+                new(SymbolEqualityComparer.Default),
+                new(SymbolEqualityComparer.Default));
+            var noSpanSymbol = Parser.ComputeSpanFormattableTiers(
+                compilation.GetSpecialType(SpecialType.System_Int32),
+                null,
+                implementsSpanFormattable: true,
+                context);
+            var spanContext = context with { SpanFormattableSymbol = compilation.GetTypeByMetadataName("System.ISpanFormattable") };
+            var supported = Parser.ComputeSpanFormattableTiers(
+                compilation.GetSpecialType(SpecialType.System_Int32),
+                null,
+                implementsSpanFormattable: true,
+                spanContext);
+            var formatted = Parser.ComputeSpanFormattableTiers(
+                compilation.GetSpecialType(SpecialType.System_Int32),
+                "X",
+                implementsSpanFormattable: true,
+                spanContext);
+            var aboveNumericRange = Parser.ComputeSpanFormattableTiers(
+                compilation.GetSpecialType(SpecialType.System_Decimal),
+                null,
+                implementsSpanFormattable: true,
+                spanContext);
+            var belowNumericRange = Parser.ComputeSpanFormattableTiers(
+                compilation.GetSpecialType(SpecialType.System_String),
+                null,
+                implementsSpanFormattable: true,
+                spanContext);
+
+            await Assert.That(noSpanSymbol).IsEqualTo((false, true));
+            await Assert.That(supported).IsEqualTo((true, true));
+            await Assert.That(formatted).IsEqualTo((false, true));
+            await Assert.That(aboveNumericRange).IsEqualTo((false, true));
+            await Assert.That(belowNumericRange).IsEqualTo((false, true));
         }
 
         /// <summary>Creates a non-body parameter model.</summary>

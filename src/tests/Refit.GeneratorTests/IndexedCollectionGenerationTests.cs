@@ -62,6 +62,25 @@ public sealed class IndexedCollectionGenerationTests
         }
         """;
 
+    /// <summary>Source with an explicitly empty Indexed collection nesting delimiter.</summary>
+    private const string EmptyDelimiterIndexedSource =
+        """
+        using System.Collections.Generic;
+        using System.Threading.Tasks;
+        using Refit;
+
+        public sealed class Item
+        {
+            public int Id { get; set; }
+        }
+
+        public interface IGeneratedClient
+        {
+            [Get("/items")]
+            Task<string> Search([Query("", "", CollectionFormat = CollectionFormat.Indexed)] List<Item> items);
+        }
+        """;
+
     /// <summary>Source where the element type has a nested object property - should fall back to reflection
     /// because the nested type is complex and the reflection builder walks runtime types.</summary>
     private const string IndexedWithSimpleScalarCollectionSource =
@@ -131,6 +150,17 @@ public sealed class IndexedCollectionGenerationTests
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
     }
 
+    /// <summary>Verifies an empty Indexed nesting delimiter falls back to the standard dot delimiter.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EmptyIndexedDelimiterUsesDotFallback()
+    {
+        var result = Fixture.RunGenerator(EmptyDelimiterIndexedSource, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).Contains("items[{");
+    }
+
     /// <summary>Verifies a Indexed collection whose element type has a scalar collection property flattens inline
     /// (the collection property on the element uses the settings-default CollectionFormat).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -195,5 +225,45 @@ public sealed class IndexedCollectionGenerationTests
 
         // A scalar element has no object properties to flatten — handled as regular Collection inline generation.
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+    }
+
+    /// <summary>Verifies a Indexed parameter whose element type is a collection with a complex element type falls back to reflective generation.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>    
+    [Test]
+    public async Task IndexedWithComplexIndexElementFallsBackToReflective()
+    {
+        const string source =
+            """
+            #nullable enable
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Car
+            {
+                public int Id { get; set; }
+                public string? Name { get; set; }
+            }
+
+            public sealed class ComplexElement
+            {
+                public List<Car>? Cars { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/v")]
+                Task<string> Values([Query(CollectionFormat.Indexed)] List<ComplexElement> values);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+
+        // A scalar element has no object properties to flatten — handled as regular Collection inline generation.
+        await Assert.That(result.GeneratedSources[Hint]).Contains(ReflectiveFallback);
     }
 }

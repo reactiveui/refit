@@ -35,13 +35,16 @@ internal static partial class Parser
     /// <param name="returnTypeAdapterInterface">The resolved <c>Refit.IReturnTypeAdapter`2</c> symbol, or null.</param>
     /// <param name="returnTypeAdapters">The discovered <c>IReturnTypeAdapter</c> implementations, so the analyzer agrees
     /// with the generator that an adapter-backed return type is inline-eligible.</param>
+    /// <param name="indexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c> resolved once from the
+    /// compilation, or <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
     /// <returns><see langword="true"/> when the method's request is inline-eligible.</returns>
     internal static bool CanBuildRequestInline(
         IMethodSymbol methodSymbol,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         INamedTypeSymbol? formattableSymbol,
         INamedTypeSymbol? returnTypeAdapterInterface,
-        INamedTypeSymbol[] returnTypeAdapters)
+        INamedTypeSymbol[] returnTypeAdapters,
+        int? indexedCollectionFormatValue = null)
     {
         if (FindHttpMethodAttribute(methodSymbol, httpMethodBaseAttributeSymbol) is null)
         {
@@ -69,7 +72,8 @@ internal static partial class Parser
             ExternAliases: [],
             AssemblyAliasCache: new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default),
             QualifiedTypeCache: new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default),
-            FormattableClassificationCache: new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default));
+            FormattableClassificationCache: new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default),
+            IndexedCollectionFormatValue: indexedCollectionFormatValue);
         return ParseRequest(methodSymbol, ClassifyInlineReturnShape(methodSymbol.ReturnType), context)
             .CanGenerateInline;
     }
@@ -77,9 +81,8 @@ internal static partial class Parser
     /// <summary>Classifies a return type into the shape buckets inline eligibility distinguishes.</summary>
     /// <param name="returnType">The declared return type.</param>
     /// <returns>The return shape; unsupported shapes map to <see cref="ReturnTypeInfo.Return"/>.</returns>
-    internal static ReturnTypeInfo ClassifyInlineReturnShape(ITypeSymbol returnType)
-    {
-        return returnType is not INamedTypeSymbol namedType
+    internal static ReturnTypeInfo ClassifyInlineReturnShape(ITypeSymbol returnType) =>
+        returnType is not INamedTypeSymbol namedType
             ? ReturnTypeInfo.Return
             : namedType.MetadataName switch
             {
@@ -90,7 +93,6 @@ internal static partial class Parser
                 "IObservable`1" when IsInNamespace(namedType, "System") => ReturnTypeInfo.Observable,
                 _ => ReturnTypeInfo.Return
             };
-    }
 
     /// <summary>Determines whether a type is <c>System.Net.Http.HttpRequestMessage</c>, the type argument of the
     /// build-and-return <c>Task&lt;HttpRequestMessage&gt;</c> shape.</summary>

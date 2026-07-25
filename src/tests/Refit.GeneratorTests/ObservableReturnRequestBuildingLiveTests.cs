@@ -46,14 +46,12 @@ public sealed class ObservableReturnRequestBuildingLiveTests
     }
 
     /// <summary>Hosts one compiled generated observable client plus the reflection builder for parity assertions.</summary>
-    /// <param name="context">The collectible load context holding the compiled assembly.</param>
     /// <param name="handler">The capturing message handler.</param>
     /// <param name="client">The HTTP client shared by both request paths.</param>
     /// <param name="interfaceType">The compiled Refit interface type.</param>
     /// <param name="generatedApi">The generated client instance.</param>
     /// <param name="requestBuilder">The reflection request builder for the compiled interface.</param>
     private sealed class ObservableHarness(
-        CollectibleAssemblyLoadContext context,
         CapturingHandler handler,
         HttpClient client,
         Type interfaceType,
@@ -93,17 +91,12 @@ public sealed class ObservableReturnRequestBuildingLiveTests
                     $"Generated compilation failed: {string.Join(Environment.NewLine, result.CompilationErrors)}");
             }
 
-            var (assembly, loadContext) = Fixture.EmitAndLoad(result);
-            var interfaceType = assembly.GetType("Refit.LiveObservable.IObservableApi", throwOnError: true)!;
-            var generatedType = assembly
-                .GetTypes()
-                .Single(type => type.IsClass && interfaceType.IsAssignableFrom(type));
-
+            var interfaceType = typeof(Refit.LiveObservable.IObservableApi);
             var handler = new CapturingHandler();
             var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
-            var requestBuilder = RequestBuilder.ForType(interfaceType, new RefitSettings());
-            var generatedApi = Activator.CreateInstance(generatedType, [client, requestBuilder])!;
-            return new(loadContext, handler, client, interfaceType, generatedApi, requestBuilder);
+            var requestBuilder = RequestBuilder.ForType(interfaceType, new());
+            var generatedApi = RestService.For(interfaceType, client, requestBuilder);
+            return new(handler, client, interfaceType, generatedApi, requestBuilder);
         }
 
         /// <summary>Invokes a method on the generated client, returning the cold observable it produces.</summary>
@@ -145,7 +138,6 @@ public sealed class ObservableReturnRequestBuildingLiveTests
         {
             client.Dispose();
             handler.Dispose();
-            context.Dispose();
         }
     }
 

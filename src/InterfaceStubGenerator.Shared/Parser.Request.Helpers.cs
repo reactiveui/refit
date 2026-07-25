@@ -73,13 +73,10 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the path is supported.</returns>
     /// <remarks>A no-leading-slash path is supported: it resolves against the base address under RFC 3986 and throws
     /// under legacy resolution at request time, exactly as the reflection request builder validates it.</remarks>
-    internal static bool IsPathSupported(string path)
-    {
-        return IsPathTemplateValid(path)
+    internal static bool IsPathSupported(string path) => IsPathTemplateValid(path)
             && path.IndexOf('\\') < 0
             && path.IndexOf('\r') < 0
             && path.IndexOf('\n') < 0;
-    }
 
     /// <summary>Prepends the client interface's shared route prefix to a method's relative path.</summary>
     /// <param name="prefix">The shared route prefix, or an empty/whitespace string for a no-op.</param>

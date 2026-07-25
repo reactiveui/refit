@@ -186,7 +186,7 @@ public partial class HttpClientFactoryExtensionsTests
         {
             var parameter = request.Headers.Authorization?.Parameter ?? string.Empty;
             await onRequest().ConfigureAwait(false);
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(parameter) };
+            return new(HttpStatusCode.OK) { Content = new StringContent(parameter) };
         }
     }
 

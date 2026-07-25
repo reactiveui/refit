@@ -11,7 +11,8 @@
       "CodeCoverage": {
         "ModulePaths": {
           "Include": [
-            ".*[\\\\/]Refit(\\..+)?\\.dll$"
+            ".*[\\\\/]Refit(?:\\.[^\\\\/]+)?\\.dll$",
+            ".*[\\\\/]InterfaceStubGeneratorV[23]\\.dll$"
           ],
           "Exclude": [
             ".*Tests\\.dll$",
