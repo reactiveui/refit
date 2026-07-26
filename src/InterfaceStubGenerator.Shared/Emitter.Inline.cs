@@ -490,41 +490,47 @@ internal static partial class Emitter
             AppendSetHeader(sb, bodyIndent, requestLocal, name, value, settingsLocal);
         }
 
-        foreach (var parameter in request.Parameters)
-        {
-            switch (parameter.Kind)
-            {
-                case RequestParameterKind.Header:
-                    {
-                        // An [Authorize] parameter carries a "{scheme} " prefix; a plain [Header] has none.
-                        var headerValueExpression = parameter.HeaderValuePrefix is { } valuePrefix
-                            ? new InterpolatedStringBuilder().AppendLiteral(valuePrefix).AppendExpression(BuildHeaderValueExpression(parameter)).Build()
-                            : BuildHeaderValueExpression(parameter);
-                        sb ??= new PooledStringBuilder();
-                        var headerName = ToCSharpStringLiteral(parameter.HeaderName);
-                        AppendSetHeader(sb, bodyIndent, requestLocal, headerName, headerValueExpression, settingsLocal);
-                        break;
-                    }
-
-                case RequestParameterKind.HeaderCollection:
-                    {
-                        sb ??= new PooledStringBuilder();
-                        _ = sb.Append(bodyIndent).Append("global::Refit.GeneratedRequestRunner.AddHeaderCollection(")
-                            .Append(requestLocal).Append(ArgumentSeparator).Append("@").Append(parameter.Name)
-                            .Append(ArgumentSeparator).Append(settingsLocal).Append(ValidateHeadersMember).AppendLine(");");
-                        break;
-                    }
-
-                default:
-                    {
-                        // All other parameter kinds (Path, Query, Body, Property, CancellationToken, ...)
-                        // are not headers and contribute nothing to header application here.
-                        break;
-                    }
-            }
-        }
-
+        AppendInlineParameterHeaders(ref sb, request.Parameters, bodyIndent, requestLocal, settingsLocal);
         return sb?.ToString() ?? string.Empty;
+    }
+
+    /// <summary>Appends dynamic parameter headers to the generated request body.</summary>
+    /// <param name="sb">The lazily allocated output buffer.</param>
+    /// <param name="parameters">The request parameters.</param>
+    /// <param name="bodyIndent">The method-body indentation.</param>
+    /// <param name="requestLocal">The generated request-message local.</param>
+    /// <param name="settingsLocal">The generated settings local.</param>
+    internal static void AppendInlineParameterHeaders(
+        ref PooledStringBuilder? sb,
+        ImmutableEquatableArray<RequestParameterModel> parameters,
+        string bodyIndent,
+        string requestLocal,
+        string settingsLocal)
+    {
+        foreach (var parameter in parameters)
+        {
+            if (parameter.HeaderName.Length > 0)
+            {
+                // HeaderName is independent of the primary binding kind so one parameter can also bind the path.
+                var headerValueExpression = parameter.HeaderValuePrefix is { } valuePrefix
+                    ? new InterpolatedStringBuilder().AppendLiteral(valuePrefix).AppendExpression(BuildHeaderValueExpression(parameter)).Build()
+                    : BuildHeaderValueExpression(parameter);
+                sb ??= new PooledStringBuilder();
+                var headerName = ToCSharpStringLiteral(parameter.HeaderName);
+                AppendSetHeader(sb, bodyIndent, requestLocal, headerName, headerValueExpression, settingsLocal);
+                continue;
+            }
+
+            if (parameter.Kind != RequestParameterKind.HeaderCollection)
+            {
+                continue;
+            }
+
+            sb ??= new PooledStringBuilder();
+            _ = sb.Append(bodyIndent).Append("global::Refit.GeneratedRequestRunner.AddHeaderCollection(")
+                .Append(requestLocal).Append(ArgumentSeparator).Append("@").Append(parameter.Name)
+                .Append(ArgumentSeparator).Append(settingsLocal).Append(ValidateHeadersMember).AppendLine(");");
+        }
     }
 
     /// <summary>Appends one <c>SetHeader</c> statement directly into the header buffer.</summary>

@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <Compile Include="..\InterfaceStubGenerator.Shared\**\*.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\Polyfills\NotNullWhenAttribute.cs" Link="Polyfills\NotNullWhenAttribute.cs"/>
   </ItemGroup>
 
   <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">

@@ -341,12 +341,6 @@ public sealed class RefitInterfaceAnalyzerTests
             .Contains(GeneratedRequestBuildingFallbackDiagnosticId);
     }
 
-    /// <summary>Verifies HTTP path extraction handles missing attribute data.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GetHttpPathReturnsEmptyForMissingAttribute() =>
-        await Assert.That(RefitInterfaceAnalyzer.GetHttpPath(null)).IsEqualTo(string.Empty);
-
     /// <summary>Verifies IDisposable inheritance does not produce RF001.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

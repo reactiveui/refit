@@ -20,11 +20,12 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Refit.GeneratorTests"/>
-    <InternalsVisibleTo Include="Refit.Analyzers.Tests"/>
+    <InternalsVisibleTo Include="Refit.Analyzers.Internals.Tests"/>
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\Refit.Analyzers.Shared\**\*.cs" LinkBase="Refit.Analyzers.Shared"/>
+    <Compile Include="..\Polyfills\NotNullWhenAttribute.cs" Link="Polyfills\NotNullWhenAttribute.cs"/>
   </ItemGroup>
 
   <ItemGroup Label="Shared generator request classification (keeps RF006 in lockstep with CanGenerateInline)">

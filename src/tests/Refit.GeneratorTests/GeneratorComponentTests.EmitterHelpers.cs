@@ -39,6 +39,9 @@ public static partial class GeneratorComponentTests
         /// <summary>The populated part count used by join helper tests.</summary>
         private const int PopulatedPartCount = 2;
 
+        /// <summary>The generated parameter attribute-provider field name used by emitter helper tests.</summary>
+        private const string ParameterInfoFieldName = "parameterInfo";
+
         /// <summary>Verifies escaping every special C# string-literal character.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
@@ -92,12 +95,47 @@ public static partial class GeneratorComponentTests
                 true);
             var source = new PooledStringBuilder();
 
-            Emitter.BuildParameterInfoField(parameter, "Get", "parameterInfo", source);
-            Emitter.AppendIndexedCollectionQueryStatements(source, parameter, query, "parameterInfo", emission);
+            Emitter.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
+            Emitter.AppendIndexedCollectionQueryStatements(source, parameter, query, ParameterInfoFieldName, emission);
 
             var generated = source.ToString();
             await Assert.That(generated).Contains("GeneratedParameterAttributeProvider.Empty");
             await Assert.That(generated).Contains("foreach (var item in @items)");
+        }
+
+        /// <summary>Verifies parameter attributes are grouped by type without changing their declaration order.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task BuildParameterInfoFieldGroupsRepeatedAttributeTypes()
+        {
+            const string QueryAttributeType = "global::Refit.QueryAttribute";
+            const string AliasAttributeType = "global::Refit.AliasAsAttribute";
+            var emptyArguments = ImmutableEquatableArray<string>.Empty;
+            var emptyNamedArguments = ImmutableEquatableArray<NamedAttributeArgument>.Empty;
+            var attributes = ImmutableEquatableArrayFactory.FromArray(
+                [
+                    new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments),
+                    new ParameterAttributeModel(AliasAttributeType, emptyArguments, emptyNamedArguments),
+                    new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments),
+                ]);
+            var parameter = new RequestParameterModel(
+                "id",
+                "int",
+                null,
+                attributes,
+                RequestParameterKind.Path,
+                CanBeNull: false,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                BodyBufferMode.None);
+            var source = new PooledStringBuilder();
+
+            Emitter.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
+
+            await Assert.That(source.ToString()).Contains(
+                "{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute()} }, " +
+                "{ typeof(global::Refit.AliasAsAttribute), new object[] { new global::Refit.AliasAsAttribute()} }");
         }
 
         /// <summary>Verifies the string-literal escape lookup for special, line-terminator, and verbatim characters.</summary>

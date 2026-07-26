@@ -178,9 +178,19 @@ internal static partial class Parser
             return new(bodyParameter, bodyEligible, 1, 0, 0);
         }
 
-        if (TryParseHeaderParameter(parameter, parameterType, context.Generation, out var headerParameter))
+        if (TryGetHeaderName(parameter, out var headerName))
         {
-            return new(headerParameter, true, 0, 0, 0);
+            return ParseBoundPathParameter(parameter, parameterType, context) is { } pathParameter
+                ? pathParameter with
+                {
+                    Parameter = pathParameter.Parameter with { HeaderName = headerName },
+                }
+                : new(
+                    BuildHeaderParameter(parameter, parameterType, headerName, context.Generation),
+                    true,
+                    0,
+                    0,
+                    0);
         }
 
         if (TryParseHeaderCollectionParameter(parameter, parameterType, context.Generation, out var headerCollectionParameter))
