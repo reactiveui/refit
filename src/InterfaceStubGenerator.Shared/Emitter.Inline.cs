@@ -498,7 +498,7 @@ internal static partial class Emitter
                     {
                         // An [Authorize] parameter carries a "{scheme} " prefix; a plain [Header] has none.
                         var headerValueExpression = parameter.HeaderValuePrefix is { } valuePrefix
-                            ? $"{ToCSharpStringLiteral(valuePrefix)} + {BuildHeaderValueExpression(parameter)}"
+                            ? new InterpolatedStringBuilder().AppendLiteral(valuePrefix).AppendExpression(BuildHeaderValueExpression(parameter)).Build()
                             : BuildHeaderValueExpression(parameter);
                         sb ??= new PooledStringBuilder();
                         var headerName = ToCSharpStringLiteral(parameter.HeaderName);

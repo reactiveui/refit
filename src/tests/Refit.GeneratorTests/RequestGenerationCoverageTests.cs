@@ -243,8 +243,8 @@ public sealed partial class RequestGenerationCoverageTests
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
         await Assert.That(generated).Contains("\"Authorization\"");
-        await Assert.That(generated).Contains("\"Bearer \"");
-        await Assert.That(generated).Contains("\"Token \"");
+        await Assert.That(generated).Contains("\"Bearer {");
+        await Assert.That(generated).Contains("\"Token {");
     }
 
     /// <summary>Verifies a dotted path placeholder whose intermediate segment property does not exist falls back.</summary>

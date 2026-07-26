@@ -159,6 +159,7 @@ public sealed class IndexedCollectionGenerationTests
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(result.GeneratedSources[Hint]).Contains("items[{");
+        await Assert.That(result.GeneratedSources[Hint]).Contains("}.Id");
     }
 
     /// <summary>Verifies a Indexed collection whose element type has a scalar collection property flattens inline

@@ -506,7 +506,7 @@ internal static partial class Emitter
         _ = builder.Append('"');
         foreach (var c in value)
         {
-            AppendEscapedCharacter(builder, c);
+            AppendEscapedCharacter(builder, c, false);
         }
 
         _ = builder.Append('"');
@@ -598,5 +598,75 @@ internal static partial class Emitter
             {{methodIndent}}}
 
             """);
+    }
+
+    /// <summary>Represents a builder for interpolated strings.</summary>
+    internal sealed class InterpolatedStringBuilder
+    {
+        /// <summary>The internal string builder used to accumulate the interpolated string content.</summary>
+        private readonly PooledStringBuilder _builder;
+
+        /// <summary>Indicates if the builder has any content.</summary>
+        private bool _hasContent;
+
+        /// <summary>Initializes a new instance of the <see cref="InterpolatedStringBuilder"/> class.</summary>
+        internal InterpolatedStringBuilder()
+        {
+            _builder = new();
+        }
+
+        /// <summary>Appends a c# expression to the interpolated string.</summary>
+        /// <param name="expression">The C# expression.</param>
+        /// <returns>The interpolated string builder.</returns>
+        internal InterpolatedStringBuilder AppendExpression(string expression)
+        {
+            Initialize();
+            _ = _builder.Append('{').Append(expression).Append('}');
+            return this;
+        }
+
+        /// <summary>Appends a literal.</summary>
+        /// <param name="literal">The literal string.</param>
+        /// <returns>The interpolated string builder.</returns>
+        internal InterpolatedStringBuilder AppendLiteral(string literal)
+        {
+            Initialize();
+            foreach (var c in literal)
+            {
+                AppendEscapedCharacter(_builder, c, true);
+            }
+
+            return this;
+        }
+
+        /// <summary>Builds the final interpolated string representation.</summary>
+        /// <returns>The interpolated string.</returns>
+        internal string Build() => _builder.Append('"').ToString();
+
+        /// <summary>Builds the final raw string representation without the final quote.</summary>
+        /// <returns>The raw string.</returns>
+        internal string BuildRaw() => _builder.ToString();
+
+        /// <summary>Appends the specified raw string to the builder.</summary>
+        /// <param name="raw">The raw string.</param>
+        /// <returns>The interpolated string builder.</returns>
+        internal InterpolatedStringBuilder FromRaw(string raw)
+        {
+            _ = _builder.Append(raw);
+            _hasContent = true;
+            return this;
+        }
+
+        /// <summary>Initializes the builder if it has not been initialized.</summary>
+        private void Initialize()
+        {
+            if (_hasContent)
+            {
+                return;
+            }
+
+            _hasContent = true;
+            _ = _builder.Append('$').Append('"');
+        }
     }
 }

@@ -2,11 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -51,12 +46,12 @@ public static partial class GeneratorComponentTests
         {
             var builder = new PooledStringBuilder();
 
-            foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\u0085', '\u2028', '\u2029', 'x' })
+            foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\u0085', '\u2028', '\u2029', '{', '}', 'x' })
             {
-                Emitter.AppendEscapedCharacter(builder, value);
+                Emitter.AppendEscapedCharacter(builder, value, false);
             }
 
-            await Assert.That(builder.ToString()).IsEqualTo("""\\\"\0\a\b\f\n\r\t\v\u0085\u2028\u2029x""");
+            await Assert.That(builder.ToString()).IsEqualTo("""\\\"\0\a\b\f\n\r\t\v\u0085\u2028\u2029{}x""");
         }
 
         /// <summary>Verifies unguarded indexed query emission and the shared empty parameter provider.</summary>
