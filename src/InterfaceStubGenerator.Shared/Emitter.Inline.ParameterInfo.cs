@@ -68,29 +68,13 @@ internal static partial class Emitter
     /// <param name="sb">The target builder.</param>
     internal static void BuildParameterInfoField(in RequestParameterModel parameter, string method, string paramInfoFieldName, PooledStringBuilder sb)
     {
-        // Build the initializer.
         var memberIndent = Indent(MethodMemberIndentation);
-        Dictionary<string, List<ParameterAttributeModel>> grouped = new();
-
-        foreach (var attribute in parameter.Attributes)
-        {
-            var key = $"typeof({attribute.TypeExpression})";
-            if (grouped.TryGetValue(key, out var groupedAttributes))
-            {
-                groupedAttributes.Add(attribute);
-            }
-            else
-            {
-                grouped.Add(key, [attribute]);
-            }
-        }
-
         _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
             .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
             .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
 
         // A parameter with no attributes shares the singleton empty provider instead of allocating an empty dictionary.
-        if (grouped.Count == 0)
+        if (parameter.Attributes.Count == 0)
         {
             _ = sb.AppendLine("global::Refit.GeneratedParameterAttributeProvider.Empty;");
             return;
@@ -98,24 +82,69 @@ internal static partial class Emitter
 
         const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
         _ = sb.Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("() {");
-        var i = 0;
-        foreach (var kv in grouped)
+        var groupIndex = 0;
+        for (var attributeIndex = 0; attributeIndex < parameter.Attributes.Count; attributeIndex++)
         {
-            _ = AppendJoining("{ ", i, sb).Append(kv.Key).Append(", new object[] { ");
-            i++;
-            var argIndex = 0;
-            foreach (var arg in kv.Value)
+            var attribute = parameter.Attributes[attributeIndex];
+            if (HasEarlierAttributeOfType(parameter.Attributes, attributeIndex, attribute.TypeExpression))
             {
-                // Multiple attributes of the same type must be comma-separated inside the array.
-                _ = AppendSeparator(argIndex, sb);
-                argIndex++;
-                AppendAttributeValue(arg, sb);
+                continue;
             }
 
+            _ = AppendJoining("{ typeof(", groupIndex, sb).Append(attribute.TypeExpression).Append("), new object[] { ");
+            groupIndex++;
+            AppendAttributesOfType(parameter.Attributes, attributeIndex, attribute.TypeExpression, sb);
             _ = sb.Append("} }");
         }
 
         _ = sb.Append('}').AppendLine(");");
+    }
+
+    /// <summary>Determines whether an attribute type has already been emitted.</summary>
+    /// <param name="attributes">The parameter attributes.</param>
+    /// <param name="attributeIndex">The current attribute index.</param>
+    /// <param name="typeExpression">The current attribute type expression.</param>
+    /// <returns><see langword="true"/> when an earlier attribute has the same type.</returns>
+    internal static bool HasEarlierAttributeOfType(
+        ImmutableEquatableArray<ParameterAttributeModel> attributes,
+        int attributeIndex,
+        string typeExpression)
+    {
+        for (var i = 0; i < attributeIndex; i++)
+        {
+            if (string.Equals(attributes[i].TypeExpression, typeExpression, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Appends every attribute of one type without allocating a temporary grouping collection.</summary>
+    /// <param name="attributes">The parameter attributes.</param>
+    /// <param name="startIndex">The first attribute index to inspect.</param>
+    /// <param name="typeExpression">The attribute type expression to append.</param>
+    /// <param name="sb">The target builder.</param>
+    internal static void AppendAttributesOfType(
+        ImmutableEquatableArray<ParameterAttributeModel> attributes,
+        int startIndex,
+        string typeExpression,
+        PooledStringBuilder sb)
+    {
+        var emittedCount = 0;
+        for (var i = startIndex; i < attributes.Count; i++)
+        {
+            var attribute = attributes[i];
+            if (!string.Equals(attribute.TypeExpression, typeExpression, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            _ = AppendSeparator(emittedCount, sb);
+            emittedCount++;
+            AppendAttributeValue(attribute, sb);
+        }
     }
 
     /// <summary>Assigns the unique cached field name for each attribute-provider parameter and emits its field.</summary>

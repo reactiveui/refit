@@ -208,17 +208,11 @@ internal static partial class Parser
         return false;
     }
 
-    /// <summary>Tries to parse a dynamic header parameter.</summary>
+    /// <summary>Tries to resolve a dynamic header name.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
-    /// <param name="parameterType">The parameter type display string.</param>
-    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
-    /// <param name="headerParameter">Receives the header parameter model.</param>
+    /// <param name="headerName">Receives the trimmed header name.</param>
     /// <returns><see langword="true"/> when the parameter has a supported header attribute.</returns>
-    internal static bool TryParseHeaderParameter(
-        IParameterSymbol parameter,
-        string parameterType,
-        in InterfaceGenerationContext context,
-        out RequestParameterModel headerParameter)
+    internal static bool TryGetHeaderName(IParameterSymbol parameter, [NotNullWhen(true)] out string? headerName)
     {
         foreach (var attribute in parameter.GetAttributes())
         {
@@ -228,29 +222,42 @@ internal static partial class Parser
             }
 
             var arguments = attribute.ConstructorArguments;
-            if (arguments.IsEmpty || arguments[0].Value is not string headerName ||
-                string.IsNullOrWhiteSpace(headerName))
+            if (arguments.IsEmpty || arguments[0].Value is not string candidateHeaderName ||
+                string.IsNullOrWhiteSpace(candidateHeaderName))
             {
                 continue;
             }
 
-            headerParameter = new(
-                parameter.MetadataName,
-                parameterType,
-                null,
-                BuildParameterAttributes(parameter, context),
-                RequestParameterKind.Header,
-                CanBeNull(parameter.Type, parameter.NullableAnnotation),
-                headerName.Trim(),
-                string.Empty,
-                string.Empty,
-                BodyBufferMode.None);
+            headerName = candidateHeaderName.Trim();
             return true;
         }
 
-        headerParameter = default;
+        headerName = null;
         return false;
     }
+
+    /// <summary>Builds a dynamic header parameter.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="headerName">The resolved header name.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The header request model.</returns>
+    internal static RequestParameterModel BuildHeaderParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        string headerName,
+        in InterfaceGenerationContext context) =>
+        new(
+            parameter.MetadataName,
+            parameterType,
+            null,
+            BuildParameterAttributes(parameter, context),
+            RequestParameterKind.Header,
+            CanBeNull(parameter.Type, parameter.NullableAnnotation),
+            headerName,
+            string.Empty,
+            string.Empty,
+            BodyBufferMode.None);
 
     /// <summary>Tries to parse a dynamic header collection parameter.</summary>
     /// <param name="parameter">The parameter to inspect.</param>

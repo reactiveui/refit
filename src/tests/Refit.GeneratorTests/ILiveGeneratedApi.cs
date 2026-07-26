@@ -24,4 +24,19 @@ internal interface ILiveGeneratedApi
         [HeaderCollection] IDictionary<string, string> headers,
         [Property("parameter-tenant")] int tenantId,
         CancellationToken cancellationToken);
+
+    /// <summary>Gets a response with one identifier bound to both the path and a header.</summary>
+    /// <param name="id">The identifier used by both request bindings.</param>
+    /// <returns>The response body.</returns>
+    [Get("/users/{id}")]
+    Task<string> GetPathAndHeader([Header("X-Id")] int id);
+
+    /// <summary>Gets a response with one aliased identifier bound to both the path and a header.</summary>
+    /// <param name="id">The identifier used by both request bindings.</param>
+    /// <returns>The response body.</returns>
+    [Get("/users/{userId}")]
+    Task<string> GetAliasedPathAndHeader(
+        [AliasAs("userId")]
+        [Header("X-User-Id")]
+        int id);
 }

@@ -9,9 +9,10 @@ namespace Refit.Generator;
 /// <param name="Type">The fully-qualified parameter type.</param>
 /// <param name="Locations">The parameter's location in the URL template string, when this is a path parameter.</param>
 /// <param name="Attributes">The parameter's attributes.</param>
-/// <param name="Kind">The generated request binding kind.</param>
+/// <param name="Kind">The primary generated request binding kind.</param>
 /// <param name="CanBeNull">Whether generated code must null-check the parameter before dereferencing.</param>
-/// <param name="HeaderName">The request header name, when this is a header parameter.</param>
+/// <param name="HeaderName">The request header name when the parameter contributes a dynamic header, independently
+/// of its primary binding kind.</param>
 /// <param name="PropertyKey">The request property key, when this is a property parameter.</param>
 /// <param name="BodySerializationMethod">The Refit body serialization method name, when this is a body parameter.</param>
 /// <param name="BodyBufferMode">The body buffering mode, when this is a body parameter.</param>
