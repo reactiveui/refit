@@ -46,12 +46,12 @@ public static partial class GeneratorComponentTests
         {
             var builder = new PooledStringBuilder();
 
-            foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\u0085', '\u2028', '\u2029', 'x' })
+            foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\u0085', '\u2028', '\u2029', '{', '}', 'x' })
             {
                 Emitter.AppendEscapedCharacter(builder, value, false);
             }
 
-            await Assert.That(builder.ToString()).IsEqualTo("""\\\"\0\a\b\f\n\r\t\v\u0085\u2028\u2029x""");
+            await Assert.That(builder.ToString()).IsEqualTo("""\\\"\0\a\b\f\n\r\t\v\u0085\u2028\u2029{}x""");
         }
 
         /// <summary>Verifies unguarded indexed query emission and the shared empty parameter provider.</summary>
