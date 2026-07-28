@@ -49,7 +49,12 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task RefitMethod()
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "whatever", refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(
+                global::System.Net.Http.HttpMethod.Get,
+                global::Refit.GeneratedRequestRunner.BuildRelativeUri(
+                this.Client,
+                "whatever",
+                refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApiDisposable));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "RefitMethod");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "whatever");

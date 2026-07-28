@@ -74,9 +74,21 @@ internal static partial class Emitter
     {
         // A template with placeholders but no bound path parameters still runs the unmatched-placeholder
         // check so AllowUnmatchedRouteParameters keeps its reflection-path semantics.
+        var indent = Indent(MethodBodyIndentation + MethodBodyIndentation);
         return TryBuildInlinePathFastExpression(request, parameterInfoNames, emission)
             ?? (parameters.Length > 0 || request.Path.IndexOf('{') >= 0
-                ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}, {settingsLocal}.AllowUnmatchedRouteParameters{parameters})"
+                ? new PooledStringBuilder()
+                .AppendLine("global::Refit.GeneratedRequestRunner.BuildRequestPath(")
+                .Append(indent)
+                .Append(ToCSharpStringLiteral(request.Path))
+                .AppendLine(",")
+                .Append(indent)
+                .Append(settingsLocal)
+                .AppendLine(".AllowUnmatchedRouteParameters")
+                .Append(indent)
+                .Append(parameters)
+                .Append(")")
+                .ToString()
                 : ToCSharpStringLiteral(request.Path));
     }
 

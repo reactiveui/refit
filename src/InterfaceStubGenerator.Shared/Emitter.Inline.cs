@@ -586,13 +586,35 @@ internal static partial class Emitter
     /// <param name="request">The parsed request model.</param>
     /// <param name="requestPathExpression">The built path-and-query expression.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="bodyIndent">The indentation for the body.</param>
     /// <returns>The generated <c>BuildRelativeUri</c> call.</returns>
     /// <remarks>A <c>[QueryUriFormat]</c> method re-encodes the whole path and query with the attribute's UriFormat,
     /// matching the reflection builder's final GetComponents pass; every other method uses the direct relative URI.</remarks>
-    internal static string BuildRelativeUriExpression(in RequestModel request, string requestPathExpression, string settingsLocal) =>
-        request.QueryUriFormat is { } queryUriFormat
-            ? $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution, (global::System.UriFormat){queryUriFormat})"
-            : $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
+    internal static string BuildRelativeUriExpression(in RequestModel request, string requestPathExpression, string settingsLocal, string bodyIndent)
+    {
+        var buffer = new PooledStringBuilder()
+            .AppendLine("global::Refit.GeneratedRequestRunner.BuildRelativeUri(")
+            .Append(bodyIndent)
+            .AppendLine("this.Client,")
+            .Append(bodyIndent)
+            .Append(requestPathExpression)
+            .AppendLine(",")
+            .Append(bodyIndent)
+            .Append(settingsLocal)
+            .Append(".UrlResolution");
+        if (request.QueryUriFormat is { } queryUriFormat)
+        {
+            _ = buffer
+            .AppendLine(",")
+            .Append(bodyIndent)
+            .Append("(global::System.UriFormat)")
+            .Append(queryUriFormat);
+        }
+
+        return buffer
+        .Append(')')
+        .ToString();
+    }
 
     /// <summary>Finds the first request parameter of the given kind.</summary>
     /// <param name="request">The request model to inspect.</param>

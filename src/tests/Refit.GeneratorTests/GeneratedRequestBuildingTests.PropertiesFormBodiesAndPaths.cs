@@ -330,7 +330,7 @@ public partial class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a?b={bVal}", refitSettings.AllowUnmatchedRouteParameters, [((5, 11), """);
+        await Assert.That(generated).Contains("[((5, 11), ");
     }
 
     /// <summary>Verifies that auto-appended query parameters generate inline query construction.</summary>

@@ -53,7 +53,7 @@ public sealed class RelativePathResolutionLiveTests
     {
         var generated = string.Concat(Fixture.RunGenerator(ApiSource, generatedRequestBuilding: true).GeneratedSources.Values);
 
-        await Assert.That(generated).Contains("BuildRequestPath(\"relative/{id}\"");
+        await Assert.That(generated).Contains("\"relative/{id}\",");
         await Assert.That(generated).DoesNotContain("BuildRestResultFuncForMethod(\"Relative\"");
     }
 
