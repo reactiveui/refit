@@ -34,7 +34,7 @@ internal static partial class Emitter
         // the base-address merge; every other method builds a relative URI merged onto the base address.
         var requestUriExpression = HasUrlParameter(request)
             ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
-            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal, bodyIndent);
+            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal);
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
             plan.BodyParameter,
             uniqueNames,
@@ -110,7 +110,7 @@ internal static partial class Emitter
         // the base-address merge; every other method builds a relative URI merged onto the base address.
         var requestUriExpression = HasUrlParameter(request)
             ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
-            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal, bodyIndent);
+            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal);
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
             plan.BodyParameter,
             uniqueNames,
@@ -149,9 +149,9 @@ internal static partial class Emitter
             .Append(bodyIndent).Append("var ").Append(settingsLocal).Append(" = ").Append(settingsFieldName).AppendLine(";")
             .Append(prologue)
             .Append(bodyIndent).Append("var ").Append(requestLocal)
-            .Append(" = new global::System.Net.Http.HttpRequestMessage(")
-            .AppendLine().Append(bodyIndent).Append(httpMethodExpression)
-            .Append(",").AppendLine().Append(bodyIndent).Append(requestUriExpression).AppendLine(");")
+            .Append(" = new global::System.Net.Http.HttpRequestMessage(").AppendLine()
+            .Append(bodyIndent).Append(httpMethodExpression).Append(",").AppendLine()
+            .Append(bodyIndent).Append(requestUriExpression).AppendLine(");")
             .Append(contentSource)
             .Append(headerSource);
         AppendInlineRequestProperties(builder, request, interfaceModel, methodModel, requestLocal, settingsLocal);

@@ -53,9 +53,18 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                (refitUseDefaultFormatting ? global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, (7, 13), @user) : global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, [((7, 13), global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @user, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(int)))])),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    (refitUseDefaultFormatting
+                    ? global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/users/{user}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        (7, 13),
+                        @user)
+                    : global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/users/{user}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((7, 13), global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @user, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(int)))])),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "Get");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users/{user}");

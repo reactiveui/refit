@@ -53,12 +53,12 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                global::Refit.GeneratedRequestRunner.BuildRequestPath(
-                                "/users/{username}",
-                                refitSettings.AllowUnmatchedRouteParameters
-                                , [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/users/{username}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUser");
@@ -82,12 +82,12 @@ namespace Refit.Implementation
                 {
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                global::Refit.GeneratedRequestRunner.BuildRequestPath(
-                                "/users/{username}",
-                                refitSettings.AllowUnmatchedRouteParameters
-                                , [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/users/{username}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUserObservable");
@@ -113,12 +113,12 @@ namespace Refit.Implementation
                 {
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                global::Refit.GeneratedRequestRunner.BuildRequestPath(
-                                "/users/{userName}",
-                                refitSettings.AllowUnmatchedRouteParameters
-                                , [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/users/{userName}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUserCamelCase");
@@ -144,12 +144,12 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                global::Refit.GeneratedRequestRunner.BuildRequestPath(
-                                "/orgs/{orgname}/members",
-                                refitSettings.AllowUnmatchedRouteParameters
-                                , [((6, 15), refitUseDefaultFormatting ? (@orgName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @orgName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/orgs/{orgname}/members",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((6, 15), refitUseDefaultFormatting ? (@orgName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @orgName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetOrgMembers");
@@ -178,9 +178,9 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                refitQueryBuilder.Build(),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    refitQueryBuilder.Build(),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "FindUsers");
@@ -203,9 +203,9 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                "/",
-                refitSettings.UrlResolution));
+                    this.Client,
+                    "/",
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetIndex");
@@ -228,9 +228,9 @@ namespace Refit.Implementation
                 global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
                 {
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                "/",
-                refitSettings.UrlResolution));
+                    this.Client,
+                    "/",
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetIndexObservable");
@@ -255,9 +255,9 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                "/give-me-some-404-action",
-                refitSettings.UrlResolution));
+                    this.Client,
+                    "/give-me-some-404-action",
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "NothingToSeeHere");
@@ -280,9 +280,9 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                "/give-me-some-404-action",
-                refitSettings.UrlResolution));
+                    this.Client,
+                    "/give-me-some-404-action",
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "NothingToSeeHereWithMetadata");
@@ -306,12 +306,12 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                global::Refit.GeneratedRequestRunner.BuildRequestPath(
-                                "/users/{username}",
-                                refitSettings.AllowUnmatchedRouteParameters
-                                , [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/users/{username}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUserWithMetadata");
@@ -335,12 +335,12 @@ namespace Refit.Implementation
                 {
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                global::Refit.GeneratedRequestRunner.BuildRequestPath(
-                                "/users/{username}",
-                                refitSettings.AllowUnmatchedRouteParameters
-                                , [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/users/{username}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUserObservableWithMetadata");
@@ -366,12 +366,12 @@ namespace Refit.Implementation
                 {
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                global::Refit.GeneratedRequestRunner.BuildRequestPath(
-                                "/users/{username}",
-                                refitSettings.AllowUnmatchedRouteParameters
-                                , [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/users/{username}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((7, 17), refitUseDefaultFormatting ? (@userName) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @userName, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUserIApiResponseObservableWithMetadata");
@@ -396,9 +396,9 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Post,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                "/users",
-                refitSettings.UrlResolution));
+                    this.Client,
+                    "/users",
+                    refitSettings.UrlResolution));
                 refitRequest.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<global::Refit.Tests.User>(
                     refitSettings,
                     @user,
@@ -426,9 +426,9 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Post,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                "/users",
-                refitSettings.UrlResolution));
+                    this.Client,
+                    "/users",
+                    refitSettings.UrlResolution));
                 refitRequest.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<global::Refit.Tests.User>(
                     refitSettings,
                     @user,

@@ -207,7 +207,7 @@ internal static partial class Emitter
         replacements.Sort(static (left, right) => left.Start.CompareTo(right.Start));
 
         var parametersSb = new PooledStringBuilder();
-        var indent = Indent(MethodBodyIndentation + MethodBodyIndentation);
+        var indent = Indent(MethodBodyIndentation + 1 + 1);
 
         var first = true;
         foreach (var replacement in replacements)

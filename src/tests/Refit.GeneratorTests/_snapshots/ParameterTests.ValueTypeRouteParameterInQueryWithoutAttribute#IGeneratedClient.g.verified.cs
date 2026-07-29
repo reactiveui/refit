@@ -53,12 +53,12 @@ namespace Refit.Implementation
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
                 global::System.Net.Http.HttpMethod.Get,
                 global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                this.Client,
-                global::Refit.GeneratedRequestRunner.BuildRequestPath(
-                                "/todos?q={q}",
-                                refitSettings.AllowUnmatchedRouteParameters
-                                , [((9, 12), refitUseDefaultFormatting ? (@q) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @q, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
-                refitSettings.UrlResolution));
+                    this.Client,
+                    global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                        "/todos?q={q}",
+                        refitSettings.AllowUnmatchedRouteParameters,
+                        [((9, 12), refitUseDefaultFormatting ? (@q) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @q, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                    refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "Find");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/todos?q={q}");
