@@ -149,8 +149,8 @@ internal static partial class Emitter
             .Append(bodyIndent).Append("var ").Append(settingsLocal).Append(" = ").Append(settingsFieldName).AppendLine(";")
             .Append(prologue)
             .Append(bodyIndent).Append("var ").Append(requestLocal)
-            .Append(" = new global::System.Net.Http.HttpRequestMessage(").AppendLine()
-            .Append(bodyIndent).Append(httpMethodExpression).Append(",").AppendLine()
+            .AppendLine(" = new global::System.Net.Http.HttpRequestMessage(")
+            .Append(bodyIndent).Append(httpMethodExpression).AppendLine(",")
             .Append(bodyIndent).Append(requestUriExpression).AppendLine(");")
             .Append(contentSource)
             .Append(headerSource);
