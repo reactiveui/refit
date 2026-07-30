@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Linq;
+
 namespace Refit.Generator;
 
 /// <summary>Emits the cached parameter attribute-provider fields and the parameters argument for the inline path.</summary>
@@ -93,17 +95,34 @@ internal static partial class Emitter
 
         _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
             .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
-            .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
+            .Append(memberIndent).Append("private static readonly global::System.Reflection.ICustomAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
 
         // A parameter with no attributes shares the singleton empty provider instead of allocating an empty dictionary.
         if (grouped.Count == 0)
         {
-            _ = sb.AppendLine("global::Refit.GeneratedParameterAttributeProvider.Empty;");
+            _ = sb.AppendLine("global::Refit.GeneratedRequestRunner.EmptyAttributeProvider;");
+            return;
+        }
+
+        if (grouped.Count == 1)
+        {
+            var attribute = grouped.First();
+            _ = sb.Append("global::Refit.GeneratedRequestRunner.BuildAttributeProvider(").Append(attribute.Key).Append(", new object[] { ");
+            var argIndex = 0;
+            foreach (var arg in attribute.Value)
+            {
+                // Multiple attributes of the same type must be comma-separated inside the array.
+                _ = AppendSeparator(argIndex, sb);
+                argIndex++;
+                AppendAttributeValue(arg, sb);
+            }
+
+            _ = sb.Append("});");
             return;
         }
 
         const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
-        _ = sb.Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("() {");
+        _ = sb.Append("new global::Refit.BuildAttributeProvider(new ").Append(dictType).Append("() {");
         var i = 0;
         foreach (var kv in grouped)
         {
@@ -146,7 +165,7 @@ internal static partial class Emitter
 
             if (parameter.Attributes.Count == 0)
             {
-                dict.Add(parameter.Name, "global::Refit.GeneratedParameterAttributeProvider.Empty");
+                dict.Add(parameter.Name, "global::Refit.GeneratedRequestRunner.EmptyAttributeProvider");
                 continue;
             }
 

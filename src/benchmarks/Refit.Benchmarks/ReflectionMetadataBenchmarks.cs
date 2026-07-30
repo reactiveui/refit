@@ -10,7 +10,7 @@ namespace Refit.Benchmarks;
 
 /// <summary>
 /// Allocation micro-benchmarks for the runtime reflection metadata helpers: <c>ReflectionPropertyHelpers</c> readable
-/// property enumeration (all-readable fast path and the filtered slow path) and <see cref="GeneratedParameterAttributeProvider"/>
+/// property enumeration (all-readable fast path and the filtered slow path) and <see cref="ManyParameterAttributeProvider"/>
 /// attribute flattening and lookups (uncached first access, memoized access, and type-filtered access).
 /// </summary>
 [MemoryDiagnoser]
@@ -35,7 +35,7 @@ public class ReflectionMetadataBenchmarks
     private readonly Type _filteredType = typeof(PartiallyReadableModel);
 
     /// <summary>A pre-built provider whose attributes are already flattened, used by the memoized-access benchmark.</summary>
-    private GeneratedParameterAttributeProvider _cachedProvider = null!;
+    private ManyParameterAttributeProvider _cachedProvider = null!;
 
     /// <summary>Warms the memoized provider before the benchmarks run.</summary>
     [GlobalSetup]
@@ -63,13 +63,13 @@ public class ReflectionMetadataBenchmarks
     /// <returns>The flattened attribute count.</returns>
     [Benchmark]
     [BenchmarkCategory("Attributes")]
-    public int FlattenAttributes() => GeneratedParameterAttributeProvider.FlattenAttributes(_attributes).Length;
+    public int FlattenAttributes() => ManyParameterAttributeProvider.FlattenAttributes(_attributes).Length;
 
     /// <summary>Flattens all attributes on first access through a fresh provider (uncached).</summary>
     /// <returns>The flattened attribute count.</returns>
     [Benchmark]
     [BenchmarkCategory("Attributes")]
-    public int GetAllAttributesUncached() => new GeneratedParameterAttributeProvider(_attributes).GetCustomAttributes(true).Length;
+    public int GetAllAttributesUncached() => new ManyParameterAttributeProvider(_attributes).GetCustomAttributes(true).Length;
 
     /// <summary>Returns the memoized flattened attributes on a warmed provider.</summary>
     /// <returns>The flattened attribute count.</returns>

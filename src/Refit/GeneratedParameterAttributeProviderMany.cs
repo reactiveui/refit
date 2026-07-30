@@ -8,11 +8,8 @@ namespace Refit;
 
 /// <summary>Provides parameter attributes for generated code.</summary>
 /// <param name="attributes">The attribute information.</param>
-public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[]> attributes) : ICustomAttributeProvider
+internal sealed class GeneratedParameterAttributeProviderMany(Dictionary<Type, object[]> attributes) : ICustomAttributeProvider
 {
-    /// <summary>A shared provider for parameters that declare no attributes, avoiding a per-parameter empty dictionary.</summary>
-    public static readonly GeneratedParameterAttributeProvider Empty = new([]);
-
     /// <summary>The lazily flattened array of every attribute, memoized on first access.</summary>
     private object[]? _allAttributes;
 

@@ -91,7 +91,7 @@ public class TestUrlFormatter : IUrlParameterFormatter
 
     /// <summary>
     /// Compares two providers of different kinds by the attributes they expose. Generated request
-    /// building supplies a synthetic <see cref="GeneratedParameterAttributeProvider"/> instead of the
+    /// building supplies a synthetic <see cref="ManyParameterAttributeProvider"/> instead of the
     /// reflection <see cref="ParameterInfo"/>, so the formatter matches on the attribute metadata both
     /// providers carry rather than on the concrete provider type.
     /// </summary>

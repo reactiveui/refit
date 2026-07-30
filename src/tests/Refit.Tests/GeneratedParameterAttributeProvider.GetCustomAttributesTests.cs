@@ -11,7 +11,7 @@ public partial class GeneratedParameterAttributeProviderTests
     [Test]
     public void GetCustomAttributesThrowsForNullType()
     {
-        var provider = new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>());
+        var provider = new ManyParameterAttributeProvider(new Dictionary<Type, object[]>());
 
 #nullable disable
         _ = Assert.Throws<ArgumentNullException>(() => _ = provider.GetCustomAttributes(null, false));
@@ -23,7 +23,7 @@ public partial class GeneratedParameterAttributeProviderTests
     [Test]
     public async Task GetCustomAttributesReturnsEmptyArrayForEmptyProvider()
     {
-        var provider = new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>());
+        var provider = new ManyParameterAttributeProvider(new Dictionary<Type, object[]>());
 
         var result = provider.GetCustomAttributes(typeof(QueryAttribute), false);
 
@@ -36,7 +36,7 @@ public partial class GeneratedParameterAttributeProviderTests
     public async Task GetCustomAttributesReturnsAttributesArray()
     {
         var provider =
-            new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>
+            new ManyParameterAttributeProvider(new Dictionary<Type, object[]>
             {
                 { typeof(QueryAttribute), [new QueryAttribute()] }
             });
@@ -52,7 +52,7 @@ public partial class GeneratedParameterAttributeProviderTests
     public async Task GetCustomAttributesWithNoTypeReturnsAttributesArray()
     {
         var provider =
-            new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>
+            new ManyParameterAttributeProvider(new Dictionary<Type, object[]>
             {
                 { typeof(QueryAttribute), [new QueryAttribute()] },
                 { typeof(AliasAsAttribute), [new AliasAsAttribute("foo")] }

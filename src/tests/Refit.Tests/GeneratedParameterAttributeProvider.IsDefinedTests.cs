@@ -12,7 +12,7 @@ public partial class GeneratedParameterAttributeProviderTests
     [Test]
     public async Task IsDefinedReturnsFalseForEmptyProvider()
     {
-        var provider = new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>());
+        var provider = new ManyParameterAttributeProvider(new Dictionary<Type, object[]>());
 
         var isDefined = provider.IsDefined(typeof(QueryAttribute), false);
 
@@ -24,7 +24,7 @@ public partial class GeneratedParameterAttributeProviderTests
     [Test]
     public async Task IsDefinedReturnsFalseForUnavailableTypeInProvider()
     {
-        var provider = new GeneratedParameterAttributeProvider(
+        var provider = new ManyParameterAttributeProvider(
             new Dictionary<Type, object[]> { { typeof(AliasAsAttribute), [new AliasAsAttribute("foo")] } });
 
         var isDefined = provider.IsDefined(typeof(QueryAttribute), false);
@@ -37,7 +37,7 @@ public partial class GeneratedParameterAttributeProviderTests
     [Test]
     public async Task IsDefinedReturnsTrueForAvailableTypeInProvider()
     {
-        var provider = new GeneratedParameterAttributeProvider(
+        var provider = new ManyParameterAttributeProvider(
             new Dictionary<Type, object[]> { { typeof(QueryAttribute), [new QueryAttribute()] } });
 
         var isDefined = provider.IsDefined(typeof(QueryAttribute), false);

@@ -11,6 +11,9 @@ namespace Refit;
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static partial class GeneratedRequestRunner
 {
+    /// <summary>A shared provider for parameters that declare no attributes.</summary>
+    public static readonly ICustomAttributeProvider EmptyAttributeProvider = new GeneratedParameterAttributeProviderSingle(typeof(GeneratedParameterAttributeProviderSingle), []);
+
     /// <summary>The underlying value of the obsolete <c>BodySerializationMethod.Json</c> member.</summary>
     private const int ObsoleteJsonBodySerializationMethodValue = 1;
 
@@ -18,6 +21,17 @@ public static partial class GeneratedRequestRunner
     /// host is irrelevant because <see cref="UriComponents.PathAndQuery"/> ignores it; it mirrors the reflection builder's
     /// own base so the two produce byte-identical output.</summary>
     private static readonly Uri QueryUriFormatBase = new("https://api", UriKind.Absolute);
+
+    /// <summary>Creates a <see cref="GeneratedParameterAttributeProviderSingle"/> for parameters with a single attribute type.</summary>
+    /// <param name="type">Type of the custom attribute.</param>
+    /// <param name="attributes">The attribute information.</param>
+    /// <returns>A <see cref="GeneratedParameterAttributeProviderSingle"/> corresponding to a method parameter.</returns>
+    public static ICustomAttributeProvider BuildAttributeProvider(Type type, object[] attributes) => new GeneratedParameterAttributeProviderSingle(type, attributes);
+
+    /// <summary>Creates a <see cref="GeneratedParameterAttributeProviderMany"/> for parameters with many attribute types.</summary>
+    /// <param name="attributes">The attribute information.</param>
+    /// <returns>A <see cref="GeneratedParameterAttributeProviderMany"/> corresponding to a method parameter.</returns>
+    public static ICustomAttributeProvider BuildAttributeProvider(Dictionary<Type, object[]> attributes) => new GeneratedParameterAttributeProviderMany(attributes);
 
     /// <summary>Builds the relative request URI for a generated request, joining the client base address with the method path.</summary>
     /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
