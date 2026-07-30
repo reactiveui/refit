@@ -637,10 +637,17 @@ internal static partial class RequestExecutionHelpers
             .ConfigureAwait(false);
     }
 
-    /// <summary>Attempts to buffer content into memory, ignoring buffering failures.</summary>
+    /// <summary>Attempts to buffer content into memory, ignoring buffering failures but honouring cancellation.</summary>
     /// <param name="content">The content to buffer.</param>
     /// <param name="cancellationToken">A token to cancel buffering.</param>
     /// <returns>A task that completes once buffering has been attempted.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when the caller cancelled while buffering.</exception>
+    /// <remarks>
+    /// Buffering is best-effort: a failure just means the serializer reads the live stream instead. Cancellation is
+    /// not, because continuing would hand the serializer partially consumed content. The check sits after the catch
+    /// rather than in a filter on it, so it also covers the targets whose <c>LoadIntoBufferAsync</c> polyfill drops
+    /// the token and therefore never throws.
+    /// </remarks>
     internal static async Task TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
     {
         try
@@ -651,6 +658,8 @@ internal static partial class RequestExecutionHelpers
         {
             _ = bufferingException;
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
     }
 
     /// <summary>The outcome of attempting to send a request.</summary>
