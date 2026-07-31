@@ -1,20 +1,86 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": ["local>reactiveui/.github:renovate"],
+    "extends": [
+        "local>reactiveui/.github:renovate"
+    ],
     "semanticCommits": "enabled",
     "packageRules": [
         {
             "description": "Legacy System.* compatibility packages are pinned to their 4.x line for the net4*/netstandard targets. Cap Renovate below 5.0.0 so the .NET monorepo v10 updates do not bump these and break those targets. The modern 10.x System.* entries (selected by the IsTargetFrameworkCompatible bands) are unaffected because this rule only matches versions currently on 4.x.",
-            "matchManagers": ["nuget"],
-            "matchPackageNames": ["/^System\\./"],
+            "matchManagers": [
+                "nuget"
+            ],
+            "matchPackageNames": [
+                "/^System\\./"
+            ],
             "matchCurrentVersion": "/^4\\./",
             "allowedVersions": "<5.0.0"
         },
         {
             "description": "Hold the Roslyn (Microsoft.CodeAnalysis.*) toolchain at its current versions for back-compatibility. The source generator multi-targets Roslyn 3.8/4.1/5.0 and the test/benchmark tooling tracks the 4.x line; these move together only as a deliberate toolchain bump, not via automated updates.",
-            "matchManagers": ["nuget"],
-            "matchPackageNames": ["/^Microsoft\\.CodeAnalysis/"],
+            "matchManagers": [
+                "nuget"
+            ],
+            "matchPackageNames": [
+                "/^Microsoft\\.CodeAnalysis/"
+            ],
             "enabled": false
+        },
+        {
+            "description": "Analyzer packages all gate the build through the same warnings-as-errors pass, so landing them separately just means several red CI runs in a row. Move them in one PR.",
+            "matchManagers": [
+                "nuget"
+            ],
+            "groupName": "analyzers",
+            "matchPackageNames": [
+                "/^Roslynator\\./",
+                "/^SonarAnalyzer\\./",
+                "/Sharp\\.Analyzers$/",
+                "/^Microsoft\\.VisualStudio\\.Threading\\.Analyzers$/"
+            ]
+        },
+        {
+            "description": "Packaging, versioning and symbol tooling. These affect how the package is produced, never the shipped API, so they are safe to move as one.",
+            "matchManagers": [
+                "nuget"
+            ],
+            "groupName": "build tooling",
+            "matchPackageNames": [
+                "/^MinVer$/",
+                "/^Microsoft\\.SourceLink\\./"
+            ]
+        },
+        {
+            "description": "Verify.TUnit is built against a specific TUnit version. The shared preset groups TUnit separately from Verify.*, which can split a matched pair across two PRs and red the build; keep them together here.",
+            "matchManagers": [
+                "nuget"
+            ],
+            "groupName": "TUnit",
+            "matchPackageNames": [
+                "/^TUnit(\\.|$)/",
+                "/^Verify\\./"
+            ]
+        },
+        {
+            "description": "Serilog sinks are versioned against the Serilog core they bind to.",
+            "matchManagers": [
+                "nuget"
+            ],
+            "groupName": "Serilog",
+            "matchPackageNames": [
+                "/^Serilog(\\.|$)/"
+            ]
+        },
+        {
+            "description": "Test and benchmark helpers that sit outside the framework cohorts the shared preset already groups.",
+            "matchManagers": [
+                "nuget"
+            ],
+            "groupName": "test tooling",
+            "matchPackageNames": [
+                "/^AutoFixture(\\.|$)/",
+                "/^BenchmarkDotNet(\\.|$)/"
+            ]
         }
     ]
 }
