@@ -46,7 +46,7 @@ namespace Refit.Implementation
                 _settings = settings;
             }
             /// <summary>Cached attribute provider for the generated Find method's q parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______qAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>() {{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute()} }});
+            private static readonly global::System.Reflection.ICustomAttributeProvider ______qAttributeProvider = new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute() });
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<string[]> Find(string? @q)
