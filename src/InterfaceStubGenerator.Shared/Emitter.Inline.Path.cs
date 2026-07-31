@@ -64,7 +64,7 @@ internal static partial class Emitter
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="parameters">The default path builder argument fragment.</param>
-    /// <param name="methodIndent">The indentation level for the method.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     /// <returns>The generated path expression.</returns>
     internal static string BuildInlinePathExpression(
         in RequestModel request,
@@ -72,11 +72,11 @@ internal static partial class Emitter
         in InlineValueEmission emission,
         string settingsLocal,
         string parameters,
-        int methodIndent)
+        int methodAdditionalIndent)
     {
         // A template with placeholders but no bound path parameters still runs the unmatched-placeholder
         // check so AllowUnmatchedRouteParameters keeps its reflection-path semantics.
-        var expression = TryBuildInlinePathFastExpression(request, parameterInfoNames, emission, methodIndent);
+        var expression = TryBuildInlinePathFastExpression(request, parameterInfoNames, emission, methodAdditionalIndent);
         if (expression is not null)
         {
             return expression;
@@ -84,7 +84,7 @@ internal static partial class Emitter
 
         if (parameters.Length > 0 || request.Path.IndexOf('{') >= 0)
         {
-            var indent = Indent(HttpAdditionalBuildRequestPathIndentation + methodIndent);
+            var indent = Indent(HttpAdditionalBuildRequestPathIndentation + MethodBodyIndentation + methodAdditionalIndent);
             var stringBuilder = new PooledStringBuilder()
             .AppendLine("global::Refit.GeneratedRequestRunner.BuildRequestPath(")
             .Append(indent).Append(ToCSharpStringLiteral(request.Path)).AppendLine(",")
@@ -108,7 +108,7 @@ internal static partial class Emitter
     /// <param name="request">The parsed request model.</param>
     /// <param name="parameterInfoNames">The map of parameter name to cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <param name="methodIndent">The indentation level for the method.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>       
     /// <returns>The path expression using the span-formattable fast overload, or null to use the default path building.</returns>
     /// <remarks>The default-formatting branch formats the value straight into the path buffer (net6+ integers with no
     /// escaping, net10+ span-escaped values); a customized <c>IUrlParameterFormatter</c> falls back to the string overload.</remarks>
@@ -116,7 +116,7 @@ internal static partial class Emitter
         in RequestModel request,
         Dictionary<string, string> parameterInfoNames,
         in InlineValueEmission emission,
-        int methodIndent)
+        int methodAdditionalIndent)
     {
         RequestParameterModel? pathParameter = null;
         foreach (var parameter in request.Parameters)
@@ -153,8 +153,8 @@ internal static partial class Emitter
         var valueExpression = $"@{pathParameter.Value.Name}";
         _ = parameterInfoNames.TryGetValue(pathParameter.Value.Name, out var providerField);
 
-        var indentBuildRelativeUriParameter = Indent(HttpAdditionalBuildRelativeUriIndentation + methodIndent);
-        var indentBuilderBuildRequestPath = Indent(HttpAdditionalBuildRequestPathIndentation + methodIndent);
+        var indentBuildRelativeUriParameter = Indent(HttpAdditionalBuildRelativeUriIndentation + MethodBodyIndentation + methodAdditionalIndent);
+        var indentBuilderBuildRequestPath = Indent(HttpAdditionalBuildRequestPathIndentation + MethodBodyIndentation + methodAdditionalIndent);
         var stringBuilder = new PooledStringBuilder().Append('(').AppendLine(emission.UseDefaultFormattingLocal)
             .Append(indentBuildRelativeUriParameter).Append("? ");
         _ = BuildCommonInlinePathFastExpression(stringBuilder, indentBuilderBuildRequestPath, template, allowUnmatched)

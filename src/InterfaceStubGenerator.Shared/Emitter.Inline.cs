@@ -141,9 +141,9 @@ internal static partial class Emitter
             enumFormatterScope,
             paramInfoSb,
             interfaceModel.SupportsCollectionExpressions);
-        var methodIntent = MethodBodyIndentation + (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable ? 1 : 0);
-        var parameters = GetParametersArg(request, parameterInfoNames, emission, methodIntent);
-        var pathExpression = BuildInlinePathExpression(request, parameterInfoNames, emission, settingsLocal, parameters, methodIntent);
+        var methodAdditionalIntent = methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable ? 1 : 0;
+        var parameters = GetParametersArg(request, parameterInfoNames, emission, methodAdditionalIntent);
+        var pathExpression = BuildInlinePathExpression(request, parameterInfoNames, emission, settingsLocal, parameters, methodAdditionalIntent);
 
         var plan = new InlineMethodPlan(
             bodyParameter,
