@@ -4,7 +4,7 @@
 
 namespace Refit.Tests;
 
-/// <summary>GeneratedParameterAttributeProvider tests.</summary>
+/// <summary>Tests for the attribute provider keyed by attribute type.</summary>
 public partial class GeneratedParameterAttributeProviderTests
 {
     /// <summary>Test IsDefined returns false for empty provider.</summary>
@@ -17,6 +17,18 @@ public partial class GeneratedParameterAttributeProviderTests
         var isDefined = provider.IsDefined(typeof(QueryAttribute), false);
 
         await Assert.That(isDefined).IsFalse();
+    }
+
+    /// <summary>Test the shared empty provider reports no attributes at all.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EmptyProviderReportsNoAttributes()
+    {
+        var provider = GeneratedParameterAttributeProvider.Empty;
+
+        await Assert.That(provider.IsDefined(typeof(QueryAttribute), false)).IsFalse();
+        await Assert.That(provider.GetCustomAttributes(typeof(QueryAttribute), false)).IsEmpty();
+        await Assert.That(provider.GetCustomAttributes(false)).IsEmpty();
     }
 
     /// <summary>Test IsDefined returns false when type doesn't exist.</summary>

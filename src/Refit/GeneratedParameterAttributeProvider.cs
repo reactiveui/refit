@@ -6,7 +6,8 @@ using System.Reflection;
 
 namespace Refit;
 
-/// <summary>Provides parameter attributes for generated code.</summary>
+/// <summary>Provides the attributes declared on a parameter, keyed by attribute type. Use
+/// <see cref="GeneratedSingleTypeParameterAttributeProvider"/> instead when every attribute has the same type.</summary>
 /// <param name="attributes">The attribute information.</param>
 public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[]> attributes) : ICustomAttributeProvider
 {

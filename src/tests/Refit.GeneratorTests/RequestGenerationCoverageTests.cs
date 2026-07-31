@@ -155,7 +155,7 @@ public sealed partial class RequestGenerationCoverageTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("GeneratedParameterAttributeProvider");
+        await Assert.That(generated).Contains("new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(global::RefitGeneratorTest.TagAttribute)");
         await Assert.That(generated).Contains("new global::RefitGeneratorTest.TagAttribute(typeof(int), new[] { 1, 2 }");
         await Assert.That(generated).Contains("new global::RefitGeneratorTest.TagAttribute(typeof(string), new[] { 3 }");
         await Assert.That(generated).Contains("(global::System.DayOfWeek)");

@@ -71,12 +71,22 @@ internal static partial class Emitter
         var memberIndent = Indent(MethodMemberIndentation);
         _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
             .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
-            .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
+            .Append(memberIndent).Append("private static readonly global::System.Reflection.ICustomAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
 
         // A parameter with no attributes shares the singleton empty provider instead of allocating an empty dictionary.
         if (parameter.Attributes.Count == 0)
         {
             _ = sb.AppendLine("global::Refit.GeneratedParameterAttributeProvider.Empty;");
+            return;
+        }
+
+        // Attributes of a single type are held directly by their array, so the common case skips the dictionary entirely.
+        var firstTypeExpression = parameter.Attributes[0].TypeExpression;
+        if (!HasMultipleAttributeTypes(parameter.Attributes))
+        {
+            _ = sb.Append("new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(").Append(firstTypeExpression).Append("), new object[] { ");
+            AppendAttributesOfType(parameter.Attributes, 0, firstTypeExpression, sb);
+            _ = sb.AppendLine(" });");
             return;
         }
 
@@ -98,6 +108,23 @@ internal static partial class Emitter
         }
 
         _ = sb.Append('}').AppendLine(");");
+    }
+
+    /// <summary>Determines whether the attributes span more than one attribute type.</summary>
+    /// <param name="attributes">The parameter attributes, of which there is at least one.</param>
+    /// <returns><see langword="true"/> when at least two distinct attribute types are present.</returns>
+    internal static bool HasMultipleAttributeTypes(ImmutableEquatableArray<ParameterAttributeModel> attributes)
+    {
+        var firstTypeExpression = attributes[0].TypeExpression;
+        for (var i = 1; i < attributes.Count; i++)
+        {
+            if (!string.Equals(attributes[i].TypeExpression, firstTypeExpression, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Determines whether an attribute type has already been emitted.</summary>

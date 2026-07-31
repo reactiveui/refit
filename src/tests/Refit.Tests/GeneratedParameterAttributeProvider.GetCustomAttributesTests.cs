@@ -4,7 +4,7 @@
 
 namespace Refit.Tests;
 
-/// <summary>GeneratedParameterAttributeProvider tests.</summary>
+/// <summary>Tests for the attribute provider keyed by attribute type.</summary>
 public partial class GeneratedParameterAttributeProviderTests
 {
     /// <summary>Test throws ArgumentNullException for null type.</summary>

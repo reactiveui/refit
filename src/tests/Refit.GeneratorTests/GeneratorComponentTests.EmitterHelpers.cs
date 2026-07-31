@@ -138,6 +138,41 @@ public static partial class GeneratorComponentTests
                 "{ typeof(global::Refit.AliasAsAttribute), new object[] { new global::Refit.AliasAsAttribute()} }");
         }
 
+        /// <summary>Verifies a parameter carrying attributes of one type is emitted without a keyed dictionary.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task BuildParameterInfoFieldEmitsSingleTypeProviderForOneAttributeType()
+        {
+            const string QueryAttributeType = "global::Refit.QueryAttribute";
+            var emptyArguments = ImmutableEquatableArray<string>.Empty;
+            var emptyNamedArguments = ImmutableEquatableArray<NamedAttributeArgument>.Empty;
+            var attributes = ImmutableEquatableArrayFactory.FromArray(
+                [
+                    new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments),
+                    new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments),
+                ]);
+            var parameter = new RequestParameterModel(
+                "id",
+                "int",
+                null,
+                attributes,
+                RequestParameterKind.Path,
+                CanBeNull: false,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                BodyBufferMode.None);
+            var source = new PooledStringBuilder();
+
+            Emitter.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
+
+            var generated = source.ToString();
+            await Assert.That(generated).Contains(
+                "new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(global::Refit.QueryAttribute), " +
+                "new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute() });");
+            await Assert.That(generated).DoesNotContain("Dictionary");
+        }
+
         /// <summary>Verifies the string-literal escape lookup for special, line-terminator, and verbatim characters.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
