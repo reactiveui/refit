@@ -34,7 +34,7 @@ internal static partial class Emitter
         // the base-address merge; every other method builds a relative URI merged onto the base address.
         var requestUriExpression = HasUrlParameter(request)
             ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
-            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal, MethodBodyIndentation + 1);
+            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal, 1);
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
             plan.BodyParameter,
             uniqueNames,
@@ -111,7 +111,7 @@ internal static partial class Emitter
         // the base-address merge; every other method builds a relative URI merged onto the base address.
         var requestUriExpression = HasUrlParameter(request)
             ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
-            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal, MethodBodyIndentation);
+            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal, 0);
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
             plan.BodyParameter,
             uniqueNames,

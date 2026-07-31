@@ -588,13 +588,13 @@ internal static partial class Emitter
     /// <param name="request">The parsed request model.</param>
     /// <param name="requestPathExpression">The built path-and-query expression.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
-    /// <param name="methodIndent">The indentation level for the method.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     /// <returns>The generated <c>BuildRelativeUri</c> call.</returns>
     /// <remarks>A <c>[QueryUriFormat]</c> method re-encodes the whole path and query with the attribute's UriFormat,
     /// matching the reflection builder's final GetComponents pass; every other method uses the direct relative URI.</remarks>
-    internal static string BuildRelativeUriExpression(in RequestModel request, string requestPathExpression, string settingsLocal, int methodIndent)
+    internal static string BuildRelativeUriExpression(in RequestModel request, string requestPathExpression, string settingsLocal, int methodAdditionalIndent)
     {
-        var bodyAndExtraIndent = Indent(HttpAdditionalBuildRelativeUriIndentation + methodIndent);
+        var bodyAndExtraIndent = Indent(HttpAdditionalBuildRelativeUriIndentation + MethodBodyIndentation + methodAdditionalIndent);
         var stringBuilder = new PooledStringBuilder()
             .AppendLine("global::Refit.GeneratedRequestRunner.BuildRelativeUri(")
             .Append(bodyAndExtraIndent).AppendLine("this.Client,")
