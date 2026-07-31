@@ -154,62 +154,62 @@ internal static partial class Emitter
         switch (part.Kind)
         {
             case MultipartPartKind.HttpContent:
-                {
-                    _ = sb.Append(value).AppendLine(");");
-                    break;
-                }
+            {
+                _ = sb.Append(value).AppendLine(");");
+                break;
+            }
 
             case MultipartPartKind.MultipartItem:
-                {
-                    _ = sb.Append(value).Append(".ToContent(), ").Append(value).Append(".Name ?? ").Append(fieldName)
-                        .Append(", string.IsNullOrEmpty(").Append(value).Append(".FileName) ? ").Append(fileName)
-                        .Append(" : ").Append(value).AppendLine(".FileName);");
-                    break;
-                }
+            {
+                _ = sb.Append(value).Append(".ToContent(), ").Append(value).Append(".Name ?? ").Append(fieldName)
+                    .Append(", string.IsNullOrEmpty(").Append(value).Append(".FileName) ? ").Append(fileName)
+                    .Append(" : ").Append(value).AppendLine(".FileName);");
+                break;
+            }
 
             case MultipartPartKind.Stream:
-                {
-                    // Caller-owned stream: wrapped in non-disposing content so disposing the request never closes it.
-                    _ = sb.Append(CreateStreamContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
-                        .Append(fileName).AppendLine(");");
-                    break;
-                }
+            {
+                // Caller-owned stream: wrapped in non-disposing content so disposing the request never closes it.
+                _ = sb.Append(CreateStreamContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
+                    .Append(fileName).AppendLine(");");
+                break;
+            }
 
             case MultipartPartKind.String:
-                {
-                    _ = sb.Append(StringContentNew).Append(value).Append("), ").Append(fieldName).AppendLine(");");
-                    break;
-                }
+            {
+                _ = sb.Append(StringContentNew).Append(value).Append("), ").Append(fieldName).AppendLine(");");
+                break;
+            }
 
             case MultipartPartKind.FileInfo:
-                {
-                    _ = sb.Append(StreamContentNew).Append(value).Append(".OpenRead()), ").Append(fieldName).Append(", ")
-                        .Append(value).AppendLine(".Name);");
-                    break;
-                }
+            {
+                _ = sb.Append(StreamContentNew).Append(value).Append(".OpenRead()), ").Append(fieldName).Append(", ")
+                    .Append(value).AppendLine(".Name);");
+                break;
+            }
 
             case MultipartPartKind.ByteArray:
-                {
-                    _ = sb.Append(ByteArrayContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
-                        .Append(fileName).AppendLine(");");
-                    break;
-                }
+            {
+                _ = sb.Append(ByteArrayContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
+                    .Append(fileName).AppendLine(");");
+                break;
+            }
 
             case MultipartPartKind.Serialized:
-                {
-                    AppendSerializedMultipartArgument(sb, settingsLocal, value, fieldName);
-                    break;
-                }
+            {
+                AppendSerializedMultipartArgument(sb, settingsLocal, value, fieldName);
+                break;
+            }
 
             default:
-                {
-                    // Formattable: Guid/DateTime/etc. render through the form URL-encoded formatter, exactly as the
-                    // reflection builder's AddSerializedMultipartItem special case does.
-                    _ = sb.Append(StringContentNew).Append(settingsLocal)
-                        .Append(".FormUrlEncodedParameterFormatter.Format(").Append(value).Append(", null) ?? string.Empty), ")
-                        .Append(fieldName).AppendLine(");");
-                    break;
-                }
+            {
+                // Formattable: Guid/DateTime/etc. render through the form URL-encoded formatter, exactly as the
+                // reflection builder's AddSerializedMultipartItem special case does.
+                _ = sb.Append(StringContentNew).Append(settingsLocal)
+                    .Append(".FormUrlEncodedParameterFormatter.Format(").Append(value).Append(", null) ?? string.Empty), ")
+                    .Append(fieldName).AppendLine(");");
+                break;
+            }
         }
     }
 

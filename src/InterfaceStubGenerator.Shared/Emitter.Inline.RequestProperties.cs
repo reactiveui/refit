@@ -25,7 +25,7 @@ internal static partial class Emitter
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
-    /// <param name="settingsLocal">The generated settings local name.</param
+    /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     /// <returns>The generated request option/property statements.</returns>
     /// <remarks>The cold-observable shape reuses this block inside a string-interpolated construction block, so it
