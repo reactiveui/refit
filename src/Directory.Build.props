@@ -172,10 +172,7 @@
     <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all"/>
   </ItemGroup>
 
-  <!-- Per-TFM public-API tracking via Roslyn PublicApiAnalyzers (RS0016/RS0017/RS0037);
-       baselines live in <Project>/PublicAPI/<tfm>/. Only the shipped libraries are tracked;
-       the tests, benchmarks, examples, source generators, and the AOT smoke app opt out.
-       Run tools/generate-publicapi.sh after any public API change to refresh the baselines. -->
+  <!-- Public API baselines live in <Project>/PublicAPI/<tfm>/PublicAPI.txt; shipped libraries only. -->
   <PropertyGroup>
     <TrackPublicApi Condition="'$(TrackPublicApi)' == ''">true</TrackPublicApi>
     <TrackPublicApi Condition="$(MSBuildProjectDirectory.Contains('tests'))">false</TrackPublicApi>
@@ -183,11 +180,10 @@
     <TrackPublicApi Condition="$(MSBuildProjectDirectory.Contains('examples'))">false</TrackPublicApi>
     <TrackPublicApi Condition="$(MSBuildProjectName.Contains('InterfaceStubGenerator'))">false</TrackPublicApi>
     <TrackPublicApi Condition="$(MSBuildProjectName.Contains('NativeAotSmoke'))">false</TrackPublicApi>
+    <EnablePublicApiBaseline>$(TrackPublicApi)</EnablePublicApiBaseline>
   </PropertyGroup>
   <ItemGroup Condition="'$(TrackPublicApi)' == 'true'">
-    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all"/>
-    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI\$(TargetFramework)\PublicAPI.Shipped.txt"/>
-    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI\$(TargetFramework)\PublicAPI.Unshipped.txt"/>
+    <PackageReference Include="PublicApiSharp.Analyzers" PrivateAssets="all"/>
   </ItemGroup>
 
   <Target Name="AddCommitHashToAssemblyAttributes" BeforeTargets="GetAssemblyAttributes">
