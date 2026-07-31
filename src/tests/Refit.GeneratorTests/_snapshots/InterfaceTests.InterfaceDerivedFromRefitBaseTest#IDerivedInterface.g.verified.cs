@@ -50,11 +50,12 @@ namespace Refit.Implementation
             {
                 var refitSettings = _settings;
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(
-                global::System.Net.Http.HttpMethod.Get,
-                global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                    this.Client,
-                    "/users",
-                    refitSettings.UrlResolution));
+                    global::System.Net.Http.HttpMethod.Get,
+                    global::Refit.GeneratedRequestRunner.BuildRelativeUri(
+                        this.Client,
+                        "/users",
+                        refitSettings.UrlResolution)
+                );
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IDerivedInterface));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "Get");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users");

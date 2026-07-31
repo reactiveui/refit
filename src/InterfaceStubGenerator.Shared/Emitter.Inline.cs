@@ -141,8 +141,9 @@ internal static partial class Emitter
             enumFormatterScope,
             paramInfoSb,
             interfaceModel.SupportsCollectionExpressions);
-        var parameters = GetParametersArg(request, parameterInfoNames, emission);
-        var pathExpression = BuildInlinePathExpression(request, parameterInfoNames, emission, settingsLocal, parameters);
+        var methodIntent = MethodBodyIndentation + (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable ? 1 : 0);
+        var parameters = GetParametersArg(request, parameterInfoNames, emission, methodIntent);
+        var pathExpression = BuildInlinePathExpression(request, parameterInfoNames, emission, settingsLocal, parameters, methodIntent);
 
         var plan = new InlineMethodPlan(
             bodyParameter,
@@ -474,13 +475,14 @@ internal static partial class Emitter
     /// <param name="request">The parsed request model.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name, read for the header validation flag.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     /// <returns>The generated header statements.</returns>
-    internal static string BuildInlineHeaders(in RequestModel request, string requestLocal, string settingsLocal)
+    internal static string BuildInlineHeaders(in RequestModel request, string requestLocal, string settingsLocal, int methodAdditionalIndent)
     {
         // Append directly into a pooled buffer allocated only once a header is actually emitted; the previous
         // string[] + interpolated-fragment + ConcatParts shape allocated the array (and a validate-flag string) even
         // for the common header-less method. The emitted text is identical.
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation + methodAdditionalIndent);
         PooledStringBuilder? sb = null;
         foreach (var header in request.StaticHeaders)
         {
@@ -586,12 +588,13 @@ internal static partial class Emitter
     /// <param name="request">The parsed request model.</param>
     /// <param name="requestPathExpression">The built path-and-query expression.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="methodIndent">The indentation level for the method.</param>
     /// <returns>The generated <c>BuildRelativeUri</c> call.</returns>
     /// <remarks>A <c>[QueryUriFormat]</c> method re-encodes the whole path and query with the attribute's UriFormat,
     /// matching the reflection builder's final GetComponents pass; every other method uses the direct relative URI.</remarks>
-    internal static string BuildRelativeUriExpression(in RequestModel request, string requestPathExpression, string settingsLocal)
+    internal static string BuildRelativeUriExpression(in RequestModel request, string requestPathExpression, string settingsLocal, int methodIndent)
     {
-        var bodyAndExtraIndent = Indent(MethodBodyIndentation + 1);
+        var bodyAndExtraIndent = Indent(HttpAdditionalBuildRelativeUriIndentation + methodIndent);
         var stringBuilder = new PooledStringBuilder()
             .AppendLine("global::Refit.GeneratedRequestRunner.BuildRelativeUri(")
             .Append(bodyAndExtraIndent).AppendLine("this.Client,")

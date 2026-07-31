@@ -46,28 +46,36 @@ namespace Refit.Implementation
                 _settings = settings;
             }
             /// <inheritdoc />
-            public global::System.Threading.Tasks.ValueTask<string> Get()
+            public global::System.IObservable<global::System.Net.Http.HttpResponseMessage> GetUser(string @user)
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(
-                    global::System.Net.Http.HttpMethod.Get,
-                    global::Refit.GeneratedRequestRunner.BuildRelativeUri(
-                        this.Client,
-                        "/users",
-                        refitSettings.UrlResolution)
-                );
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                    var refitRequest = new global::System.Net.Http.HttpRequestMessage(
+                        global::System.Net.Http.HttpMethod.Get,
+                        global::Refit.GeneratedRequestRunner.BuildRelativeUri(
+                            this.Client,
+                            global::Refit.GeneratedRequestRunner.BuildRequestPath(
+                                "/users/{user}",
+                                refitSettings.AllowUnmatchedRouteParameters,
+                                [((7, 13), refitUseDefaultFormatting ? (@user) : global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @user, global::Refit.GeneratedParameterAttributeProvider.Empty, typeof(string)))]),
+                            refitSettings.UrlResolution)
+                    );
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
-                global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "Get");
-                global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users");
-                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { }); }
-                return new global::System.Threading.Tasks.ValueTask<string>(global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
+                global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetUser");
+                global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users/{user}");
+                if (refitSettings.CaptureMethodArguments) { global::Refit.GeneratedRequestRunner.AddRequestProperty<object?[]>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodArguments, new object?[] { @user }); }
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<global::System.Net.Http.HttpResponseMessage, global::System.Net.Http.HttpResponseMessage>(
                     this.Client,
-                    refitRequest,
+                    BuildRefitRequest,
                     refitSettings,
                     false,
-                    true,
                     false,
-                    global::System.Threading.CancellationToken.None));
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
         }
     }

@@ -35,13 +35,15 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
     /// <returns>The generated multipart content statements, ending with the request-content assignment.</returns>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     internal static string BuildInlineMultipartContent(
         in RequestModel request,
         string requestLocal,
         string settingsLocal,
-        UniqueNameBuilder locals)
+        UniqueNameBuilder locals,
+        int methodAdditionalIndent)
     {
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation + methodAdditionalIndent);
         var contentLocal = locals.New("refitMultipart");
 
         var sb = new PooledStringBuilder();
@@ -52,7 +54,7 @@ internal static partial class Emitter
         {
             if (parameter is { Kind: RequestParameterKind.MultipartPart, MultipartPart: { } part })
             {
-                AppendMultipartPart(sb, parameter, part, settingsLocal, contentLocal, locals);
+                AppendMultipartPart(sb, parameter, part, settingsLocal, contentLocal, locals, methodAdditionalIndent);
             }
         }
 
@@ -69,15 +71,17 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="contentLocal">The generated multipart content local name.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     internal static void AppendMultipartPart(
         PooledStringBuilder sb,
         in RequestParameterModel parameter,
         MultipartPartModel part,
         string settingsLocal,
         string contentLocal,
-        UniqueNameBuilder locals)
+        UniqueNameBuilder locals,
+        int methodAdditionalIndent)
     {
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation + methodAdditionalIndent);
         var valueExpression = $"@{parameter.Name}";
 
         // A reference-typed enumerable adds one part per element; a null collection contributes no parts, matching the
@@ -150,62 +154,62 @@ internal static partial class Emitter
         switch (part.Kind)
         {
             case MultipartPartKind.HttpContent:
-            {
-                _ = sb.Append(value).AppendLine(");");
-                break;
-            }
+                {
+                    _ = sb.Append(value).AppendLine(");");
+                    break;
+                }
 
             case MultipartPartKind.MultipartItem:
-            {
-                _ = sb.Append(value).Append(".ToContent(), ").Append(value).Append(".Name ?? ").Append(fieldName)
-                    .Append(", string.IsNullOrEmpty(").Append(value).Append(".FileName) ? ").Append(fileName)
-                    .Append(" : ").Append(value).AppendLine(".FileName);");
-                break;
-            }
+                {
+                    _ = sb.Append(value).Append(".ToContent(), ").Append(value).Append(".Name ?? ").Append(fieldName)
+                        .Append(", string.IsNullOrEmpty(").Append(value).Append(".FileName) ? ").Append(fileName)
+                        .Append(" : ").Append(value).AppendLine(".FileName);");
+                    break;
+                }
 
             case MultipartPartKind.Stream:
-            {
-                // Caller-owned stream: wrapped in non-disposing content so disposing the request never closes it.
-                _ = sb.Append(CreateStreamContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
-                    .Append(fileName).AppendLine(");");
-                break;
-            }
+                {
+                    // Caller-owned stream: wrapped in non-disposing content so disposing the request never closes it.
+                    _ = sb.Append(CreateStreamContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
+                        .Append(fileName).AppendLine(");");
+                    break;
+                }
 
             case MultipartPartKind.String:
-            {
-                _ = sb.Append(StringContentNew).Append(value).Append("), ").Append(fieldName).AppendLine(");");
-                break;
-            }
+                {
+                    _ = sb.Append(StringContentNew).Append(value).Append("), ").Append(fieldName).AppendLine(");");
+                    break;
+                }
 
             case MultipartPartKind.FileInfo:
-            {
-                _ = sb.Append(StreamContentNew).Append(value).Append(".OpenRead()), ").Append(fieldName).Append(", ")
-                    .Append(value).AppendLine(".Name);");
-                break;
-            }
+                {
+                    _ = sb.Append(StreamContentNew).Append(value).Append(".OpenRead()), ").Append(fieldName).Append(", ")
+                        .Append(value).AppendLine(".Name);");
+                    break;
+                }
 
             case MultipartPartKind.ByteArray:
-            {
-                _ = sb.Append(ByteArrayContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
-                    .Append(fileName).AppendLine(");");
-                break;
-            }
+                {
+                    _ = sb.Append(ByteArrayContentNew).Append(value).Append("), ").Append(fieldName).Append(", ")
+                        .Append(fileName).AppendLine(");");
+                    break;
+                }
 
             case MultipartPartKind.Serialized:
-            {
-                AppendSerializedMultipartArgument(sb, settingsLocal, value, fieldName);
-                break;
-            }
+                {
+                    AppendSerializedMultipartArgument(sb, settingsLocal, value, fieldName);
+                    break;
+                }
 
             default:
-            {
-                // Formattable: Guid/DateTime/etc. render through the form URL-encoded formatter, exactly as the
-                // reflection builder's AddSerializedMultipartItem special case does.
-                _ = sb.Append(StringContentNew).Append(settingsLocal)
-                    .Append(".FormUrlEncodedParameterFormatter.Format(").Append(value).Append(", null) ?? string.Empty), ")
-                    .Append(fieldName).AppendLine(");");
-                break;
-            }
+                {
+                    // Formattable: Guid/DateTime/etc. render through the form URL-encoded formatter, exactly as the
+                    // reflection builder's AddSerializedMultipartItem special case does.
+                    _ = sb.Append(StringContentNew).Append(settingsLocal)
+                        .Append(".FormUrlEncodedParameterFormatter.Format(").Append(value).Append(", null) ?? string.Empty), ")
+                        .Append(fieldName).AppendLine(");");
+                    break;
+                }
         }
     }
 

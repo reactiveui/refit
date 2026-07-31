@@ -25,16 +25,16 @@ internal static partial class Emitter
         var settingsLocal = plan.SettingsLocal;
         var requestLocal = plan.RequestLocal;
         var emission = plan.Emission;
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var innerBodyIndent = Indent(MethodBodyIndentation + 1);
 
-        var requestPrologueSource = BuildInlineRequestPrologue(request, plan, bodyIndent, out var requestPathExpression);
+        var requestPrologueSource = BuildInlineRequestPrologue(request, plan, innerBodyIndent, out var requestPathExpression);
         var (httpMethodFieldSource, httpMethodExpression) = BuildHttpMethodField(request, uniqueNames);
 
         // A [Url] method dispatches to an absolute URI (the validated [Url] value with any query appended), bypassing
         // the base-address merge; every other method builds a relative URI merged onto the base address.
         var requestUriExpression = HasUrlParameter(request)
             ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
-            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal);
+            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal, MethodBodyIndentation + 1);
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
             plan.BodyParameter,
             uniqueNames,
@@ -45,19 +45,19 @@ internal static partial class Emitter
         // parameter (a multipart method never carries one), so the two paths never both apply.
         var contentSource = plan.BodyParameter is null
             ? string.Empty
-            : BuildInlineContent(plan.BodyParameter.Value, requestLocal, settingsLocal, formFieldsFieldName, interfaceModel.SupportsNullable, emission, plan.Locals);
+            : BuildInlineContent(plan, formFieldsFieldName, interfaceModel.SupportsNullable, emission, 1);
         if (request.IsMultipart)
         {
-            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, plan.Locals);
+            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, plan.Locals, 1);
         }
 
-        var headerSource = BuildInlineHeaders(request, requestLocal, settingsLocal);
-        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, methodModel, requestLocal, settingsLocal);
+        var headerSource = BuildInlineHeaders(request, requestLocal, settingsLocal, 1);
+        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, methodModel, requestLocal, settingsLocal, 1);
 
         // A method that declares a positive [Timeout] stashes it on the request so the send helpers apply it; every
         // other method emits nothing here and pays no per-call timeout cost.
         var timeoutSource = request.TimeoutMilliseconds > 0
-            ? $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetRequestTimeout({requestLocal}, {request.TimeoutMilliseconds});\n"
+            ? $"{innerBodyIndent}global::Refit.GeneratedRequestRunner.SetRequestTimeout({requestLocal}, {request.TimeoutMilliseconds});\n"
             : string.Empty;
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
 
@@ -101,6 +101,7 @@ internal static partial class Emitter
         var requestLocal = plan.RequestLocal;
         var bodyIndent = Indent(MethodBodyIndentation);
         var methodIndent = Indent(MethodMemberIndentation);
+        var httpRequestMessageIndent = Indent(MethodBodyIndentation + 1);
 
         var prologue = new PooledStringBuilder();
         var requestPathExpression = AppendInlineRequestPrologue(prologue, request, plan, bodyIndent);
@@ -110,7 +111,7 @@ internal static partial class Emitter
         // the base-address merge; every other method builds a relative URI merged onto the base address.
         var requestUriExpression = HasUrlParameter(request)
             ? $"new global::System.Uri({requestPathExpression}, global::System.UriKind.Absolute)"
-            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal);
+            : BuildRelativeUriExpression(request, requestPathExpression, settingsLocal, MethodBodyIndentation);
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
             plan.BodyParameter,
             uniqueNames,
@@ -121,13 +122,13 @@ internal static partial class Emitter
         // parameter (a multipart method never carries one), so the two paths never both apply.
         var contentSource = plan.BodyParameter is null
             ? string.Empty
-            : BuildInlineContent(plan.BodyParameter.Value, requestLocal, settingsLocal, formFieldsFieldName, interfaceModel.SupportsNullable, plan.Emission, plan.Locals);
+            : BuildInlineContent(plan, formFieldsFieldName, interfaceModel.SupportsNullable, plan.Emission, 0);
         if (request.IsMultipart)
         {
-            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, plan.Locals);
+            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, plan.Locals, 0);
         }
 
-        var headerSource = BuildInlineHeaders(request, requestLocal, settingsLocal);
+        var headerSource = BuildInlineHeaders(request, requestLocal, settingsLocal, 0);
 
         // A method that declares a positive [Timeout] stashes it on the request so the send helpers apply it; every
         // other method emits nothing here and pays no per-call timeout cost.
@@ -150,11 +151,12 @@ internal static partial class Emitter
             .Append(prologue)
             .Append(bodyIndent).Append("var ").Append(requestLocal)
             .AppendLine(" = new global::System.Net.Http.HttpRequestMessage(")
-            .Append(bodyIndent).Append(httpMethodExpression).AppendLine(",")
-            .Append(bodyIndent).Append(requestUriExpression).AppendLine(");")
+            .Append(httpRequestMessageIndent).Append(httpMethodExpression).AppendLine(",")
+            .Append(httpRequestMessageIndent).Append(requestUriExpression).AppendLine()
+            .Append(bodyIndent).AppendLine(");")
             .Append(contentSource)
             .Append(headerSource);
-        AppendInlineRequestProperties(builder, request, interfaceModel, methodModel, requestLocal, settingsLocal);
+        AppendInlineRequestProperties(builder, request, interfaceModel, methodModel, requestLocal, settingsLocal, 0);
 
         // The optional per-call timeout, then the send-and-deserialize statement (appended straight into the buffer,
         // dispatching on the return shape), then the method's closing brace.
@@ -180,6 +182,7 @@ internal static partial class Emitter
         var settingsLocal = plan.SettingsLocal;
         var requestLocal = plan.RequestLocal;
         var bodyIndent = Indent(MethodBodyIndentation);
+        var innerBodyIndent = Indent(MethodBodyIndentation + 1);
         var methodIndent = Indent(MethodMemberIndentation);
         var prologue = fragments.RequestPrologueSource;
         var httpMethod = fragments.HttpMethodExpression;
@@ -187,7 +190,10 @@ internal static partial class Emitter
 
         var methodPrefix = $"{plan.ParamInfoBuilder}{fragments.FormFieldsSource}{fragments.HttpMethodFieldSource}{fragments.Opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
         var requestConstruction = $$"""
-            {{prologue}}{{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{httpMethod}}, {{uri}});
+            {{prologue}}{{innerBodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage(
+            {{innerBodyIndent}}    {{httpMethod}},
+            {{innerBodyIndent}}    {{uri}}
+            {{innerBodyIndent}});
             {{fragments.ContentSource}}{{fragments.HeaderSource}}{{fragments.RequestPropertySource}}{{fragments.TimeoutSource}}
             """;
         var buildRequestLocal = plan.Locals.New("BuildRefitRequest");

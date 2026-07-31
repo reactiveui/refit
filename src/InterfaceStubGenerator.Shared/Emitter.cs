@@ -58,6 +58,12 @@ internal static partial class Emitter
     /// <summary>Indentation level for generated method constraints and statements.</summary>
     private const int MethodBodyIndentation = 4;
 
+    /// <summary>Indentation level for generated BuildRelativeUri relative to <see cref="MethodBodyIndentation"/>.</summary>
+    private const int HttpAdditionalBuildRelativeUriIndentation = 2;
+
+    /// <summary>Indentation level for generated BuildRequestPath relative to <see cref="MethodBodyIndentation"/>.</summary>
+    private const int HttpAdditionalBuildRequestPathIndentation = 3;
+
     /// <summary>The generated attribute that identifies source produced by this generator.</summary>
     private static readonly string GeneratedCodeAttribute = BuildGeneratedCodeAttribute();
 

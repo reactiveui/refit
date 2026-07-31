@@ -8,29 +8,28 @@ namespace Refit.Generator;
 internal static partial class Emitter
 {
     /// <summary>Builds request content assignment for an inline generated method.</summary>
-    /// <param name="bodyParameter">The body parameter model.</param>
-    /// <param name="requestLocal">The generated request message local name.</param>
-    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
     /// <param name="formFieldsFieldName">The cached form field descriptor array name, or null to use the reflection path.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <param name="locals">The method-scope unique local name builder.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     /// <returns>The generated content assignment.</returns>
     internal static string BuildInlineContent(
-        in RequestParameterModel bodyParameter,
-        string requestLocal,
-        string settingsLocal,
+        in InlineMethodPlan plan,
         string? formFieldsFieldName,
         bool supportsNullable,
         in InlineValueEmission emission,
-        UniqueNameBuilder locals)
+        int methodAdditionalIndent)
     {
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation + methodAdditionalIndent);
+        var requestLocal = plan.RequestLocal;
+        var settingsLocal = plan.SettingsLocal;
+        var bodyParameter = plan.BodyParameter!.Value;
         if (bodyParameter.BodySerializationMethod == "UrlEncoded")
         {
             if (IsUnrollableFormBody(bodyParameter))
             {
-                return BuildInlineFormUnroll(bodyParameter, requestLocal, supportsNullable, emission, locals);
+                return BuildInlineFormUnroll(bodyParameter, requestLocal, supportsNullable, emission, plan.Locals);
             }
 
             return formFieldsFieldName is not null
