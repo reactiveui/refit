@@ -18,3 +18,8 @@ static Refit.GeneratedRequestRunner.SerializeMultipartPart<T>(Refit.RefitSetting
 Refit.GeneratedQueryStringBuilder.AddPreEscapedKey(string! name, string? value, bool preEncoded) -> void
 Refit.GeneratedQueryStringBuilder.AddFormattedPreEscapedKey<T>(string! name, T value, string? format, bool preEncoded) -> void
 static Refit.GeneratedRequestRunner.BuildRequestPath<T>(string! relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value, string? format) -> string!
+Refit.GeneratedSingleTypeParameterAttributeProvider
+Refit.GeneratedSingleTypeParameterAttributeProvider.GeneratedSingleTypeParameterAttributeProvider(System.Type! type, object![]! attributes) -> void
+Refit.GeneratedSingleTypeParameterAttributeProvider.GetCustomAttributes(System.Type! attributeType, bool inherit) -> object![]!
+Refit.GeneratedSingleTypeParameterAttributeProvider.GetCustomAttributes(bool inherit) -> object![]!
+Refit.GeneratedSingleTypeParameterAttributeProvider.IsDefined(System.Type! attributeType, bool inherit) -> bool

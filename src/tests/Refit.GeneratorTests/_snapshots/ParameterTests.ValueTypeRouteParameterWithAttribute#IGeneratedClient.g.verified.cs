@@ -46,7 +46,7 @@ namespace Refit.Implementation
                 _settings = settings;
             }
             /// <summary>Cached attribute provider for the generated Get method's id parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______idAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>() {{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute(){ Format = "00" }} }});
+            private static readonly global::System.Reflection.ICustomAttributeProvider ______idAttributeProvider = new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute(){ Format = "00" } });
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<string> Get(int? @id)
