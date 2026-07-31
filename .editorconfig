@@ -1680,10 +1680,10 @@ dotnet_diagnostic.PSH1416.severity = error # Cache the serializer options instea
 dotnet_diagnostic.PSH1417.severity = error # Do not compute an expensive argument for an assertion
 
 ###################
-# PublicApiAnalyzers (RSxxxx) - public API surface tracking
+# Public API surface tracking (PASxxxx)
+# PAS0001/PAS0002/PAS0003/PAS0005 are errors by default and need no entry here.
 ###################
-dotnet_diagnostic.RS0016.severity = error # public symbol missing from the PublicAPI baseline
-dotnet_diagnostic.RS0017.severity = error # PublicAPI baseline entry no longer in source
+dotnet_diagnostic.PAS0004.severity = warning # no public API baseline for this target framework
 
 ###################
 # Trimming Analyzer Warnings (IL2001 - IL2123)

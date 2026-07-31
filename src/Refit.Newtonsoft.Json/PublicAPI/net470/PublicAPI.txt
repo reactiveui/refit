@@ -1,0 +1,11 @@
+namespace Refit;
+
+public sealed class NewtonsoftJsonContentSerializer : Refit.IHttpContentSerializer, Refit.ISynchronousContentDeserializer
+{
+    public NewtonsoftJsonContentSerializer() { }
+    public NewtonsoftJsonContentSerializer(Newtonsoft.Json.JsonSerializerSettings? jsonSerializerSettings) { }
+    public T? DeserializeFromString<T>(string content) { }
+    public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
+    public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
+    public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+}

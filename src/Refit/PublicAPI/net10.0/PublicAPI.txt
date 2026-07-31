@@ -1,0 +1,718 @@
+[assembly: System.Runtime.CompilerServices.DisableRuntimeMarshalling]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Benchmarks")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Reflection")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Tests")]
+namespace Refit;
+
+[System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+public sealed class AliasAsAttribute : System.Attribute
+{
+    public AliasAsAttribute(string name) { }
+    public string Name { get; }
+}
+public class ApiException : Refit.ApiExceptionBase
+{
+    protected ApiException(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders headers, Refit.RefitSettings refitSettings) { }
+    protected ApiException(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders headers, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
+    protected ApiException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders headers, Refit.RefitSettings refitSettings) { }
+    protected ApiException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders headers, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
+    public string? Content { get; set; }
+    public System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; protected set; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+    public bool HasContent { get; }
+    public System.Net.Http.Headers.HttpResponseHeaders Headers { get; }
+    public string? ReasonPhrase { get; }
+    public System.Net.HttpStatusCode StatusCode { get; }
+    public T? GetContentAs<T>() { }
+    public System.Threading.Tasks.Task<T?> GetContentAsAsync<T>() { }
+    public bool TryGetContentAs<T>(out T? content) { }
+    public static System.Threading.Tasks.Task<Refit.ApiException> Create(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings) { }
+    public static System.Threading.Tasks.Task<Refit.ApiException> Create(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
+    public static System.Threading.Tasks.Task<Refit.ApiException> Create(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings) { }
+    public static System.Threading.Tasks.Task<Refit.ApiException> Create(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
+}
+public abstract class ApiExceptionBase : System.Exception
+{
+    protected ApiExceptionBase(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings, System.Exception innerException) { }
+    protected ApiExceptionBase(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings) { }
+    protected ApiExceptionBase(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "RequestContent")]
+    public bool HasRequestContent { get; }
+    public System.Net.Http.HttpMethod HttpMethod { get; }
+    public Refit.RefitSettings RefitSettings { get; }
+    public string? RequestContent { get; set; }
+    public System.Net.Http.HttpRequestMessage RequestMessage { get; }
+    public System.Uri? Uri { get; }
+}
+public class ApiRequestException : Refit.ApiExceptionBase
+{
+    public ApiRequestException(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings, System.Exception innerException) { }
+    public ApiRequestException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings) { }
+    public ApiRequestException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
+}
+public sealed class ApiResponse<T> : Refit.IApiResponse<T>
+{
+    public ApiResponse(System.Net.Http.HttpResponseMessage response, T? content, Refit.RefitSettings settings) { }
+    public ApiResponse(System.Net.Http.HttpResponseMessage response, T? content, Refit.RefitSettings settings, Refit.ApiExceptionBase? error) { }
+    public ApiResponse(System.Net.Http.HttpRequestMessage request, System.Net.Http.HttpResponseMessage? response, T? content, Refit.RefitSettings settings, Refit.ApiExceptionBase? error = null) { }
+    public T? Content { get; }
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    public System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
+    public Refit.ApiExceptionBase? Error { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+    public bool HasContent { get; }
+    public System.Net.Http.Headers.HttpResponseHeaders? Headers { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Headers")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "StatusCode")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Version")]
+    public bool IsReceived { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Headers")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "StatusCode")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Version")]
+    public bool IsSuccessStatusCode { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Headers")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "StatusCode")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Version")]
+    public bool IsSuccessful { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+    public bool IsSuccessfulWithContent { get; }
+    public string? ReasonPhrase { get; }
+    public System.Net.Http.HttpRequestMessage RequestMessage { get; }
+    public Refit.RefitSettings Settings { get; }
+    public System.Net.HttpStatusCode? StatusCode { get; }
+    public System.Version? Version { get; }
+    public void Dispose() { }
+    public System.Threading.Tasks.ValueTask<Refit.ApiResponse<T>> EnsureSuccessStatusCodeAsync() { }
+    public System.Threading.Tasks.ValueTask<Refit.ApiResponse<T>> EnsureSuccessfulAsync() { }
+    public bool HasRequestError(out Refit.ApiRequestException? error) { }
+    public bool HasResponseError(out Refit.ApiException? error) { }
+}
+public static class ApiResponseExtensions
+{
+    extension(Refit.IApiResponse response)
+    {
+        public System.Threading.Tasks.ValueTask<Refit.IApiResponse> EnsureSuccessStatusCodeAsync() { }
+        public System.Threading.Tasks.ValueTask<Refit.IApiResponse> EnsureSuccessfulAsync() { }
+    }
+    extension(Refit.IApiResponse<T> response)
+    {
+        public System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>> EnsureSuccessStatusCodeAsync() { }
+        public System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>> EnsureSuccessfulAsync() { }
+    }
+}
+[System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+[System.Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem", false)]
+public sealed class AttachmentNameAttribute : System.Attribute
+{
+    public AttachmentNameAttribute(string name) { }
+    public string Name { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class AuthorizeAttribute : System.Attribute
+{
+    public AuthorizeAttribute(string scheme = "Bearer") { }
+    public string Scheme { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class BodyAttribute : System.Attribute
+{
+    public BodyAttribute() { }
+    public BodyAttribute(Refit.BodySerializationMethod serializationMethod) { }
+    public BodyAttribute(bool buffered) { }
+    public BodyAttribute(Refit.BodySerializationMethod serializationMethod, bool buffered) { }
+    public bool? Buffered { get; }
+    public Refit.BodySerializationMethod SerializationMethod { get; }
+}
+public enum BodySerializationMethod
+{
+    Default = 0,
+    [System.Obsolete("Use BodySerializationMethod.Serialized instead", false)]
+    Json = 1,
+    UrlEncoded = 2,
+    Serialized = 3,
+    JsonLines = 4,
+}
+public class ByteArrayPart : Refit.MultipartItem
+{
+    public ByteArrayPart(byte[] value, string fileName, string? contentType = null, string? name = null) { }
+    public byte[] Value { get; }
+    protected override System.Net.Http.HttpContent CreateContent() { }
+}
+public class CamelCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
+{
+    public CamelCaseUrlParameterKeyFormatter() { }
+    public string Format(string key) { }
+}
+public enum CollectionFormat
+{
+    RefitParameterFormatter = 0,
+    Csv = 1,
+    Ssv = 2,
+    Tsv = 3,
+    Pipes = 4,
+    Multi = 5,
+    Indexed = 6,
+}
+public class DefaultApiExceptionFactory
+{
+    public DefaultApiExceptionFactory(Refit.RefitSettings refitSettings) { }
+    public System.Threading.Tasks.ValueTask<System.Exception?> CreateAsync(System.Net.Http.HttpResponseMessage responseMessage) { }
+}
+public class DefaultFormUrlEncodedParameterFormatter : Refit.IFormUrlEncodedParameterFormatter
+{
+    public DefaultFormUrlEncodedParameterFormatter() { }
+    public virtual string? Format(object? value, string? formatString) { }
+}
+public class DefaultUrlParameterFormatter : Refit.IUrlParameterFormatter
+{
+    public DefaultUrlParameterFormatter() { }
+    public void AddFormat<TParameter>(string format) { }
+    public void AddFormat<TContainer, TParameter>(string format) { }
+    public virtual string? Format(object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+}
+public class DefaultUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
+{
+    public DefaultUrlParameterKeyFormatter() { }
+    public virtual string Format(string key) { }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class DeleteAttribute : Refit.HttpMethodAttribute
+{
+    public DeleteAttribute(string path) { }
+    public override System.Net.Http.HttpMethod Method { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class EncodedAttribute : System.Attribute
+{
+    public EncodedAttribute() { }
+}
+public class FileInfoPart : Refit.MultipartItem
+{
+    public FileInfoPart(System.IO.FileInfo value, string fileName, string? contentType = null, string? name = null) { }
+    public System.IO.FileInfo Value { get; }
+    protected override System.Net.Http.HttpContent CreateContent() { }
+}
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+public sealed class FormField<TBody>
+{
+    public FormField(System.Func<TBody, object?> getter, string clrName, string? explicitName, string? prefixSegment, string? format, Refit.CollectionFormat? collectionFormat, bool serializeNull) { }
+    public string ClrName { get; }
+    public Refit.CollectionFormat? CollectionFormat { get; }
+    public string? ExplicitName { get; }
+    public string? Format { get; }
+    public System.Func<TBody, object?> Getter { get; }
+    public string? PrefixSegment { get; }
+    public bool SerializeNull { get; }
+    public string? ResolveFieldName(Refit.IUrlParameterKeyFormatter urlParameterKeyFormatter) { }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class FormObjectAttribute : System.Attribute
+{
+    public FormObjectAttribute() { }
+}
+public sealed class GeneratedParameterAttributeProvider : System.Reflection.ICustomAttributeProvider
+{
+    public GeneratedParameterAttributeProvider(System.Collections.Generic.Dictionary<System.Type, object[]> attributes) { }
+    public static readonly Refit.GeneratedParameterAttributeProvider Empty;
+    public object[] GetCustomAttributes(bool inherit) { }
+    public object[] GetCustomAttributes(System.Type attributeType, bool inherit) { }
+    public bool IsDefined(System.Type attributeType, bool inherit) { }
+}
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+public ref struct GeneratedQueryStringBuilder
+{
+    public GeneratedQueryStringBuilder(string relativePath) { }
+    public GeneratedQueryStringBuilder(string relativePath, bool hasQuery) { }
+    public void Add(string name, string? value, bool preEncoded) { }
+    public void AddCollectionValue(string? value) { }
+    public void AddCollectionValueFormatted<T>(T value) where T : System.ISpanFormattable { }
+    public void AddFlag(string? name, bool preEncoded) { }
+    public void AddFormatted<T>(string name, T value, string? format, bool preEncoded) where T : System.ISpanFormattable { }
+    public void AddFormattedPreEscapedKey<T>(string name, T value, string? format, bool preEncoded) where T : System.ISpanFormattable { }
+    public void AddPreEscapedKey(string name, string? value, bool preEncoded) { }
+    public void BeginCollection(string name, Refit.CollectionFormat collectionFormat, bool preEncoded) { }
+    public string Build() { }
+    public void EndCollection() { }
+}
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+public static class GeneratedRequestRunner
+{
+    public static void AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, System.Type interfaceType) { }
+    public static void AddFormattedCollectionProperty(ref Refit.GeneratedQueryStringBuilder builder, Refit.RefitSettings settings, System.Collections.IEnumerable? values, string key, Refit.CollectionFormat collectionFormat, bool preEncoded, (System.Type ElementProviderType, System.Reflection.ICustomAttributeProvider JoinedProvider, System.Type JoinedType) formatting) { }
+    public static void AddHeaderCollection(System.Net.Http.HttpRequestMessage request, System.Collections.Generic.IDictionary<string, string>? headers, bool validateHeaders) { }
+    public static void AddRequestProperty<TValue>(System.Net.Http.HttpRequestMessage request, string key, TValue value) { }
+    public static string BuildQueryKey(Refit.RefitSettings settings, string clrName, string? explicitName, string? prefixSegment) { }
+    public static System.Uri BuildRelativeUri(System.Net.Http.HttpClient client, string relativePath, Refit.UrlResolutionMode urlResolution) { }
+    public static System.Uri BuildRelativeUri(System.Net.Http.HttpClient client, string relativePath, Refit.UrlResolutionMode urlResolution, System.UriFormat queryUriFormat) { }
+    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter) { }
+    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value)> uriParams) { }
+    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value, bool preEncoded)> uriParams) { }
+    public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value) where T : System.ISpanFormattable { }
+    public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value, string? format) where T : System.ISpanFormattable { }
+    public static bool CanUnrollForm(object? body) { }
+    public static System.Net.Http.HttpContent CreateBodyContent<TBody>(Refit.RefitSettings settings, TBody body, Refit.BodySerializationMethod serializationMethod, bool streamBody) { }
+    public static System.Net.Http.HttpContent CreateJsonLinesBodyContent<TBody>(Refit.RefitSettings settings, TBody body) { }
+    public static System.Net.Http.HttpContent CreateStreamContent(System.IO.Stream stream) { }
+    public static System.Net.Http.HttpContent CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings settings, TBody body) { }
+    public static System.Net.Http.HttpContent CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings settings, TBody body, Refit.FormField<TBody>[] fields) { }
+    public static string FormatInvariant<T>(T value, string? format) where T : System.IFormattable { }
+    public static string? FormatUrlParameter(Refit.RefitSettings settings, object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+    public static string RequireAbsoluteUrl(object? url) { }
+    public static string RoundTripEscapePath(string? value, Refit.RefitSettings settings, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+    public static System.Threading.Tasks.Task<T?> SendAsync<T, TBody>(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) { }
+    public static System.IObservable<T?> SendObservable<T, TBody>(System.Net.Http.HttpClient client, System.Func<System.Net.Http.HttpRequestMessage> requestFactory, Refit.RefitSettings settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken methodCancellationToken) { }
+    public static System.Threading.Tasks.Task SendVoidAsync(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, bool bufferBody, System.Threading.CancellationToken cancellationToken) { }
+    public static System.Net.Http.HttpContent SerializeMultipartPart<T>(Refit.RefitSettings settings, T value, string fieldName) { }
+    public static void SetHeader(System.Net.Http.HttpRequestMessage request, string name, string? value, bool validateHeaders) { }
+    public static void SetRequestTimeout(System.Net.Http.HttpRequestMessage request, int timeoutMilliseconds) { }
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    public static System.Collections.Generic.IAsyncEnumerable<T?> StreamAsync<T>(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, System.Threading.CancellationToken methodCancellationToken, System.Threading.CancellationToken cancellationToken = default) { }
+    public static bool UsesDefaultFormUrlEncodedParameterFormatting(Refit.RefitSettings settings) { }
+    public static bool UsesDefaultUrlParameterFormatting(Refit.RefitSettings settings) { }
+    public static bool UsesDefaultUrlParameterKeyFormatting(Refit.RefitSettings settings) { }
+}
+public sealed class GeneratedSingleTypeParameterAttributeProvider : System.Reflection.ICustomAttributeProvider
+{
+    public GeneratedSingleTypeParameterAttributeProvider(System.Type type, object[] attributes) { }
+    public object[] GetCustomAttributes(bool inherit) { }
+    public object[] GetCustomAttributes(System.Type attributeType, bool inherit) { }
+    public bool IsDefined(System.Type attributeType, bool inherit) { }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class GetAttribute : Refit.HttpMethodAttribute
+{
+    public GetAttribute(string path) { }
+    public override System.Net.Http.HttpMethod Method { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class HeadAttribute : Refit.HttpMethodAttribute
+{
+    public HeadAttribute(string path) { }
+    public override System.Net.Http.HttpMethod Method { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class HeaderAttribute : System.Attribute
+{
+    public HeaderAttribute(string header) { }
+    public string Header { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class HeaderCollectionAttribute : System.Attribute
+{
+    public HeaderCollectionAttribute() { }
+}
+[System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Interface)]
+public sealed class HeadersAttribute : System.Attribute
+{
+    public HeadersAttribute(params string[] headers) { }
+    public string[] Headers { get; }
+}
+public abstract class HttpMethodAttribute : System.Attribute
+{
+    protected HttpMethodAttribute(string path) { }
+    public abstract System.Net.Http.HttpMethod Method { get; }
+    public virtual string Path { get; protected set; }
+}
+public static class HttpRequestMessageOptions
+{
+    public static string InterfaceType { get; }
+    public static string MethodArguments { get; }
+    public static string MethodName { get; }
+    public static string RelativePathTemplate { get; }
+    public static string RequestContent { get; }
+    public static string RestMethodInfo { get; }
+}
+public interface IApiResponse : System.IDisposable
+{
+    System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
+    Refit.ApiExceptionBase? Error { get; }
+    System.Net.Http.Headers.HttpResponseHeaders? Headers { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Headers")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "StatusCode")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Version")]
+    bool IsReceived { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Headers")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "StatusCode")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Version")]
+    bool IsSuccessStatusCode { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Headers")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "StatusCode")]
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Version")]
+    bool IsSuccessful { get; }
+    string? ReasonPhrase { get; }
+    System.Net.Http.HttpRequestMessage? RequestMessage { get; }
+    System.Net.HttpStatusCode? StatusCode { get; }
+    System.Version? Version { get; }
+    bool HasRequestError(out Refit.ApiRequestException? error) { }
+    bool HasResponseError(out Refit.ApiException? error) { }
+}
+public interface IApiResponse<out T> : Refit.IApiResponse
+{
+    T? Content { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+    bool HasContent { get; }
+    [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+    bool IsSuccessfulWithContent { get; }
+}
+public interface IFormUrlEncodedParameterFormatter
+{
+    string? Format(object? value, string? formatString) { }
+}
+public interface IHttpContentSerializer
+{
+    System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
+    string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
+    System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+}
+public interface IQueryConverter<in T>
+{
+    void Flatten(T value, string keyPrefix, ref Refit.GeneratedQueryStringBuilder builder, Refit.RefitSettings settings) { }
+}
+public interface IRequestBuilder
+{
+    Refit.RefitSettings Settings { get; }
+    [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Building request delegates from reflected method metadata requires runtime generic method instantiation.")]
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building request delegates from reflected method metadata requires generic method metadata to be available at runtime.")]
+    System.Func<System.Net.Http.HttpClient, object[], object?> BuildRestResultFuncForMethod(string methodName, System.Type[]? parameterTypes = null, System.Type[]? genericArgumentTypes = null) { }
+}
+public interface IRequestBuilder<T> : Refit.IRequestBuilder
+{
+}
+public interface IReturnTypeAdapter<TReturn, TResult>
+{
+    TReturn Adapt(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>> invoke) { }
+}
+public interface IStreamingContentSerializer
+{
+    System.Collections.Generic.IAsyncEnumerable<T?> DeserializeStreamAsync<T>(System.IO.Stream stream, Refit.StreamingContentFormat format, System.Threading.CancellationToken cancellationToken = default) { }
+}
+public interface ISynchronousContentDeserializer
+{
+    T? DeserializeFromString<T>(string content) { }
+}
+public interface ISynchronousContentSerializer
+{
+    System.Net.Http.HttpContent ToHttpContentSynchronous<T>(T item) { }
+    System.Net.Http.HttpContent ToStreamingHttpContent<T>(T item) { }
+}
+public interface IUrlParameterFormatter
+{
+    string? Format(object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+}
+public interface IUrlParameterKeyFormatter
+{
+    string Format(string key) { }
+}
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[System.Obsolete("Use NewtonsoftJsonContentSerializer in the Refit.Newtonsoft.Json package instead", true)]
+public class JsonContentSerializer : Refit.IHttpContentSerializer
+{
+    public JsonContentSerializer() { }
+    public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
+    public string GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
+    public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+}
+public sealed class JsonLinesContent : System.Net.Http.HttpContent
+{
+    public JsonLinesContent(System.Collections.IEnumerable items, Refit.IHttpContentSerializer serializer) { }
+    public static string JsonLinesMediaType { get; }
+    protected override System.Threading.Tasks.Task SerializeToStreamAsync(System.IO.Stream stream, System.Net.TransportContext? context) { }
+    protected override bool TryComputeLength(out long length) { }
+}
+public class KebabCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
+{
+    public KebabCaseUrlParameterKeyFormatter() { }
+    public string Format(string key) { }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class MultipartAttribute : System.Attribute
+{
+    public MultipartAttribute(string boundaryText = "----MyGreatBoundary") { }
+    public string BoundaryText { get; }
+}
+public abstract class MultipartItem
+{
+    protected MultipartItem(string fileName, string? contentType) { }
+    protected MultipartItem(string fileName, string? contentType, string? name) { }
+    public string? ContentType { get; }
+    public string FileName { get; }
+    public string? Name { get; }
+    protected abstract System.Net.Http.HttpContent CreateContent() { }
+    public System.Net.Http.HttpContent ToContent() { }
+}
+public class ObjectToInferredTypesConverter : System.Text.Json.Serialization.JsonConverter<object>
+{
+    public ObjectToInferredTypesConverter() { }
+    public override object? Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options) { }
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, object value, System.Text.Json.JsonSerializerOptions options) { }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class OptionsAttribute : Refit.HttpMethodAttribute
+{
+    public OptionsAttribute(string path) { }
+    public override System.Net.Http.HttpMethod Method { get; }
+}
+public enum ParameterType
+{
+    Normal = 0,
+    RoundTripping = 1,
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class PatchAttribute : Refit.HttpMethodAttribute
+{
+    public PatchAttribute(string path) { }
+    public override System.Net.Http.HttpMethod Method { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Interface)]
+public sealed class PathPrefixAttribute : System.Attribute
+{
+    public PathPrefixAttribute(string prefix) { }
+    public string Prefix { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class PostAttribute : Refit.HttpMethodAttribute
+{
+    public PostAttribute(string path) { }
+    public override System.Net.Http.HttpMethod Method { get; }
+}
+public class ProblemDetails
+{
+    public ProblemDetails() { }
+    public string? Detail { get; set; }
+    public System.Collections.Generic.Dictionary<string, string[]> Errors { get; init; }
+    [System.Text.Json.Serialization.JsonExtensionData]
+    public System.Collections.Generic.IDictionary<string, object> Extensions { get; init; }
+    public string? Instance { get; set; }
+    public int Status { get; set; }
+    public string? Title { get; set; }
+    public string? Type { get; set; }
+}
+[System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+public sealed class PropertyAttribute : System.Attribute
+{
+    public PropertyAttribute() { }
+    public PropertyAttribute(string key) { }
+    public string? Key { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class PutAttribute : Refit.HttpMethodAttribute
+{
+    public PutAttribute(string path) { }
+    public override System.Net.Http.HttpMethod Method { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+public sealed class QueryAttribute : System.Attribute
+{
+    public QueryAttribute() { }
+    public QueryAttribute(Refit.CollectionFormat collectionFormat) { }
+    public QueryAttribute(string delimiter) { }
+    public QueryAttribute(string delimiter, string prefix) { }
+    public QueryAttribute(string delimiter, string prefix, string format) { }
+    public Refit.CollectionFormat CollectionFormat { get; set; }
+    public string Delimiter { get; }
+    public string? Format { get; set; }
+    public bool IsCollectionFormatSpecified { get; }
+    public string? Prefix { get; }
+    public bool SerializeNull { get; set; }
+    public bool TreatAsString { get; set; }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class QueryConverterAttribute : System.Attribute
+{
+    public QueryConverterAttribute(System.Type converterType) { }
+    public System.Type ConverterType { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class QueryNameAttribute : System.Attribute
+{
+    public QueryNameAttribute() { }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class QueryUriFormatAttribute : System.Attribute
+{
+    public QueryUriFormatAttribute(System.UriFormat uriFormat) { }
+    public System.UriFormat UriFormat { get; }
+}
+public class RefitSettings
+{
+    public RefitSettings() { }
+    public RefitSettings(Refit.IHttpContentSerializer contentSerializer) { }
+    public RefitSettings(Refit.IHttpContentSerializer contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter) { }
+    public RefitSettings(Refit.IHttpContentSerializer contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter, Refit.IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter) { }
+    public RefitSettings(Refit.IHttpContentSerializer contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter, Refit.IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter, Refit.IUrlParameterKeyFormatter? urlParameterKeyFormatter) { }
+    public bool AllowUnmatchedRouteParameters { get; set; }
+    public System.Func<System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<string>>? AuthorizationHeaderValueGetter { get; set; }
+    public bool Buffered { get; set; }
+    public bool CaptureMethodArguments { get; set; }
+    public bool CaptureRequestContent { get; set; }
+    public Refit.CollectionFormat CollectionFormat { get; set; }
+    public Refit.IHttpContentSerializer ContentSerializer { get; set; }
+    public System.Func<System.Net.Http.HttpResponseMessage, System.Exception, System.Threading.Tasks.ValueTask<System.Exception?>>? DeserializationExceptionFactory { get; set; }
+    public System.Func<System.Net.Http.HttpResponseMessage, System.Threading.Tasks.ValueTask<System.Exception?>> ExceptionFactory { get; set; }
+    public System.Action<Refit.ApiExceptionBase>? ExceptionRedactor { get; set; }
+    public Refit.IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
+    public bool HonorContentSerializerPropertyNamesInQuery { get; set; }
+    public System.Func<System.Net.Http.HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }
+    public System.Collections.Generic.Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
+    public int? MaxExceptionContentLength { get; set; }
+    public Refit.RequestBodySerializationMode RequestBodySerialization { get; set; }
+    public System.Collections.Generic.IList<System.Type> ReturnTypeAdapters { get; }
+    public System.Func<System.Net.Http.HttpRequestMessage, System.Exception, System.Threading.CancellationToken, System.Exception> TransportExceptionFactory { get; set; }
+    public Refit.IUrlParameterFormatter UrlParameterFormatter { get; set; }
+    public System.Collections.Generic.IDictionary<System.Type, Refit.IUrlParameterFormatter> UrlParameterFormatterMap { get; }
+    public Refit.IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
+    public Refit.UrlResolutionMode UrlResolution { get; set; }
+    public bool ValidateHeaders { get; set; }
+    public System.Version Version { get; set; }
+    public System.Net.Http.HttpVersionPolicy VersionPolicy { get; set; }
+    public static Refit.RefitSettings CamelCase() { }
+    public static Refit.RefitSettings KebabCase() { }
+    public static Refit.RefitSettings SnakeCase() { }
+}
+public enum RequestBodySerializationMode
+{
+    Default = 0,
+    Buffered = 1,
+    Streamed = 2,
+}
+public static class RequestBuilder
+{
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
+    public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
+    public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
+    public static Refit.IRequestBuilder<T> ForType<T>() { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
+    public static Refit.IRequestBuilder<T> ForType<T>(Refit.RefitSettings? settings) { }
+}
+public record RestMethodInfo : System.IEquatable<Refit.RestMethodInfo>
+{
+    public RestMethodInfo(string Name, System.Type HostingType, System.Reflection.MethodInfo MethodInfo, string RelativePath, System.Type ReturnType) { }
+    public System.Type HostingType { get; init; }
+    public System.Reflection.MethodInfo MethodInfo { get; init; }
+    public string Name { get; init; }
+    public string RelativePath { get; init; }
+    public System.Type ReturnType { get; init; }
+}
+public class RestMethodParameterInfo
+{
+    public RestMethodParameterInfo(bool isObjectPropertyParameter, System.Reflection.ParameterInfo parameterInfo) { }
+    public RestMethodParameterInfo(string name, System.Reflection.ParameterInfo parameterInfo) { }
+    public bool IsObjectPropertyParameter { get; set; }
+    public string? Name { get; set; }
+    public System.Reflection.ParameterInfo ParameterInfo { get; set; }
+    public System.Collections.Generic.List<Refit.RestMethodParameterProperty> ParameterProperties { get; init; }
+    public Refit.ParameterType Type { get; set; }
+}
+public class RestMethodParameterProperty
+{
+    public RestMethodParameterProperty(string name, System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo> propertyChain) { }
+    public RestMethodParameterProperty(string name, System.Reflection.PropertyInfo propertyInfo) { }
+    public string Name { get; set; }
+    public System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo> PropertyChain { get; set; }
+    public System.Reflection.PropertyInfo PropertyInfo { get; set; }
+}
+public static class RestService
+{
+    public static System.Net.Http.HttpClient CreateHttpClient(string hostUrl, Refit.RefitSettings? settings) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    public static object For(System.Type refitInterfaceType, string hostUrl) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client by Type requires runtime type lookup and constructor metadata.")]
+    public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.IRequestBuilder builder) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    public static object For(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings? settings) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    public static T For<T>(System.Net.Http.HttpClient client) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    public static T For<T>(string hostUrl) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and constructor metadata.")]
+    public static T For<T>(System.Net.Http.HttpClient client, Refit.IRequestBuilder<T> builder) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    public static T For<T>(System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    public static T For<T>(string hostUrl, Refit.RefitSettings? settings) { }
+    public static object ForGenerated(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings settings) { }
+    public static object ForGenerated(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings settings) { }
+    public static T ForGenerated<T>(System.Net.Http.HttpClient client) { }
+    public static T ForGenerated<T>(string hostUrl) { }
+    public static T ForGenerated<T>(System.Net.Http.HttpClient client, Refit.RefitSettings settings) { }
+    public static T ForGenerated<T>(string hostUrl, Refit.RefitSettings settings) { }
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public static void RegisterGeneratedFactory(System.Type refitInterfaceType, System.Func<System.Net.Http.HttpClient, Refit.IRequestBuilder, object> factory) { }
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public static void RegisterGeneratedFactory<T>(System.Func<System.Net.Http.HttpClient, Refit.IRequestBuilder, T> factory) { }
+    [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+    public static void RegisterGeneratedSettingsFactory<T>(System.Func<System.Net.Http.HttpClient, Refit.RefitSettings, T> factory) { }
+}
+public class SnakeCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
+{
+    public SnakeCaseUrlParameterKeyFormatter() { }
+    public string Format(string key) { }
+}
+public class StreamPart : Refit.MultipartItem
+{
+    public StreamPart(System.IO.Stream value, string fileName, string? contentType = null, string? name = null) { }
+    public System.IO.Stream Value { get; }
+    protected override System.Net.Http.HttpContent CreateContent() { }
+}
+public enum StreamingContentFormat
+{
+    JsonArray = 0,
+    JsonLines = 1,
+    ServerSentEvents = 2,
+}
+public sealed class SystemTextJsonContentSerializer : Refit.IHttpContentSerializer, Refit.IStreamingContentSerializer, Refit.ISynchronousContentDeserializer, Refit.ISynchronousContentSerializer
+{
+    public SystemTextJsonContentSerializer() { }
+    public SystemTextJsonContentSerializer(System.Text.Json.JsonSerializerOptions jsonSerializerOptions) { }
+    public System.Text.Json.JsonSerializerOptions SerializerOptions { get; }
+    public T? DeserializeFromString<T>(string content) { }
+    public System.Collections.Generic.IAsyncEnumerable<T?> DeserializeStreamAsync<T>(System.IO.Stream stream, Refit.StreamingContentFormat format, System.Threading.CancellationToken cancellationToken = default) { }
+    public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
+    public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
+    public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+    public System.Net.Http.HttpContent ToHttpContentSynchronous<T>(T item) { }
+    public System.Net.Http.HttpContent ToStreamingHttpContent<T>(T item) { }
+    public static System.Text.Json.JsonSerializerOptions GetDefaultJsonSerializerOptions() { }
+    public static System.Text.Json.JsonSerializerOptions GetFastPathJsonSerializerOptions() { }
+}
+public sealed class SystemTextJsonQueryConverter<T> : Refit.IQueryConverter<T>
+{
+    public SystemTextJsonQueryConverter() { }
+    public void Flatten(T value, string keyPrefix, ref Refit.GeneratedQueryStringBuilder builder, Refit.RefitSettings settings) { }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class TimeoutAttribute : System.Attribute
+{
+    public TimeoutAttribute(int milliseconds) { }
+    public int Milliseconds { get; }
+}
+public static class UniqueName
+{
+    public static string ForType(System.Type refitInterfaceType) { }
+    public static string ForType(System.Type refitInterfaceType, object? serviceKey) { }
+    public static string ForType<T>() { }
+    public static string ForType<T>(object? serviceKey) { }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+public sealed class UrlAttribute : System.Attribute
+{
+    public UrlAttribute() { }
+}
+public enum UrlResolutionMode
+{
+    RefitLegacy = 0,
+    Rfc3986 = 1,
+}
+public class ValidationApiException : Refit.ApiException
+{
+    public ValidationApiException(string message) { }
+    public ValidationApiException(string message, System.Exception innerException) { }
+    public Refit.ProblemDetails? Content { get; }
+    public static Refit.ValidationApiException Create(Refit.ApiException exception) { }
+}

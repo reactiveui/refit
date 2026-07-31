@@ -1,0 +1,107 @@
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.HttpClientFactory.Tests")]
+namespace Refit;
+
+public static class HttpClientFactoryExtensions
+{
+    extension(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder builder)
+    {
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddAuthorizationHeaderValueProvider(System.Func<System.IServiceProvider, System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<string>> getToken) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient(System.Type refitInterfaceType, object? serviceKey) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient(System.Type refitInterfaceType, object? serviceKey, Refit.RefitSettings? settings) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient(System.Type refitInterfaceType, object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, Refit.RefitSettings? settings) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient<T>() where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient<T>(Refit.RefitSettings? settings) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient<T>(System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) where T : class { }
+    }
+    extension(Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+    {
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient(System.Type refitInterfaceType, object? serviceKey) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient(System.Type refitInterfaceType, object? serviceKey, Refit.RefitSettings? settings) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient(System.Type refitInterfaceType, object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient(System.Type refitInterfaceType, object? serviceKey, Refit.RefitSettings? settings, string? httpClientName) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient(System.Type refitInterfaceType, object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, Refit.RefitSettings? settings) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, Refit.RefitSettings? settings, string? httpClientName) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType, Refit.RefitSettings? settings, string? httpClientName) { }
+        [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient<T>() where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient<T>(Refit.RefitSettings? settings) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient<T>(System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient<T>(Refit.RefitSettings? settings, string? httpClientName) where T : class { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient<T>(System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitGeneratedClient<T>() where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitGeneratedClient<T>(Refit.RefitSettings? settings) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitGeneratedClient<T>(System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitGeneratedClient<T>(Refit.RefitSettings? settings, string? httpClientName) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitGeneratedClient<T>(System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) where T : class { }
+    }
+}
+public interface ISettingsFor
+{
+    Refit.RefitSettings? Settings { get; }
+}
+public class SettingsFor<T> : Refit.ISettingsFor
+{
+    public SettingsFor(Refit.RefitSettings? settings) { }
+    public Refit.RefitSettings? Settings { get; }
+}

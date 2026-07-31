@@ -1,0 +1,112 @@
+namespace Refit.Testing;
+
+public sealed class NetworkBehavior
+{
+    public NetworkBehavior() { }
+    public NetworkBehavior(int seed) { }
+    public System.TimeSpan Delay { get; set; }
+    public double ErrorPercent { get; set; }
+    public System.Net.HttpStatusCode ErrorStatusCode { get; set; }
+    public System.Func<System.Exception> FailureFactory { get; set; }
+    public double FailurePercent { get; set; }
+    public double Variance { get; set; }
+    public System.Net.Http.HttpResponseMessage CreateErrorResponse() { }
+    public System.Exception CreateFailure() { }
+    public System.TimeSpan NextDelay() { }
+    public bool NextIsError() { }
+    public bool NextIsFailure() { }
+}
+public static class Reply
+{
+    public static Refit.Testing.StubResponse Content(System.Net.Http.HttpContent body) { }
+    public static Refit.Testing.StubResponse From(System.Func<System.Net.Http.HttpRequestMessage, System.Net.Http.HttpResponseMessage> responder) { }
+    public static Refit.Testing.StubResponse From(System.Func<System.Net.Http.HttpRequestMessage, System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage>> responder) { }
+    public static Refit.Testing.StubResponse Json(string body) { }
+    public static Refit.Testing.StubResponse Json(string body, System.Net.HttpStatusCode status) { }
+    public static Refit.Testing.StubResponse Status(System.Net.HttpStatusCode statusCode) { }
+    public static Refit.Testing.StubResponse Text(string body) { }
+    public static Refit.Testing.StubResponse Text(string body, string contentType) { }
+    public static Refit.Testing.StubResponse With<T>(T body) { }
+    public static Refit.Testing.StubResponse With<T>(T body, System.Net.HttpStatusCode status) { }
+}
+public static class Route
+{
+    public static Refit.Testing.RouteMatcher Any(string template) { }
+    public static Refit.Testing.RouteMatcher Delete(string template) { }
+    public static Refit.Testing.RouteMatcher Fallback() { }
+    public static Refit.Testing.RouteMatcher For(System.Net.Http.HttpMethod method, string template) { }
+    public static Refit.Testing.RouteMatcher Get(string template) { }
+    public static Refit.Testing.RouteMatcher Head(string template) { }
+    public static Refit.Testing.RouteMatcher Patch(string template) { }
+    public static Refit.Testing.RouteMatcher Post(string template) { }
+    public static Refit.Testing.RouteMatcher Put(string template) { }
+}
+public sealed class RouteMatcher
+{
+    public RouteMatcher() { }
+    public string? Body { get; init; }
+    public string? ExactQuery { get; init; }
+    public (string Key, string Value)[]? ExactQueryParams { get; init; }
+    public bool Fallback { get; init; }
+    public (string Key, string Value)[]? FormData { get; init; }
+    public (string Name, string Value)[]? Headers { get; init; }
+    public System.Net.Http.HttpMethod? Method { get; init; }
+    public (string Key, string Value)[]? Query { get; init; }
+    public bool Reusable { get; init; }
+    public required string Template { get; init; }
+    public System.Func<System.Net.Http.HttpRequestMessage, bool>? Where { get; init; }
+    public System.Func<System.Net.Http.HttpRequestMessage, System.Threading.Tasks.Task<bool>>? WhereAsync { get; init; }
+}
+public sealed class StubApiResponse<T> : Refit.IApiResponse<T>
+{
+    public StubApiResponse() { }
+    public T? Content { get; init; }
+    public System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; init; }
+    public Refit.ApiExceptionBase? Error { get; init; }
+    public bool HasContent { get; init; }
+    public System.Net.Http.Headers.HttpResponseHeaders? Headers { get; init; }
+    public bool IsReceived { get; init; }
+    public bool IsSuccessStatusCode { get; init; }
+    public bool IsSuccessful { get; init; }
+    public bool IsSuccessfulWithContent { get; init; }
+    public string? ReasonPhrase { get; init; }
+    public System.Net.Http.HttpRequestMessage? RequestMessage { get; init; }
+    public System.Net.HttpStatusCode? StatusCode { get; init; }
+    public System.Version? Version { get; init; }
+    public void Dispose() { }
+    public bool HasRequestError(out Refit.ApiRequestException? error) { }
+    public bool HasResponseError(out Refit.ApiException? error) { }
+}
+public sealed class StubHttp : System.Net.Http.HttpMessageHandler, System.Collections.Generic.IEnumerable<Refit.Testing.RouteMatcher>
+{
+    public StubHttp() { }
+    public StubHttp(Refit.Testing.NetworkBehavior behavior) { }
+    public Refit.Testing.NetworkBehavior? Behavior { get; set; }
+    public System.Collections.Generic.IReadOnlyList<System.Net.Http.HttpRequestMessage> Requests { get; }
+    public void Add(Refit.Testing.RouteMatcher route, Refit.Testing.StubResponse response) { }
+    public T CreateClient<T>(string hostUrl) { }
+    public T CreateClient<T>(string hostUrl, Refit.RefitSettings baseSettings) { }
+    public T CreateGeneratedClient<T>(string hostUrl) { }
+    public T CreateGeneratedClient<T>(string hostUrl, Refit.RefitSettings baseSettings) { }
+    public System.Threading.Tasks.Task<T?> LastRequestBodyAsync<T>() { }
+    public System.Threading.Tasks.Task<T?> RequestBodyAsync<T>(int index) { }
+    protected override System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken) { }
+    System.Collections.Generic.IEnumerator<Refit.Testing.RouteMatcher> System.Collections.Generic.IEnumerable<Refit.Testing.RouteMatcher>.GetEnumerator() { }
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { }
+    public Refit.RefitSettings ToSettings() { }
+    public Refit.RefitSettings ToSettings(Refit.RefitSettings baseSettings) { }
+    public void VerifyAllCalled() { }
+    public System.Threading.Tasks.Task VerifyAllCalledAsync() { }
+    public System.Threading.Tasks.Task VerifyAllCalledAsync(System.TimeSpan timeout) { }
+}
+public sealed class StubResponse
+{
+    public StubResponse() { }
+    public System.Net.Http.HttpContent? Content { get; init; }
+    public string? ContentType { get; init; }
+    public string? Json { get; init; }
+    public System.Func<System.Net.Http.HttpRequestMessage, System.Net.Http.HttpResponseMessage>? Responder { get; init; }
+    public System.Func<System.Net.Http.HttpRequestMessage, System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage>>? ResponderAsync { get; init; }
+    public System.Net.HttpStatusCode Status { get; init; }
+    public string? Text { get; init; }
+}

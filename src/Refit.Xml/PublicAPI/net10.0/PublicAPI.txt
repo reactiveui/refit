@@ -1,0 +1,30 @@
+namespace Refit;
+
+public class XmlContentSerializer : Refit.IHttpContentSerializer, Refit.ISynchronousContentDeserializer
+{
+    public XmlContentSerializer() { }
+    public XmlContentSerializer(Refit.XmlContentSerializerSettings settings) { }
+    public T? DeserializeFromString<T>(string content) { }
+    public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
+    public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
+    public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+}
+public class XmlContentSerializerSettings
+{
+    public XmlContentSerializerSettings() { }
+    public System.Xml.Serialization.XmlAttributeOverrides XmlAttributeOverrides { get; set; }
+    public string? XmlDefaultNamespace { get; set; }
+    public System.Xml.Serialization.XmlSerializerNamespaces XmlNamespaces { get; set; }
+    public Refit.XmlReaderWriterSettings XmlReaderWriterSettings { get; set; }
+}
+public class XmlReaderWriterSettings
+{
+    public XmlReaderWriterSettings() { }
+    public XmlReaderWriterSettings(System.Xml.XmlReaderSettings readerSettings) { }
+    public XmlReaderWriterSettings(System.Xml.XmlWriterSettings writerSettings) { }
+    public XmlReaderWriterSettings(System.Xml.XmlReaderSettings readerSettings, System.Xml.XmlWriterSettings writerSettings) { }
+    [System.Obsolete("Enabling DTD processing re-opens XML External Entity (XXE) and entity-expansion attacks and is strongly discouraged. Only set this for XML from a fully trusted source.")]
+    public bool AllowDtdProcessing { get; set; }
+    public System.Xml.XmlReaderSettings ReaderSettings { get; set; }
+    public System.Xml.XmlWriterSettings WriterSettings { get; set; }
+}
