@@ -49,7 +49,13 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task Post()
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Post, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/users", refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(
+                    global::System.Net.Http.HttpMethod.Post,
+                    global::Refit.GeneratedRequestRunner.BuildRelativeUri(
+                        this.Client,
+                        "/users",
+                        refitSettings.UrlResolution)
+                );
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "Post");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/users");

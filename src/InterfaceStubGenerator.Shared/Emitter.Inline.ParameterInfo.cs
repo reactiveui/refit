@@ -212,11 +212,13 @@ internal static partial class Emitter
     /// <param name="request">The parsed request model.</param>
     /// <param name="uniqueNameLookup">The map of parameter name to cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     /// <returns>The generated argument list fragment.</returns>
     internal static string GetParametersArg(
         in RequestModel request,
         Dictionary<string, string> uniqueNameLookup,
-        in InlineValueEmission emission)
+        in InlineValueEmission emission,
+        int methodAdditionalIndent)
     {
         // A single pre-encoded path parameter switches every replacement to the overload carrying the
         // per-value encoding flag, because a params call cannot mix tuple arities.
@@ -234,12 +236,14 @@ internal static partial class Emitter
         replacements.Sort(static (left, right) => left.Start.CompareTo(right.Start));
 
         var parametersSb = new PooledStringBuilder();
+        var indent = Indent(HttpAdditionalBuildRequestPathIndentation + MethodBodyIndentation + methodAdditionalIndent);
+
         var first = true;
         foreach (var replacement in replacements)
         {
             if (!first)
             {
-                _ = parametersSb.Append(", ");
+                _ = parametersSb.AppendLine(",").Append(indent);
             }
 
             first = false;

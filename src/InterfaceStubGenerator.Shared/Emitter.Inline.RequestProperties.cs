@@ -26,6 +26,7 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     /// <returns>The generated request option/property statements.</returns>
     /// <remarks>The cold-observable shape reuses this block inside a string-interpolated construction block, so it
     /// materializes it here; the standard shape appends it straight into the interface buffer.</remarks>
@@ -34,10 +35,11 @@ internal static partial class Emitter
         InterfaceModel interfaceModel,
         in MethodModel methodModel,
         string requestLocal,
-        string settingsLocal)
+        string settingsLocal,
+        int methodAdditionalIndent)
     {
         var sb = new PooledStringBuilder();
-        AppendInlineRequestProperties(sb, request, interfaceModel, methodModel, requestLocal, settingsLocal);
+        AppendInlineRequestProperties(sb, request, interfaceModel, methodModel, requestLocal, settingsLocal, methodAdditionalIndent);
         return sb.ToString();
     }
 
@@ -48,15 +50,17 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     internal static void AppendInlineRequestProperties(
         PooledStringBuilder sb,
         in RequestModel request,
         InterfaceModel interfaceModel,
         in MethodModel methodModel,
         string requestLocal,
-        string settingsLocal)
+        string settingsLocal,
+        int methodAdditionalIndent)
     {
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation + methodAdditionalIndent);
         _ = sb.Append(bodyIndent)
             .Append("global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(")
             .Append(requestLocal).Append(ArgumentSeparator).Append(settingsLocal)

@@ -35,13 +35,15 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
     /// <returns>The generated multipart content statements, ending with the request-content assignment.</returns>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     internal static string BuildInlineMultipartContent(
         in RequestModel request,
         string requestLocal,
         string settingsLocal,
-        UniqueNameBuilder locals)
+        UniqueNameBuilder locals,
+        int methodAdditionalIndent)
     {
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation + methodAdditionalIndent);
         var contentLocal = locals.New("refitMultipart");
 
         var sb = new PooledStringBuilder();
@@ -52,7 +54,7 @@ internal static partial class Emitter
         {
             if (parameter is { Kind: RequestParameterKind.MultipartPart, MultipartPart: { } part })
             {
-                AppendMultipartPart(sb, parameter, part, settingsLocal, contentLocal, locals);
+                AppendMultipartPart(sb, parameter, part, settingsLocal, contentLocal, locals, methodAdditionalIndent);
             }
         }
 
@@ -69,15 +71,17 @@ internal static partial class Emitter
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="contentLocal">The generated multipart content local name.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     internal static void AppendMultipartPart(
         PooledStringBuilder sb,
         in RequestParameterModel parameter,
         MultipartPartModel part,
         string settingsLocal,
         string contentLocal,
-        UniqueNameBuilder locals)
+        UniqueNameBuilder locals,
+        int methodAdditionalIndent)
     {
-        var bodyIndent = Indent(MethodBodyIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation + methodAdditionalIndent);
         var valueExpression = $"@{parameter.Name}";
 
         // A reference-typed enumerable adds one part per element; a null collection contributes no parts, matching the

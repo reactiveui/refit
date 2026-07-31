@@ -210,7 +210,7 @@ public partial class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/foo?key=value\"");
+        await Assert.That(generated).Contains("\"/foo?key=value\",");
         await Assert.That(generated).DoesNotContain("#name");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -228,7 +228,7 @@ public partial class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/foo\"");
+        await Assert.That(generated).Contains("\"/foo\",");
         await Assert.That(generated).DoesNotContain("?key=value");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -246,7 +246,7 @@ public partial class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/foo?key=&two=2\"");
+        await Assert.That(generated).Contains("\"/foo?key=&two=2\",");
         await Assert.That(generated).DoesNotContain("=drop");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -363,9 +363,9 @@ public partial class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/global\"");
-        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/alias\"");
-        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/qualified\"");
+        await Assert.That(generated).Contains("\"/global\",");
+        await Assert.That(generated).Contains("\"/alias\",");
+        await Assert.That(generated).Contains("\"/qualified\",");
         await Assert.That(generated).Contains("HttpMethod.Get");
         await Assert.That(generated).Contains("HttpMethod.Post");
         await Assert.That(generated).Contains("HttpMethod.Put");

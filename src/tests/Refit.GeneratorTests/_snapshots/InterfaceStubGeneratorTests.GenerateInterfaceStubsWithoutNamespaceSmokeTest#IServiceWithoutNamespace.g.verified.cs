@@ -49,7 +49,13 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task GetRoot()
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/", refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(
+                    global::System.Net.Http.HttpMethod.Get,
+                    global::Refit.GeneratedRequestRunner.BuildRelativeUri(
+                        this.Client,
+                        "/",
+                        refitSettings.UrlResolution)
+                );
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::IServiceWithoutNamespace));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "GetRoot");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/");
@@ -66,7 +72,13 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task PostRoot()
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Post, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/", refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(
+                    global::System.Net.Http.HttpMethod.Post,
+                    global::Refit.GeneratedRequestRunner.BuildRelativeUri(
+                        this.Client,
+                        "/",
+                        refitSettings.UrlResolution)
+                );
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::IServiceWithoutNamespace));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "PostRoot");
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.RelativePathTemplate, "/");

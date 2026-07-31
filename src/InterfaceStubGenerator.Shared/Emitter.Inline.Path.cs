@@ -16,7 +16,7 @@ internal static partial class Emitter
     /// <c>ReadOnlySpan</c> overload accepts via the array-to-span conversion. The array element type is inferred from the
     /// tuple values rather than stated, so no nullable reference annotation is emitted into a pre-C# 8 consumer.</remarks>
     internal static string WrapPathReplacements(string tuples, bool supportsCollectionExpressions) =>
-        supportsCollectionExpressions ? $", [{tuples}]" : $", new[] {{ {tuples} }}";
+        supportsCollectionExpressions ? $"[{tuples}]" : $"new[] {{ {tuples} }}";
 
     /// <summary>Determines whether any path parameter passes its value through pre-encoded.</summary>
     /// <param name="request">The parsed request model.</param>
@@ -64,33 +64,59 @@ internal static partial class Emitter
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="parameters">The default path builder argument fragment.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
     /// <returns>The generated path expression.</returns>
     internal static string BuildInlinePathExpression(
         in RequestModel request,
         Dictionary<string, string> parameterInfoNames,
         in InlineValueEmission emission,
         string settingsLocal,
-        string parameters)
+        string parameters,
+        int methodAdditionalIndent)
     {
         // A template with placeholders but no bound path parameters still runs the unmatched-placeholder
         // check so AllowUnmatchedRouteParameters keeps its reflection-path semantics.
-        return TryBuildInlinePathFastExpression(request, parameterInfoNames, emission)
-            ?? (parameters.Length > 0 || request.Path.IndexOf('{') >= 0
-                ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}, {settingsLocal}.AllowUnmatchedRouteParameters{parameters})"
-                : ToCSharpStringLiteral(request.Path));
+        var expression = TryBuildInlinePathFastExpression(request, parameterInfoNames, emission, methodAdditionalIndent);
+        if (expression is not null)
+        {
+            return expression;
+        }
+
+        if (parameters.Length > 0 || request.Path.IndexOf('{') >= 0)
+        {
+            var indent = Indent(HttpAdditionalBuildRequestPathIndentation + MethodBodyIndentation + methodAdditionalIndent);
+            var stringBuilder = new PooledStringBuilder()
+            .AppendLine("global::Refit.GeneratedRequestRunner.BuildRequestPath(")
+            .Append(indent).Append(ToCSharpStringLiteral(request.Path)).AppendLine(",")
+            .Append(indent).Append(settingsLocal).Append(".AllowUnmatchedRouteParameters");
+
+            if (parameters.Length > 0)
+            {
+                _ = stringBuilder
+                .AppendLine(",")
+                .Append(indent)
+                .Append(parameters);
+            }
+
+            return stringBuilder.Append(')').ToString();
+        }
+
+        return ToCSharpStringLiteral(request.Path);
     }
 
     /// <summary>Builds the allocation-free path expression for a single span-formattable path parameter, or null.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <param name="parameterInfoNames">The map of parameter name to cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>       
     /// <returns>The path expression using the span-formattable fast overload, or null to use the default path building.</returns>
     /// <remarks>The default-formatting branch formats the value straight into the path buffer (net6+ integers with no
     /// escaping, net10+ span-escaped values); a customized <c>IUrlParameterFormatter</c> falls back to the string overload.</remarks>
     internal static string? TryBuildInlinePathFastExpression(
         in RequestModel request,
         Dictionary<string, string> parameterInfoNames,
-        in InlineValueEmission emission)
+        in InlineValueEmission emission,
+        int methodAdditionalIndent)
     {
         RequestParameterModel? pathParameter = null;
         foreach (var parameter in request.Parameters)
@@ -122,20 +148,47 @@ internal static partial class Emitter
         var start = location.Start.GetOffset(pathLength);
         var end = location.End.GetOffset(pathLength);
         var template = ToCSharpStringLiteral(request.Path);
-        var settingsLocal = emission.SettingsLocal;
-        var allowUnmatched = $"{settingsLocal}.AllowUnmatchedRouteParameters";
+
+        var allowUnmatched = $"{emission.SettingsLocal}.AllowUnmatchedRouteParameters";
         var valueExpression = $"@{pathParameter.Value.Name}";
         _ = parameterInfoNames.TryGetValue(pathParameter.Value.Name, out var providerField);
-        const string runner = "global::Refit.GeneratedRequestRunner.BuildRequestPath";
 
-        var fastExpression = valueFormat.IsUrlSafeSpanFormattable
-            ? $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression})"
-            : $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression}, {ToNullableCSharpStringLiteral(valueFormat.Format)})";
+        var indentBuildRelativeUriParameter = Indent(HttpAdditionalBuildRelativeUriIndentation + MethodBodyIndentation + methodAdditionalIndent);
+        var indentBuilderBuildRequestPath = Indent(HttpAdditionalBuildRequestPathIndentation + MethodBodyIndentation + methodAdditionalIndent);
+        var stringBuilder = new PooledStringBuilder().Append('(').AppendLine(emission.UseDefaultFormattingLocal)
+            .Append(indentBuildRelativeUriParameter).Append("? ");
+        _ = BuildCommonInlinePathFastExpression(stringBuilder, indentBuilderBuildRequestPath, template, allowUnmatched)
+            .Append('(').Append(start).Append(", ").Append(end).AppendLine("),")
+            .Append(indentBuilderBuildRequestPath).Append(valueExpression);
+        if (!valueFormat.IsUrlSafeSpanFormattable)
+        {
+            _ = stringBuilder
+                .AppendLine(",")
+                .Append(indentBuilderBuildRequestPath).Append(ToNullableCSharpStringLiteral(valueFormat.Format));
+        }
+
         var customTuple =
             $"(({start}, {end}), {EmitFormatUrlParameter(valueExpression, providerField, $"typeof({pathParameter.Value.Type})", emission)})";
-        var customReplacements = WrapPathReplacements(customTuple, emission.SupportsCollectionExpressions);
-        var customExpression = $"{runner}({template}, {allowUnmatched}{customReplacements})";
+        _ = stringBuilder
+            .AppendLine(")")
+            .Append(indentBuildRelativeUriParameter).Append(": ");
+        return BuildCommonInlinePathFastExpression(stringBuilder, indentBuilderBuildRequestPath, template, allowUnmatched)
+            .Append(WrapPathReplacements(customTuple, emission.SupportsCollectionExpressions)).Append("))").ToString();
+    }
 
-        return $"({emission.UseDefaultFormattingLocal} ? {fastExpression} : {customExpression})";
+    /// <summary>Writes the shared inline path-building helper call for generated request path emission.</summary>
+    /// <param name="builder">The pooled string builder receiving the generated source.</param>
+    /// <param name="indentBuilderBuildRequestPath">The indentation prefix used for the helper call arguments.</param>
+    /// <param name="template">The escaped path template literal emitted into the generated code.</param>
+    /// <param name="allowUnmatched">The expression that controls whether unmatched route parameters are allowed.</param>
+    /// <returns>The same pooled string builder, allowing chained emission.</returns>
+    internal static PooledStringBuilder BuildCommonInlinePathFastExpression(PooledStringBuilder builder, string indentBuilderBuildRequestPath, string template, string allowUnmatched)
+    {
+        const string runner = "global::Refit.GeneratedRequestRunner.BuildRequestPath";
+        return builder
+            .Append(runner).AppendLine("(")
+            .Append(indentBuilderBuildRequestPath).Append(template).AppendLine(",")
+            .Append(indentBuilderBuildRequestPath).Append(allowUnmatched).AppendLine(",")
+            .Append(indentBuilderBuildRequestPath);
     }
 }
