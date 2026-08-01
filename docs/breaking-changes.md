@@ -3,12 +3,21 @@
 Every breaking change and notable addition, newest first. Each major version links back to the feature documentation
 in the [main README](../README.md).
 
+* [V15.x.x](#v15xx)
 * [V14.x.x](#v14xx)
 * [V13.x.x](#v13xx)
 * [V12.x.x](#v12xx)
 * [V11.x.x](#v11xx)
 * [Updates in 8.0.x](#updates-in-80x)
 * [V6.x.x](#v6xx)
+
+## V15.x.x
+
+### Breaking changes in V15.x
+
+* **Response buffering now propagates caller cancellation.** If a caller cancels while Refit buffers response content,
+  Refit throws `OperationCanceledException` instead of continuing with partially consumed content. Other buffering
+  failures remain best-effort.
 
 ## V14.x.x
 

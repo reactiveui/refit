@@ -317,6 +317,45 @@ public partial class GeneratedRequestRunnerTests
             .ThrowsExactly<OperationCanceledException>();
     }
 
+    /// <summary>Verifies cancellation while buffering the response stops before the serializer sees partially consumed content.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncStopsBeforeDeserializationWhenCancelledDuringBuffering()
+    {
+        var serializer = new RecordingContentSerializer
+        {
+            DeserializedValue = new GeneratedResult(DeserializedResultValue)
+        };
+        using var tokenSource = new CancellationTokenSource();
+
+        // Cancel once the response exists, so cancellation lands on buffering rather than on the send itself.
+        var handler = new CapturingHandler(
+            async (_, _) =>
+            {
+                await tokenSource.CancelAsync();
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("buffered")
+                };
+            });
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+
+        await Assert
+            .That(
+                () => GeneratedRequestRunner.SendAsync<GeneratedResult, GeneratedResult>(
+                    client,
+                    request,
+                    CreateSettings(serializer),
+                    isApiResponse: false,
+                    shouldDisposeResponse: true,
+                    bufferBody: false,
+                    tokenSource.Token))
+            .ThrowsExactly<OperationCanceledException>();
+
+        await Assert.That(serializer.DeserializeCallCount).IsEqualTo(0);
+    }
+
     /// <summary>Verifies caller-requested cancellation during send is rethrown instead of being wrapped in <see cref="ApiRequestException"/>.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
