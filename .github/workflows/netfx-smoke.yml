@@ -1,0 +1,34 @@
+name: .NET Framework smoke
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+
+permissions:
+    contents: read
+
+jobs:
+    netfx-smoke:
+        runs-on: windows-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v6
+              with:
+                  dotnet-version: 11.x
+                  dotnet-quality: preview
+
+            - name: Build the smoke test
+              run: dotnet build src/Refit.NetFrameworkSmoke/Refit.NetFrameworkSmoke.csproj -c Release
+
+            # The generator emits its factory registrations inside #if NET5_0_OR_GREATER, so these targets resolve the
+            # generated client by name instead. Nothing else in the test matrix runs on .NET Framework.
+            - name: Run on net472
+              run: src\Refit.NetFrameworkSmoke\bin\Release\net472\Refit.NetFrameworkSmoke.exe
+
+            - name: Run on net481
+              run: src\Refit.NetFrameworkSmoke\bin\Release\net481\Refit.NetFrameworkSmoke.exe
