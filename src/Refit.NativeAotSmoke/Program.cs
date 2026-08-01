@@ -72,6 +72,24 @@ if (!handler.SawFormBody)
     throw new InvalidOperationException("The AOT URL-encoded request body was not serialized through generated Refit code.");
 }
 
+// A missed generated-client lookup forces the interface assembly's module initializer and looks again, which is what
+// rescues runtimes that have not run it yet. Prove that forcing path is reachable under Native AOT.
+string? missingClientMessage = null;
+
+try
+{
+    _ = RestService.ForGenerated<INoGeneratedClientApi>(client);
+}
+catch (InvalidOperationException ex)
+{
+    missingClientMessage = ex.Message;
+}
+
+if (missingClientMessage?.Contains("doesn't look like a Refit interface", StringComparison.Ordinal) != true)
+{
+    throw new InvalidOperationException("The AOT lookup for a missing generated client did not report it.");
+}
+
 Console.WriteLine("Native AOT Refit smoke test passed.");
 
 /// <summary>The generated top-level program's declaring type, sealed so the JIT can devirtualize its members.</summary>
