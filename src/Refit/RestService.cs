@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -20,6 +21,9 @@ public static class RestService
     /// <summary>Holds source-generated factories that only need settings and avoid request-builder reflection.</summary>
     private static readonly ConcurrentDictionary<Type, Func<HttpClient, RefitSettings, object>> _generatedSettingsFactories =
         new();
+
+    /// <summary>Caches the module-initializer runner so resolving a client allocates no delegate.</summary>
+    private static readonly Action<Type> _generatedRegistrationRunner = RunGeneratedRegistrations;
 
     /// <summary>Registers a source-generated Refit implementation factory.</summary>
     /// <param name="refitInterfaceType">The Refit interface type.</param>
@@ -86,27 +90,18 @@ public static class RestService
         ArgumentExceptionHelper.ThrowIfNull(client);
         ArgumentExceptionHelper.ThrowIfNull(settings);
 
-        if (GeneratedSettingsFactory<T>.Factory is { } settingsFactory)
+#if NET5_0_OR_GREATER
+        if (TryResolveGeneratedClient<T>(client, settings, _generatedRegistrationRunner, out var instance))
         {
-            return settingsFactory(client, settings);
-        }
-
-        if (_generatedSettingsFactories.TryGetValue(typeof(T), out var untypedSettingsFactory))
-        {
-            return (T)untypedSettingsFactory(client, settings);
-        }
-
-        if (_generatedFactories.TryGetValue(typeof(T), out var untypedFactory))
-        {
-            return (T)untypedFactory(client, new GeneratedOnlyRequestBuilder(settings));
-        }
-
-        if (GeneratedFactory<T>.Factory is { } factory)
-        {
-            return factory(client, new GeneratedOnlyRequestBuilder(settings));
+            return instance;
         }
 
         throw CreateMissingGeneratedFactoryException(typeof(T));
+#else
+        return TryResolveGeneratedClient<T>(client, settings, _generatedRegistrationRunner, out var instance)
+            ? instance
+            : (T)CreateByGeneratedTypeName(typeof(T), client, settings);
+#endif
     }
 
     /// <summary>Create a source-generated Refit implementation without falling back to reflection.</summary>
@@ -153,17 +148,18 @@ public static class RestService
         ArgumentExceptionHelper.ThrowIfNull(client);
         ArgumentExceptionHelper.ThrowIfNull(settings);
 
-        if (_generatedSettingsFactories.TryGetValue(refitInterfaceType, out var settingsFactory))
+#if NET5_0_OR_GREATER
+        if (TryResolveGeneratedClient(refitInterfaceType, client, settings, _generatedRegistrationRunner, out var instance))
         {
-            return settingsFactory(client, settings);
-        }
-
-        if (_generatedFactories.TryGetValue(refitInterfaceType, out var factory))
-        {
-            return factory(client, new GeneratedOnlyRequestBuilder(settings));
+            return instance;
         }
 
         throw CreateMissingGeneratedFactoryException(refitInterfaceType);
+#else
+        return TryResolveGeneratedClient(refitInterfaceType, client, settings, _generatedRegistrationRunner, out var instance)
+            ? instance
+            : CreateByGeneratedTypeName(refitInterfaceType, client, settings);
+#endif
     }
 
     /// <summary>Create a source-generated Refit implementation without falling back to reflection.</summary>
@@ -213,16 +209,13 @@ public static class RestService
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(HttpClient client, RefitSettings? settings)
     {
+        var resolvedSettings = settings ?? new();
+
         // A generated settings factory means every method builds its request inline, so the reflection
         // request builder (and the Refit.Reflection assembly) is never needed for this interface.
-        if (GeneratedSettingsFactory<T>.Factory is { } settingsFactory)
+        if (TryResolveInlineClient<T>(client, resolvedSettings, _generatedRegistrationRunner, out var instance))
         {
-            return settingsFactory(client, settings ?? new());
-        }
-
-        if (_generatedSettingsFactories.TryGetValue(typeof(T), out var untypedSettingsFactory))
-        {
-            return (T)untypedSettingsFactory(client, settings ?? new());
+            return instance;
         }
 
         var requestBuilder = RequestBuilder.ForType<T>(settings);
@@ -324,11 +317,13 @@ public static class RestService
         HttpClient client,
         RefitSettings? settings)
     {
+        var resolvedSettings = settings ?? new();
+
         // A generated settings factory means every method builds its request inline, so the reflection
         // request builder (and the Refit.Reflection assembly) is never needed for this interface.
-        if (_generatedSettingsFactories.TryGetValue(refitInterfaceType, out var settingsFactory))
+        if (TryResolveInlineClient(refitInterfaceType, client, resolvedSettings, _generatedRegistrationRunner, out var instance))
         {
-            return settingsFactory(client, settings ?? new());
+            return instance;
         }
 
         var requestBuilder = RequestBuilder.ForType(refitInterfaceType, settings);
@@ -424,6 +419,113 @@ public static class RestService
         return new(innerHandler ?? new HttpClientHandler()) { BaseAddress = new(baseAddress) };
     }
 
+    /// <summary>Runs the generated-factory registrations declared by the assembly that owns a Refit interface.</summary>
+    /// <param name="refitInterfaceType">The Refit interface type.</param>
+    /// <remarks>
+    /// The generator emits those registrations in a <c>[ModuleInitializer]</c> in the assembly that declares the
+    /// interface. The runtime only promises to run a module initializer before the first static field read or method
+    /// call in that module, and resolving a client only ever does <c>typeof(T)</c>, which is neither. CoreCLR runs
+    /// module initializers eagerly regardless, but Mono - which Blazor WebAssembly runs on - does not, so a lookup can
+    /// miss purely because the initializer has not run yet. Forcing the module constructor is safe to repeat, because
+    /// a module constructor runs at most once.
+    /// </remarks>
+    internal static void RunGeneratedRegistrations(Type refitInterfaceType) =>
+        RuntimeHelpers.RunModuleConstructor(refitInterfaceType.Module.ModuleHandle);
+
+    /// <summary>Resolves a generated implementation, forcing the interface assembly's registrations on a miss.</summary>
+    /// <typeparam name="T">The Refit interface type.</typeparam>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <param name="runRegistrations">Runs the registrations declared by the interface's assembly.</param>
+    /// <param name="instance">The resolved implementation.</param>
+    /// <returns><see langword="true"/> when a generated implementation was resolved.</returns>
+    internal static bool TryResolveGeneratedClient<T>(
+        HttpClient client,
+        RefitSettings settings,
+        Action<Type> runRegistrations,
+        out T instance)
+    {
+        if (TryCreateGeneratedClient(client, settings, out instance))
+        {
+            return true;
+        }
+
+        runRegistrations(typeof(T));
+
+        return TryCreateGeneratedClient(client, settings, out instance);
+    }
+
+    /// <summary>Resolves a generated implementation, forcing the interface assembly's registrations on a miss.</summary>
+    /// <param name="refitInterfaceType">The Refit interface type.</param>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <param name="runRegistrations">Runs the registrations declared by the interface's assembly.</param>
+    /// <param name="instance">The resolved implementation.</param>
+    /// <returns><see langword="true"/> when a generated implementation was resolved.</returns>
+    internal static bool TryResolveGeneratedClient(
+        Type refitInterfaceType,
+        HttpClient client,
+        RefitSettings settings,
+        Action<Type> runRegistrations,
+        out object instance)
+    {
+        if (TryCreateGeneratedClient(refitInterfaceType, client, settings, out instance))
+        {
+            return true;
+        }
+
+        runRegistrations(refitInterfaceType);
+
+        return TryCreateGeneratedClient(refitInterfaceType, client, settings, out instance);
+    }
+
+    /// <summary>Resolves a fully inline generated implementation, forcing the interface assembly's registrations on a miss.</summary>
+    /// <typeparam name="T">The Refit interface type.</typeparam>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <param name="runRegistrations">Runs the registrations declared by the interface's assembly.</param>
+    /// <param name="instance">The resolved implementation.</param>
+    /// <returns><see langword="true"/> when an inline generated implementation was resolved.</returns>
+    internal static bool TryResolveInlineClient<T>(
+        HttpClient client,
+        RefitSettings settings,
+        Action<Type> runRegistrations,
+        out T instance)
+    {
+        if (TryCreateInlineClient(client, settings, out instance))
+        {
+            return true;
+        }
+
+        runRegistrations(typeof(T));
+
+        return TryCreateInlineClient(client, settings, out instance);
+    }
+
+    /// <summary>Resolves a fully inline generated implementation, forcing the interface assembly's registrations on a miss.</summary>
+    /// <param name="refitInterfaceType">The Refit interface type.</param>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <param name="runRegistrations">Runs the registrations declared by the interface's assembly.</param>
+    /// <param name="instance">The resolved implementation.</param>
+    /// <returns><see langword="true"/> when an inline generated implementation was resolved.</returns>
+    internal static bool TryResolveInlineClient(
+        Type refitInterfaceType,
+        HttpClient client,
+        RefitSettings settings,
+        Action<Type> runRegistrations,
+        out object instance)
+    {
+        if (TryCreateInlineClient(refitInterfaceType, client, settings, out instance))
+        {
+            return true;
+        }
+
+        runRegistrations(refitInterfaceType);
+
+        return TryCreateInlineClient(refitInterfaceType, client, settings, out instance);
+    }
+
     /// <summary>Resolves the generated implementation type for a Refit interface.</summary>
     /// <param name="refitInterfaceType">The Refit interface type.</param>
     /// <returns>The generated implementation type.</returns>
@@ -455,6 +557,127 @@ public static class RestService
 
         return new(message);
     }
+
+    /// <summary>Creates a generated implementation from the registered factories.</summary>
+    /// <typeparam name="T">The Refit interface type.</typeparam>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <param name="instance">The created implementation.</param>
+    /// <returns><see langword="true"/> when a factory was registered.</returns>
+    private static bool TryCreateGeneratedClient<T>(HttpClient client, RefitSettings settings, out T instance)
+    {
+        if (TryCreateInlineClient(client, settings, out instance))
+        {
+            return true;
+        }
+
+        if (_generatedFactories.TryGetValue(typeof(T), out var untypedFactory))
+        {
+            instance = (T)untypedFactory(client, new GeneratedOnlyRequestBuilder(settings));
+            return true;
+        }
+
+        if (GeneratedFactory<T>.Factory is { } factory)
+        {
+            instance = factory(client, new GeneratedOnlyRequestBuilder(settings));
+            return true;
+        }
+
+        instance = default!;
+        return false;
+    }
+
+    /// <summary>Creates a generated implementation from the registered factories.</summary>
+    /// <param name="refitInterfaceType">The Refit interface type.</param>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <param name="instance">The created implementation.</param>
+    /// <returns><see langword="true"/> when a factory was registered.</returns>
+    private static bool TryCreateGeneratedClient(
+        Type refitInterfaceType,
+        HttpClient client,
+        RefitSettings settings,
+        out object instance)
+    {
+        if (TryCreateInlineClient(refitInterfaceType, client, settings, out instance))
+        {
+            return true;
+        }
+
+        if (_generatedFactories.TryGetValue(refitInterfaceType, out var factory))
+        {
+            instance = factory(client, new GeneratedOnlyRequestBuilder(settings));
+            return true;
+        }
+
+        instance = default!;
+        return false;
+    }
+
+    /// <summary>Creates a generated implementation whose methods all build their requests inline.</summary>
+    /// <typeparam name="T">The Refit interface type.</typeparam>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <param name="instance">The created implementation.</param>
+    /// <returns><see langword="true"/> when a settings factory was registered.</returns>
+    private static bool TryCreateInlineClient<T>(HttpClient client, RefitSettings settings, out T instance)
+    {
+        if (GeneratedSettingsFactory<T>.Factory is { } settingsFactory)
+        {
+            instance = settingsFactory(client, settings);
+            return true;
+        }
+
+        if (_generatedSettingsFactories.TryGetValue(typeof(T), out var untypedSettingsFactory))
+        {
+            instance = (T)untypedSettingsFactory(client, settings);
+            return true;
+        }
+
+        instance = default!;
+        return false;
+    }
+
+    /// <summary>Creates a generated implementation whose methods all build their requests inline.</summary>
+    /// <param name="refitInterfaceType">The Refit interface type.</param>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <param name="instance">The created implementation.</param>
+    /// <returns><see langword="true"/> when a settings factory was registered.</returns>
+    private static bool TryCreateInlineClient(
+        Type refitInterfaceType,
+        HttpClient client,
+        RefitSettings settings,
+        out object instance)
+    {
+        if (_generatedSettingsFactories.TryGetValue(refitInterfaceType, out var settingsFactory))
+        {
+            instance = settingsFactory(client, settings);
+            return true;
+        }
+
+        instance = default!;
+        return false;
+    }
+
+#if !NET5_0_OR_GREATER
+    /// <summary>Creates a generated implementation by resolving its emitted type name.</summary>
+    /// <param name="refitInterfaceType">The Refit interface type.</param>
+    /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
+    /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
+    /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
+    /// <remarks>
+    /// .NET Framework has no <c>[ModuleInitializer]</c>, so the generator emits no registrations for those targets and
+    /// the factory registries stay empty there. Resolving the generated type by name is the same fallback the
+    /// reflection path already uses, and it keeps the modern targets free of runtime type lookup.
+    /// </remarks>
+    private static object CreateByGeneratedTypeName(Type refitInterfaceType, HttpClient client, RefitSettings settings)
+    {
+        var generatedType = _typeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType);
+
+        return Activator.CreateInstance(generatedType, client, new GeneratedOnlyRequestBuilder(settings))!;
+    }
+#endif
 
     /// <summary>Holds the typed generated factory for a single Refit interface.</summary>
     /// <typeparam name="T">The Refit interface type.</typeparam>
