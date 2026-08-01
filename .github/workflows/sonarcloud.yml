@@ -19,7 +19,8 @@ jobs:
             sonarProjectKey: reactiveui_refit
             sonarOrganization: reactiveui
             sonarExclusions: '**/tests/**,**/benchmarks/**,**/examples/**,**/TestResults/**'
-            sonarCoverageExclusions: '**/tests/**,**/benchmarks/**,**/examples/**,**/*Tests/**,**/*Tests.cs,**/Generated/**,**/*.g.cs'
+            # The smoke tests are standalone executables run outside the test harness, so no collector instruments them.
+            sonarCoverageExclusions: '**/tests/**,**/benchmarks/**,**/examples/**,**/*Tests/**,**/*Tests.cs,**/Generated/**,**/*.g.cs,**/Refit.NativeAotSmoke/**,**/Refit.NetFrameworkSmoke/**'
             sonarCpdExclusions: '**/tests/**,**/benchmarks/**,**/examples/**'
             sonarTestExclusions: '**/tests/**,**/benchmarks/**,**/examples/**'
             testTimeout: '15m'
