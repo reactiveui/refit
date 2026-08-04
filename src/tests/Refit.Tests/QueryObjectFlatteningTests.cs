@@ -210,6 +210,39 @@ public class QueryObjectFlatteningTests
             query);
     }
 
+    /// <summary>
+    /// Verifies an explicitly empty <c>[Query]</c> delimiter joins nested keys with nothing at all, rather than
+    /// falling back to the default dot. An absent attribute and an explicitly empty delimiter are different things.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task EmptyDelimiterJoinsNestedKeysWithoutSeparator()
+    {
+        var query = new NestedQueryObject { Name = "ada", Address = new AddressQuery { City = "wien", Zip = "1010" } };
+
+        await AssertParityAsync(
+            "/nested/empty?Name=ada&AddressCity=wien&Addressz=1010",
+            api => api.FlattenNestedWithEmptyDelimiter(query),
+            new RequestBuilderImplementation<IQueryObjectApi>()
+                .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenNestedWithEmptyDelimiter)),
+            query);
+    }
+
+    /// <summary>Verifies a custom non-dotted <c>[Query]</c> delimiter joins nested keys, matching the reflection builder.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task CustomDelimiterJoinsNestedKeys()
+    {
+        var query = new NestedQueryObject { Name = "ada", Address = new AddressQuery { City = "wien", Zip = "1010" } };
+
+        await AssertParityAsync(
+            "/nested/colon?Name=ada&Address%3ACity=wien&Address%3Az=1010",
+            api => api.FlattenNestedWithCustomDelimiter(query),
+            new RequestBuilderImplementation<IQueryObjectApi>()
+                .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenNestedWithCustomDelimiter)),
+            query);
+    }
+
     /// <summary>Verifies a custom key formatter is applied to every nested key segment, matching the reflection builder.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

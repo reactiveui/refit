@@ -300,14 +300,16 @@ internal static partial class Parser
         BodyBufferMode BufferMode);
 
     /// <summary>Form-relevant data parsed from a <c>[Query]</c> attribute on a parameter or body property.</summary>
-    /// <param name="Delimiter">The delimiter combined with the prefix.</param>
+    /// <param name="Delimiter">The delimiter combined with the prefix, or <see langword="null"/> when no
+    /// <c>[Query]</c> attribute was present. An explicitly supplied empty delimiter is preserved as
+    /// <see cref="string.Empty"/> and must not be confused with the absent case.</param>
     /// <param name="Prefix">The field name prefix, if any.</param>
     /// <param name="Format">The value format, if any.</param>
     /// <param name="CollectionFormatValue">The explicit collection format value, if any.</param>
     /// <param name="SerializeNull">Whether null values are serialized as empty fields.</param>
     /// <param name="TreatAsString">Whether the raw value is stringified via <c>ToString()</c> before formatting.</param>
     internal readonly record struct QueryFormData(
-        string Delimiter,
+        string? Delimiter,
         string? Prefix,
         string? Format,
         int? CollectionFormatValue,
