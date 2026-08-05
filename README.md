@@ -2570,6 +2570,23 @@ services.AddRefitGeneratedClient<IWebApi>(provider => new RefitSettings { /* con
 services.AddRefitGeneratedClient<IWebApi>(settings, "my-named-client");
 ```
 
+`AddKeyedRefitGeneratedClient<T>` is the keyed counterpart, mirroring `AddKeyedRefitClient<T>` for the generated-only
+path. It registers the client (and its `SettingsFor<T>`) under a service key so the same interface can be registered
+more than once with different configuration, and each key gets its own named `HttpClient`:
+
+```csharp
+services.AddKeyedRefitGeneratedClient<IWebApi>("primary")
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://primary.example.com"));
+services.AddKeyedRefitGeneratedClient<IWebApi>("secondary", settings)
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://secondary.example.com"));
+
+// resolve with the key
+var primary = provider.GetRequiredKeyedService<IWebApi>("primary");
+```
+
+The same overload shapes are available as the non-keyed helper - settings, a settings factory resolved from the
+container, and a custom `HttpClient` name - each taking the service key as the first argument.
+
 If no source-generated client exists for the interface, resolving it throws an `InvalidOperationException` that points
 you back to the generator output - the registration never silently falls back to reflection.
 

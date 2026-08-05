@@ -19,6 +19,15 @@ in the [main README](../README.md).
   Refit throws `OperationCanceledException` instead of continuing with partially consumed content. Other buffering
   failures remain best-effort.
 
+### New in V15.x
+
+* **`AddKeyedRefitGeneratedClient<T>` added to `Refit.HttpClientFactory`.** The generated-only registration helper now
+  has the same keyed parity that `AddRefitClient<T>` has with `AddKeyedRefitClient<T>`. All five overload shapes of
+  `AddRefitGeneratedClient<T>` are available with a leading `serviceKey` argument, registering both the client and its
+  `SettingsFor<T>` as keyed services and giving each key its own named `HttpClient`. Purely additive; existing
+  `AddRefitGeneratedClient<T>` calls are unaffected. See
+  [Generated-only client registration](../README.md#generated-only-client-registration-with-ihttpclientfactory).
+
 ## V14.x.x
 
 ### Breaking changes in V14.x

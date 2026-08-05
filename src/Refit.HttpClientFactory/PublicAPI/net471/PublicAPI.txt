@@ -31,6 +31,11 @@ public static class HttpClientFactoryExtensions
         public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) where T : class { }
         public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, Refit.RefitSettings? settings, string? httpClientName) where T : class { }
         public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey, Refit.RefitSettings? settings) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey, Refit.RefitSettings? settings, string? httpClientName) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) where T : class { }
         public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType) { }
         public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
         public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) { }
