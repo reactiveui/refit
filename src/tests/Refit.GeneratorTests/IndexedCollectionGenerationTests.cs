@@ -163,10 +163,7 @@ public sealed class IndexedCollectionGenerationTests
     [Test]
     public async Task EmptyIndexedDelimiterConcatenatesWithoutSeparator()
     {
-        var result = Fixture.RunGenerator(
-            EmptyDelimiterIndexedSource,
-            generatedRequestBuilding: true
-        );
+        var result = Fixture.RunGenerator(EmptyDelimiterIndexedSource, generatedRequestBuilding: true);
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(result.GeneratedSources[Hint]).Contains(ExpectedItemsQueryKeyPrefix);
