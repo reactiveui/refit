@@ -81,6 +81,9 @@ public sealed class IndexedCollectionGenerationTests
         }
         """;
 
+    /// <summary>The expected query key prefix for an Indexed collection parameter, which is <c>items[{</c> for the test sources above.</summary>
+    private const string ExpectedItemsQueryKeyPrefix = "items[{";
+
     /// <summary>Source where the element type has a nested object property - should fall back to reflection
     /// because the nested type is complex and the reflection builder walks runtime types.</summary>
     private const string IndexedWithSimpleScalarCollectionSource =
@@ -150,15 +153,37 @@ public sealed class IndexedCollectionGenerationTests
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
     }
 
-    /// <summary>Verifies an empty Indexed nesting delimiter falls back to the standard dot delimiter.</summary>
+    /// <summary>
+    /// Verifies an explicitly empty Indexed nesting delimiter joins the indexed key to the element's property name
+    /// with no separator at all, rather than falling back to the dot. The reflection builder composes this key as
+    /// <c>indexedKey + attr.Delimiter + propertyKey</c> with the delimiter used verbatim, so substituting the dot
+    /// for an explicitly empty delimiter would make the generated client disagree with it.
+    /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task EmptyIndexedDelimiterUsesDotFallback()
+    public async Task EmptyIndexedDelimiterConcatenatesWithoutSeparator()
     {
-        var result = Fixture.RunGenerator(EmptyDelimiterIndexedSource, generatedRequestBuilding: true);
+        var result = Fixture.RunGenerator(
+            EmptyDelimiterIndexedSource,
+            generatedRequestBuilding: true
+        );
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(result.GeneratedSources[Hint]).Contains("items[{");
+        await Assert.That(result.GeneratedSources[Hint]).Contains(ExpectedItemsQueryKeyPrefix);
+        await Assert.That(result.GeneratedSources[Hint]).Contains("}Id");
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain("}.Id");
+    }
+
+    /// <summary>Verifies an Indexed parameter that supplies no delimiter still composes its keys under the dot,
+    /// which is the delimiter <c>[Query]</c> itself defaults to.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UnspecifiedIndexedDelimiterUsesDot()
+    {
+        var result = Fixture.RunGenerator(NullableIndexedSource, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).Contains(ExpectedItemsQueryKeyPrefix);
         await Assert.That(result.GeneratedSources[Hint]).Contains("}.Id");
     }
 
@@ -195,7 +220,7 @@ public sealed class IndexedCollectionGenerationTests
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
 
-        await Assert.That(generated).Contains("items[{");
+        await Assert.That(generated).Contains(ExpectedItemsQueryKeyPrefix);
     }
 
     /// <summary>Verifies a Indexed parameter whose element type is a scalar (not complex) generates inline
@@ -229,7 +254,7 @@ public sealed class IndexedCollectionGenerationTests
     }
 
     /// <summary>Verifies a Indexed parameter whose element type is a collection with a complex element type falls back to reflective generation.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>    
+    /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task IndexedWithComplexIndexElementFallsBackToReflective()
     {
