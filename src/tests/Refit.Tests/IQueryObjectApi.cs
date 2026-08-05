@@ -61,6 +61,19 @@ public interface IQueryObjectApi
     [Get("/nested")]
     Task<string> FlattenNested([Query] NestedQueryObject query);
 
+    /// <summary>Flattens a query object with a nested object property under an explicitly empty delimiter, so the
+    /// nested keys are concatenated with no separator at all.</summary>
+    /// <param name="query">The query object.</param>
+    /// <returns>The response body.</returns>
+    [Get("/nested/empty")]
+    Task<string> FlattenNestedWithEmptyDelimiter([Query(delimiter: "")] NestedQueryObject query);
+
+    /// <summary>Flattens a query object with a nested object property under a custom non-dotted delimiter.</summary>
+    /// <param name="query">The query object.</param>
+    /// <returns>The response body.</returns>
+    [Get("/nested/colon")]
+    Task<string> FlattenNestedWithCustomDelimiter([Query(delimiter: ":")] NestedQueryObject query);
+
     /// <summary>Flattens a query object with a nullable nested value-type property under a dotted key.</summary>
     /// <param name="query">The query object.</param>
     /// <returns>The response body.</returns>

@@ -104,7 +104,7 @@ internal static partial class Parser
             ElementCanBeNull: false,
             BuildValueFormat(flattenType, null, formattableSymbol, context),
             residual.ToImmutableEquatableArray(),
-            NestingDelimiter: string.IsNullOrEmpty(data.Delimiter) ? "." : data.Delimiter);
+            NestingDelimiter: data.Delimiter ?? DefaultNestingDelimiter);
         return true;
     }
 

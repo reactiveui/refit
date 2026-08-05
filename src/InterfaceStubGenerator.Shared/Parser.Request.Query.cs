@@ -17,6 +17,14 @@ internal static partial class Parser
     /// <summary>The maximum nested-object depth flattened inline before the whole parameter falls back to reflection.</summary>
     private const int MaxNestingDepth = 32;
 
+    /// <summary>The delimiter joining nested query keys when no <c>[Query]</c> attribute supplies one.</summary>
+    /// <remarks>
+    /// This is only the fallback for the absent-attribute case. A <c>[Query]</c> attribute always carries a delimiter -
+    /// <c>QueryAttribute.Delimiter</c> itself defaults to <c>"."</c> - so an explicitly supplied empty delimiter
+    /// must be honoured rather than replaced with this value.
+    /// </remarks>
+    private const string DefaultNestingDelimiter = ".";
+
     /// <summary>The metadata name of <c>Refit.CollectionFormat</c>.</summary>
     private const string CollectionFormatTypeName = "Refit.CollectionFormat";
 
@@ -244,21 +252,18 @@ internal static partial class Parser
             ? nullableObject.TypeArguments[0]
             : parameter.Type;
 
-        if (TryBuildQueryObjectProperties(objectType, parameterPrefixSegment, formattableSymbol, context) is not { } properties)
-        {
-            return null;
-        }
-
-        return new(
-            urlName,
-            QueryParameterShape.Object,
-            TreatAsString: false,
-            preEncoded,
-            data.CollectionFormatValue,
-            ElementCanBeNull: false,
-            BuildValueFormat(parameter.Type, format, formattableSymbol, context),
-            properties,
-            NestingDelimiter: string.IsNullOrEmpty(data.Delimiter) ? "." : data.Delimiter);
+        return TryBuildQueryObjectProperties(objectType, parameterPrefixSegment, formattableSymbol, context) is not { } properties
+            ? null
+            : new(
+                urlName,
+                QueryParameterShape.Object,
+                TreatAsString: false,
+                preEncoded,
+                data.CollectionFormatValue,
+                ElementCanBeNull: false,
+                BuildValueFormat(parameter.Type, format, formattableSymbol, context),
+                properties,
+                NestingDelimiter: data.Delimiter ?? DefaultNestingDelimiter);
     }
 
     /// <summary>Builds the query model for a collection-of-simple-elements parameter, or null for any other shape.</summary>
@@ -344,21 +349,18 @@ internal static partial class Parser
             return null;
         }
 
-        if (TryBuildQueryObjectProperties(elementType!, null, formattableSymbol, context) is not { } elementProperties)
-        {
-            return null;
-        }
-
-        return new(
-            urlName,
-            QueryParameterShape.IndexedCollection,
-            TreatAsString: false,
-            preEncoded,
-            data.CollectionFormatValue,
-            CanElementBeNull(elementType!),
-            BuildValueFormat(elementType!, format, formattableSymbol, context),
-            elementProperties,
-            NestingDelimiter: string.IsNullOrEmpty(data.Delimiter) ? "." : data.Delimiter);
+        return TryBuildQueryObjectProperties(elementType!, null, formattableSymbol, context) is not { } elementProperties
+            ? null
+            : new(
+                urlName,
+                QueryParameterShape.IndexedCollection,
+                TreatAsString: false,
+                preEncoded,
+                data.CollectionFormatValue,
+                CanElementBeNull(elementType!),
+                BuildValueFormat(elementType!, format, formattableSymbol, context),
+                elementProperties,
+                NestingDelimiter: data.Delimiter ?? DefaultNestingDelimiter);
     }
 
     /// <summary>Builds the query model for a <c>[QueryConverter]</c> parameter, or null when the type is unresolved.</summary>
