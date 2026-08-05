@@ -252,21 +252,18 @@ internal static partial class Parser
             ? nullableObject.TypeArguments[0]
             : parameter.Type;
 
-        if (TryBuildQueryObjectProperties(objectType, parameterPrefixSegment, formattableSymbol, context) is not { } properties)
-        {
-            return null;
-        }
-
-        return new(
-            urlName,
-            QueryParameterShape.Object,
-            TreatAsString: false,
-            preEncoded,
-            data.CollectionFormatValue,
-            ElementCanBeNull: false,
-            BuildValueFormat(parameter.Type, format, formattableSymbol, context),
-            properties,
-            NestingDelimiter: data.Delimiter ?? DefaultNestingDelimiter);
+        return TryBuildQueryObjectProperties(objectType, parameterPrefixSegment, formattableSymbol, context) is not { } properties
+            ? null
+            : new(
+                urlName,
+                QueryParameterShape.Object,
+                TreatAsString: false,
+                preEncoded,
+                data.CollectionFormatValue,
+                ElementCanBeNull: false,
+                BuildValueFormat(parameter.Type, format, formattableSymbol, context),
+                properties,
+                NestingDelimiter: data.Delimiter ?? DefaultNestingDelimiter);
     }
 
     /// <summary>Builds the query model for a collection-of-simple-elements parameter, or null for any other shape.</summary>
@@ -352,21 +349,18 @@ internal static partial class Parser
             return null;
         }
 
-        if (TryBuildQueryObjectProperties(elementType!, null, formattableSymbol, context) is not { } elementProperties)
-        {
-            return null;
-        }
-
-        return new(
-            urlName,
-            QueryParameterShape.IndexedCollection,
-            TreatAsString: false,
-            preEncoded,
-            data.CollectionFormatValue,
-            CanElementBeNull(elementType!),
-            BuildValueFormat(elementType!, format, formattableSymbol, context),
-            elementProperties,
-            NestingDelimiter: data.Delimiter ?? DefaultNestingDelimiter);
+        return TryBuildQueryObjectProperties(elementType!, null, formattableSymbol, context) is not { } elementProperties
+            ? null
+            : new(
+                urlName,
+                QueryParameterShape.IndexedCollection,
+                TreatAsString: false,
+                preEncoded,
+                data.CollectionFormatValue,
+                CanElementBeNull(elementType!),
+                BuildValueFormat(elementType!, format, formattableSymbol, context),
+                elementProperties,
+                NestingDelimiter: data.Delimiter ?? DefaultNestingDelimiter);
     }
 
     /// <summary>Builds the query model for a <c>[QueryConverter]</c> parameter, or null when the type is unresolved.</summary>
