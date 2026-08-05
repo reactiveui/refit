@@ -72,6 +72,13 @@ public static class HttpClientFactoryExtensions
         [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
         public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey, Refit.RefitSettings? settings) where T : class { }
+        [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction) where T : class { }
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey, Refit.RefitSettings? settings, string? httpClientName) where T : class { }
+        [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
+        public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddKeyedRefitGeneratedClient<T>(object? serviceKey, System.Func<System.IServiceProvider, Refit.RefitSettings?>? settingsAction, string? httpClientName) where T : class { }
         [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.")]
         [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.")]
         public Microsoft.Extensions.DependencyInjection.IHttpClientBuilder AddRefitClient(System.Type refitInterfaceType) { }

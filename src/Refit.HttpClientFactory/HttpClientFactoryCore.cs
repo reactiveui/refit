@@ -304,6 +304,56 @@ internal static class HttpClientFactoryCore
                 serviceProvider.GetRequiredService<SettingsFor<T>>().Settings ?? new RefitSettings()));
     }
 
+    /// <summary>Registers a strongly typed, keyed, source-generated Refit client without any reflection fallback.</summary>
+    /// <typeparam name="T">The Refit interface type to register.</typeparam>
+    /// <param name="services">The service collection to register into.</param>
+    /// <param name="serviceKey">The key under which the client is registered.</param>
+    /// <param name="settings">A factory that produces the Refit settings, or null.</param>
+    /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
+    /// <returns>The HTTP client builder for further configuration.</returns>
+    [SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+    internal static IHttpClientBuilder AddKeyedRefitGeneratedClientCore<T>(
+        IServiceCollection services,
+        object? serviceKey,
+        Func<IServiceProvider, RefitSettings?>? settings,
+        string? httpClientName)
+        where T : class
+    {
+        ArgumentExceptionHelper.ThrowIfNull(services);
+
+        ArgumentExceptionHelper.ThrowIfNull(serviceKey);
+
+        // register settings
+        _ = services.AddKeyedSingleton(
+            serviceKey,
+            (provider, _) => new SettingsFor<T>(settings?.Invoke(provider)));
+
+        // create HttpClientBuilder
+        var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>(serviceKey));
+
+        // configure primary and additional handlers from the keyed settings
+        ConfigureKeyedHandlers(
+            builder,
+            serviceProvider => serviceProvider.GetRequiredKeyedService<SettingsFor<T>>(serviceKey));
+
+        // add keyed typed client backed by the source generator only; throws clearly if no generated client exists
+        _ = builder.Services.AddKeyedTransient(
+            serviceKey,
+            (s, _) =>
+            {
+                var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
+                var httpClient = httpClientFactory.CreateClient(builder.Name);
+                return RestService.ForGenerated<T>(
+                    httpClient,
+                    s.GetRequiredKeyedService<SettingsFor<T>>(serviceKey).Settings ?? new RefitSettings());
+            });
+
+        return builder;
+    }
+
     /// <summary>Resolves and caches the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
     /// <returns>The open generic <c>RequestBuilder.ForType</c> method definition.</returns>
     [RequiresUnreferencedCode("Resolving RequestBuilder.ForType by reflection requires method metadata to be available at runtime.")]
