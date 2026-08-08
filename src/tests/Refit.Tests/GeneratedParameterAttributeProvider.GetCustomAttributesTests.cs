@@ -36,10 +36,7 @@ public partial class GeneratedParameterAttributeProviderTests
     public async Task GetCustomAttributesReturnsAttributesArray()
     {
         var provider =
-            new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>
-            {
-                { typeof(QueryAttribute), [new QueryAttribute()] }
-            });
+            new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]> { { typeof(QueryAttribute), [new QueryAttribute()] }, });
 
         var result = provider.GetCustomAttributes(typeof(QueryAttribute), false);
 
@@ -51,12 +48,11 @@ public partial class GeneratedParameterAttributeProviderTests
     [Test]
     public async Task GetCustomAttributesWithNoTypeReturnsAttributesArray()
     {
-        var provider =
-            new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>
-            {
-                { typeof(QueryAttribute), [new QueryAttribute()] },
-                { typeof(AliasAsAttribute), [new AliasAsAttribute("foo")] }
-            });
+        var provider = new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>
+        {
+            { typeof(QueryAttribute), [new QueryAttribute()] },
+            { typeof(AliasAsAttribute), [new AliasAsAttribute("foo")] },
+        });
 
         const int expectedCount = 2;
 

@@ -8,6 +8,7 @@ namespace Refit;
 
 /// <summary>An obsolete JSON content serializer that has been replaced by serializers in dedicated packages.</summary>
 /// <seealso cref="Refit.IHttpContentSerializer" />
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [Obsolete(
     "Use NewtonsoftJsonContentSerializer in the Refit.Newtonsoft.Json package instead",
     true)]

@@ -5,6 +5,7 @@
 namespace Refit.Benchmarks;
 
 /// <summary>A representative URL-encoded form payload used by the form serialization benchmark.</summary>
+[System.Diagnostics.DebuggerDisplay("{FirstName}")]
 public sealed class FormBenchmarkModel
 {
     /// <summary>Gets or sets the aliased first name.</summary>

@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 namespace Meow;
 
 /// <summary>In-memory backend handler that serves responses for the issue demo endpoints.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class DemoBackendHandler : HttpMessageHandler
 {
     /// <inheritdoc/>
@@ -42,7 +43,7 @@ public sealed class DemoBackendHandler : HttpMessageHandler
             Content = new StringContent(
                 JsonConvert.SerializeObject(new CustomerEchoResponse { CustomerIdHeader = customerIdHeader }),
                 Encoding.UTF8,
-                "application/json")
+                "application/json"),
         };
     }
 
@@ -57,11 +58,13 @@ public sealed class DemoBackendHandler : HttpMessageHandler
         {
             const int keyValuePartCount = 2;
             var kv = part.Split('=', keyValuePartCount);
-            if (kv.Length == keyValuePartCount && kv[0] == "size" && int.TryParse(Uri.UnescapeDataString(kv[1]), out var parsed))
+            if (!(kv.Length == keyValuePartCount && kv[0] == "size" && int.TryParse(Uri.UnescapeDataString(kv[1]), out var parsed)))
             {
-                size = parsed;
-                break;
+                continue;
             }
+
+            size = parsed;
+            break;
         }
 
         var response = new LargePayloadResponse();

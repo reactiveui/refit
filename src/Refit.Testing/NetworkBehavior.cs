@@ -4,6 +4,7 @@
 
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 
 namespace Refit.Testing;
 
@@ -18,6 +19,7 @@ namespace Refit.Testing;
 /// of delays and faults within a runtime. Defaults mirror Retrofit: a 2 second delay, 40% variance, 3%
 /// failure and 0% error. The calculation methods are usable standalone.
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{Delay}")]
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Security",
     "CA5394:Random is an insecure random number generator",
@@ -88,20 +90,22 @@ public sealed class NetworkBehavior
             sample = _random.NextDouble();
         }
 
-        var factor = 1D + (((sample * VarianceSpan) - 1D) * Variance);
-        return TimeSpan.FromMilliseconds(Delay.TotalMilliseconds * Math.Max(0D, factor));
+        return TimeSpan.FromMilliseconds(Delay.TotalMilliseconds * Math.Max(0D, 1D + (((sample * VarianceSpan) - 1D) * Variance)));
     }
 
     /// <summary>Determines whether the next request should simulate a network failure.</summary>
     /// <returns><see langword="true"/> when the request should fail.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool NextIsFailure() => NextChance(FailurePercent);
 
     /// <summary>Determines whether the next request should simulate an HTTP error response.</summary>
     /// <returns><see langword="true"/> when the request should return an error status.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool NextIsError() => NextChance(ErrorPercent);
 
     /// <summary>Creates the exception used to simulate a network failure.</summary>
     /// <returns>The exception to throw.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Exception CreateFailure() => FailureFactory();
 
     /// <summary>Creates the response used to simulate an HTTP error.</summary>

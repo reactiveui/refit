@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Tests;
 
 /// <summary>Direct coverage for indexed reflection queries containing explicitly serialized null properties.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionIndexedNullQueryTests
 {
     /// <summary>The populated value paired with the null value.</summary>
@@ -21,7 +22,7 @@ public sealed class ReflectionIndexedNullQueryTests
         var values = new[]
         {
             new IndexedItem { Values = [null] },
-            new IndexedItem { Value = PopulatedValue }
+            new IndexedItem { Value = PopulatedValue },
         };
         var attribute = new QueryAttribute(CollectionFormat.Indexed);
         var untypedEntries = new List<QueryParameterEntry>();

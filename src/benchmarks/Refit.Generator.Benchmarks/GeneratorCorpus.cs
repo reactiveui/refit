@@ -45,8 +45,8 @@ internal static class GeneratorCorpus
 
     /// <summary>Gets a single small CRUD interface: the common "one client, a handful of methods" case.</summary>
     internal static string Small { get; } =
-        Preamble +
-        """
+        Preamble
+        + """
         public sealed class Widget
         {
             public int Id { get; set; }
@@ -80,8 +80,8 @@ internal static class GeneratorCorpus
 
     /// <summary>Gets a query-heavy corpus exercising scalar, collection, object, and converter query bindings.</summary>
     internal static string QueryHeavy { get; } =
-        Preamble +
-        """
+        Preamble
+        + """
         using System.Runtime.Serialization;
 
         public enum BenchSort
@@ -122,8 +122,8 @@ internal static class GeneratorCorpus
 
     /// <summary>Gets a multipart-heavy corpus exercising stream, byte-array, string, and typed multipart parts.</summary>
     internal static string MultipartHeavy { get; } =
-        Preamble +
-        """
+        Preamble
+        + """
         using System.IO;
 
         public interface IMultipartApi

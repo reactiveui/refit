@@ -9,6 +9,7 @@ namespace Refit.Generator.Benchmarks;
 /// <summary>Micro-benchmarks for <see cref="UniqueNameBuilder"/>, allocated fresh per emitted interface.</summary>
 /// <remarks>Each interface reserves its member names then draws unique field and local names, so the reserve-then-draw
 /// cycle (and its backing <see cref="System.Collections.Generic.HashSet{T}"/>) runs once per generated client.</remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]

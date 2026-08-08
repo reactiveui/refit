@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -12,6 +13,7 @@ namespace Refit.Reflection.Benchmarks;
 /// request-shape structs: <c>CloseGenericMethodKey</c>, <c>MethodTableKey</c>, <c>ParameterFragment</c>,
 /// <c>QueryMapEntry</c>, and <c>QueryParameterEntry</c>, plus the parameter-fragment factories.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -100,31 +102,37 @@ public class MethodKeyEqualityBenchmarks
 
     /// <summary>Compares two closed-generic keys for equality.</summary>
     /// <returns><see langword="true"/> when the keys are equal.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool CloseGenericMethodKeyEquals() => _closeKeyA.Equals(_closeKeyB);
 
     /// <summary>Hashes a closed-generic key.</summary>
     /// <returns>The hash code.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int CloseGenericMethodKeyGetHashCode() => _closeKeyA.GetHashCode();
 
     /// <summary>Compares two method-table keys for equality.</summary>
     /// <returns><see langword="true"/> when the keys are equal.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool MethodTableKeyEquals() => _methodKeyA.Equals(_methodKeyB);
 
     /// <summary>Hashes a method-table key.</summary>
     /// <returns>The hash code.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int MethodTableKeyGetHashCode() => _methodKeyA.GetHashCode();
 
     /// <summary>Compares two parameter fragments for equality.</summary>
     /// <returns><see langword="true"/> when the fragments are equal.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool ParameterFragmentEquals() => _fragmentA.Equals(_fragmentB);
 
     /// <summary>Hashes a parameter fragment.</summary>
     /// <returns>The hash code.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int ParameterFragmentGetHashCode() => _fragmentA.GetHashCode();
 
@@ -143,21 +151,25 @@ public class MethodKeyEqualityBenchmarks
 
     /// <summary>Compares two query-map entries for equality.</summary>
     /// <returns><see langword="true"/> when the entries are equal.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool QueryMapEntryEquals() => _mapEntryA.Equals(_mapEntryB);
 
     /// <summary>Hashes a query-map entry.</summary>
     /// <returns>The hash code.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int QueryMapEntryGetHashCode() => _mapEntryA.GetHashCode();
 
     /// <summary>Compares two query-parameter entries for equality.</summary>
     /// <returns><see langword="true"/> when the entries are equal.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool QueryParameterEntryEquals() => _paramEntryA.Equals(_paramEntryB);
 
     /// <summary>Hashes a query-parameter entry.</summary>
     /// <returns>The hash code.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int QueryParameterEntryGetHashCode() => _paramEntryA.GetHashCode();
 }

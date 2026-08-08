@@ -141,11 +141,7 @@ public sealed class StubHttpCoverageTests
     [Test]
     public async Task HandlerEnumeratesRoutes()
     {
-        var handler = new StubHttp
-        {
-            { Route.Get("/a"), Reply.Status(HttpStatusCode.OK) },
-            { Route.Post("/b"), Reply.Status(HttpStatusCode.OK) },
-        };
+        var handler = new StubHttp { { Route.Get("/a"), Reply.Status(HttpStatusCode.OK) }, { Route.Post("/b"), Reply.Status(HttpStatusCode.OK) }, };
 
         var generic = handler.ToList();
 

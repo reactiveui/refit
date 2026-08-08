@@ -10,7 +10,7 @@ internal sealed class GeneratedOnlyRequestBuilder : IRequestBuilder
 {
     /// <summary>Initializes a new instance of the <see cref="GeneratedOnlyRequestBuilder"/> class.</summary>
     /// <param name="settings">The settings used by the generated client.</param>
-    public GeneratedOnlyRequestBuilder(RefitSettings settings) => Settings = settings;
+    internal GeneratedOnlyRequestBuilder(RefitSettings settings) => Settings = settings;
 
     /// <inheritdoc/>
     public RefitSettings Settings { get; }

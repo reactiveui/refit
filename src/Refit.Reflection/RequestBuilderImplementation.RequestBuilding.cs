@@ -6,6 +6,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -128,6 +129,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="serializer">The content serializer to use.</param>
     /// <param name="body">The body value to serialize.</param>
     /// <returns>The serialized HTTP content.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -159,6 +161,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="serializer">The synchronous content serializer to use.</param>
     /// <param name="body">The body value to serialize.</param>
     /// <returns>The serialized, buffered HTTP content.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -190,6 +193,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="serializer">The synchronous content serializer to use.</param>
     /// <param name="body">The body value to serialize.</param>
     /// <returns>The streaming HTTP content.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -228,11 +232,13 @@ internal partial class RequestBuilderImplementation
         var index = 0;
         for (var i = 0; i < paramList.Length; i++)
         {
-            if (paramList[i] is not CancellationToken)
+            if (paramList[i] is CancellationToken)
             {
-                mappedParams[index] = paramList[i];
-                index++;
+                continue;
             }
+
+            mappedParams[index] = paramList[i];
+            index++;
         }
 
         return mappedParams;
@@ -553,7 +559,7 @@ internal partial class RequestBuilderImplementation
 
         // Walk the property chain (one link for a single-level binding, more for a dotted {a.b.c} binding), stopping at
         // the first null so a missing intermediate formats as an empty segment rather than throwing.
-        object? propertyObject = paramList[fragment.ArgumentIndex];
+        var propertyObject = paramList[fragment.ArgumentIndex];
         foreach (var link in property.PropertyChain)
         {
             if (propertyObject is null)

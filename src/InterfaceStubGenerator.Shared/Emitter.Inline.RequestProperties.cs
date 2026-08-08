@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
 
@@ -86,20 +87,24 @@ internal static partial class Emitter
 
         foreach (var property in interfaceModel.Properties)
         {
-            if (property.RequestPropertyKey.Length != 0 && property.HasGetter)
+            if (property.RequestPropertyKey.Length == 0 || !property.HasGetter)
             {
-                var key = ToCSharpStringLiteral(property.RequestPropertyKey);
-                AppendRequestProperty(sb, bodyIndent, requestLocal, property.Type, key, BuildPropertyAccessExpression(property));
+                continue;
             }
+
+            var key = ToCSharpStringLiteral(property.RequestPropertyKey);
+            AppendRequestProperty(sb, bodyIndent, requestLocal, property.Type, key, BuildPropertyAccessExpression(property));
         }
 
         foreach (var parameter in request.Parameters)
         {
-            if (parameter.Kind == RequestParameterKind.Property)
+            if (parameter.Kind != RequestParameterKind.Property)
             {
-                var key = ToCSharpStringLiteral(parameter.PropertyKey);
-                AppendRequestProperty(sb, bodyIndent, requestLocal, parameter.Type, key, $"@{parameter.Name}");
+                continue;
             }
+
+            var key = ToCSharpStringLiteral(parameter.PropertyKey);
+            AppendRequestProperty(sb, bodyIndent, requestLocal, parameter.Type, key, $"@{parameter.Name}");
         }
     }
 
@@ -110,6 +115,7 @@ internal static partial class Emitter
     /// <param name="typeArgument">The request-property value type argument.</param>
     /// <param name="keyExpression">The property-key expression.</param>
     /// <param name="valueExpression">The property-value expression.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void AppendRequestProperty(
         PooledStringBuilder sb,
         string bodyIndent,

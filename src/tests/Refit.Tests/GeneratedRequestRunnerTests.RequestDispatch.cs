@@ -46,10 +46,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SetHeaderReplacesExistingContentHeaders()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath)
-        {
-            Content = new StringContent("body")
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath) { Content = new StringContent("body"), };
         request.Content.Headers.ContentLanguage.Add(ContentLanguageValue);
 
         GeneratedRequestRunner.SetHeader(request, "Content-Language", "fr-FR", validateHeaders: false);
@@ -99,11 +96,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task AddHeaderCollectionIgnoresNullAndReplacesExistingHeaders()
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
-        var headers = new Dictionary<string, string>
-        {
-            [FirstHeaderName] = "one",
-            ["X-Second"] = "two"
-        };
+        var headers = new Dictionary<string, string> { [FirstHeaderName] = "one", ["X-Second"] = "two", };
 
         GeneratedRequestRunner.SetHeader(request, FirstHeaderName, "original", validateHeaders: false);
         GeneratedRequestRunner.AddHeaderCollection(request, null, validateHeaders: false);
@@ -137,13 +130,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task AddConfiguredRequestOptionsAddsConfiguredValuesAndInterfaceType()
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
-        var settings = new RefitSettings(new RecordingContentSerializer())
-        {
-            HttpRequestMessageOptions = new()
-            {
-                ["configured"] = ConfiguredOptionValue
-            }
-        };
+        var settings = new RefitSettings(new RecordingContentSerializer()) { HttpRequestMessageOptions = new() { ["configured"] = ConfiguredOptionValue, }, };
 
         GeneratedRequestRunner.AddConfiguredRequestOptions(
             request,
@@ -178,10 +165,7 @@ public partial class GeneratedRequestRunnerTests
         var serializer = new RecordingContentSerializer();
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("response")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("response"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings(serializer);
@@ -206,15 +190,9 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("buffered")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("buffered"), }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath)
-        {
-            Content = new StringContent("request-body")
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath) { Content = new StringContent("request-body"), };
 
         var result = await GeneratedRequestRunner.SendAsync<string, string>(
             client,
@@ -237,10 +215,7 @@ public partial class GeneratedRequestRunnerTests
         Justification = "The test awaits generated SendAsync before response disposal and verifies this exact response is returned.")]
     public async Task SendAsyncReturnsHttpResponseMessageWithoutExceptionFactory()
     {
-        var response = new HttpResponseMessage(HttpStatusCode.InternalServerError)
-        {
-            Content = new StringContent("server-error")
-        };
+        var response = new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent("server-error"), };
         var handler = new CapturingHandler((_, _) => Task.FromResult(response));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
@@ -273,10 +248,7 @@ public partial class GeneratedRequestRunnerTests
         var responseContent = new StringContent("content");
         var handler = new CapturingHandler(
             (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = responseContent
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = responseContent, }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -299,10 +271,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("streamed-response")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("streamed-response"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -324,16 +293,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncDeserializesSerializedContent()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializedValue = new GeneratedResult(DeserializedResultValue)
-        };
+        var serializer = new RecordingContentSerializer { DeserializedValue = new GeneratedResult(DeserializedResultValue), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{\"value\":42}")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"value\":42}"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -355,16 +318,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncReturnsDefaultForEmptySerializedContent()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializedValue = new GeneratedResult(DeserializedResultValue)
-        };
+        var serializer = new RecordingContentSerializer { DeserializedValue = new GeneratedResult(DeserializedResultValue), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new ByteArrayContent([])
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([]), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -386,16 +343,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncReturnsSuccessfulApiResponseWithDeserializedContent()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializedValue = new GeneratedResult(SuccessResultValue)
-        };
+        var serializer = new RecordingContentSerializer { DeserializedValue = new GeneratedResult(SuccessResultValue), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{\"value\":123}")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"value\":123}"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -418,16 +369,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncIgnoresResponseBufferingFailuresBeforeDeserializing()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializedValue = new GeneratedResult(BufferedResultValue)
-        };
+        var serializer = new RecordingContentSerializer { DeserializedValue = new GeneratedResult(BufferedResultValue), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new ThrowingLoadContent()
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new ThrowingLoadContent(), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -537,10 +482,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(ObservedResponseContent)
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(ObservedResponseContent), }));
         using var client = CreateClient(handler);
         using var methodTokenSource = new CancellationTokenSource();
 
@@ -566,10 +508,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(ObservedResponseContent)
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(ObservedResponseContent), }));
         using var client = CreateClient(handler);
 
         var observable = GeneratedRequestRunner.SendObservable<string, string>(

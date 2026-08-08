@@ -6,11 +6,13 @@ using System.Net.Http;
 namespace Refit;
 
 /// <summary>Base type for multipart form items that carry a file name and optional content metadata.</summary>
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 public abstract class MultipartItem
 {
     /// <summary>Initializes a new instance of the <see cref="MultipartItem"/> class.</summary>
     /// <param name="fileName">Name of the file.</param>
     /// <param name="contentType">Type of the content.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="fileName"/> is <see langword="null"/>.</exception>
     protected MultipartItem(string fileName, string? contentType)
     {
         FileName = fileName ?? throw new ArgumentNullException(nameof(fileName));

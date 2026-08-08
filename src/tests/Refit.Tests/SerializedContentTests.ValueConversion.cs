@@ -195,10 +195,7 @@ public partial class SerializedContentTests
     {
         var resolver = new TrackingTypeInfoResolver(ObjectValueContainerJsonSerializerContext.Default);
         var options = new JsonSerializerOptions(
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions())
-        {
-            TypeInfoResolver = resolver
-        };
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()) { TypeInfoResolver = resolver, };
 
         var json = SystemTextJsonSerializer.Serialize(
             new ObjectValueContainer { Value = RoadRunnerName },
@@ -241,7 +238,7 @@ public partial class SerializedContentTests
             "\"alreadyLowercase\"",
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
-        await Assert.That(result).IsEqualTo(CamelCaseEnum.alreadyLowercase);
+        await Assert.That(result).IsEqualTo(CamelCaseEnum.AlreadyLowercase);
     }
 
     /// <summary>Verifies that numeric enum values are deserialized correctly.</summary>
@@ -253,7 +250,7 @@ public partial class SerializedContentTests
             "2",
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
-        await Assert.That(result).IsEqualTo(CamelCaseEnum.alreadyLowercase);
+        await Assert.That(result).IsEqualTo(CamelCaseEnum.AlreadyLowercase);
     }
 
     /// <summary>Verifies that unsigned numeric enum values are deserialized correctly.</summary>
@@ -313,7 +310,7 @@ public partial class SerializedContentTests
             "2",
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
-        await Assert.That(result).IsEqualTo(CamelCaseEnum.alreadyLowercase);
+        await Assert.That(result).IsEqualTo(CamelCaseEnum.AlreadyLowercase);
     }
 
     /// <summary>Verifies that JSON null throws for a non-nullable enum.</summary>
@@ -386,10 +383,7 @@ public partial class SerializedContentTests
     public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeUndefinedEnumDictionaryKeysAsNumbers()
     {
         var json = SystemTextJsonSerializer.Serialize(
-            new Dictionary<CamelCaseEnum, string>
-            {
-                [(CamelCaseEnum)UndefinedEnumValue] = "unknown"
-            },
+            new Dictionary<CamelCaseEnum, string> { [(CamelCaseEnum)UndefinedEnumValue] = "unknown", },
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(json).IsEqualTo("""{"999":"unknown"}""");
@@ -401,10 +395,7 @@ public partial class SerializedContentTests
     public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeUndefinedUnsignedEnumDictionaryKeysAsNumbers()
     {
         var json = SystemTextJsonSerializer.Serialize(
-            new Dictionary<UnsignedCamelCaseEnum, string>
-            {
-                [(UnsignedCamelCaseEnum)UndefinedUnsignedEnumValue] = "unknown"
-            },
+            new Dictionary<UnsignedCamelCaseEnum, string> { [(UnsignedCamelCaseEnum)UndefinedUnsignedEnumValue] = "unknown", },
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(json).IsEqualTo("""{"9223372036854775808":"unknown"}""");
@@ -416,7 +407,7 @@ public partial class SerializedContentTests
     public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeLowercaseEnumNamesUnchanged()
     {
         var json = SystemTextJsonSerializer.Serialize(
-            CamelCaseEnum.alreadyLowercase,
+            CamelCaseEnum.AlreadyLowercase,
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(json).IsEqualTo("\"alreadyLowercase\"");
@@ -475,17 +466,9 @@ public partial class SerializedContentTests
     public async Task SystemTextJsonContentSerializer_UsesSourceGeneratedMetadataWhenProvided()
     {
         var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
-        {
-            TypeInfoResolver = resolver
-        };
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { TypeInfoResolver = resolver, };
         var serializer = new SystemTextJsonContentSerializer(options);
-        var model = new User
-        {
-            Name = RoadRunnerName,
-            Company = "ACME",
-            CreatedAt = "1949-09-17"
-        };
+        var model = new User { Name = RoadRunnerName, Company = "ACME", CreatedAt = "1949-09-17", };
 
         var content = serializer.ToHttpContent(model);
         var roundTrip = await serializer.FromHttpContentAsync<User>(content);
@@ -503,10 +486,7 @@ public partial class SerializedContentTests
     public async Task SystemTextJsonContentSerializer_DeserializeFromString_UsesSourceGeneratedMetadata()
     {
         var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
-        {
-            TypeInfoResolver = resolver
-        };
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { TypeInfoResolver = resolver, };
         var serializer = new SystemTextJsonContentSerializer(options);
 
         var roundTrip = serializer.DeserializeFromString<User>("{\"name\":\"Road Runner\"}");
@@ -536,11 +516,7 @@ public partial class SerializedContentTests
     {
         var serializer = new SystemTextJsonContentSerializer();
 
-        var source = new Dictionary<CamelCaseEnum, string>
-        {
-            [CamelCaseEnum.ValueOne] = FirstEnumValue,
-            [CamelCaseEnum.alreadyLowercase] = "second"
-        };
+        var source = new Dictionary<CamelCaseEnum, string> { [CamelCaseEnum.ValueOne] = FirstEnumValue, [CamelCaseEnum.AlreadyLowercase] = "second", };
 
         var content = serializer.ToHttpContent(source);
         var serialized = await content.ReadAsStringAsync();
@@ -550,7 +526,7 @@ public partial class SerializedContentTests
 
         await Assert.That(roundTrip).IsNotNull();
         await Assert.That(roundTrip![CamelCaseEnum.ValueOne]).IsEqualTo(FirstEnumValue);
-        await Assert.That(roundTrip[CamelCaseEnum.alreadyLowercase]).IsEqualTo("second");
+        await Assert.That(roundTrip[CamelCaseEnum.AlreadyLowercase]).IsEqualTo("second");
     }
 
     /// <summary>Verifies nullable enum dictionary key conversion handles empty and non-empty property names.</summary>
@@ -606,13 +582,7 @@ public partial class SerializedContentTests
         {
             HttpMessageHandlerFactory = static () => new StubHttpMessageHandler(static _ =>
                 Task.FromResult(
-                    new HttpResponseMessage(System.Net.HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(
-                            "{\"status\":\"totally-ready\"}",
-                            Encoding.UTF8,
-                            JsonMediaType)
-                    }))
+                    new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent("{\"status\":\"totally-ready\"}", Encoding.UTF8, JsonMediaType), })),
         };
 
         var api = RestService.For<IIssue2067StatusApi>(BaseAddress, settings);
@@ -632,11 +602,8 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new(System.Net.HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
-                };
-            })
+                return new(System.Net.HttpStatusCode.OK) { Content = new StringContent("{}", Encoding.UTF8, JsonMediaType), };
+            }),
         };
 
         var api = RestService.For<IIssue2083ColorApi>(BaseAddress, settings);

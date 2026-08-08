@@ -33,24 +33,12 @@ public sealed class ResponseNewtonsoftTests
     public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiException()
     {
         const string nonJsonResponse = "bad response";
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(nonJsonResponse)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(nonJsonResponse), };
         expectedResponse.Content.Headers.Clear();
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://api/aliasTest"),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get("http://api/aliasTest"), Reply.From(req => expectedResponse) }, };
 
-        var newtonSoftFixture = handler.CreateClient<IMyAliasService>("http://api", new RefitSettings
-        {
-            ContentSerializer = new NewtonsoftJsonContentSerializer()
-        });
+        var newtonSoftFixture = handler.CreateClient<IMyAliasService>("http://api", new RefitSettings { ContentSerializer = new NewtonsoftJsonContentSerializer(), });
 
         var actualException = await Assert.That(newtonSoftFixture.GetTestObject).ThrowsExactly<ApiException>();
 
@@ -65,24 +53,12 @@ public sealed class ResponseNewtonsoftTests
     public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiResponse()
     {
         const string nonJsonResponse = "bad response";
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(nonJsonResponse)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(nonJsonResponse), };
         expectedResponse.Content.Headers.Clear();
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get($"http://api/{nameof(IMyAliasService.GetApiResponseTestObject)}"),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get($"http://api/{nameof(IMyAliasService.GetApiResponseTestObject)}"), Reply.From(req => expectedResponse) }, };
 
-        var newtonSoftFixture = handler.CreateClient<IMyAliasService>("http://api", new RefitSettings
-        {
-            ContentSerializer = new NewtonsoftJsonContentSerializer()
-        });
+        var newtonSoftFixture = handler.CreateClient<IMyAliasService>("http://api", new RefitSettings { ContentSerializer = new NewtonsoftJsonContentSerializer(), });
 
         var apiResponse = await newtonSoftFixture.GetApiResponseTestObject();
 

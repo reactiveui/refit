@@ -12,11 +12,7 @@ public sealed class HeaderCollectionMergeTests
     [Test]
     public async Task HeaderCollectionOnlyMethodCreatesHeaderDictionary()
     {
-        var headers = new Dictionary<string, string>
-        {
-            { "key1", "val1" },
-            { "key2", "val2" }
-        };
+        var headers = new Dictionary<string, string> { { "key1", "val1" }, { "key2", "val2" }, };
 
         var fixture = new RequestBuilderImplementation<IHeaderCollectionMergeApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
@@ -34,10 +30,7 @@ public sealed class HeaderCollectionMergeTests
     [Test]
     public async Task HeaderCollectionMergesIntoExistingHeaderDictionary()
     {
-        var headers = new Dictionary<string, string>
-        {
-            { "key1", "val1" }
-        };
+        var headers = new Dictionary<string, string> { { "key1", "val1" }, };
 
         var fixture = new RequestBuilderImplementation<IHeaderCollectionMergeApi>();
         var factory = fixture.BuildRequestFactoryForMethod(

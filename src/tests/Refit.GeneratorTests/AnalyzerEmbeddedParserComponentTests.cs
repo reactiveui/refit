@@ -113,13 +113,7 @@ public sealed class AnalyzerEmbeddedParserComponentTests
             CanGenerateInline: true,
             "Adapter",
             headers,
-            parameters)
-        {
-            IsMultipart = true,
-            MultipartBoundary = "boundary",
-            QueryUriFormat = 1,
-            TimeoutMilliseconds = TwoElements,
-        };
+            parameters) { IsMultipart = true, MultipartBoundary = "boundary", QueryUriFormat = 1, TimeoutMilliseconds = TwoElements, };
 
         await Assert.That(header.Name).IsEqualTo("X-Test");
         await Assert.That(header.Value).IsEqualTo("value");
@@ -142,6 +136,7 @@ public sealed class AnalyzerEmbeddedParserComponentTests
 
     /// <summary>Exercises embedded type hierarchy checks with base classes, interfaces, and unrelated types.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="InvalidOperationException">The test compilation is missing the <c>Derived</c>, <c>Base</c>, or <c>IMarker</c> symbol.</exception>
     [Test]
     public async Task TypeHierarchyChecksIncludeInterfacesOnlyWhenRequested()
     {
@@ -163,6 +158,7 @@ public sealed class AnalyzerEmbeddedParserComponentTests
 
     /// <summary>Exercises parser helpers compiled into the analyzer rather than reaching them through reflection.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="InvalidOperationException">The test compilation is missing the <c>Marker</c> or <c>Root</c> symbol.</exception>
     [Test]
     public async Task EmbeddedParserHelpersClassifyPathsBodiesAndHeaders()
     {
@@ -225,6 +221,7 @@ public sealed class AnalyzerEmbeddedParserComponentTests
 
     /// <summary>Exercises analyzer-embedded parsing paths using real Roslyn symbols and attribute data.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="InvalidOperationException">The test compilation is missing the <c>IApi</c> or <c>HttpMethodAttribute</c> symbol.</exception>
     [Test]
     public async Task EmbeddedParserConsumesCompiledMethodsAndAttributesDirectly()
     {
@@ -288,6 +285,7 @@ public sealed class AnalyzerEmbeddedParserComponentTests
 
     /// <summary>Exercises non-generic API response and empty constant-query parsing paths.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="InvalidOperationException">The test compilation is missing the <c>IApiResponse</c> or <c>Marker</c> symbol.</exception>
     [Test]
     public async Task EmbeddedParserHandlesNonGenericApiResponseAndEmptyQueryParts()
     {
@@ -343,6 +341,7 @@ public sealed class AnalyzerEmbeddedParserComponentTests
 
     /// <summary>Exercises extern-alias qualification directly against aliased Roslyn metadata references.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="InvalidOperationException">An aliased assembly symbol, or one of the metadata symbols the qualification is asserted against, is missing from the test compilation.</exception>
     [Test]
     public async Task EmbeddedAliasQualificationHandlesGlobalAndAliasOnlyReferences()
     {
@@ -470,6 +469,7 @@ public sealed class AnalyzerEmbeddedParserComponentTests
     /// <param name="supportsSpanEscape">Whether span-based URL escaping is available.</param>
     /// <param name="includeSpanFormattable">Whether the span-formattable symbol is available.</param>
     /// <returns>The generation context.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="compilation"/> (or the empty fallback compilation) does not reference the <c>Refit.HttpMethodAttribute</c> symbol.</exception>
     private static AnalyzerInterfaceGenerationContext CreateAliasContext(
         CSharpCompilation? compilation,
         bool generatedRequestBuilding = true,

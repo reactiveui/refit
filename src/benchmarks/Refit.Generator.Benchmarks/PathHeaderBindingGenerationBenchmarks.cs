@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -11,6 +12,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Refit.Generator.Benchmarks;
 
 /// <summary>Measures parser and emitter costs for a path parameter with and without an additional header binding.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -77,6 +79,7 @@ public class PathHeaderBindingGenerationBenchmarks
 
     /// <summary>Parses a path-only method.</summary>
     /// <returns>The parsed interface count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Parser")]
     public int ParsePathOnly() =>
@@ -84,6 +87,7 @@ public class PathHeaderBindingGenerationBenchmarks
 
     /// <summary>Parses a method whose path parameter also contributes a header.</summary>
     /// <returns>The parsed interface count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Parser")]
     public int ParsePathAndHeader() =>
@@ -91,12 +95,14 @@ public class PathHeaderBindingGenerationBenchmarks
 
     /// <summary>Emits a path-only method.</summary>
     /// <returns>The generated source length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Emitter")]
     public int EmitPathOnly() => Emitter.EmitInterface(_pathOnlyInterface).Length;
 
     /// <summary>Emits a method whose path parameter also contributes a header.</summary>
     /// <returns>The generated source length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Emitter")]
     public int EmitPathAndHeader() => Emitter.EmitInterface(_pathAndHeaderInterface).Length;

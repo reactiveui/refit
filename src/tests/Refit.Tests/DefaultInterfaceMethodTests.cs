@@ -24,13 +24,7 @@ public class DefaultInterfaceMethodTests
     [Test]
     public async Task InternalInterfaceMemberTest()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(HttpBinUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType }
-            },
-        };
+        var handler = new StubHttp { { Route.Get(HttpBinUrl), new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType } }, };
 
         var settings = handler.ToSettings();
 
@@ -45,13 +39,7 @@ public class DefaultInterfaceMethodTests
     [Test]
     public async Task DimTest()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(HttpBinUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType }
-            },
-        };
+        var handler = new StubHttp { { Route.Get(HttpBinUrl), new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType } }, };
 
         var settings = handler.ToSettings();
 
@@ -66,13 +54,7 @@ public class DefaultInterfaceMethodTests
     [Test]
     public async Task InternalDimTest()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(HttpBinUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType }
-            },
-        };
+        var handler = new StubHttp { { Route.Get(HttpBinUrl), new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = HtmlMediaType } }, };
 
         var settings = handler.ToSettings();
 

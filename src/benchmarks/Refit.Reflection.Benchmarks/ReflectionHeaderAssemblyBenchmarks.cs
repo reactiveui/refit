@@ -12,6 +12,7 @@ namespace Refit.Reflection.Benchmarks;
 /// collection and authorization parameter; expanding a header collection; applying collected headers to a request;
 /// setting a single header; and writing request options and Refit metadata.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]

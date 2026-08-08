@@ -99,10 +99,7 @@ public partial class HttpClientFactoryExtensionsTests
         var factory = serviceProvider.GetRequiredService<IHttpClientFactory>();
         var client = factory.CreateClient(builder.Name);
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ScopedRequestUri))
-        {
-            Headers = { Authorization = new(customScheme) }
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ScopedRequestUri)) { Headers = { Authorization = new(customScheme) }, };
         using var response = await client.SendAsync(request);
 
         await Assert.That(capturingHandler.Scheme).IsEqualTo(customScheme);
@@ -126,10 +123,7 @@ public partial class HttpClientFactoryExtensionsTests
         var factory = serviceProvider.GetRequiredService<IHttpClientFactory>();
         var client = factory.CreateClient(builder.Name);
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ScopedRequestUri))
-        {
-            Headers = { Authorization = new("Bearer", "preset-token") }
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ScopedRequestUri)) { Headers = { Authorization = new("Bearer", "preset-token") }, };
         using var response = await client.SendAsync(request);
 
         await Assert.That(capturingHandler.HadAuthorizationHeader).IsFalse();

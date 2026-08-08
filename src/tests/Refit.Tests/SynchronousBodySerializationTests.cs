@@ -113,11 +113,7 @@ public class SynchronousBodySerializationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher
-                {
-                    Template = "*",
-                    Reusable = true
-                },
+                new RouteMatcher { Template = "*", Reusable = true, },
                 Reply.From(async request =>
                 {
                     mediaType = request.Content!.Headers.ContentType?.MediaType;

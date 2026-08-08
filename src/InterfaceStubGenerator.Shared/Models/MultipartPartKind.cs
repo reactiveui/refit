@@ -14,27 +14,27 @@ namespace Refit.Generator;
 internal enum MultipartPartKind
 {
     /// <summary>The value is already an <see cref="System.Net.Http.HttpContent"/> and is added verbatim.</summary>
-    HttpContent,
+    HttpContent = 0,
 
     /// <summary>The value is a <c>Refit.MultipartItem</c> (or subclass) added via its <c>ToContent()</c>.</summary>
-    MultipartItem,
+    MultipartItem = 1,
 
     /// <summary>The value is a <see cref="System.IO.Stream"/> wrapped in a <c>StreamContent</c>.</summary>
-    Stream,
+    Stream = 2,
 
     /// <summary>The value is a <see cref="string"/> wrapped in a <c>StringContent</c>.</summary>
-    String,
+    String = 3,
 
     /// <summary>The value is a <see cref="System.IO.FileInfo"/> opened into a <c>StreamContent</c>.</summary>
-    FileInfo,
+    FileInfo = 4,
 
     /// <summary>The value is a <see cref="byte"/> array wrapped in a <c>ByteArrayContent</c>.</summary>
-    ByteArray,
+    ByteArray = 5,
 
     /// <summary>The value is a date/time or <see cref="System.Guid"/> rendered by the form URL-encoded formatter.</summary>
-    Formattable,
+    Formattable = 6,
 
     /// <summary>The value is a sealed or value type (a bool, enum, or sealed DTO) written through the content serializer,
     /// matching the reflection builder's <c>AddSerializedMultipartItem</c> serializer fallback.</summary>
-    Serialized
+    Serialized = 7,
 }

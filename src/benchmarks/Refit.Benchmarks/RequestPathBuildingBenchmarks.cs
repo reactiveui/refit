@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -14,6 +15,7 @@ namespace Refit.Benchmarks;
 /// catch-all path round-tripping, relative URI assembly, query-key composition, invariant value formatting, absolute
 /// URL validation, and collection expansion.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -80,10 +82,7 @@ public class RequestPathBuildingBenchmarks
     public void Setup()
     {
         _settings = new(new SystemTextJsonContentSerializer());
-        _snakeSettings = new(new SystemTextJsonContentSerializer())
-        {
-            UrlParameterKeyFormatter = new SnakeCaseUrlParameterKeyFormatter(),
-        };
+        _snakeSettings = new(new SystemTextJsonContentSerializer()) { UrlParameterKeyFormatter = new SnakeCaseUrlParameterKeyFormatter(), };
         _client = new() { BaseAddress = new(Host) };
         _spanRange = FindPlaceholder(_spanTemplate);
         _intRange = FindPlaceholder(_intTemplate);
@@ -91,11 +90,13 @@ public class RequestPathBuildingBenchmarks
     }
 
     /// <summary>Disposes the HTTP client.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [GlobalCleanup]
     public void Cleanup() => _client.Dispose();
 
     /// <summary>Substitutes a single escaped placeholder through the span overload.</summary>
     /// <returns>The built path length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Path")]
     public int BuildPathSpan() =>
@@ -103,6 +104,7 @@ public class RequestPathBuildingBenchmarks
 
     /// <summary>Substitutes a single integer placeholder span-formatted into the path.</summary>
     /// <returns>The built path length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Path")]
     public int BuildPathInt() =>
@@ -110,6 +112,7 @@ public class RequestPathBuildingBenchmarks
 
     /// <summary>Substitutes a single formattable placeholder with in-place escaping.</summary>
     /// <returns>The built path length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Path")]
     public int BuildPathFormattable() =>
@@ -117,6 +120,7 @@ public class RequestPathBuildingBenchmarks
 
     /// <summary>Round-trips a catch-all path value, escaping each slash-separated section.</summary>
     /// <returns>The escaped path fragment length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Path")]
     public int RoundTripEscapePath() =>
@@ -124,6 +128,7 @@ public class RequestPathBuildingBenchmarks
 
     /// <summary>Assembles a relative URI under RFC 3986 resolution.</summary>
     /// <returns>The relative URI string length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Uri")]
     public int BuildRelativeUriRfc() =>
@@ -131,6 +136,7 @@ public class RequestPathBuildingBenchmarks
 
     /// <summary>Assembles a relative URI under legacy base-address merging.</summary>
     /// <returns>The relative URI string length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Uri")]
     public int BuildRelativeUriLegacy() =>
@@ -138,30 +144,35 @@ public class RequestPathBuildingBenchmarks
 
     /// <summary>Composes a query key through the pristine default (no key formatter) fast path.</summary>
     /// <returns>The composed key length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Key")]
     public int BuildQueryKeyDefault() => GeneratedRequestRunner.BuildQueryKey(_settings, "FirstName", null, null).Length;
 
     /// <summary>Composes a query key through the snake_case key formatter.</summary>
     /// <returns>The composed key length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Key")]
     public int BuildQueryKeyFormatted() => GeneratedRequestRunner.BuildQueryKey(_snakeSettings, "FirstName", null, null).Length;
 
     /// <summary>Formats an integer value with the invariant culture, without boxing.</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Format")]
     public int FormatInvariantInt() => GeneratedRequestRunner.FormatInvariant(_idValue, null).Length;
 
     /// <summary>Formats a timestamp value with the invariant culture, without boxing.</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Format")]
     public int FormatInvariantTimestamp() => GeneratedRequestRunner.FormatInvariant(_timestamp, null).Length;
 
     /// <summary>Validates and returns the string form of an absolute URL.</summary>
     /// <returns>The absolute URL length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Format")]
     public int RequireAbsoluteUrl() => GeneratedRequestRunner.RequireAbsoluteUrl(_absoluteUrl).Length;

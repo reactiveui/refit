@@ -12,6 +12,7 @@ namespace Refit;
 /// serialized with the configured <see cref="IHttpContentSerializer"/> and emitted on its own line.
 /// </summary>
 /// <seealso href="https://jsonlines.org"/>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class JsonLinesContent : HttpContent
 {
     /// <summary>The single line-feed byte written between serialized elements.</summary>
@@ -26,6 +27,7 @@ public sealed class JsonLinesContent : HttpContent
     /// <summary>Initializes a new instance of the <see cref="JsonLinesContent"/> class.</summary>
     /// <param name="items">The sequence of values to serialize, one per line.</param>
     /// <param name="serializer">The serializer used to encode each element.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> or <paramref name="serializer"/> is <see langword="null"/>.</exception>
     public JsonLinesContent(IEnumerable items, IHttpContentSerializer serializer)
     {
         _items = items ?? throw new ArgumentNullException(nameof(items));

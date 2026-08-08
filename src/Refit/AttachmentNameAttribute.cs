@@ -9,6 +9,7 @@ namespace Refit;
 /// Initializes a new instance of the <see cref="AttachmentNameAttribute"/> class.
 /// </remarks>
 /// <param name="name">The name.</param>
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
 [Obsolete(
     "Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem",

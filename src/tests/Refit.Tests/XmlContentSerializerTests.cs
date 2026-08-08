@@ -29,6 +29,7 @@ public class XmlContentSerializerTests
 
     /// <summary>Verifies a DTO serializes to the expected XML element values.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="InvalidOperationException">The serialized document has no <c>Dto</c> root element.</exception>
     [Test]
     public async Task ShouldSerializeToXml()
     {
@@ -58,10 +59,7 @@ public class XmlContentSerializerTests
 
         var dto = BuildDto();
         var serializerSettings = new XmlContentSerializerSettings();
-        var attributes = new XmlAttributes
-        {
-            XmlRoot = new(overridenRootElementName)
-        };
+        var attributes = new XmlAttributes { XmlRoot = new(overridenRootElementName), };
         serializerSettings.XmlAttributeOverrides.Add(dto.GetType(), attributes);
         var sut = new XmlContentSerializer(serializerSettings);
 
@@ -80,10 +78,7 @@ public class XmlContentSerializerTests
         const string prefix = "google";
 
         var dto = BuildDto();
-        var serializerSettings = new XmlContentSerializerSettings
-        {
-            XmlNamespaces = new()
-        };
+        var serializerSettings = new XmlContentSerializerSettings { XmlNamespaces = new(), };
         serializerSettings.XmlNamespaces.Add(prefix, "https://google.com");
         var sut = new XmlContentSerializer(serializerSettings);
 
@@ -113,10 +108,7 @@ public class XmlContentSerializerTests
     [Test]
     public async Task ShouldDeserializeFromXmlAsync()
     {
-        var serializerSettings = new XmlContentSerializerSettings
-        {
-            XmlNamespaces = new()
-        };
+        var serializerSettings = new XmlContentSerializerSettings { XmlNamespaces = new(), };
         var sut = new XmlContentSerializer(serializerSettings);
 
         var dto = await sut.FromHttpContentAsync<Dto>(
@@ -143,13 +135,7 @@ public class XmlContentSerializerTests
     public async Task XmlEncodingShouldMatchWriterSettingAsync()
     {
         var encoding = Encoding.UTF32;
-        var serializerSettings = new XmlContentSerializerSettings
-        {
-            XmlReaderWriterSettings = new()
-            {
-                WriterSettings = new() { Encoding = encoding }
-            }
-        };
+        var serializerSettings = new XmlContentSerializerSettings { XmlReaderWriterSettings = new() { WriterSettings = new() { Encoding = encoding }, }, };
         var sut = new XmlContentSerializer(serializerSettings);
 
         var dto = BuildDto();
@@ -211,11 +197,7 @@ public class XmlContentSerializerTests
     public async Task ReaderSettingsAlwaysProhibitDtdAndClearResolver()
     {
         var settings = new XmlReaderWriterSettings(
-            new XmlReaderSettings
-            {
-                DtdProcessing = DtdProcessing.Parse,
-                XmlResolver = new XmlUrlResolver()
-            });
+            new XmlReaderSettings { DtdProcessing = DtdProcessing.Parse, XmlResolver = new XmlUrlResolver(), });
 
         await Assert.That(settings.ReaderSettings.DtdProcessing).IsEqualTo(DtdProcessing.Prohibit);
     }
@@ -254,12 +236,7 @@ public class XmlContentSerializerTests
     /// <summary>Builds a populated <see cref="Dto"/> instance for the tests.</summary>
     /// <returns>A new <see cref="Dto"/>.</returns>
     private static Dto BuildDto() =>
-        new()
-        {
-            CreatedOn = DateTime.UnixEpoch,
-            Identifier = Guid.NewGuid().ToString(),
-            Name = "Test Dto Object"
-        };
+        new() { CreatedOn = DateTime.UnixEpoch, Identifier = Guid.NewGuid().ToString(), Name = "Test Dto Object", };
 
     /// <summary>A simple data transfer object used to exercise XML serialization.</summary>
     public class Dto

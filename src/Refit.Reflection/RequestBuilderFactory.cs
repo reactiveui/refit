@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -9,6 +10,7 @@ namespace Refit;
 internal class RequestBuilderFactory : IRequestBuilderFactory
 {
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -16,20 +18,21 @@ internal class RequestBuilderFactory : IRequestBuilderFactory
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public IRequestBuilder<T> Create<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(RefitSettings? settings) =>
         new CachedRequestBuilderImplementation<T>(
             new RequestBuilderImplementation<T>(settings));
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public IRequestBuilder Create(
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         RefitSettings? settings) =>
         new CachedRequestBuilderImplementation(

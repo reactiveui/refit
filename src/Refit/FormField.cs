@@ -12,6 +12,7 @@ namespace Refit;
 /// <see cref="RefitSettings"/>.
 /// </summary>
 /// <typeparam name="TBody">The declared body type the field belongs to.</typeparam>
+[System.Diagnostics.DebuggerDisplay("{Getter}")]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class FormField<TBody>
 {

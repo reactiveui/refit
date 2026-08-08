@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 namespace Refit;
@@ -102,6 +103,7 @@ internal static class SystemTextJsonQueryFlattener
     /// <param name="value">The value to format.</param>
     /// <param name="settings">The active Refit settings.</param>
     /// <returns>The formatted value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string? Format(object value, RefitSettings settings) =>
         settings.UrlParameterFormatter.Format(value, value.GetType(), value.GetType());
 }

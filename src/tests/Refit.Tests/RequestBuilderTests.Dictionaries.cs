@@ -143,10 +143,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()
     {
-        var settings = new RefitSettings
-        {
-            UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter")
-        };
+        var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter"), };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsSsv");
@@ -161,10 +158,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task QueryStringWithEnumerablesCanBeFormattedEnumerable()
     {
-        var settings = new RefitSettings
-        {
-            UrlParameterFormatter = new TestEnumerableUrlParameterFormatter()
-        };
+        var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter(), };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
@@ -497,11 +491,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.QueryWithDictionaryWithEnumKey));
 
-        var dict = new Dictionary<TestEnum, string>
-        {
-            { TestEnum.A, Value1 },
-            { TestEnum.B, Value2 },
-        };
+        var dict = new Dictionary<TestEnum, string> { { TestEnum.A, Value1 }, { TestEnum.B, Value2 }, };
 
         var output = await factory([dict]);
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
@@ -518,11 +508,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.QueryWithDictionaryWithPrefix));
 
-        var dict = new Dictionary<TestEnum, string>
-        {
-            { TestEnum.A, Value1 },
-            { TestEnum.B, Value2 },
-        };
+        var dict = new Dictionary<TestEnum, string> { { TestEnum.A, Value1 }, { TestEnum.B, Value2 }, };
 
         var output = await factory([dict]);
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
@@ -560,11 +546,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.QueryWithDictionaryWithEnumKey));
 
-        var dict = new Dictionary<TestEnum, string>
-        {
-            { TestEnum.A, Value1 },
-            { TestEnum.B, Value2 },
-        };
+        var dict = new Dictionary<TestEnum, string> { { TestEnum.A, Value1 }, { TestEnum.B, Value2 }, };
 
         var output = await factory([dict]);
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
@@ -597,10 +579,7 @@ public partial class RequestBuilderTests
     {
         var urlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter();
 
-        var refitSettings = new RefitSettings
-        {
-            UrlParameterKeyFormatter = urlParameterKeyFormatter
-        };
+        var refitSettings = new RefitSettings { UrlParameterKeyFormatter = urlParameterKeyFormatter, };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(refitSettings);
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
@@ -622,14 +601,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
 
-        var complexQuery = new ComplexQueryObject
-        {
-            TestAliasedDictionary = new()
-            {
-                { TestEnum.A, Value1 },
-                { TestEnum.B, Value2 },
-            },
-        };
+        var complexQuery = new ComplexQueryObject { TestAliasedDictionary = new() { { TestEnum.A, Value1 }, { TestEnum.B, Value2 }, }, };
 
         var output = await factory([complexQuery]);
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
@@ -647,14 +619,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
 
-        var complexQuery = new ComplexQueryObject
-        {
-            TestDictionary = new()
-            {
-                { TestEnum.A, Value1 },
-                { TestEnum.B, Value2 },
-            },
-        };
+        var complexQuery = new ComplexQueryObject { TestDictionary = new() { { TestEnum.A, Value1 }, { TestEnum.B, Value2 }, }, };
 
         var output = await factory([complexQuery]);
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
@@ -673,14 +638,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
 
-        var complexQuery = new ComplexQueryObject
-        {
-            TestDictionary = new()
-            {
-                { TestEnum.A, Value1 },
-                { TestEnum.B, Value2 },
-            },
-        };
+        var complexQuery = new ComplexQueryObject { TestDictionary = new() { { TestEnum.A, Value1 }, { TestEnum.B, Value2 }, }, };
 
         var output = await factory([complexQuery]);
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
@@ -694,11 +652,11 @@ public partial class RequestBuilderTests
     /// <summary>A mock request builder that counts invocations.</summary>
     private sealed class RequestBuilderMock : IRequestBuilder
     {
-        /// <summary>Gets the number of times the builder was invoked.</summary>
-        public int CallCount { get; private set; }
-
         /// <inheritdoc/>
         public RefitSettings Settings { get; } = new();
+
+        /// <summary>Gets the number of times the builder was invoked.</summary>
+        public int CallCount { get; private set; }
 
         /// <summary>Records the invocation and returns null.</summary>
         /// <param name="methodName">The name of the method being built.</param>

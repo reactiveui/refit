@@ -6,6 +6,7 @@ namespace Refit.Reflection.Benchmarks;
 
 /// <summary>An open generic return-type adapter surfacing <see cref="ReflectionResult{T}"/>, matched via the generic-definition path.</summary>
 /// <typeparam name="T">The wrapped result type.</typeparam>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionResultAdapter<T> : IReturnTypeAdapter<ReflectionResult<T>, T>
 {
     /// <inheritdoc/>

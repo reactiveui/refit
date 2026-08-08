@@ -554,11 +554,7 @@ internal static partial class Parser
             format,
             implementsSpanFormattable,
             context);
-        return new(InlineFormatKind.Formattable, format, typeName, isNullableValueType, null)
-        {
-            IsUrlSafeSpanFormattable = urlSafe,
-            IsSpanFormattableEscapable = escapable,
-        };
+        return new(InlineFormatKind.Formattable, format, typeName, isNullableValueType, null) { IsUrlSafeSpanFormattable = urlSafe, IsSpanFormattableEscapable = escapable, };
     }
 
     /// <summary>Returns the memoized <c>IFormattable</c>/<c>ISpanFormattable</c> classification for a type, computing it once per pass.</summary>
@@ -636,9 +632,8 @@ internal static partial class Parser
         var urlSafe = context.SpanFormattableSymbol is not null
             && format is null
             && type.SpecialType is >= SpecialType.System_SByte and <= SpecialType.System_UInt64;
-        var escapable = context.SupportsSpanEscape
-            && implementsSpanFormattable;
-        return (urlSafe, escapable);
+        return (urlSafe, context.SupportsSpanEscape
+            && implementsSpanFormattable);
     }
 
     /// <summary>Resolves the compile-time enum members honored by the default URL parameter formatter.</summary>

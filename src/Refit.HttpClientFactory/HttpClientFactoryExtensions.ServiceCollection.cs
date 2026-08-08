@@ -139,9 +139,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>()
             where T : class
         {
@@ -164,9 +164,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(RefitSettings? settings)
             where T : class
         {
@@ -190,9 +190,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(
             RefitSettings? settings,
             string? httpClientName)
@@ -218,9 +218,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(Func<IServiceProvider, RefitSettings?>? settingsAction)
             where T : class
         {
@@ -245,9 +245,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(
             Func<IServiceProvider, RefitSettings?>? settingsAction,
             string? httpClientName)
@@ -406,9 +406,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(object? serviceKey)
             where T : class
         {
@@ -435,9 +435,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(
             object? serviceKey,
             RefitSettings? settings)
@@ -467,9 +467,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(
             object? serviceKey,
             RefitSettings? settings,
@@ -500,9 +500,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(
             object? serviceKey,
             Func<IServiceProvider, RefitSettings?>? settingsAction)
@@ -533,9 +533,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.Interfaces |
-                DynamicallyAccessedMemberTypes.PublicMethods |
-                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             T>(
             object? serviceKey,
             Func<IServiceProvider, RefitSettings?>? settingsAction,

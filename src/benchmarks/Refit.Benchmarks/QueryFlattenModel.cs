@@ -6,6 +6,7 @@ namespace Refit.Benchmarks;
 
 /// <summary>A representative query object flattened into a query string by the query-flattening benchmark: scalars,
 /// a collection, and a nested object.</summary>
+[System.Diagnostics.DebuggerDisplay("{Id}")]
 public sealed class QueryFlattenModel
 {
     /// <summary>Gets or sets the identifier.</summary>

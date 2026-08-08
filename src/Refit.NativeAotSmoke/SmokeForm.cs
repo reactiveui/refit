@@ -6,4 +6,5 @@ namespace Refit.NativeAotSmoke;
 /// <summary>The URL-encoded form payload used by the native AOT smoke test.</summary>
 /// <param name="Name">The form name.</param>
 /// <param name="Count">The form count.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed record SmokeForm(string Name, int Count);

@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 namespace Meow.Responses;
 
 /// <summary>A single cat image search result.</summary>
+[System.Diagnostics.DebuggerDisplay("{Breeds}")]
 public class SearchResult
 {
     /// <summary>Gets or sets the breeds associated with the image.</summary>

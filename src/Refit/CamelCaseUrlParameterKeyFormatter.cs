@@ -4,6 +4,7 @@
 namespace Refit;
 
 /// <summary>Provides an implementation of <see cref="IUrlParameterKeyFormatter"/> that formats URL parameter keys in camelCase.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
 {
     /// <summary>Formats the specified key.</summary>
@@ -29,7 +30,7 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
             return key;
         }
 
-        char[] chars = key.ToCharArray();
+        var chars = key.ToCharArray();
         FixCasing(chars);
         return new(chars);
     }
@@ -46,10 +47,8 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
                 break;
             }
 
-            var hasNext = i + 1 < chars.Length;
-
             // Stop when next char is already lowercase.
-            if (i > 0 && hasNext && !char.IsUpper(chars[i + 1]))
+            if (i > 0 && (i + 1 < chars.Length) && !char.IsUpper(chars[i + 1]))
             {
                 break;
             }

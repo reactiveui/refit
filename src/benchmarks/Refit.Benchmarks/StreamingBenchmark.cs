@@ -9,6 +9,7 @@ using BenchmarkDotNet.Attributes;
 namespace Refit.Benchmarks;
 
 /// <summary>Compares Refit IAsyncEnumerable streaming against buffering the whole response into a list.</summary>
+[System.Diagnostics.DebuggerDisplay("{Count}")]
 [MemoryDiagnoser]
 public class StreamingBenchmark
 {
@@ -44,10 +45,7 @@ public class StreamingBenchmark
 
         _service = RestService.For<IStreamingService>(
             Host,
-            new(new SystemTextJsonContentSerializer(options))
-            {
-                HttpMessageHandlerFactory = () => new StaticValueHttpResponseHandler(payload, HttpStatusCode.OK),
-            });
+            new(new SystemTextJsonContentSerializer(options)) { HttpMessageHandlerFactory = () => new StaticValueHttpResponseHandler(payload, HttpStatusCode.OK), });
     }
 
     /// <summary>Streams and counts the response through Refit's IAsyncEnumerable support.</summary>

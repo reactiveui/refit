@@ -8,19 +8,18 @@ namespace System.Diagnostics.CodeAnalysis;
 /// <summary>Polyfill of the trimming attribute indicating which members are accessed dynamically.</summary>
 /// <param name="memberTypes">The member types that are dynamically accessed.</param>
 [AttributeUsage(
-    AttributeTargets.Class |
-    AttributeTargets.Field |
-    AttributeTargets.GenericParameter |
-    AttributeTargets.Interface |
-    AttributeTargets.Method |
-    AttributeTargets.Parameter |
-    AttributeTargets.Property |
-    AttributeTargets.ReturnValue |
-    AttributeTargets.Struct,
+    AttributeTargets.Class
+    | AttributeTargets.Field
+    | AttributeTargets.GenericParameter
+    | AttributeTargets.Interface
+    | AttributeTargets.Method
+    | AttributeTargets.Parameter
+    | AttributeTargets.Property
+    | AttributeTargets.ReturnValue
+    | AttributeTargets.Struct,
     Inherited = false)]
 [ExcludeFromCodeCoverage]
-internal sealed class DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes memberTypes)
-    : Attribute, DynamicallyAccessedMembersAttribute.IMetadata
+internal sealed class DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes memberTypes) : Attribute, DynamicallyAccessedMembersAttribute.IMetadata
 {
     /// <summary>Defines the trimming-required public metadata contract.</summary>
     internal interface IMetadata

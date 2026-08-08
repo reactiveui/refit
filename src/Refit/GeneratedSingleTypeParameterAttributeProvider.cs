@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -11,9 +12,11 @@ namespace Refit;
 /// carries attributes of more than one type.</summary>
 /// <param name="type">The attribute type every entry of <paramref name="attributes"/> has.</param>
 /// <param name="attributes">The attribute information.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class GeneratedSingleTypeParameterAttributeProvider(Type type, object[] attributes) : ICustomAttributeProvider
 {
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public object[] GetCustomAttributes(bool inherit) => attributes;
 
     /// <inheritdoc/>

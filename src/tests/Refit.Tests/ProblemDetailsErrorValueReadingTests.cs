@@ -67,11 +67,7 @@ public sealed class ProblemDetailsErrorValueReadingTests
     /// <returns>The response message.</returns>
     private static HttpResponseMessage CreateErrorResponse(string content, string mediaType)
     {
-        var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            RequestMessage = new(HttpMethod.Get, ExampleUri),
-            Content = new StringContent(content)
-        };
+        var response = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = new(HttpMethod.Get, ExampleUri), Content = new StringContent(content), };
 
         response.Content.Headers.ContentType = new(mediaType);
         return response;

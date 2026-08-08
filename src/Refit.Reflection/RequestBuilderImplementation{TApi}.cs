@@ -18,7 +18,7 @@ internal class RequestBuilderImplementation<
     /// <summary>Initializes a new instance of the <see cref="RequestBuilderImplementation{TApi}"/> class.</summary>
     /// <param name="refitSettings">The settings to use, or null for defaults.</param>
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    public RequestBuilderImplementation(RefitSettings? refitSettings = null)
+    internal RequestBuilderImplementation(RefitSettings? refitSettings = null)
         : base(typeof(TApi), refitSettings)
     {
     }

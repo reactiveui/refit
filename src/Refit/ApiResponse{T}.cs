@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -17,6 +18,7 @@ namespace Refit;
 /// <param name="content">Response content.</param>
 /// <param name="settings">Refit settings used to send the request.</param>
 /// <param name="error">The exception, if the request failed.</param>
+[System.Diagnostics.DebuggerDisplay("{Content}")]
 public sealed class ApiResponse<T>(
     HttpRequestMessage request,
     HttpResponseMessage? response,
@@ -25,7 +27,7 @@ public sealed class ApiResponse<T>(
     ApiExceptionBase? error = null) : IApiResponse<T>
 {
     /// <summary>Tracks whether this instance has already been disposed.</summary>
-    private bool _disposed;
+    private int _disposed;
 
     /// <summary>Initializes a new instance of the <see cref="ApiResponse{T}"/> class.</summary>
     /// <param name="response">Original HTTP Response message.</param>
@@ -122,6 +124,7 @@ public sealed class ApiResponse<T>(
     public ApiExceptionBase? Error { get; } = error;
 
     /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose() => Dispose(true);
 
     /// <summary>Ensures the request was successful by throwing an exception in case of failure.</summary>
@@ -183,22 +186,23 @@ public sealed class ApiResponse<T>(
     /// <summary>Disposes the underlying response once, guarding against repeated disposal.</summary>
     internal void DisposeResponse()
     {
-        if (_disposed)
+        // An interlocked latch, so two threads racing to dispose cannot both reach the response.
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
         {
             return;
         }
-
-        _disposed = true;
 
         response?.Dispose();
     }
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ValueTask<ApiResponse<T>> EnsureSlowAsync() => ThrowsApiExceptionAsync();
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous throw operation.</returns>
+    /// <exception cref="InvalidOperationException">No HTTP response was ever received, so there is nothing to build an API exception from.</exception>
     internal async ValueTask<ApiResponse<T>> ThrowsApiExceptionAsync()
     {
         var responseMessage = response

@@ -88,13 +88,7 @@ internal static partial class Parser
             canGenerateInline,
             canGenerateInline ? adapterTypeExpression : null,
             staticHeaders,
-            parameters)
-        {
-            IsMultipart = isMultipart,
-            MultipartBoundary = multipartBoundary,
-            QueryUriFormat = queryUriFormat,
-            TimeoutMilliseconds = timeoutMilliseconds,
-        };
+            parameters) { IsMultipart = isMultipart, MultipartBoundary = multipartBoundary, QueryUriFormat = queryUriFormat, TimeoutMilliseconds = timeoutMilliseconds, };
     }
 
     /// <summary>Resolves the HTTP verb, path, and path-parameter placeholders declared by a method's HTTP attribute.</summary>
@@ -320,10 +314,9 @@ internal static partial class Parser
         }
 
         var equalsIndex = path.IndexOf('=', partStart, partLength);
-        var keyLength = equalsIndex >= 0
+        if (IsWhiteSpace(path, partStart, equalsIndex >= 0
             ? equalsIndex - partStart
-            : partLength;
-        if (IsWhiteSpace(path, partStart, keyLength))
+            : partLength))
         {
             return;
         }
@@ -711,11 +704,13 @@ internal static partial class Parser
                 var matched = roundTrip
                     ? IsRoundTripMatch(occurrence.Name, name)
                     : string.Equals(occurrence.Name, name, StringComparison.OrdinalIgnoreCase);
-                if (matched)
+                if (!matched)
                 {
-                    ranges[index] = occurrence.Location;
-                    index++;
+                    continue;
                 }
+
+                ranges[index] = occurrence.Location;
+                index++;
             }
 
             return ImmutableEquatableArrayFactory.FromArray(ranges);
@@ -774,12 +769,14 @@ internal static partial class Parser
                     _j = _i + _path[_i..].IndexOfAny('}', '/');
                 }
 
-                if (isClose)
+                if (!isClose)
                 {
-                    Start = currentStart;
-                    End = currentEnd;
-                    return true;
+                    continue;
                 }
+
+                Start = currentStart;
+                End = currentEnd;
+                return true;
             }
 
             return false;

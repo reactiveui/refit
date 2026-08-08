@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
 
@@ -11,6 +12,7 @@ internal static class ImmutableEquatableArrayFactory
     /// <summary>Gets an empty immutable equatable array.</summary>
     /// <typeparam name="T">The element type.</typeparam>
     /// <returns>An empty array instance.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",

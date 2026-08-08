@@ -25,5 +25,6 @@ namespace Refit;
 /// Calling <c>api.DownloadAsync("https://cdn.example.com/file.bin", "abc")</c> dispatches a GET to
 /// <c>https://cdn.example.com/file.bin?token=abc</c> regardless of the client's base address.
 /// </example>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class UrlAttribute : Attribute;

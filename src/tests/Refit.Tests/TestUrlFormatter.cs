@@ -42,6 +42,7 @@ public class TestUrlFormatter : IUrlParameterFormatter
     /// <param name="attributeProvider">The attribute provider associated with the value.</param>
     /// <param name="type">The declared type of the value.</param>
     /// <returns>The string representation of the value.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="attributeProvider"/> or <paramref name="type"/> does not match the expectation recorded for this invocation.</exception>
     public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type)
     {
         if (!SameMetadata(attributeProvider, _expectedAttributeProviders[_index]))

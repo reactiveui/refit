@@ -57,9 +57,7 @@ internal sealed partial class PooledBufferWriter
                 return 0;
             }
 
-            var bytesAvailable = _length - _position;
-
-            var source = _pooledBuffer.AsSpan(_position, bytesAvailable);
+            var source = _pooledBuffer.AsSpan(_position, _length - _position);
 
             var bytesCopied = Math.Min(source.Length, buffer.Length);
 
@@ -83,8 +81,7 @@ internal sealed partial class PooledBufferWriter
                 throw CreateObjectDisposedException();
             }
 
-            var bytesAvailable = _length - _position;
-            var source = _pooledBuffer.AsMemory(_position, bytesAvailable);
+            var source = _pooledBuffer.AsMemory(_position, _length - _position);
             _position += source.Length;
 
             return destination.WriteAsync(source, cancellationToken).AsTask();

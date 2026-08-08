@@ -67,10 +67,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType)
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         using var methodTokenSource = new CancellationTokenSource();
@@ -96,10 +93,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType)
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
@@ -122,10 +116,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType)
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(JsonArrayBody, Encoding.UTF8, JsonArrayMediaType), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
@@ -149,10 +140,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.BadRequest)
-                {
-                    Content = new StringContent("boom")
-                }));
+                new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("boom"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());

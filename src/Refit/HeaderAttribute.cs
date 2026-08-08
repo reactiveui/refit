@@ -9,6 +9,7 @@ namespace Refit;
 /// Initializes a new instance of the <see cref="HeaderAttribute"/> class.
 /// </remarks>
 /// <param name="header">The header.</param>
+[System.Diagnostics.DebuggerDisplay("{Header}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class HeaderAttribute(string header) : Attribute
 {

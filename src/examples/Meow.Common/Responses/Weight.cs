@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 namespace Meow.Responses;
 
 /// <summary>Describes the weight of a cat breed in imperial and metric units.</summary>
+[System.Diagnostics.DebuggerDisplay("{Imperial}")]
 public class Weight
 {
     /// <summary>Gets or sets the weight in imperial units.</summary>

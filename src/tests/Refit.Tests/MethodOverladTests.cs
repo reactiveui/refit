@@ -56,13 +56,7 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest1()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(BaseUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = "text/html" }
-            },
-        };
+        var handler = new StubHttp { { Route.Get(BaseUrl), new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = "text/html" } }, };
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
         var plainText = await fixture.Get();
@@ -75,13 +69,7 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest2()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://httpbin.org/status/403"),
-                Reply.Status(HttpStatusCode.Forbidden)
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://httpbin.org/status/403"), Reply.Status(HttpStatusCode.Forbidden) }, };
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
@@ -95,13 +83,7 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest3()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GetUrl, Query = [("someVal", "201")] },
-                Reply.Json("some-T-value")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GetUrl, Query = [("someVal", "201")] }, Reply.Json("some-T-value") }, };
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
@@ -158,13 +140,7 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest6()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GetUrl, Query = [("input", "99")] },
-                Reply.Json("generic-output")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GetUrl, Query = [("input", "99")] }, Reply.Json("generic-output") }, };
 
         var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 

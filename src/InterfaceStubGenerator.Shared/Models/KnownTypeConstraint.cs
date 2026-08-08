@@ -17,7 +17,7 @@ internal enum KnownTypeConstraint
     None = 0,
 
     /// <summary>The reference type (<c>class</c>) constraint.</summary>
-    Class = 1,
+    Class = 1 << 0,
 
     /// <summary>The <c>unmanaged</c> constraint.</summary>
     Unmanaged = 1 << 1,
@@ -29,5 +29,5 @@ internal enum KnownTypeConstraint
     NotNull = 1 << 3,
 
     /// <summary>The parameterless constructor (<c>new()</c>) constraint.</summary>
-    New = 1 << 4
+    New = 1 << 4,
 }

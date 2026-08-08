@@ -28,10 +28,8 @@ internal static partial class Emitter
         string providerField,
         in InlineValueEmission emission)
     {
-        // TreatAsString stringifies the raw value before the formatter runs, mirroring the reflection builder.
-        var customValue = query.TreatAsString ? valueExpression + ToStringCall : valueExpression;
         var customExpression =
-            EmitFormatUrlParameter(customValue, providerField, $"typeof({parameterTypeName})", emission);
+            EmitFormatUrlParameter(query.TreatAsString ? valueExpression + ToStringCall : valueExpression, providerField, $"typeof({parameterTypeName})", emission);
 
         var fastExpression = query.TreatAsString
             ? valueExpression + ToStringCall

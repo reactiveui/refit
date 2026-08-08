@@ -36,7 +36,7 @@ public partial class MultipartTests
                 await using var str = await parts[0].ReadAsStreamAsync();
                 await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -67,7 +67,7 @@ public partial class MultipartTests
                 await using var str = await parts[0].ReadAsStreamAsync();
                 await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -99,7 +99,7 @@ public partial class MultipartTests
                 await using var str = await parts[0].ReadAsStreamAsync();
                 await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -133,7 +133,7 @@ public partial class MultipartTests
                 await using var str = await parts[0].ReadAsStreamAsync();
                 await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -154,18 +154,15 @@ public partial class MultipartTests
     {
         var fileName = CreateTempFile();
 
-        var handler = new MockHttpMessageHandler
-        {
-            Asserts = AssertFileInfoParts
-        };
+        var handler = new MockHttpMessageHandler { Asserts = AssertFileInfoParts, };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
         try
         {
             await using (var stream = GetTestFileStream(TestFilePath))
-            await using (var outStream = File.OpenWrite(fileName))
             {
+                await using var outStream = File.OpenWrite(fileName);
                 await stream.CopyToAsync(outStream);
                 await outStream.FlushAsync();
             }
@@ -196,6 +193,7 @@ public partial class MultipartTests
     /// <param name="contentSerializerType">The serializer type to exercise.</param>
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(SystemTextJsonContentSerializer), JsonMediaType)]
     [Arguments(typeof(XmlContentSerializer), "application/xml")]
@@ -227,14 +225,10 @@ public partial class MultipartTests
                     .ConfigureAwait(false);
                 await Assert.That(result0!.Property1).IsEqualTo(model1.Property1);
                 await Assert.That(result0!.Property2).IsEqualTo(model1.Property2);
-            }
+            },
         };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            ContentSerializer = serializer
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, ContentSerializer = serializer, };
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadJsonObject(model1);
@@ -247,10 +241,7 @@ public partial class MultipartTests
     {
         var fixture = RestService.For<IRunscopeApi>(
             BaseAddress,
-            new()
-            {
-                ContentSerializer = new ThrowingContentSerializer()
-            });
+            new() { ContentSerializer = new ThrowingContentSerializer(), });
 
         Task UploadJsonObject() => fixture.UploadJsonObject(new());
 
@@ -266,6 +257,7 @@ public partial class MultipartTests
     /// <param name="contentSerializerType">The serializer type to exercise.</param>
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(SystemTextJsonContentSerializer), JsonMediaType)]
     [Arguments(typeof(XmlContentSerializer), "application/xml")]
@@ -310,14 +302,10 @@ public partial class MultipartTests
                     .ConfigureAwait(false);
                 await Assert.That(result1!.Property1).IsEqualTo(model2.Property1);
                 await Assert.That(result1!.Property2).IsEqualTo(model2.Property2);
-            }
+            },
         };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            ContentSerializer = serializer
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, ContentSerializer = serializer, };
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadJsonObjects([model1, model2]);
@@ -337,18 +325,15 @@ public partial class MultipartTests
 
         var anotherModel = new AnotherModel { Foos = ["bar1", "bar2"] };
 
-        var handler = new MockHttpMessageHandler
-        {
-            Asserts = content => AssertMixedParts(content, model1, model2, name)
-        };
+        var handler = new MockHttpMessageHandler { Asserts = content => AssertMixedParts(content, model1, model2, name), };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
         try
         {
             await using (var stream = GetTestFileStream(TestFilePath))
-            await using (var outStream = File.OpenWrite(fileName))
             {
+                await using var outStream = File.OpenWrite(fileName);
                 await stream.CopyToAsync(outStream);
                 await outStream.FlushAsync();
             }
@@ -374,11 +359,7 @@ public partial class MultipartTests
     public async Task MultipartUploadShouldWorkWithHttpContent()
     {
         var httpContent = new StringContent("some text", Encoding.ASCII, CustomMediaType);
-        httpContent.Headers.ContentDisposition = new("attachment")
-        {
-            Name = "myName",
-            FileName = "myFileName",
-        };
+        httpContent.Headers.ContentDisposition = new("attachment") { Name = "myName", FileName = "myFileName", };
 
         var handler = new MockHttpMessageHandler
         {
@@ -393,7 +374,7 @@ public partial class MultipartTests
                 await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(CustomMediaType);
                 var result0 = await parts[0].ReadAsStringAsync().ConfigureAwait(false);
                 await Assert.That(result0).IsEqualTo("some text");
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -414,14 +395,13 @@ public partial class MultipartTests
         // The parts are captured while the request is in flight because the HttpClient disposes the multipart content
         // (clearing its child parts) once the send completes.
         List<HttpContent>? capturedParts = null;
-        var handler = new MockHttpMessageHandler
+        Task CaptureParts(IEnumerable<HttpContent> content)
         {
-            Asserts = content =>
-            {
-                capturedParts = content.ToList();
-                return Task.CompletedTask;
-            }
-        };
+            capturedParts = content.ToList();
+            return Task.CompletedTask;
+        }
+
+        var handler = new MockHttpMessageHandler { Asserts = CaptureParts };
 
         var fixture = new RequestBuilderImplementation<IRunscopeApi>();
         var factory = fixture.BuildRestResultFuncForMethod(nameof(IRunscopeApi.UploadHttpContents));
@@ -487,8 +467,8 @@ public partial class MultipartTests
         await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("test-fileinfopart.pdf");
         await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
         await using (var str = await parts[0].ReadAsStreamAsync())
-        await using (var src = GetTestFileStream(TestFilePath))
         {
+            await using var src = GetTestFileStream(TestFilePath);
             await Assert.That(StreamsEqual(src, str)).IsTrue();
         }
 
@@ -498,19 +478,17 @@ public partial class MultipartTests
             .IsEqualTo("test-fileinfopart2.pdf");
         await Assert.That(parts[1].Headers.ContentType).IsNull();
         await using (var str = await parts[1].ReadAsStreamAsync())
-        await using (var src = GetTestFileStream(TestFilePath))
         {
+            await using var src = GetTestFileStream(TestFilePath);
             await Assert.That(StreamsEqual(src, str)).IsTrue();
         }
 
         await Assert.That(parts[additionalFilePartIndex].Headers.ContentDisposition!.Name).IsEqualTo("anotherFile");
         await Assert.That(parts[additionalFilePartIndex].Headers.ContentDisposition!.FileName).IsEqualTo("additionalfile.pdf");
         await Assert.That(parts[additionalFilePartIndex].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
-        await using (var str = await parts[additionalFilePartIndex].ReadAsStreamAsync())
-        await using (var src = GetTestFileStream(TestFilePath))
-        {
-            await Assert.That(StreamsEqual(src, str)).IsTrue();
-        }
+        await using var additionalStr = await parts[additionalFilePartIndex].ReadAsStreamAsync();
+        await using var additionalSrc = GetTestFileStream(TestFilePath);
+        await Assert.That(StreamsEqual(additionalSrc, additionalStr)).IsTrue();
     }
 
     /// <summary>Asserts the parts produced by the mixed-types multipart upload.</summary>
@@ -559,8 +537,8 @@ public partial class MultipartTests
         await Assert.That(parts[filePartIndex].Headers.ContentDisposition!.FileName).IsEqualTo(name);
         await Assert.That(parts[filePartIndex].Headers.ContentType).IsNull();
         await using (var str = await parts[filePartIndex].ReadAsStreamAsync())
-        await using (var src = GetTestFileStream(TestFilePath))
         {
+            await using var src = GetTestFileStream(TestFilePath);
             await Assert.That(StreamsEqual(src, str)).IsTrue();
         }
 

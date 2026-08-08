@@ -4,6 +4,7 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -24,6 +25,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="relativePath">The method's relative path, including any leading slash and query string.</param>
     /// <param name="urlResolution">The configured URL resolution mode.</param>
     /// <returns>A relative <see cref="Uri"/> to assign to the request, which the client merges with its base address.</returns>
+    /// <exception cref="InvalidOperationException">Legacy resolution is in effect and <paramref name="client"/> has no base address to prefix the path with.</exception>
     public static Uri BuildRelativeUri(HttpClient client, string relativePath, UrlResolutionMode urlResolution)
     {
         if (urlResolution == UrlResolutionMode.Rfc3986)
@@ -49,6 +51,7 @@ public static partial class GeneratedRequestRunner
     /// builder, then re-encodes the whole thing through <see cref="Uri.GetComponents(UriComponents, UriFormat)"/> with the
     /// method's <c>QueryUriFormat</c> (so <see cref="UriFormat.Unescaped"/> decodes it). Rfc3986 resolution ignores the
     /// format, exactly as the reflection builder does.</remarks>
+    /// <exception cref="InvalidOperationException">Legacy resolution is in effect and <paramref name="client"/> has no base address to prefix the path with.</exception>
     public static Uri BuildRelativeUri(HttpClient client, string relativePath, UrlResolutionMode urlResolution, UriFormat queryUriFormat)
     {
         if (urlResolution == UrlResolutionMode.Rfc3986)
@@ -92,7 +95,7 @@ public static partial class GeneratedRequestRunner
     public static string BuildRequestPath(
         string relativePathTemplate,
         bool allowUnmatchedParameter,
-        ReadOnlySpan<((int startIdx, int endIdx) range, string? value)> uriParams)
+        ReadOnlySpan<((int StartIdx, int EndIdx) Range, string? Value)> uriParams)
     {
         if (uriParams.IsEmpty && allowUnmatchedParameter)
         {
@@ -142,13 +145,13 @@ public static partial class GeneratedRequestRunner
     public static string BuildRequestPath<T>(
         string relativePathTemplate,
         bool allowUnmatchedParameter,
-        (int startIdx, int endIdx) range,
+        (int StartIdx, int EndIdx) range,
         T value)
         where T : ISpanFormattable
     {
         var pathSpan = relativePathTemplate.AsSpan();
         using var sb = new ValueStringBuilder(stackalloc char[256]);
-        sb.Append(pathSpan[..range.startIdx]);
+        sb.Append(pathSpan[..range.StartIdx]);
 
         // long.MinValue and ulong.MaxValue both render in 20 characters, so 32 always succeeds for an integer.
         Span<char> buffer = stackalloc char[32];
@@ -161,7 +164,7 @@ public static partial class GeneratedRequestRunner
             sb.Append(StringHelpers.EscapeDataString(value.ToString(null, System.Globalization.CultureInfo.InvariantCulture)));
         }
 
-        sb.Append(pathSpan[range.endIdx..]);
+        sb.Append(pathSpan[range.EndIdx..]);
         return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
     }
 #endif
@@ -179,7 +182,7 @@ public static partial class GeneratedRequestRunner
     public static string BuildRequestPath<T>(
         string relativePathTemplate,
         bool allowUnmatchedParameter,
-        (int startIdx, int endIdx) range,
+        (int StartIdx, int EndIdx) range,
         T value,
         string? format)
         where T : ISpanFormattable
@@ -188,7 +191,7 @@ public static partial class GeneratedRequestRunner
         var sb = new ValueStringBuilder(stackalloc char[256]);
         try
         {
-            sb.Append(pathSpan[..range.startIdx]);
+            sb.Append(pathSpan[..range.StartIdx]);
 
             Span<char> buffer = stackalloc char[128];
             if (value.TryFormat(buffer, out var written, format.AsSpan(), System.Globalization.CultureInfo.InvariantCulture))
@@ -200,7 +203,7 @@ public static partial class GeneratedRequestRunner
                 sb.Append(StringHelpers.EscapeDataString(value.ToString(format, System.Globalization.CultureInfo.InvariantCulture)));
             }
 
-            sb.Append(pathSpan[range.endIdx..]);
+            sb.Append(pathSpan[range.EndIdx..]);
             return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
         }
         finally
@@ -217,6 +220,7 @@ public static partial class GeneratedRequestRunner
     /// <exception cref="ArgumentException">
     /// The template contains a placeholder and unmatched URL parameters aren't allowed.
     /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter) =>
         ThrowIfUnmatchedParameter(relativePathTemplate, relativePathTemplate, allowUnmatchedParameter);
 
@@ -233,7 +237,7 @@ public static partial class GeneratedRequestRunner
     public static string BuildRequestPath(
         string relativePathTemplate,
         bool allowUnmatchedParameter,
-        ReadOnlySpan<((int startIdx, int endIdx) range, string? value, bool preEncoded)> uriParams)
+        ReadOnlySpan<((int StartIdx, int EndIdx) Range, string? Value, bool PreEncoded)> uriParams)
     {
         if (uriParams.IsEmpty && allowUnmatchedParameter)
         {
@@ -335,6 +339,7 @@ public static partial class GeneratedRequestRunner
     /// <remarks>This is the single point both the reflection and source-generated request builders call, so a formatter
     /// registered in <see cref="RefitSettings.UrlParameterFormatterMap"/> is applied identically by both. Lookup is by
     /// exact runtime type; every other value uses <see cref="RefitSettings.UrlParameterFormatter"/>.</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string? FormatUrlParameter(
         RefitSettings settings,
         object? value,
@@ -401,6 +406,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="value">The value to format.</param>
     /// <param name="format">The compile-time format from <c>[Query(Format = ...)]</c>, or null.</param>
     /// <returns>The formatted value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -542,6 +548,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="request">The request to modify.</param>
     /// <param name="key">The property key.</param>
     /// <param name="value">The property value.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -666,6 +673,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="relativePathTemplate">The original path template, used in the error message.</param>
     /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
     /// <returns>The validated path, returned unchanged.</returns>
+    /// <exception cref="ArgumentException"><paramref name="path"/> still holds a <c>{name}</c> placeholder and unmatched URL parameters aren't allowed.</exception>
     internal static string ThrowIfUnmatchedParameter(string path, string relativePathTemplate, bool allowUnmatchedParameter)
     {
         if (allowUnmatchedParameter)
@@ -726,6 +734,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="body">The body value.</param>
     /// <param name="serializationMethod">The configured body serialization method.</param>
     /// <returns>The serialized HTTP content.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="serializationMethod"/> is not one of the serialized body methods.</exception>
     internal static HttpContent CreateSerializedBodyContent<TBody>(
         RefitSettings settings,
         TBody body,
@@ -796,6 +805,7 @@ public static partial class GeneratedRequestRunner
     /// <summary>Removes CR and LF characters from a generated header name or value.</summary>
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
 
     /// <summary>Formats a single catch-all path section through the configured formatter and appends its escaped form.</summary>
@@ -804,6 +814,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="settings">The Refit settings supplying the URL parameter formatter registry and default.</param>
     /// <param name="attributeProvider">The parameter's attribute provider passed to the formatter.</param>
     /// <param name="type">The parameter's declared type passed to the formatter.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void AppendFormattedSection(
         ref ValueStringBuilder sb,
         string section,

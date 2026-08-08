@@ -1,6 +1,8 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
+
 namespace RestApiforTest;
 
 /// <summary>Provides configuration and service setup for the application's startup process.</summary>
@@ -8,6 +10,7 @@ namespace RestApiforTest;
 /// request pipeline for the application. It defines methods for registering services with the dependency injection
 /// container and for specifying how HTTP requests are handled. This class is typically specified as the entry point
 /// for application startup in the program's host configuration.</remarks>
+[System.Diagnostics.DebuggerDisplay("{Configuration}")]
 public sealed class Startup
 {
     /// <summary>Initializes a new instance of the Startup class with the specified application configuration settings.</summary>
@@ -27,6 +30,7 @@ public sealed class Startup
     /// startup.</remarks>
     /// <param name="services">The collection of service descriptors to which application services are added. This parameter must not be
     /// null.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ConfigureServices(IServiceCollection services) => services.AddControllers();
 
     /// <summary>Configures the application's request pipeline and environment-specific middleware.</summary>

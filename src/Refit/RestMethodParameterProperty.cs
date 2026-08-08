@@ -13,6 +13,7 @@ namespace Refit;
 /// <see cref="PropertyInfo"/> is its final element (the value formatted into the URL). A single-level binding has a
 /// one-element chain, so existing consumers that read <see cref="PropertyInfo"/> behave unchanged.
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 public class RestMethodParameterProperty
 {
     /// <summary>Initializes a new instance of the <see cref="RestMethodParameterProperty"/> class for a single property.</summary>

@@ -150,21 +150,25 @@ internal static partial class Parser
         var count = 0;
         foreach (var method in nonRefitMethods)
         {
-            if (IsEmittableNonRefitMethod(method))
+            if (!IsEmittableNonRefitMethod(method))
             {
-                methodModels[count] = ParseNonRefitMethod(method, false, context);
-                count++;
+                continue;
             }
+
+            methodModels[count] = ParseNonRefitMethod(method, false, context);
+            count++;
         }
 
         foreach (var method in derivedNonRefitMethods)
         {
-            if (IsEmittableNonRefitMethod(method))
+            if (!IsEmittableNonRefitMethod(method))
             {
-                // Derived non-Refit methods are emitted as explicit interface implementations.
-                methodModels[count] = ParseNonRefitMethod(method, true, context);
-                count++;
+                continue;
             }
+
+            // Derived non-Refit methods are emitted as explicit interface implementations.
+            methodModels[count] = ParseNonRefitMethod(method, true, context);
+            count++;
         }
 
         return TrimAndWrap(methodModels, count);
@@ -263,18 +267,22 @@ internal static partial class Parser
             var seen = false;
             for (var i = 0; i < count; i++)
             {
-                if (string.Equals(memberNames[i], name, StringComparison.Ordinal))
+                if (!string.Equals(memberNames[i], name, StringComparison.Ordinal))
                 {
-                    seen = true;
-                    break;
+                    continue;
                 }
+
+                seen = true;
+                break;
             }
 
-            if (!seen)
+            if (seen)
             {
-                memberNames[count] = name;
-                count++;
+                continue;
             }
+
+            memberNames[count] = name;
+            count++;
         }
 
         return TrimAndWrap(memberNames, count);

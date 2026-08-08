@@ -5,6 +5,7 @@ namespace Meow;
 
 /// <summary>Read-only stream that rejects synchronous reads to mimic async-only transports.</summary>
 /// <param name="data">The data to expose through the stream.</param>
+[System.Diagnostics.DebuggerDisplay("{CanRead}")]
 public sealed class AsyncOnlyReadStream(byte[] data) : Stream
 {
     /// <summary>The underlying memory stream over the data.</summary>

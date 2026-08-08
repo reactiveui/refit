@@ -34,13 +34,7 @@ public class DeserializationExceptionFactoryTests
     public async Task NoDeserializationExceptionFactory_WithSuccessfulDeserialization()
     {
         const int intContent = 123;
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") }
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GetWithResultUrl), new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") } }, };
         var fixture = handler.CreateClient<IMyService>(BaseUrl);
 
         var result = await fixture.GetWithResult();
@@ -55,13 +49,7 @@ public class DeserializationExceptionFactoryTests
     [Test]
     public async Task NoDeserializationExceptionFactory_WithUnsuccessfulDeserialization()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) }
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GetWithResultUrl), new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) } }, };
         var fixture = handler.CreateClient<IMyService>(BaseUrl);
 
         var thrownException = await Assert.That(fixture.GetWithResult).ThrowsExactly<ApiException>();
@@ -76,17 +64,8 @@ public class DeserializationExceptionFactoryTests
     public async Task ProvideFactoryWhichReturnsNull_WithSuccessfulDeserialization()
     {
         const int intContent = 123;
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") }
-            },
-        };
-        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
-        {
-            DeserializationExceptionFactory = static (_, _) => new ValueTask<Exception?>((Exception?)null)
-        });
+        var handler = new StubHttp { { Route.Get(GetWithResultUrl), new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") } }, };
+        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings { DeserializationExceptionFactory = static (_, _) => new ValueTask<Exception?>((Exception?)null), });
 
         var result = await fixture.GetWithResult();
 
@@ -100,17 +79,8 @@ public class DeserializationExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichReturnsNull_WithUnsuccessfulDeserialization()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) }
-            },
-        };
-        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
-        {
-            DeserializationExceptionFactory = static (_, _) => new ValueTask<Exception?>((Exception?)null)
-        });
+        var handler = new StubHttp { { Route.Get(GetWithResultUrl), new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) } }, };
+        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings { DeserializationExceptionFactory = static (_, _) => new ValueTask<Exception?>((Exception?)null), });
 
         var result = await fixture.GetWithResult();
 
@@ -125,17 +95,8 @@ public class DeserializationExceptionFactoryTests
     public async Task ProvideFactoryWhichReturnsException_WithUnsuccessfulDeserialization()
     {
         var exception = new InvalidOperationException("Unsuccessful Deserialization Exception");
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) }
-            },
-        };
-        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
-        {
-            DeserializationExceptionFactory = (_, _) => new ValueTask<Exception?>(exception)
-        });
+        var handler = new StubHttp { { Route.Get(GetWithResultUrl), new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) } }, };
+        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings { DeserializationExceptionFactory = (_, _) => new ValueTask<Exception?>(exception), });
 
         var thrownException = await Assert.That(fixture.GetWithResult).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrownException).IsEqualTo(exception);
@@ -150,17 +111,8 @@ public class DeserializationExceptionFactoryTests
     {
         var exception = new InvalidOperationException("Unsuccessful Deserialization Exception");
         const int intContent = 123;
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") }
-            },
-        };
-        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
-        {
-            DeserializationExceptionFactory = (_, _) => new ValueTask<Exception?>(exception)
-        });
+        var handler = new StubHttp { { Route.Get(GetWithResultUrl), new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") } }, };
+        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings { DeserializationExceptionFactory = (_, _) => new ValueTask<Exception?>(exception), });
 
         var result = await fixture.GetWithResult();
 

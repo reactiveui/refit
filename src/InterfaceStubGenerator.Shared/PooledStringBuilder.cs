@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
 
@@ -51,6 +52,9 @@ internal sealed partial class PooledStringBuilder
     /// <param name="capacity">The initial buffer capacity to rent.</param>
     internal PooledStringBuilder(int capacity) => _buffer = RentBuffer(Math.Max(capacity, DefaultCapacity));
 
+    /// <summary>Gets the number of characters written so far.</summary>
+    internal int Length => _pos;
+
     /// <summary>Appends a string.</summary>
     /// <param name="value">The string to append, or null.</param>
     /// <returns>This builder, for chaining.</returns>
@@ -70,6 +74,7 @@ internal sealed partial class PooledStringBuilder
     /// <summary>Appends the invariant decimal rendering of a 32-bit integer.</summary>
     /// <param name="value">The value to append.</param>
     /// <returns>This builder, for chaining.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal PooledStringBuilder Append(int value) => Append(value.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>Appends a single character.</summary>
@@ -107,10 +112,12 @@ internal sealed partial class PooledStringBuilder
     /// <summary>Appends a string followed by a line terminator.</summary>
     /// <param name="value">The string to append, or null.</param>
     /// <returns>This builder, for chaining.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal PooledStringBuilder AppendLine(string? value) => Append(value).Append(NewLine);
 
     /// <summary>Appends a line terminator.</summary>
     /// <returns>This builder, for chaining.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal PooledStringBuilder AppendLine() => Append(NewLine);
 
     /// <summary>Ensures the backing buffer can hold at least the requested number of characters.</summary>
@@ -140,13 +147,15 @@ internal sealed partial class PooledStringBuilder
             for (var i = _pooledCount - 1; i >= 0; i--)
             {
                 var candidate = pool[i];
-                if (candidate.Length >= minimumLength)
+                if (candidate.Length < minimumLength)
                 {
-                    pool[i] = pool[_pooledCount - 1];
-                    pool[_pooledCount - 1] = null!;
-                    _pooledCount--;
-                    return candidate;
+                    continue;
                 }
+
+                pool[i] = pool[_pooledCount - 1];
+                pool[_pooledCount - 1] = null!;
+                _pooledCount--;
+                return candidate;
             }
         }
 

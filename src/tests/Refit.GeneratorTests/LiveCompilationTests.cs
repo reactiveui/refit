@@ -118,10 +118,7 @@ public sealed class LiveCompilationTests
         {
             LastRequest = request;
             return Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("done", Encoding.UTF8, "text/plain")
-                });
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("done", Encoding.UTF8, "text/plain"), });
         }
     }
 }

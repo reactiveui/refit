@@ -17,10 +17,7 @@ var handler = new NativeAotSmokeHandler();
 
 using var client = new HttpClient(handler) { BaseAddress = new("https://aot.refit.test") };
 
-var jsonOptions = new JsonSerializerOptions(AotJsonContext.Default.Options)
-{
-    TypeInfoResolver = AotJsonContext.Default,
-};
+var jsonOptions = new JsonSerializerOptions(AotJsonContext.Default.Options) { TypeInfoResolver = AotJsonContext.Default, };
 
 var api = SmokeApiFactory.Create(client, jsonOptions);
 

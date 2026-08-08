@@ -7,6 +7,7 @@ namespace Refit.Reflection.Tests;
 /// <summary>Pins that the reflection request builder resolves each of its private delegate-factory methods to the method
 /// of that exact name, so the by-name declared-method cache keys correctly, and that an unknown name throws rather than
 /// poisoning the cache.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionDeclaredMethodLookupTests
 {
     /// <summary>Verifies a known factory name resolves to a method of that name declared on the builder type, across

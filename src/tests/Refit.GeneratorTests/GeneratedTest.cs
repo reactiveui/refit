@@ -20,7 +20,6 @@ public class GeneratedTest
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public Task ShouldNotEmitFilesWhenNoRefitInterfaces() =>
-
         // Refit should not generate any code when no valid Refit interfaces are present.
         Fixture.VerifyForBody(string.Empty, false);
 }

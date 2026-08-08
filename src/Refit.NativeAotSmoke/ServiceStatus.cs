@@ -5,4 +5,5 @@ namespace Refit.NativeAotSmoke;
 
 /// <summary>The service status used by the native AOT smoke test.</summary>
 /// <param name="Name">The service name.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed record ServiceStatus(string Name);

@@ -4,6 +4,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -27,6 +28,7 @@ internal static class AnalyzerFixture
     /// <param name="body">The interface body source.</param>
     /// <param name="generatedRequestBuilding">The value forced for the <c>RefitGeneratedRequestBuilding</c> option, or <see langword="null"/> to use the default.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Task<ImmutableArray<Diagnostic>> RunForBody(string body, bool? generatedRequestBuilding = null) =>
         Run(BuildBodySource(body), generatedRequestBuilding);
 
@@ -55,6 +57,7 @@ internal static class AnalyzerFixture
     /// <param name="optionKey">The bare analyzer-config option key.</param>
     /// <param name="optionValue">The analyzer-config option value.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Task<ImmutableArray<Diagnostic>> RunForBodyWithAnalyzerConfigOption(string body, string optionKey, string optionValue) =>
         Analyze(
             BuildBodySource(body),

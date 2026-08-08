@@ -150,8 +150,7 @@ internal static partial class Parser
             _ = context.ExternAliases.Add(alias);
         }
 
-        var effectiveAlias = alias ?? "global";
-        var name = $"{effectiveAlias}::{named.ToDisplayString(AliasQualifiedNameFormat)}";
+        var name = $"{alias ?? "global"}::{named.ToDisplayString(AliasQualifiedNameFormat)}";
         if (named.TypeArguments.IsEmpty)
         {
             return name;

@@ -7,6 +7,7 @@ namespace Refit.Reflection.Tests;
 /// <summary>Pins how the reflection request builder classifies parameters that carry <see cref="PropertyAttribute"/> and/or
 /// <see cref="QueryAttribute"/>: a property-only parameter is kept out of the query string, while a parameter that is both a
 /// property and a query parameter still contributes to the query. Both classifications are also written as request options.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionPropertyQueryParameterTests
 {
     /// <summary>Verifies a property-only parameter is excluded from the query while a property+query parameter is retained,

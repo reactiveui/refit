@@ -66,13 +66,15 @@ internal static partial class Parser
 
         foreach (var reference in getter.DeclaringSyntaxReferences)
         {
-            if (GetterReturnExpression(reference.GetSyntax()) is ObjectCreationExpressionSyntax { ArgumentList.Arguments: [var argument] }
-                && argument.Expression is LiteralExpressionSyntax { Token.Value: string literal }
-                && literal.Length > 0)
+            if (GetterReturnExpression(reference.GetSyntax()) is not ObjectCreationExpressionSyntax { ArgumentList.Arguments: [var argument] }
+                || argument.Expression is not LiteralExpressionSyntax { Token.Value: string literal }
+                || literal.Length == 0)
             {
-                verb = literal;
-                return true;
+                continue;
             }
+
+            verb = literal;
+            return true;
         }
 
         return false;

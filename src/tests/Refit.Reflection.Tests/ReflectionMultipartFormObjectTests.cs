@@ -8,6 +8,7 @@ namespace Refit.Reflection.Tests;
 
 /// <summary>Pins that the reflection request builder flattens a <see cref="FormObjectAttribute"/> parameter into one part
 /// per property while a plain parameter stays a single multipart part.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionMultipartFormObjectTests
 {
     /// <summary>The multipart parameter index of the plain text part.</summary>

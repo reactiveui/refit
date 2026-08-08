@@ -16,8 +16,7 @@ namespace System.Runtime.CompilerServices;
     AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Property,
     AllowMultiple = false,
     Inherited = false)]
-internal sealed class OverloadResolutionPriorityAttribute(int priority)
-    : Attribute, OverloadResolutionPriorityAttribute.IMetadata
+internal sealed class OverloadResolutionPriorityAttribute(int priority) : Attribute, OverloadResolutionPriorityAttribute.IMetadata
 {
     /// <summary>Defines the compiler-required public metadata contract.</summary>
     internal interface IMetadata

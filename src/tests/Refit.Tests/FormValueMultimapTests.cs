@@ -63,11 +63,11 @@ public partial class FormValueMultimapTests
     public enum EnumWithEnumMember
     {
         /// <summary>A member serialized using its default name.</summary>
-        A,
+        A = 0,
 
         /// <summary>A member serialized using its <see cref="EnumMemberAttribute"/> value.</summary>
         [EnumMember(Value = "b")]
-        B
+        B = 1,
     }
 
     /// <summary>Verifies the multimap is empty when a null source is passed in.</summary>
@@ -136,7 +136,7 @@ public partial class FormValueMultimapTests
             B = new HashSet<string> { "set1", "set2" },
             C = [1, SecondSampleInt],
             D = [FirstSampleDouble, SecondSampleDouble],
-            E = [true, false]
+            E = [true, false],
         };
         var expected = new List<KeyValuePair<string?, string?>>
         {
@@ -147,7 +147,7 @@ public partial class FormValueMultimapTests
             new("D", TabDelimitedValue),
 
             // The default behavior is to capitalize booleans. This is not a requirement.
-            new("E", PipeDelimitedBooleanValue)
+            new("E", PipeDelimitedBooleanValue),
         };
 
         var actual = new FormValueMultimap(source, _settings);
@@ -160,10 +160,7 @@ public partial class FormValueMultimapTests
     [Test]
     public async Task DefaultCollectionFormatCanBeSpecifiedInSettings_Multi()
     {
-        var settingsWithCollectionFormat = new RefitSettings
-        {
-            CollectionFormat = CollectionFormat.Multi
-        };
+        var settingsWithCollectionFormat = new RefitSettings { CollectionFormat = CollectionFormat.Multi, };
         var source = new ObjectWithRepeatedFieldsTestClass
         {
             // Members have explicit CollectionFormat
@@ -174,7 +171,7 @@ public partial class FormValueMultimapTests
             E = [true, false],
 
             // Member has no explicit CollectionFormat
-            F = [1, SecondSampleInt, ThirdSampleInt]
+            F = [1, SecondSampleInt, ThirdSampleInt],
         };
         var expected = new List<KeyValuePair<string?, string?>>
         {
@@ -218,7 +215,7 @@ public partial class FormValueMultimapTests
             E = [true, false],
 
             // Member has no explicit CollectionFormat
-            F = [1, SecondSampleInt, ThirdSampleInt]
+            F = [1, SecondSampleInt, ThirdSampleInt],
         };
         var expected = new List<KeyValuePair<string?, string?>>
         {
@@ -244,7 +241,7 @@ public partial class FormValueMultimapTests
         var source = new ObjectWithEmptyDelimitedCollection();
         var expected = new[]
         {
-            new KeyValuePair<string?, string?>("Values", string.Empty)
+            new KeyValuePair<string?, string?>("Values", string.Empty),
         };
 
         var actual = new FormValueMultimap(source, _settings);
@@ -260,7 +257,7 @@ public partial class FormValueMultimapTests
         var source = new ObjectWithUnknownCollectionFormat();
         var expected = new[]
         {
-            new KeyValuePair<string?, string?>("Values", source.Values.ToString())
+            new KeyValuePair<string?, string?>("Values", source.Values.ToString()),
         };
 
         var actual = new FormValueMultimap(source, _settings);
@@ -376,11 +373,7 @@ public partial class FormValueMultimapTests
     [Test]
     public async Task SerializesEnumWithEnumMemberAttribute()
     {
-        var source = new Dictionary<string, EnumWithEnumMember>
-        {
-            { "A", EnumWithEnumMember.A },
-            { "B", EnumWithEnumMember.B }
-        };
+        var source = new Dictionary<string, EnumWithEnumMember> { { "A", EnumWithEnumMember.A }, { "B", EnumWithEnumMember.B }, };
 
         var expected = new Dictionary<string, string> { { "A", "A" }, { "B", "b" } };
 
@@ -395,16 +388,12 @@ public partial class FormValueMultimapTests
     public async Task NestedObjectFlattensToDottedKeys()
     {
         const int age = 42;
-        var source = new ObjectWithNestedDetail
-        {
-            Name = SampleName,
-            Detail = new() { Email = NestedEmail, Age = age }
-        };
+        var source = new ObjectWithNestedDetail { Name = SampleName, Detail = new() { Email = NestedEmail, Age = age }, };
         var expected = new KeyValuePair<string?, string?>[]
         {
             new(NameFieldKey, SampleName),
             new("Detail.Email", NestedEmail),
-            new("Detail.Age", "42")
+            new("Detail.Age", "42"),
         };
 
         var actual = new FormValueMultimap(source, _settings);
@@ -430,15 +419,11 @@ public partial class FormValueMultimapTests
     [Test]
     public async Task DictionaryPropertyFlattensToPrefixedKeys()
     {
-        var source = new ObjectWithDictionary
-        {
-            Name = SampleName,
-            Extra = new() { { "key", "val" } }
-        };
+        var source = new ObjectWithDictionary { Name = SampleName, Extra = new() { { "key", "val" } }, };
         var expected = new KeyValuePair<string?, string?>[]
         {
             new(NameFieldKey, SampleName),
-            new("Extra.key", "val")
+            new("Extra.key", "val"),
         };
 
         var actual = new FormValueMultimap(source, _settings);
@@ -452,14 +437,11 @@ public partial class FormValueMultimapTests
     public async Task DictionaryWithComplexValuesFlattensRecursively()
     {
         const int age = 42;
-        var source = new ObjectWithComplexDictionary
-        {
-            Items = new() { { "first", new() { Email = NestedEmail, Age = age } } }
-        };
+        var source = new ObjectWithComplexDictionary { Items = new() { { "first", new() { Email = NestedEmail, Age = age } } }, };
         var expected = new KeyValuePair<string?, string?>[]
         {
             new("Items.first.Email", NestedEmail),
-            new("Items.first.Age", "42")
+            new("Items.first.Age", "42"),
         };
 
         var actual = new FormValueMultimap(source, _settings);
@@ -485,14 +467,11 @@ public partial class FormValueMultimapTests
     [Test]
     public async Task NestedPrefixAndAliasComposeKeys()
     {
-        var source = new ObjectWithPrefixedNested
-        {
-            Detail = new() { Zip = "1010", City = "Wien" }
-        };
+        var source = new ObjectWithPrefixedNested { Detail = new() { Zip = "1010", City = "Wien" }, };
         var expected = new KeyValuePair<string?, string?>[]
         {
             new("addr-Detail-z", "1010"),
-            new("addr-Detail-City", "Wien")
+            new("addr-Detail-City", "Wien"),
         };
 
         var actual = new FormValueMultimap(source, _settings);
@@ -510,7 +489,7 @@ public partial class FormValueMultimapTests
         var expected = new KeyValuePair<string?, string?>[]
         {
             new("Value", CycleRootValue),
-            new("Self.Value", CycleRootValue)
+            new("Self.Value", CycleRootValue),
         };
 
         var actual = new FormValueMultimap(source, _settings);
@@ -540,14 +519,11 @@ public partial class FormValueMultimapTests
     public async Task NestedObjectUnderNullQueryDelimiterFallsBackToDefaultDelimiter()
     {
         const int age = 42;
-        var source = new ObjectWithNullDelimiterQuery
-        {
-            Detail = new() { Email = NestedEmail, Age = age }
-        };
+        var source = new ObjectWithNullDelimiterQuery { Detail = new() { Email = NestedEmail, Age = age }, };
         var expected = new KeyValuePair<string?, string?>[]
         {
             new("DetailEmail", NestedEmail),
-            new("DetailAge", "42")
+            new("DetailAge", "42"),
         };
 
         var actual = new FormValueMultimap(source, _settings);

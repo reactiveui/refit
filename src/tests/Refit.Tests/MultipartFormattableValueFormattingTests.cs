@@ -12,10 +12,7 @@ public sealed class MultipartFormattableValueFormattingTests
     [Test]
     public async Task NullFormatterYieldsEmptyPart()
     {
-        var settings = new RefitSettings
-        {
-            FormUrlEncodedParameterFormatter = new NullFormattingFormUrlEncodedParameterFormatter()
-        };
+        var settings = new RefitSettings { FormUrlEncodedParameterFormatter = new NullFormattingFormUrlEncodedParameterFormatter(), };
 
         var body = await CaptureIdPartBody(settings);
 

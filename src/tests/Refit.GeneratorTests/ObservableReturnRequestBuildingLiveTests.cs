@@ -81,6 +81,7 @@ public sealed class ObservableReturnRequestBuildingLiveTests
 
         /// <summary>Compiles the scenario interface and creates the generated and reflection clients.</summary>
         /// <returns>The live harness.</returns>
+        /// <exception cref="InvalidOperationException">The generator output failed to compile.</exception>
         [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
         public static ObservableHarness Create()
         {
@@ -97,6 +98,13 @@ public sealed class ObservableReturnRequestBuildingLiveTests
             var requestBuilder = RequestBuilder.ForType(interfaceType, new());
             var generatedApi = RestService.For(interfaceType, client, requestBuilder);
             return new(handler, client, interfaceType, generatedApi, requestBuilder);
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            client.Dispose();
+            handler.Dispose();
         }
 
         /// <summary>Invokes a method on the generated client, returning the cold observable it produces.</summary>
@@ -132,13 +140,6 @@ public sealed class ObservableReturnRequestBuildingLiveTests
             var reflectionFunc = requestBuilder.BuildRestResultFuncForMethod(methodName);
             return SubscribeAndCaptureAsync(reflectionFunc(client, args!)!);
         }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            client.Dispose();
-            handler.Dispose();
-        }
     }
 
     /// <summary>Completes a task from the first notification of a single-value observable.</summary>
@@ -166,6 +167,7 @@ public sealed class ObservableReturnRequestBuildingLiveTests
 
         /// <summary>Takes the last captured request, clearing the slot.</summary>
         /// <returns>The captured request.</returns>
+        /// <exception cref="InvalidOperationException">No request has been sent through the handler since the last take.</exception>
         public HttpRequestMessage TakeLastRequest()
         {
             var request = _lastRequest ?? throw new InvalidOperationException("No request was captured.");
@@ -180,10 +182,7 @@ public sealed class ObservableReturnRequestBuildingLiveTests
         {
             _lastRequest = request;
             RequestCount++;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("\"done\"", Encoding.UTF8, "application/json")
-            });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("\"done\"", Encoding.UTF8, "application/json"), });
         }
     }
 }

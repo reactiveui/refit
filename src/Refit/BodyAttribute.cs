@@ -15,6 +15,7 @@ namespace Refit;
 /// - If the parameter has the attribute <c>[Body(BodySerializationMethod.UrlEncoded)]</c>, the content will be URL-encoded.<br/>
 /// - For all other types, the object will be serialized using the content serializer specified in the request's <see cref="RefitSettings"/>.
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{Buffered}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class BodyAttribute : Attribute
 {

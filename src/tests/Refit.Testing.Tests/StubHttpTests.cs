@@ -32,13 +32,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task MatchesMethodAndUrlAndReturnsJson()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ThingUrl),
-                Reply.Json("{\"ok\":true}")
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ThingUrl), Reply.Json("{\"ok\":true}") }, };
 
         var response = await SendAsync(handler, HttpMethod.Get, ThingUrl);
 
@@ -53,13 +47,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task WrongMethodDoesNotMatch()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ThingUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ThingUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Post, ThingUrl))
             .ThrowsExactly<InvalidOperationException>();
@@ -70,13 +58,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task VerifyAllCalledThrowsForUnmetExpectation()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://api/never"),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://api/never"), Reply.Status(HttpStatusCode.OK) }, };
 
         await Assert.That(handler.VerifyAllCalled).ThrowsExactly<InvalidOperationException>();
     }
@@ -86,13 +68,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task NullMethodMatchesAnyMethod()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = AnyUrl, Reusable = true },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = AnyUrl, Reusable = true }, Reply.Status(HttpStatusCode.OK) }, };
 
         var get = await SendAsync(handler, HttpMethod.Get, AnyUrl);
         var post = await SendAsync(handler, HttpMethod.Post, AnyUrl);
@@ -106,13 +82,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task WildcardUrlMatchesAnything()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.Text("hit")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Reusable = true }, Reply.Text("hit") }, };
 
         var response = await SendAsync(handler, HttpMethod.Get, "https://anywhere/at/all");
 
@@ -124,13 +94,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task UrlMatchesIgnoringQuery()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ThingUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ThingUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var response = await SendAsync(handler, HttpMethod.Get, ThingUrl + QuerySuffix);
 
@@ -142,13 +106,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task PartialQueryMatchesSubset()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = QueryUrl, Query = [("a", "1")] },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = QueryUrl, Query = [("a", "1")] }, Reply.Status(HttpStatusCode.OK) }, };
 
         var response = await SendAsync(handler, HttpMethod.Get, QueryUrl + QuerySuffix);
 
@@ -161,13 +119,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task PartialQueryFailsWhenMissing()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = QueryUrl, Query = [("a", "1")] },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = QueryUrl, Query = [("a", "1")] }, Reply.Status(HttpStatusCode.OK) }, };
 
         await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, $"{QueryUrl}?a=2"))
             .ThrowsExactly<InvalidOperationException>();
@@ -178,13 +130,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task ExactQueryStringMatchesRawEncoded()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = QueryUrl, ExactQuery = "key%2C=value%2C" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = QueryUrl, ExactQuery = "key%2C=value%2C" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var response = await SendAsync(handler, HttpMethod.Get, $"{QueryUrl}?key%2C=value%2C");
 
@@ -196,13 +142,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task ExactQueryStringRejectsExtras()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = QueryUrl, ExactQuery = "a=1" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = QueryUrl, ExactQuery = "a=1" }, Reply.Status(HttpStatusCode.OK) }, };
 
         await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, QueryUrl + QuerySuffix))
             .ThrowsExactly<InvalidOperationException>();
@@ -213,13 +153,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task ExactQueryParamsMatchDecodedPairs()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = QueryUrl, ExactQueryParams = [("enums", "k0,k1")] },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = QueryUrl, ExactQueryParams = [("enums", "k0,k1")] }, Reply.Status(HttpStatusCode.OK) }, };
 
         var response = await SendAsync(handler, HttpMethod.Get, $"{QueryUrl}?enums=k0%2Ck1");
 
@@ -231,13 +165,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task EmptyExactQueryMatchesNoQuery()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = QueryUrl, ExactQuery = string.Empty },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = QueryUrl, ExactQuery = string.Empty }, Reply.Status(HttpStatusCode.OK) }, };
 
         var response = await SendAsync(handler, HttpMethod.Get, QueryUrl);
 
@@ -251,13 +179,7 @@ public sealed class StubHttpTests
     {
         const string HeaderName = "X-Refit";
         const string HeaderUrl = "https://api/h";
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Headers = [(HeaderName, "99")], Reusable = true },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Headers = [(HeaderName, "99")], Reusable = true }, Reply.Status(HttpStatusCode.OK) }, };
 
         using var client = HttpClientTestFactory.Create(handler);
         using var withHeader = new HttpRequestMessage(HttpMethod.Get, HeaderUrl);
@@ -279,13 +201,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task BodyMatcherComparesContent()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = BodyUrl, Body = "raw string" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = BodyUrl, Body = "raw string" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var response = await SendAsync(handler, HttpMethod.Post, BodyUrl, new StringContent("raw string"));
 
@@ -298,13 +214,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task BodyMatcherFailsOnMismatch()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = BodyUrl, Body = "expected" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = BodyUrl, Body = "expected" }, Reply.Status(HttpStatusCode.OK) }, };
 
         await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Post, BodyUrl, new StringContent("actual")))
             .ThrowsExactly<InvalidOperationException>();
@@ -346,7 +256,7 @@ public sealed class StubHttpTests
                     Template = "*",
                     Where = static request => request.Headers.Contains(FlagHeader),
                     WhereAsync = static request => Task.FromResult(request.Headers.Contains(AsyncHeader)),
-                    Reusable = true
+                    Reusable = true,
                 },
                 Reply.Status(HttpStatusCode.OK)
             },
@@ -372,17 +282,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task NonReusableExchangesAreOneShotInOrder()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Any(SeqUrl),
-                Reply.Text("first")
-            },
-            {
-                Route.Any(SeqUrl),
-                Reply.Text("second")
-            },
-        };
+        var handler = new StubHttp { { Route.Any(SeqUrl), Reply.Text("first") }, { Route.Any(SeqUrl), Reply.Text("second") }, };
 
         var first = await SendAsync(handler, HttpMethod.Get, SeqUrl);
         var second = await SendAsync(handler, HttpMethod.Get, SeqUrl);
@@ -398,13 +298,7 @@ public sealed class StubHttpTests
     public async Task ReusableExchangeMatchesRepeatedly()
     {
         const int callCount = 2;
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.Text("again")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Reusable = true }, Reply.Text("again") }, };
 
         for (var i = 0; i < callCount; i++)
         {
@@ -439,17 +333,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task RequestsAreRecorded()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Any("https://api/a"),
-                Reply.Status(HttpStatusCode.OK)
-            },
-            {
-                Route.Any(BodyUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Any("https://api/a"), Reply.Status(HttpStatusCode.OK) }, { Route.Any(BodyUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         _ = await SendAsync(handler, HttpMethod.Get, "https://api/a");
         _ = await SendAsync(handler, HttpMethod.Post, BodyUrl);
@@ -463,13 +347,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task ToSettingsWiresHandlerFactory()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ThingUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ThingUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var settings = handler.ToSettings();
 
@@ -482,13 +360,7 @@ public sealed class StubHttpTests
     [Test]
     public async Task ToSettingsPreservesBaseSettings()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ThingUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ThingUrl), Reply.Status(HttpStatusCode.OK) }, };
         var baseSettings = new RefitSettings { Buffered = true };
 
         var settings = handler.ToSettings(baseSettings);
@@ -510,10 +382,7 @@ public sealed class StubHttpTests
                 Reply.From(static async request =>
                 {
                     var body = await request.Content!.ReadAsStringAsync();
-                    return new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(body.ToUpperInvariant())
-                    };
+                    return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body.ToUpperInvariant()), };
                 })
             },
         };
@@ -530,13 +399,7 @@ public sealed class StubHttpTests
     {
         const int landingDelayMs = 30;
         const int waitSeconds = 5;
-        var handler = new StubHttp
-        {
-            {
-                Route.Any("https://api/bg"),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Any("https://api/bg"), Reply.Status(HttpStatusCode.OK) }, };
         using var client = HttpClientTestFactory.Create(handler);
 
         // Fire-and-forget: the request only lands after a delay, so a synchronous verify would fail.
@@ -557,13 +420,7 @@ public sealed class StubHttpTests
     public async Task VerifyAllCalledAsyncThrowsOnTimeout()
     {
         const int timeoutMs = 50;
-        var handler = new StubHttp
-        {
-            {
-                Route.Any("https://api/never"),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Any("https://api/never"), Reply.Status(HttpStatusCode.OK) }, };
 
         await Assert.That(async () => await handler.VerifyAllCalledAsync(TimeSpan.FromMilliseconds(timeoutMs)))
             .ThrowsExactly<InvalidOperationException>();

@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
 
@@ -196,6 +197,7 @@ internal static partial class Emitter
     /// <summary>Creates source text from generated source.</summary>
     /// <param name="source">The generated source.</param>
     /// <returns>The generated source text.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static SourceText ToSourceText(string source) => SourceText.From(source, Encoding.UTF8);
 
     /// <summary>Builds the generated code attribute using this generator assembly identity.</summary>
@@ -612,14 +614,8 @@ internal static partial class Emitter
         /// <summary>The internal string builder used to accumulate the interpolated string content.</summary>
         private readonly PooledStringBuilder _builder;
 
-        /// <summary>Indicates if the builder has any content.</summary>
-        private bool _hasContent;
-
         /// <summary>Initializes a new instance of the <see cref="InterpolatedStringBuilder"/> class.</summary>
-        internal InterpolatedStringBuilder()
-        {
-            _builder = new();
-        }
+        internal InterpolatedStringBuilder() => _builder = new();
 
         /// <summary>Appends a c# expression to the interpolated string.</summary>
         /// <param name="expression">The C# expression.</param>
@@ -647,10 +643,12 @@ internal static partial class Emitter
 
         /// <summary>Builds the final interpolated string representation.</summary>
         /// <returns>The interpolated string.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal string Build() => _builder.Append('"').ToString();
 
         /// <summary>Builds the final raw string representation without the final quote.</summary>
         /// <returns>The raw string.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal string BuildRaw() => _builder.ToString();
 
         /// <summary>Appends the specified raw string to the builder.</summary>
@@ -659,19 +657,19 @@ internal static partial class Emitter
         internal InterpolatedStringBuilder FromRaw(string raw)
         {
             _ = _builder.Append(raw);
-            _hasContent = true;
             return this;
         }
 
-        /// <summary>Initializes the builder if it has not been initialized.</summary>
+        /// <summary>Writes the interpolated-string prefix the first time anything is appended.</summary>
+        /// <remarks>A non-empty builder has already been opened, either by this method or by
+        /// <see cref="FromRaw"/>, so the buffer length is the initialization flag.</remarks>
         private void Initialize()
         {
-            if (_hasContent)
+            if (_builder.Length != 0)
             {
                 return;
             }
 
-            _hasContent = true;
             _ = _builder.Append('$').Append('"');
         }
     }

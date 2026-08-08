@@ -91,6 +91,7 @@ public sealed class EscapedIdentifierBindingTests
 
         /// <summary>Compiles the interface, loads the generated client, and wires it to a capturing handler.</summary>
         /// <returns>The live harness.</returns>
+        /// <exception cref="InvalidOperationException">The generated compilation reported errors.</exception>
         [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
         public static LiveHarness Create()
         {
@@ -108,6 +109,13 @@ public sealed class EscapedIdentifierBindingTests
             return new(capturingHandler, httpClient, interfaceType, generatedApi);
         }
 
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            client.Dispose();
+            handler.Dispose();
+        }
+
         /// <summary>Invokes a generated method and returns the request it produced.</summary>
         /// <param name="methodName">The interface method name.</param>
         /// <param name="args">The argument values.</param>
@@ -119,13 +127,6 @@ public sealed class EscapedIdentifierBindingTests
             await task.ConfigureAwait(false);
             return handler.TakeLastRequest();
         }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            client.Dispose();
-            handler.Dispose();
-        }
     }
 
     /// <summary>Captures each outgoing request and returns a fixed JSON response.</summary>
@@ -136,6 +137,7 @@ public sealed class EscapedIdentifierBindingTests
 
         /// <summary>Takes the last captured request, clearing the slot.</summary>
         /// <returns>The captured request.</returns>
+        /// <exception cref="InvalidOperationException">No request has been sent through the handler since the last take.</exception>
         public HttpRequestMessage TakeLastRequest()
         {
             var request = _lastRequest ?? throw new InvalidOperationException("No request was captured.");
@@ -150,10 +152,7 @@ public sealed class EscapedIdentifierBindingTests
         {
             _lastRequest = request;
             return Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("\"done\"", Encoding.UTF8, "application/json")
-                });
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("\"done\"", Encoding.UTF8, "application/json"), });
         }
     }
 }

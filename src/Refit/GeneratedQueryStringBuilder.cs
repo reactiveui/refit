@@ -17,6 +17,7 @@ namespace Refit;
 /// and values are escaped with <see cref="Uri.EscapeDataString(string)"/> unless a call passes
 /// <c>preEncoded: true</c> (the <see cref="EncodedAttribute"/> contract).
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public ref struct GeneratedQueryStringBuilder
 {

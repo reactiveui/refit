@@ -139,7 +139,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
             ref Utf8JsonReader reader,
             Type typeToConvert,
             JsonSerializerOptions options) =>
-            ReadValue(ref reader);
+            Read(ref reader, typeToConvert, options);
 
         /// <inheritdoc/>
         public override void WriteAsPropertyName(
@@ -197,6 +197,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         /// <summary>Reads an enum value from either a string name or a numeric value.</summary>
         /// <param name="reader">The reader positioned on the value to read.</param>
         /// <returns>The parsed enum value.</returns>
+        /// <exception cref="JsonException">The value is an empty or whitespace string, a name that maps to no enum field, or a token that is neither a string nor a number.</exception>
         internal TEnum ReadValue(ref Utf8JsonReader reader)
         {
             if (reader.TokenType is JsonTokenType.String or JsonTokenType.PropertyName)

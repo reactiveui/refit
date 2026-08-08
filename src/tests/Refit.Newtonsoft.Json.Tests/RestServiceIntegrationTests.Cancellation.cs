@@ -21,20 +21,12 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher
-                {
-                    Method = HttpMethod.Get,
-                    Template = OrgMembersUrl,
-                    Reusable = true
-                },
+                new RouteMatcher { Method = HttpMethod.Get, Template = OrgMembersUrl, Reusable = true, },
                 Reply.From(req =>
                 {
                     // Cancel the request
                     cts.Cancel();
-                    return new(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType)
-                    };
+                    return new(HttpStatusCode.OK) { Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType), };
                 })
             },
         };
@@ -42,10 +34,7 @@ public partial class RestServiceIntegrationTests
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await Assert.That(
@@ -65,31 +54,16 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher
-                {
-                    Method = HttpMethod.Get,
-                    Template = OrgMembersUrl,
-                    Reusable = true
-                },
+                new RouteMatcher { Method = HttpMethod.Get, Template = OrgMembersUrl, Reusable = true, },
                 Reply.From(req =>
                 {
                     // Cancel the request
                     cts.Cancel();
-                    return new(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType)
-                    };
+                    return new(HttpStatusCode.OK) { Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType), };
                 })
             },
         };
-        var refitSettings = new RefitSettings
-        {
-            ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
-        };
+        var refitSettings = new RefitSettings { ContentSerializer = new NewtonsoftJsonContentSerializer(new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }), };
         refitSettings.TransportExceptionFactory = (req, ex, _) => new ApiRequestException(req, req.Method, refitSettings, ex);
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, refitSettings);
 
@@ -113,20 +87,12 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher
-                {
-                    Method = HttpMethod.Get,
-                    Template = "https://api.github.com/users/github",
-                    Reusable = true
-                },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "https://api.github.com/users/github", Reusable = true, },
                 Reply.From(req =>
                 {
                     // Cancel the request
                     cts.Cancel();
-                    return new(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType)
-                    };
+                    return new(HttpStatusCode.OK) { Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType), };
                 })
             },
         };
@@ -147,31 +113,16 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher
-                {
-                    Method = HttpMethod.Get,
-                    Template = "https://api.github.com/users/github",
-                    Reusable = true
-                },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "https://api.github.com/users/github", Reusable = true, },
                 Reply.From(req =>
                 {
                     // Cancel the request
                     cts.Cancel();
-                    return new(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType)
-                    };
+                    return new(HttpStatusCode.OK) { Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType), };
                 })
             },
         };
-        var refitSettings = new RefitSettings
-        {
-            ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
-        };
+        var refitSettings = new RefitSettings { ContentSerializer = new NewtonsoftJsonContentSerializer(new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }), };
         refitSettings.TransportExceptionFactory = (req, ex, _) => new ApiRequestException(req, req.Method, refitSettings, ex);
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, refitSettings);

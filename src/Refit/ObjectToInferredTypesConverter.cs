@@ -11,6 +11,7 @@ namespace Refit;
 /// ObjectToInferredTypesConverter.
 /// From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class ObjectToInferredTypesConverter : JsonConverter<object>
 {
     /// <summary>Reads and converts the JSON to type typeToConvert.</summary>

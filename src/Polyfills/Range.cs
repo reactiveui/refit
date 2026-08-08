@@ -66,6 +66,7 @@ internal readonly struct Range : IEquatable<Range>
     /// <summary>Calculates the start offset and length for a sequence of the given length.</summary>
     /// <param name="length">The sequence length.</param>
     /// <returns>The offset and length represented by the range.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The range does not fall inside a sequence of <paramref name="length"/> elements, or its start comes after its end.</exception>
     internal (int Offset, int Length) GetOffsetAndLength(int length)
     {
         var start = Start.GetOffset(length);

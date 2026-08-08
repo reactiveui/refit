@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 namespace Meow;
 
 /// <summary>Response carrying a large list of items.</summary>
+[System.Diagnostics.DebuggerDisplay("{Items}")]
 public sealed class LargePayloadResponse
 {
     /// <summary>Gets the list of items in the payload.</summary>

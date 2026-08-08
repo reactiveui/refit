@@ -19,13 +19,13 @@ public sealed class CamelCaseStringEnumConverterTests
     private enum SortOrder
     {
         /// <summary>A multi-word member whose camelCase name ("dateDescending") differs from its declared name.</summary>
-        DateDescending,
+        DateDescending = 0,
 
         /// <summary>A single-word member whose camelCase name ("name") differs from its declared name.</summary>
-        Name,
+        Name = 1,
 
         /// <summary>An already-lowercase member whose camelCase name equals its declared name, contributing one entry.</summary>
-        plain,
+        plain = 2,
     }
 
     /// <summary>Verifies the names-to-values map carries both the camelCase preferred name and the declared name for a

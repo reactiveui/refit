@@ -8,7 +8,7 @@ namespace Refit;
 public enum BodySerializationMethod
 {
     /// <summary>Encodes everything using the ContentSerializer in RefitSettings except for strings. Strings are set as-is.</summary>
-    Default,
+    Default = 0,
 
     /// <summary>Json encodes everything, including strings.</summary>
     [Obsolete("Use BodySerializationMethod.Serialized instead", false)]
@@ -16,17 +16,17 @@ public enum BodySerializationMethod
         "Design",
         "SST2310:Deprecated code should be removed",
         Justification = "Public API retained for backwards compatibility; cannot remove without a breaking change.")]
-    Json,
+    Json = 1,
 
     /// <summary>Form-UrlEncode's the values.</summary>
-    UrlEncoded,
+    UrlEncoded = 2,
 
     /// <summary>Encodes everything using the ContentSerializer in RefitSettings.</summary>
-    Serialized,
+    Serialized = 3,
 
     /// <summary>
     /// Encodes an enumerable body as JSON Lines (newline-delimited JSON): each element is serialized
     /// with the ContentSerializer and emitted on its own line. See <see href="https://jsonlines.org"/>.
     /// </summary>
-    JsonLines
+    JsonLines = 4,
 }

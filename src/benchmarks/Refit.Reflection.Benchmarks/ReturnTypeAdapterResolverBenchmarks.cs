@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -12,6 +13,7 @@ namespace Refit.Reflection.Benchmarks;
 /// registered adapters (closed, generic-definition, and no-match), resolving the closed adapter type to instantiate,
 /// and mapping a wrapper's type arguments onto the adapter's type parameters.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -47,36 +49,42 @@ public class ReturnTypeAdapterResolverBenchmarks
 
     /// <summary>Resolves the result type through a registered generic adapter definition.</summary>
     /// <returns><see langword="true"/> when a registered adapter surfaces the return type.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool TryResolveResultTypeGeneric() =>
         ReturnTypeAdapterResolver.TryResolveResultType(_matchingReturnType, _genericAdapters, out _);
 
     /// <summary>Resolves the result type through a registered closed adapter.</summary>
     /// <returns><see langword="true"/> when a registered adapter surfaces the return type.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool TryResolveResultTypeClosed() =>
         ReturnTypeAdapterResolver.TryResolveResultType(_matchingReturnType, _closedAdapters, out _);
 
     /// <summary>Scans the registered adapters for a return type none surface.</summary>
     /// <returns><see langword="true"/> when a registered adapter surfaces the return type.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool TryResolveResultTypeNoMatch() =>
         ReturnTypeAdapterResolver.TryResolveResultType(_nonMatchingReturnType, _genericAdapters, out _);
 
     /// <summary>Resolves the closed adapter type to instantiate, closing the generic definition.</summary>
     /// <returns>The closed adapter type.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Type? ResolveClosedAdapterTypeGeneric() =>
         ReturnTypeAdapterResolver.ResolveClosedAdapterType(_matchingReturnType, _genericAdapters);
 
     /// <summary>Matches an open generic adapter definition against the return type.</summary>
     /// <returns><see langword="true"/> when the adapter surfaces the return type.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool TryMatchGenericDefinition() =>
         ReturnTypeAdapterResolver.TryMatchGenericDefinition(_matchingReturnType, _genericAdapterDefinition, out _, out _);
 
     /// <summary>Maps the wrapper return type's arguments onto the adapter's type parameters.</summary>
     /// <returns><see langword="true"/> when every adapter type parameter binds consistently.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool TryMapTypeArguments() =>
         ReturnTypeAdapterResolver.TryMapTypeArguments(_templateReturn, _matchingReturnType, out _);

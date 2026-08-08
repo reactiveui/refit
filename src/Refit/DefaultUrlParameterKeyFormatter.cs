@@ -5,6 +5,7 @@
 namespace Refit;
 
 /// <summary>Default Url parameter key formatter. Does not do any formatting.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultUrlParameterKeyFormatter : IUrlParameterKeyFormatter
 {
     /// <summary>Formats the specified key.</summary>

@@ -231,11 +231,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task CreateUrlEncodedBodyContentUsesDeclaredBodyType()
     {
         var settings = CreateSettings();
-        DeclaredFormBody body = new DerivedFormBody
-        {
-            Name = "Ada",
-            Hidden = "ignored"
-        };
+        DeclaredFormBody body = new DerivedFormBody { Name = "Ada", Hidden = "ignored", };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(
             settings,
@@ -253,7 +249,7 @@ public partial class GeneratedRequestRunnerTests
         var body = new DeclaredFormBody { Name = "Ada" };
         var fields = new[]
         {
-            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", "renamed", null, null, null, false)
+            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", "renamed", null, null, null, false),
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
@@ -270,7 +266,7 @@ public partial class GeneratedRequestRunnerTests
         var body = new DeclaredFormBody { Name = "Ada" };
         var fields = new[]
         {
-            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", "renamed", null, null, null, false)
+            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", "renamed", null, null, null, false),
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
@@ -314,7 +310,7 @@ public partial class GeneratedRequestRunnerTests
         {
             new FormField<DeclaredFormBody>(static _ => null, "Note", "note", null, null, null, serializeNull: true),
             new FormField<DeclaredFormBody>(static _ => new List<string> { "a", "b" }, "Roles", "roles", null, null, CollectionFormat.Multi, false),
-            new FormField<DeclaredFormBody>(static _ => null, SkipFieldName, "skip", null, null, null, serializeNull: false)
+            new FormField<DeclaredFormBody>(static _ => null, SkipFieldName, "skip", null, null, null, serializeNull: false),
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
@@ -331,7 +327,7 @@ public partial class GeneratedRequestRunnerTests
         var body = new DeclaredFormBody { Name = "v" };
         var fields = new[]
         {
-            new FormField<DeclaredFormBody>(static b => b.Name, "Name", null, "pre-", null, null, false)
+            new FormField<DeclaredFormBody>(static b => b.Name, "Name", null, "pre-", null, null, false),
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
@@ -344,19 +340,13 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task DescriptorAndReflectionFormPathsProduceIdenticalOutput()
     {
-        var body = new ParityFormBody
-        {
-            WebPropertyId = "UA-1",
-            Plain = "p",
-            Note = null,
-            Roles = ["x", "y"]
-        };
+        var body = new ParityFormBody { WebPropertyId = "UA-1", Plain = "p", Note = null, Roles = ["x", "y"], };
         var fields = new[]
         {
             new FormField<ParityFormBody>(static b => b.WebPropertyId, "WebPropertyId", "tid", null, null, null, false),
             new FormField<ParityFormBody>(static b => b.Plain, "Plain", null, null, null, null, false),
             new FormField<ParityFormBody>(static b => b.Note, "Note", null, null, null, null, serializeNull: true),
-            new FormField<ParityFormBody>(static b => b.Roles, "Roles", null, null, null, CollectionFormat.Multi, false)
+            new FormField<ParityFormBody>(static b => b.Roles, "Roles", null, null, null, CollectionFormat.Multi, false),
         };
 
         // SystemTextJson takes the generated descriptor path; the recording serializer forces the reflection path.
@@ -378,12 +368,7 @@ public partial class GeneratedRequestRunnerTests
     {
         const int age = 42;
         var settings = new RefitSettings();
-        var body = new NestedParityForm
-        {
-            Name = "ada",
-            Detail = new() { Email = "a@b.com", Age = age },
-            Extra = new() { { "k", "v" } }
-        };
+        var body = new NestedParityForm { Name = "ada", Detail = new() { Email = "a@b.com", Age = age }, Extra = new() { { "k", "v" } }, };
 
         // The generated path for a complex body emits the reflection content overload; the reflection request builder
         // wraps the same FormValueMultimap directly. Both must produce identical wire content.
@@ -485,10 +470,7 @@ public partial class GeneratedRequestRunnerTests
     /// <param name="handler">The handler that will receive generated requests.</param>
     /// <returns>The configured client.</returns>
     private static HttpClient CreateClient(HttpMessageHandler handler) =>
-        new(handler)
-        {
-            BaseAddress = new("https://api.example")
-        };
+        new(handler) { BaseAddress = new("https://api.example"), };
 
     /// <summary>Captures request details sent by generated response helpers.</summary>
     private sealed class CapturingHandler : HttpMessageHandler
@@ -500,10 +482,7 @@ public partial class GeneratedRequestRunnerTests
         public CapturingHandler()
             : this(
                 static (_, _) => Task.FromResult(
-                    new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(string.Empty)
-                    }))
+                    new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(string.Empty), }))
         {
         }
 

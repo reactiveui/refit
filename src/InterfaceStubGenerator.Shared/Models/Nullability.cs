@@ -7,11 +7,11 @@ namespace Refit.Generator;
 internal enum Nullability
 {
     /// <summary>The nullable reference type context is enabled.</summary>
-    Enabled,
+    Enabled = 0,
 
     /// <summary>The nullable reference type context is disabled.</summary>
-    Disabled,
+    Disabled = 1,
 
     /// <summary>No nullable reference type context is specified.</summary>
-    None
+    None = 2,
 }

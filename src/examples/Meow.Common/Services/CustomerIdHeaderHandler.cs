@@ -5,6 +5,7 @@ namespace Meow;
 
 /// <summary>Delegating handler that copies a per-request customer id option into a request header.</summary>
 /// <param name="innerHandler">The inner handler to delegate to.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class CustomerIdHeaderHandler(HttpMessageHandler innerHandler) : DelegatingHandler(innerHandler)
 {
     /// <summary>The request options key used to carry the customer id.</summary>

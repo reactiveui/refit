@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 namespace Refit;
 
 /// <summary>Settings that control how <see cref="XmlContentSerializer"/> serializes and deserializes XML content.</summary>
+[System.Diagnostics.DebuggerDisplay("{XmlDefaultNamespace}")]
 public class XmlContentSerializerSettings
 {
     /// <summary>Initializes a new instance of the <see cref="XmlContentSerializerSettings"/> class.</summary>

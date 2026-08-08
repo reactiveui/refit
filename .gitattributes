@@ -1,19 +1,65 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Auto-detect text files and force LF in the repository AND the working tree, on every
+# platform. eol=lf is set explicitly on each pattern: a more specific line only overrides
+# the attributes it names, and a bare `text` would otherwise fall back to core.autocrlf
+# and check out CRLF on Windows.
+* text=auto eol=lf
 
-# Custom for Visual Studio
-*.cs     diff=csharp
+# Source code
+*.cs       text eol=lf diff=csharp
+*.xaml     text eol=lf
+*.slnx     text eol=lf
+*.sln      text eol=lf
+*.csproj   text eol=lf
+*.props    text eol=lf
+*.targets  text eol=lf
+*.json     text eol=lf
+*.xml      text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.md       text eol=lf
+*.txt      text eol=lf
+*.sh       text eol=lf
+*.ps1      text eol=lf
+*.cmd      text eol=lf
+*.bat      text eol=lf
+*.config   text eol=lf
+*.editorconfig text eol=lf
 
-# Standard to msysgit
-*.doc	 diff=astextplain
-*.DOC	 diff=astextplain
-*.docx diff=astextplain
-*.DOCX diff=astextplain
-*.dot  diff=astextplain
-*.DOT  diff=astextplain
-*.pdf  diff=astextplain
-*.PDF	 diff=astextplain
-*.rtf	 diff=astextplain
-*.RTF	 diff=astextplain
+# Binary files (do not normalise or diff). `binary` expands to `-text -diff`, which
+# overrides the `* text=auto eol=lf` above. Every extension here previously carried
+# `-text` only by virtue of its Git LFS line, so all of them must be listed explicitly
+# now that LFS is gone, or `text=auto` would be left guessing.
 
-.idea/
+# Images
+*.png      binary
+*.jpg      binary
+*.gif      binary
+*.ico      binary
+*.bmp      binary
+*.webp     binary
+*.psd      binary
+
+# Fonts
+*.ttf      binary
+*.otf      binary
+*.woff     binary
+*.woff2    binary
+
+# Archives
+*.zip      binary
+*.gz       binary
+*.7z       binary
+*.tar      binary
+
+# Compiled output and signing material
+*.dll      binary
+*.exe      binary
+*.pdb      binary
+*.lib      binary
+*.so       binary
+*.winmd    binary
+*.pfx      binary
+*.snk      binary
+
+# Documents
+*.pdf      binary

@@ -8,6 +8,7 @@ using System.Xml;
 namespace Refit;
 
 /// <summary>Holds the <see cref="XmlReaderSettings"/> and <see cref="XmlWriterSettings"/> used by <see cref="XmlContentSerializer"/>.</summary>
+[System.Diagnostics.DebuggerDisplay("{ReaderSettings}")]
 public class XmlReaderWriterSettings
 {
     /// <summary>The backing field for the reader settings.</summary>

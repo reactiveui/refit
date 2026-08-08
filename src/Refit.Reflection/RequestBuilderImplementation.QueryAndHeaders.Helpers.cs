@@ -64,12 +64,14 @@ internal partial class RequestBuilderImplementation
         for (var i = 0; i < interfaces.Length; i++)
         {
             var interfaceType = interfaces[i];
-            if (interfaceType.GetTypeInfo().IsGenericType
-                && interfaceType.GetGenericTypeDefinition() == ienu)
+            if (!(interfaceType.GetTypeInfo().IsGenericType
+                && interfaceType.GetGenericTypeDefinition() == ienu))
             {
-                intType = interfaceType;
-                break;
+                continue;
             }
+
+            intType = interfaceType;
+            break;
         }
 
         if (intType is null)

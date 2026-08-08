@@ -8,11 +8,11 @@ namespace Refit.Testing;
 internal enum RouteTier
 {
     /// <summary>A one-shot expectation, matched first and consumed on match.</summary>
-    OneShot,
+    OneShot = 0,
 
     /// <summary>A reusable background stub, matched after one-shot expectations.</summary>
-    Reusable,
+    Reusable = 1,
 
     /// <summary>A catch-all fallback, matched only when no other route matches.</summary>
-    Fallback,
+    Fallback = 2,
 }

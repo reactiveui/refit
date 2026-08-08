@@ -21,6 +21,7 @@ namespace Refit;
 /// </para>
 /// </remarks>
 /// <param name="prefix">The route prefix prepended to every method's relative path.</param>
+[System.Diagnostics.DebuggerDisplay("{Prefix}")]
 [AttributeUsage(AttributeTargets.Interface)]
 public sealed class PathPrefixAttribute(string prefix) : Attribute
 {

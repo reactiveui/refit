@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -13,6 +14,7 @@ namespace Refit.Reflection.Benchmarks;
 /// map and ordered URL fragments across route shapes, building the direct and nested-object validation lookups,
 /// resolving a dotted <c>{a.b.c}</c> chain, and combining a client path prefix.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -98,24 +100,28 @@ public class RouteTemplateBindingBenchmarks
 
     /// <summary>Builds the direct URL-name-to-parameter validation lookup.</summary>
     /// <returns>The parameter validation lookup.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Dictionary<string, ParameterInfo> BuildParamValidationDict() =>
         RestMethodInfoInternal.BuildParamValidationDict(_multiSegmentParameters);
 
     /// <summary>Builds the nested object-property validation lookup.</summary>
     /// <returns>The object-property validation lookup.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Dictionary<string, (ParameterInfo Parameter, PropertyInfo Property)> BuildObjectParamValidationDict() =>
         RestMethodInfoInternal.BuildObjectParamValidationDict(_objectPropertyParameters);
 
     /// <summary>Resolves a dotted <c>{a.b.c}</c> placeholder into its parameter and property chain.</summary>
     /// <returns>The resolved parameter and property chain.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public (ParameterInfo Parameter, IReadOnlyList<PropertyInfo> Chain)? TryResolveNestedPropertyChain() =>
         RestMethodInfoInternal.TryResolveNestedPropertyChain(_nestedPropertyParameters, "request.inner.code");
 
     /// <summary>Combines a client path prefix with a method path template.</summary>
     /// <returns>The combined path.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public string CombineWithPathPrefix() =>
         RestMethodInfoInternal.CombineWithPathPrefix(_clientPathPrefix, _methodPathTemplate);

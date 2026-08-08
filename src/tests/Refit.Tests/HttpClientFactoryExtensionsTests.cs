@@ -104,10 +104,7 @@ public partial class HttpClientFactoryExtensionsTests
         var builder = services.AddHttpClient("builder-settings-factory");
 
         _ = builder.AddRefitClient<IFooWithOtherAttribute>(
-            static serviceProvider => new()
-            {
-                ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
-            });
+            static serviceProvider => new() { ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!, });
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
@@ -149,10 +146,7 @@ public partial class HttpClientFactoryExtensionsTests
 
         _ = builder.AddRefitClient(
             typeof(IFooWithOtherAttribute),
-            static serviceProvider => new()
-            {
-                ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
-            });
+            static serviceProvider => new() { ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!, });
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
@@ -213,10 +207,7 @@ public partial class HttpClientFactoryExtensionsTests
         _ = builder.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             BuilderKey,
-            static serviceProvider => new()
-            {
-                ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
-            });
+            static serviceProvider => new() { ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!, });
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
@@ -232,7 +223,7 @@ public partial class HttpClientFactoryExtensionsTests
     [SuppressMessage("Usage", "CA2263:Prefer generic overload", Justification = "Test intentionally exercises the non-generic Type overload.")]
     public async Task HttpClientBuilderOverloadsValidateRequiredArguments()
     {
-        IHttpClientBuilder builder = new ServiceCollection().AddHttpClient(BuilderValidationClientName);
+        var builder = new ServiceCollection().AddHttpClient(BuilderValidationClientName);
 
         await AssertValidBuilderRejectsNullArguments(builder);
 
@@ -350,11 +341,7 @@ public partial class HttpClientFactoryExtensionsTests
         var recordingHandler = new RecordingHandler();
         var services = new ServiceCollection();
         var builder = services.AddRefitClient<IFooWithOtherAttribute>(
-            new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => recordingHandler,
-                AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("token")
-            });
+            new RefitSettings { HttpMessageHandlerFactory = () => recordingHandler, AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("token"), });
         var serviceProvider = services.BuildServiceProvider();
         var client = serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(builder.Name);
         client.DefaultRequestHeaders.Authorization = new("Bearer", "placeholder");
@@ -374,11 +361,7 @@ public partial class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
         var builder = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "keyed-handler",
-            new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => recordingHandler,
-                AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("keyed-token")
-            });
+            new RefitSettings { HttpMessageHandlerFactory = () => recordingHandler, AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("keyed-token"), });
         var serviceProvider = services.BuildServiceProvider();
         var client = serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(builder.Name);
         client.DefaultRequestHeaders.Authorization = new("Bearer", "placeholder");

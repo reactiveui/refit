@@ -4,6 +4,7 @@
 
 using System.Collections;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -14,6 +15,7 @@ namespace Refit.Reflection.Benchmarks;
 /// maps, adding scalar/collection/object query parameters, encoding and parsing query strings, joining collection
 /// values, building a property query key, and classifying values for flattening.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -127,11 +129,13 @@ public class ReflectionQueryBuildingBenchmarks
 
     /// <summary>Flattens a populated object into query-map entries.</summary>
     /// <returns>The number of query-map entries.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int BuildQueryMapObject() => _builder.BuildQueryMap(_queryModelBoxed).Count;
 
     /// <summary>Flattens a dictionary into query-map entries.</summary>
     /// <returns>The number of query-map entries.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int BuildQueryMapDictionary() => _builder.BuildQueryMap(_dictionary).Count;
 
@@ -167,6 +171,7 @@ public class ReflectionQueryBuildingBenchmarks
 
     /// <summary>Encodes the collected query entries into a query string.</summary>
     /// <returns>The encoded query string.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public string CreateQueryString() => RequestBuilderImplementation.CreateQueryString(_queryEntries);
 
@@ -182,27 +187,32 @@ public class ReflectionQueryBuildingBenchmarks
 
     /// <summary>Formats and joins a collection into a delimited query value.</summary>
     /// <returns>The joined query value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public string JoinFormattedQueryValues() =>
         _builder.JoinFormattedQueryValues(_collectionElements, _collectionParameter, _collectionParameter.ParameterType, CsvDelimiter);
 
     /// <summary>Builds the query key for a property.</summary>
     /// <returns>The property query key.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public string BuildPropertyQueryKey() => _builder.BuildPropertyQueryKey(_nameProperty, null, null);
 
     /// <summary>Classifies a simple value that is emitted directly.</summary>
     /// <returns><see langword="true"/> when the value is emitted directly.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool DoNotConvertToQueryMapSimple() => RequestBuilderImplementation.DoNotConvertToQueryMap(_simpleValue);
 
     /// <summary>Classifies a complex value that must be flattened, scanning its interfaces.</summary>
     /// <returns><see langword="true"/> when the value is emitted directly.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool DoNotConvertToQueryMapComplex() => RequestBuilderImplementation.DoNotConvertToQueryMap(_queryModelBoxed);
 
     /// <summary>Scans a property's attribute data for a serialization-ignore marker.</summary>
     /// <returns><see langword="true"/> when the property is ignored.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public bool ShouldIgnorePropertyInQueryMap() => RequestBuilderImplementation.ShouldIgnorePropertyInQueryMap(_idProperty);
 }

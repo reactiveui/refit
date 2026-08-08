@@ -13,6 +13,7 @@ namespace Refit.Benchmarks;
 /// public entry point <see cref="SystemTextJsonQueryConverter{T}"/>, which walk a value's JSON metadata and append
 /// each property (scalar, collection, or nested object) to a query string.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -44,14 +45,7 @@ public class QueryFlatteningBenchmarks
         _settings = new(serializer);
         _options = serializer.SerializerOptions;
         _converter = new();
-        _model = new()
-        {
-            Id = SampleId,
-            Name = "widgets and gadgets",
-            Active = true,
-            CreatedAt = new(2026, 7, 15, 12, 30, 0, TimeSpan.Zero),
-            Address = new() { City = "Melbourne", Zip = "3000" },
-        };
+        _model = new() { Id = SampleId, Name = "widgets and gadgets", Active = true, CreatedAt = new(2026, 7, 15, 12, 30, 0, TimeSpan.Zero), Address = new() { City = "Melbourne", Zip = "3000" }, };
         _model.Tags.Add("alpha");
         _model.Tags.Add("beta");
         _model.Tags.Add("gamma");

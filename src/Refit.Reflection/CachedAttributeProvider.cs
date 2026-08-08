@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -20,6 +21,7 @@ internal sealed class CachedAttributeProvider(ICustomAttributeProvider inner) : 
     private object[]? _queryAttributes;
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public object[] GetCustomAttributes(bool inherit) => inner.GetCustomAttributes(inherit);
 
     /// <inheritdoc/>
@@ -29,5 +31,6 @@ internal sealed class CachedAttributeProvider(ICustomAttributeProvider inner) : 
             : inner.GetCustomAttributes(attributeType, inherit);
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsDefined(Type attributeType, bool inherit) => inner.IsDefined(attributeType, inherit);
 }

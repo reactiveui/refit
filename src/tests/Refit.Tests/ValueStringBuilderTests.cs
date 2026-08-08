@@ -233,10 +233,8 @@ public sealed class ValueStringBuilderTests
             var suffix = builder.AsSpan(suffixStart).ToString();
             var middle = builder.AsSpan(1, middleLength).ToString();
             var terminator = builder.RawChars[builder.Length];
-            var length = builder.Length;
-            var capacity = builder.Capacity;
 
-            return (text, length, capacity, suffix, middle, terminator);
+            return (text, builder.Length, builder.Capacity, suffix, middle, terminator);
         }
         finally
         {

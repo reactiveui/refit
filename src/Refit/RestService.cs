@@ -69,6 +69,7 @@ public static class RestService
     /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no generated implementation is registered for <typeparamref name="T"/>.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -109,6 +110,7 @@ public static class RestService
     /// <param name="hostUrl">Base address the implementation will use.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no generated implementation is registered for <typeparamref name="T"/>.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -187,9 +189,9 @@ public static class RestService
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and constructor metadata.")]
     public static T For<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(HttpClient client, IRequestBuilder<T> builder) => (T)For(typeof(T), client, builder);
 
     /// <summary>Generate a Refit implementation of the specified interface.</summary>
@@ -204,9 +206,9 @@ public static class RestService
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static T For<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(HttpClient client, RefitSettings? settings)
     {
         var resolvedSettings = settings ?? new();
@@ -227,6 +229,7 @@ public static class RestService
     /// <typeparam name="T">Interface to create the implementation for.</typeparam>
     /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -234,9 +237,9 @@ public static class RestService
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static T For<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(HttpClient client) => For<T>(client, (RefitSettings?)null);
 
     /// <summary>Generate a Refit implementation of the specified interface.</summary>
@@ -251,9 +254,9 @@ public static class RestService
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static T For<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(string hostUrl, RefitSettings? settings)
     {
         var client = CreateHttpClient(hostUrl, settings);
@@ -265,6 +268,7 @@ public static class RestService
     /// <typeparam name="T">Interface to create the implementation for.</typeparam>
     /// <param name="hostUrl">Base address the implementation will use.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -272,9 +276,9 @@ public static class RestService
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static T For<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(string hostUrl) => For<T>(hostUrl, null);
 
     /// <summary>Generate a Refit implementation of the specified interface.</summary>
@@ -285,9 +289,9 @@ public static class RestService
     [RequiresUnreferencedCode("Creating a generated client by Type requires runtime type lookup and constructor metadata.")]
     public static object For(
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         HttpClient client,
         IRequestBuilder builder)
@@ -310,9 +314,9 @@ public static class RestService
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static object For(
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         HttpClient client,
         RefitSettings? settings)
@@ -335,12 +339,13 @@ public static class RestService
     /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
     /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
     /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static object For(
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         HttpClient client) => For(refitInterfaceType, client, (RefitSettings?)null);
 
@@ -352,9 +357,9 @@ public static class RestService
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static object For(
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         string hostUrl,
         RefitSettings? settings)
@@ -368,12 +373,13 @@ public static class RestService
     /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
     /// <param name="hostUrl">Base address the implementation will use.</param>
     /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static object For(
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         string hostUrl) => For(refitInterfaceType, hostUrl, null);
 
@@ -429,6 +435,7 @@ public static class RestService
     /// miss purely because the initializer has not run yet. Forcing the module constructor is safe to repeat, because
     /// a module constructor runs at most once.
     /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void RunGeneratedRegistrations(Type refitInterfaceType) =>
         RuntimeHelpers.RunModuleConstructor(refitInterfaceType.Module.ModuleHandle);
 
@@ -533,9 +540,9 @@ public static class RestService
     [RequiresUnreferencedCode("Resolving a generated client type by name requires runtime type lookup.")]
     internal static Type GetGeneratedType(
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType)
     {
         var typeName = UniqueName.ForType(refitInterfaceType);

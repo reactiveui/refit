@@ -16,6 +16,7 @@ public partial class MultipartTests
     /// property, named per property and independent of the content serializer used for other parts.</summary>
     /// <param name="contentSerializerType">The serializer type configured on the request.</param>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(SystemTextJsonContentSerializer))]
     [Arguments(typeof(XmlContentSerializer))]
@@ -27,12 +28,7 @@ public partial class MultipartTests
                 $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
         }
 
-        var model = new FormObjectUploadModel
-        {
-            Name = FormObjectFullName,
-            Age = FormObjectAge,
-            Roles = [FormObjectAdminRole, "user"]
-        };
+        var model = new FormObjectUploadModel { Name = FormObjectFullName, Age = FormObjectAge, Roles = [FormObjectAdminRole, "user"], };
 
         var handler = new MockHttpMessageHandler
         {
@@ -48,14 +44,10 @@ public partial class MultipartTests
 
                 // A collection property is joined by the settings collection format (comma by default), not repeated.
                 await AssertTextPart(parts, "Roles", "admin,user");
-            }
+            },
         };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            ContentSerializer = serializer
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, ContentSerializer = serializer, };
 
         var fixture = RestService.For<IMultipartFormObjectApi>(BaseAddress, settings);
         await fixture.UploadFormObject(model);
@@ -66,16 +58,7 @@ public partial class MultipartTests
     [Test]
     public async Task MultipartFormObjectFlattensNestedObjectIntoComposedFields()
     {
-        var model = new NestedFormObjectUploadModel
-        {
-            Title = "Notebook",
-            Author = new()
-            {
-                Name = FormObjectFullName,
-                Age = FormObjectAge,
-                Roles = [FormObjectAdminRole]
-            }
-        };
+        var model = new NestedFormObjectUploadModel { Title = "Notebook", Author = new() { Name = FormObjectFullName, Age = FormObjectAge, Roles = [FormObjectAdminRole], }, };
 
         var handler = new MockHttpMessageHandler
         {
@@ -90,7 +73,7 @@ public partial class MultipartTests
                 await AssertTextPart(parts, "Author.full_name", FormObjectFullName);
                 await AssertTextPart(parts, "Author.Age", FormObjectAgeText);
                 await AssertTextPart(parts, "Author.Roles", FormObjectAdminRole);
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -112,14 +95,10 @@ public partial class MultipartTests
 
                 await Assert.That(parts).HasSingleItem();
                 await AssertTextPart(parts, "user_id", "abc-123");
-            }
+            },
         };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            ContentSerializer = new SystemTextJsonContentSerializer()
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, ContentSerializer = new SystemTextJsonContentSerializer(), };
 
         var fixture = RestService.For<IMultipartFormObjectApi>(BaseAddress, settings);
         await fixture.UploadSerializerNamedFormObject(new() { Id = "abc-123" });
@@ -147,7 +126,7 @@ public partial class MultipartTests
                 var filePart = parts.Single(static p => p.Headers.ContentDisposition!.Name == "recipe");
                 await Assert.That(filePart.Headers.ContentDisposition!.FileName).IsEqualTo(StreamPartFileName);
                 await Assert.That(filePart.Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -162,11 +141,7 @@ public partial class MultipartTests
     [Test]
     public async Task MultipartFormObjectSkipsFieldWithBlankName()
     {
-        var fields = new Dictionary<string, string>
-        {
-            ["   "] = "dropped",
-            ["kept"] = "value"
-        };
+        var fields = new Dictionary<string, string> { ["   "] = "dropped", ["kept"] = "value", };
 
         var handler = new MockHttpMessageHandler
         {
@@ -176,7 +151,7 @@ public partial class MultipartTests
 
                 await Assert.That(parts).HasSingleItem();
                 await AssertTextPart(parts, "kept", "value");
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -203,14 +178,10 @@ public partial class MultipartTests
                 {
                     await Assert.That(await part.ReadAsStringAsync()).IsEqualTo(string.Empty);
                 }
-            }
+            },
         };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            FormUrlEncodedParameterFormatter = new NullReturningFormUrlEncodedParameterFormatter()
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, FormUrlEncodedParameterFormatter = new NullReturningFormUrlEncodedParameterFormatter(), };
 
         var fixture = RestService.For<IMultipartFormObjectApi>(BaseAddress, settings);
         await fixture.UploadFormObject(model);

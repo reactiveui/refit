@@ -8,6 +8,7 @@ namespace Refit.Benchmarks;
 /// <summary>A message handler that returns a fixed response string and status code for every request.</summary>
 /// <param name="response">The response body to return.</param>
 /// <param name="code">The status code to return.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class StaticValueHttpResponseHandler(string response, HttpStatusCode code) : HttpMessageHandler
 {
     /// <inheritdoc/>

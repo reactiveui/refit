@@ -7,6 +7,7 @@ using Serilog;
 namespace HttpClientDiagnostics;
 
 /// <summary>A delegating handler that logs request and response details along with timing information.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [DebuggerStepThrough]
 public class HttpClientDiagnosticsHandler : DelegatingHandler
 {

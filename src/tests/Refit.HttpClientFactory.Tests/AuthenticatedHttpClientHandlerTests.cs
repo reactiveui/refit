@@ -61,8 +61,5 @@ public sealed class AuthenticatedHttpClientHandlerTests
     /// <summary>Creates a request carrying the placeholder authorization value replaced by the handler.</summary>
     /// <returns>The request.</returns>
     private static HttpRequestMessage CreateAuthorizedRequest() =>
-        new(HttpMethod.Get, "https://example.test")
-        {
-            Headers = { Authorization = new("Bearer", "placeholder") }
-        };
+        new(HttpMethod.Get, "https://example.test") { Headers = { Authorization = new("Bearer", "placeholder") }, };
 }

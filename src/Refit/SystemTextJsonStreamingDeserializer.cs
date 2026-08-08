@@ -4,9 +4,9 @@
 
 #if !NET9_0_OR_GREATER
 using System.Buffers;
-using System.Runtime.CompilerServices;
 #endif
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 namespace Refit;
@@ -24,6 +24,7 @@ internal static class SystemTextJsonStreamingDeserializer
     /// <param name="options">The serializer options to use.</param>
     /// <param name="cancellationToken">A token to cancel enumeration.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
@@ -174,7 +175,7 @@ internal static class SystemTextJsonStreamingDeserializer
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     internal static T? DeserializeLineReflection<T>(ReadOnlySpan<byte> utf8Json, JsonSerializerOptions options) =>
-        JsonSerializer.Deserialize<T>(utf8Json, options);
+        DeserializeSseDataReflection<T>(utf8Json, options);
 #endif
 
     /// <summary>Deserializes a server-sent event's UTF-8 JSON data payload.</summary>
@@ -207,6 +208,7 @@ internal static class SystemTextJsonStreamingDeserializer
     /// <param name="utf8Json">The UTF-8 encoded JSON payload bytes.</param>
     /// <param name="options">The serializer options to use.</param>
     /// <returns>The deserialized value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(

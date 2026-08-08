@@ -4,6 +4,7 @@
 namespace Refit.Benchmarks;
 
 /// <summary>Object whose properties bind to route and query parameters.</summary>
+[System.Diagnostics.DebuggerDisplay("{SomeProperty}")]
 public class PathBoundObject
 {
     /// <summary>Gets or sets the value bound to a route segment.</summary>

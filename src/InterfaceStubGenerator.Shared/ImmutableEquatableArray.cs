@@ -29,11 +29,5 @@ internal readonly partial struct ImmutableEquatableArray<T>
     /// <param name="h1">The accumulated hash code.</param>
     /// <param name="h2">The next hash code to fold in.</param>
     /// <returns>The combined hash code.</returns>
-    private static int Combine(int h1, int h2)
-    {
-        // RyuJIT optimizes this to use the ROL instruction
-        // Related GitHub pull request: https://github.com/dotnet/coreclr/pull/1830
-        var rol5 = ((uint)h1 << 5) | ((uint)h1 >> 27);
-        return ((int)rol5 + h1) ^ h2;
-    }
+    private static int Combine(int h1, int h2) => ((int)(((uint)h1 << 5) | ((uint)h1 >> 27)) + h1) ^ h2;
 }

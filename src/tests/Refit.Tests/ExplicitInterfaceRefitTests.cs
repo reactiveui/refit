@@ -101,13 +101,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task DefaultInterfaceImplementation_calls_internal_refit_method()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://foo/bar"),
-                Reply.Json("41")
-            },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/bar"), Reply.Json("41") }, };
         var fixture = handler.CreateClient<IInternalFoo>(BaseUrl);
 
         var result = ((IFoo)fixture).Bar();
@@ -121,13 +115,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Explicit_interface_member_with_refit_attribute_is_invoked()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://foo/bar"),
-                Reply.Json("41")
-            },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/bar"), Reply.Json("41") }, };
         var fixture = handler.CreateClient<IRemoteFoo2>(BaseUrl);
 
         var result = ((IFoo)fixture).Bar();
@@ -141,13 +129,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_throws_ApiException_on_error_response()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Status(HttpStatusCode.NotFound)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Status(HttpStatusCode.NotFound) }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         var ex = await Assert.That(fixture.GetString).ThrowsExactly<ApiException>();
@@ -161,13 +143,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_HttpResponseMessage_without_running_ExceptionFactory()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Status(HttpStatusCode.NotFound)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Status(HttpStatusCode.NotFound) }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         // Should not throw even for a 404 – caller owns the response
@@ -182,13 +158,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_HttpContent_without_disposing_response()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Text(HelloContent, PlainTextMediaType)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Text(HelloContent, PlainTextMediaType) }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         var content = fixture.GetHttpContent();
@@ -204,13 +174,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_Stream_without_disposing_response()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Text(HelloContent, PlainTextMediaType)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Text(HelloContent, PlainTextMediaType) }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         await using var stream = fixture.GetStream();
@@ -226,13 +190,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_IApiResponse_with_error_on_bad_status()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Status(HttpStatusCode.InternalServerError)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Status(HttpStatusCode.InternalServerError) }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         using var apiResp = fixture.GetApiResponse();
@@ -249,13 +207,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_IApiResponse_with_content_on_success()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Json("\"hello\"")
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Json("\"hello\"") }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         using var apiResp = fixture.GetApiResponse();
@@ -275,13 +227,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_raw_IApiResponse_on_success()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Text(HelloContent, PlainTextMediaType)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Text(HelloContent, PlainTextMediaType) }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         using var apiResp = fixture.GetRawApiResponse();
@@ -298,13 +244,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_void_method_throws_ApiException_on_error_response()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Status(HttpStatusCode.BadRequest)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Status(HttpStatusCode.BadRequest) }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         var ex = await Assert.That(fixture.DoVoid).ThrowsExactly<ApiException>();
@@ -317,13 +257,7 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public void Sync_void_method_succeeds_on_ok_response()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(ResourceUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(ResourceUrl), Reply.Status(HttpStatusCode.OK) }, };
         var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         fixture.DoVoid(); // should not throw

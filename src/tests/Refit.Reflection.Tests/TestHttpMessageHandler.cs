@@ -8,6 +8,7 @@ using System.Net;
 namespace Refit.Reflection.Tests;
 
 /// <summary>A test message handler capturing the request and returning canned content.</summary>
+[System.Diagnostics.DebuggerDisplay("{RequestMessage}")]
 public class TestHttpMessageHandler : HttpMessageHandler
 {
     /// <summary>Initializes a new instance of the <see cref="TestHttpMessageHandler"/> class.</summary>

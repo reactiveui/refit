@@ -115,10 +115,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task QueryPropertyIsOmittedWhenTheFormatterReturnsNull()
     {
-        var settings = new RefitSettings
-        {
-            FormUrlEncodedParameterFormatter = new NullFormUrlEncodedParameterFormatter(),
-        };
+        var settings = new RefitSettings { FormUrlEncodedParameterFormatter = new NullFormUrlEncodedParameterFormatter(), };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.QueryWithSerializationObject));
 

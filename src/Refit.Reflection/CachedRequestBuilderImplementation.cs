@@ -16,7 +16,7 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
 
     /// <summary>Initializes a new instance of the <see cref="CachedRequestBuilderImplementation"/> class.</summary>
     /// <param name="innerBuilder">The request builder whose results are cached.</param>
-    public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
+    internal CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
     {
         ArgumentExceptionHelper.ThrowIfNull(innerBuilder);
         _innerBuilder = innerBuilder;

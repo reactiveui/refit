@@ -61,30 +61,11 @@ public partial class RestServiceIntegrationTests
     {
         const string response = "4";
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(HttpBinGetUrl),
-                Reply.Json(response)
-            },
-            {
-                Route.Get(HttpBinGetUrl),
-                Reply.Json(response)
-            },
-            {
-                Route.Get(HttpBinGetUrl),
-                Reply.Json(response)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(HttpBinGetUrl), Reply.Json(response) }, { Route.Get(HttpBinGetUrl), Reply.Json(response) }, { Route.Get(HttpBinGetUrl), Reply.Json(response) }, };
 
         var settings = handler.ToSettings();
 
-        var myParams = new Dictionary<string, object>
-        {
-            [FirstNameKey] = "John",
-            [LastNameKey] = RamboLastName,
-            ["Address"] = (Zip: 9999, Street: HomeStreetAddress)
-        };
+        var myParams = new Dictionary<string, object> { [FirstNameKey] = "John", [LastNameKey] = RamboLastName, ["Address"] = (Zip: 9999, Street: HomeStreetAddress), };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>(
             HttpsHttpBinBaseUrl,
@@ -145,17 +126,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task InheritedInterfaceWithOnlyBaseMethodsTest()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(HttpBinGetUrl),
-                Reply.Json(nameof(IAmInterfaceA.Ping))
-            },
-            {
-                Route.Get(HttpBinGetUrl),
-                Reply.Json(nameof(IAmInterfaceB.Pong))
-            },
-        };
+        var handler = new StubHttp { { Route.Get(HttpBinGetUrl), Reply.Json(nameof(IAmInterfaceA.Ping)) }, { Route.Get(HttpBinGetUrl), Reply.Json(nameof(IAmInterfaceB.Pong)) }, };
 
         var fixture = handler.CreateClient<IContainAandB>(HttpsHttpBinBaseUrl);
 
@@ -203,13 +174,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task InheritedInterfaceWithoutRefitMethodsOverrideBaseTest()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = HttpBinGetUrl, Query = [("result", "Test")] },
-                Reply.Json(nameof(IAmInterfaceD.Test))
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = HttpBinGetUrl, Query = [("result", "Test")] }, Reply.Json(nameof(IAmInterfaceD.Test)) }, };
 
         var fixture = handler.CreateClient<IImplementTheInterfaceAndDontUseRefit>(HttpsHttpBinBaseUrl);
 
@@ -241,12 +206,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = handler.ToSettings();
 
-        var myParams = new Dictionary<string, object>
-        {
-            [FirstNameKey] = "John",
-            [LastNameKey] = RamboLastName,
-            ["Address"] = (Zip: 9999, Street: HomeStreetAddress)
-        };
+        var myParams = new Dictionary<string, object> { [FirstNameKey] = "John", [LastNameKey] = RamboLastName, ["Address"] = (Zip: 9999, Street: HomeStreetAddress), };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>(
             HttpsHttpBinBaseUrl,
@@ -277,12 +237,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = handler.ToSettings();
 
-        var myParams = new MyComplexQueryParams
-        {
-            FirstName = "John",
-            LastName = RamboLastName,
-            Address = new() { Postcode = PostcodeValue, Street = HomeStreetAddress },
-        };
+        var myParams = new MyComplexQueryParams { FirstName = "John", LastName = RamboLastName, Address = new() { Postcode = PostcodeValue, Street = HomeStreetAddress }, };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>(
             HttpBinGetUrl,
@@ -300,13 +255,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ServiceOutsideNamespaceGetRequest()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", Where = static r => r.Content is null },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", Where = static r => r.Content is null }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IServiceWithoutNamespace>("http://foo");
 
@@ -320,13 +269,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ServiceOutsideNamespacePostRequest()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post("http://foo/"),
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { Route.Post("http://foo/"), Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IServiceWithoutNamespace>("http://foo");
 
@@ -345,12 +288,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher
-                {
-                    Method = HttpMethod.Post,
-                    Template = "/users",
-                    Headers = [("Content-Type", "application/xml; charset=utf-8")]
-                },
+                new RouteMatcher { Method = HttpMethod.Post, Template = "/users", Headers = [("Content-Type", "application/xml; charset=utf-8")], },
                 Reply.From(static req => new(HttpStatusCode.OK) { Content = new StringContent("<User><Name>Created</Name></User>", Encoding.UTF8, "application/xml") })
             },
         };
@@ -482,13 +420,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task NullableCancellationTokenShouldBeIgnored()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GitHubFooUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GitHubFooUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<ICancellableApi>(GitHubBaseUrl);
 
@@ -504,17 +436,7 @@ public partial class RestServiceIntegrationTests
     {
         const string url = HttpBinGetUrl;
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(url),
-                Reply.Json("{ }")
-            },
-            {
-                Route.Get(url),
-                Reply.Json("{ }")
-            },
-        };
+        var handler = new StubHttp { { Route.Get(url), Reply.Json("{ }") }, { Route.Get(url), Reply.Json("{ }") }, };
 
         var settings = handler.ToSettings();
 
@@ -537,21 +459,7 @@ public partial class RestServiceIntegrationTests
     {
         const string url = HttpBinGetUrl;
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get($"{url}/"),
-                Reply.Json("{ }")
-            },
-            {
-                Route.Get($"{url}/"),
-                Reply.Json("{ }")
-            },
-            {
-                Route.Get($"{url}/"),
-                Reply.Json("{ }")
-            },
-        };
+        var handler = new StubHttp { { Route.Get($"{url}/"), Reply.Json("{ }") }, { Route.Get($"{url}/"), Reply.Json("{ }") }, { Route.Get($"{url}/"), Reply.Json("{ }") }, };
 
         var settings = handler.ToSettings();
 

@@ -12,8 +12,7 @@ namespace System.Diagnostics.CodeAnalysis;
 [ExcludeFromCodeCoverage]
 [DebuggerNonUserCode]
 [AttributeUsage(AttributeTargets.Parameter)]
-internal sealed class DoesNotReturnIfAttribute(bool parameterValue)
-    : Attribute, DoesNotReturnIfAttribute.IMetadata
+internal sealed class DoesNotReturnIfAttribute(bool parameterValue) : Attribute, DoesNotReturnIfAttribute.IMetadata
 {
     /// <summary>Defines the analysis-required public metadata contract.</summary>
     internal interface IMetadata

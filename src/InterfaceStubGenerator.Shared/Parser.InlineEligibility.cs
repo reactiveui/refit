@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -22,6 +23,7 @@ internal static partial class Parser
     /// <param name="httpMethodBaseAttributeSymbol">The resolved <c>Refit.HttpMethodAttribute</c> symbol.</param>
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <returns><see langword="true"/> when the method's request is inline-eligible.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool CanBuildRequestInline(
         IMethodSymbol methodSymbol,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,

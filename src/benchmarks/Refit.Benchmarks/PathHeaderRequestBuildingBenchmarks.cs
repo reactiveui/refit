@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Net;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -9,6 +10,7 @@ using BenchmarkDotNet.Diagnosers;
 namespace Refit.Benchmarks;
 
 /// <summary>Compares generated and reflection request building for path-only and dual path/header parameters.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -39,10 +41,7 @@ public class PathHeaderRequestBuildingBenchmarks
     public void Setup()
     {
         var settings = new RefitSettings();
-        _client = new(new StaticValueHttpResponseHandler("Ok", HttpStatusCode.OK))
-        {
-            BaseAddress = new(Host),
-        };
+        _client = new(new StaticValueHttpResponseHandler("Ok", HttpStatusCode.OK)) { BaseAddress = new(Host), };
         _generated = RestService.ForGenerated<IPathHeaderRequestService>(_client, settings);
 
         var reflectionBuilder = RequestBuilder.ForType<IPathHeaderRequestService>(settings);
@@ -53,11 +52,13 @@ public class PathHeaderRequestBuildingBenchmarks
     }
 
     /// <summary>Disposes the shared HTTP client.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [GlobalCleanup]
     public void Cleanup() => _client.Dispose();
 
     /// <summary>Builds and sends a generated path-only request.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("PathOnly")]
     public Task<HttpResponseMessage> GeneratedPathOnlyAsync() => _generated.PathOnlyAsync(Identifier);
@@ -71,6 +72,7 @@ public class PathHeaderRequestBuildingBenchmarks
 
     /// <summary>Builds and sends a generated request whose identifier also contributes a header.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("PathAndHeader")]
     public Task<HttpResponseMessage> GeneratedPathAndHeaderAsync() =>

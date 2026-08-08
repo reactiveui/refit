@@ -4,6 +4,7 @@
 namespace Refit.CodeFixes.Tests;
 
 /// <summary>Tests for Refit interface code fixes.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class RefitInterfaceCodeFixProviderTests
 {
     /// <summary>Verifies the provider supports Roslyn's batch fix-all provider.</summary>

@@ -7,6 +7,7 @@ namespace Refit.Reflection.Tests;
 /// <summary>Verifies request-building paths of the reflection request builder that only the reflection path reaches:
 /// authorization parameters, synchronous and streaming body serialization, buffered bodies, round-tripping null path
 /// values and header parsing from base interfaces.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionRequestBuildingTests
 {
     /// <summary>The base address used when building request URIs.</summary>

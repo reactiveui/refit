@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -13,6 +14,7 @@ namespace Refit.Benchmarks;
 /// text placed in a route or query string: <see cref="DefaultUrlParameterFormatter"/>, the built-in
 /// <see cref="IUrlParameterKeyFormatter"/> implementations, and the shared <c>SeparatedCaseFormatter</c> behind them.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{Key}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -50,60 +52,70 @@ public class UrlParameterFormattingBenchmarks
 
     /// <summary>Formats a plain string value.</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
     public int FormatString() => (_valueFormatter.Format("widgets and gadgets", typeof(string), typeof(string)) ?? string.Empty).Length;
 
     /// <summary>Formats an integer value (boxed through the invariant <c>string.Format</c> path).</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
     public int FormatInt() => (_valueFormatter.Format(SampleInteger, typeof(int), typeof(int)) ?? string.Empty).Length;
 
     /// <summary>Formats an enum value with no <c>[EnumMember]</c> override.</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
     public int FormatEnumPlain() => (_valueFormatter.Format(QuerySort.Name, typeof(QuerySort), typeof(QuerySort)) ?? string.Empty).Length;
 
     /// <summary>Formats an enum value carrying an <c>[EnumMember]</c> override (exercises the enum-member cache).</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
     public int FormatEnumMember() => (_valueFormatter.Format(QuerySort.DateDescending, typeof(QuerySort), typeof(QuerySort)) ?? string.Empty).Length;
 
     /// <summary>Formats a <see cref="DateTimeOffset"/> value.</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
     public int FormatDateTimeOffset() => (_valueFormatter.Format(_timestamp, typeof(DateTimeOffset), typeof(DateTimeOffset)) ?? string.Empty).Length;
 
     /// <summary>Formats a <see cref="Guid"/> value.</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
     public int FormatGuid() => (_valueFormatter.Format(_guid, typeof(Guid), typeof(Guid)) ?? string.Empty).Length;
 
     /// <summary>Formats a key through the pass-through default key formatter (baseline).</summary>
     /// <returns>The formatted key length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Key")]
     public int DefaultKey() => _defaultKey.Format(Key).Length;
 
     /// <summary>Formats a key into camelCase.</summary>
     /// <returns>The formatted key length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Key")]
     public int CamelCaseKey() => _camelCaseKey.Format(Key).Length;
 
     /// <summary>Formats a key into snake_case through the shared separated-case formatter.</summary>
     /// <returns>The formatted key length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Key")]
     public int SnakeCaseKey() => _snakeCaseKey.Format(Key).Length;
 
     /// <summary>Formats a key into kebab-case through the shared separated-case formatter.</summary>
     /// <returns>The formatted key length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Key")]
     public int KebabCaseKey() => _kebabCaseKey.Format(Key).Length;

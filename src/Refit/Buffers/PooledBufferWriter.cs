@@ -94,16 +94,15 @@ internal sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposa
             count = 1;
         }
 
-        int currentLength = _buffer.Length;
-        int freeCapacity = currentLength - _position;
+        var currentLength = _buffer.Length;
 
-        if (count <= freeCapacity)
+        if (count <= (currentLength - _position))
         {
             return;
         }
 
-        int growBy = Math.Max(count, currentLength);
-        int newSize = checked(currentLength + growBy);
+        var growBy = Math.Max(count, currentLength);
+        var newSize = checked(currentLength + growBy);
 
         var rent = ArrayPool<byte>.Shared.Rent(newSize);
 

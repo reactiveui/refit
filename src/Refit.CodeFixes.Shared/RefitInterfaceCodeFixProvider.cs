@@ -12,6 +12,7 @@ using Refit.Analyzers;
 namespace Refit.CodeFixes;
 
 /// <summary>Provides safe code fixes for Refit interface analyzer diagnostics.</summary>
+[System.Diagnostics.DebuggerDisplay("{FixableDiagnosticIds}")]
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(RefitInterfaceCodeFixProvider))]
 public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
 {
@@ -97,12 +98,14 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
         {
             foreach (var node in attribute.DescendantNodes())
             {
-                if (node is LiteralExpressionSyntax candidate
-                    && candidate.IsKind(SyntaxKind.StringLiteralExpression))
+                if (!(node is LiteralExpressionSyntax candidate
+                    && candidate.IsKind(SyntaxKind.StringLiteralExpression)))
                 {
-                    literal = candidate;
-                    break;
+                    continue;
                 }
+
+                literal = candidate;
+                break;
             }
         }
 

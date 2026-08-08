@@ -5,6 +5,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace Refit;
@@ -32,8 +33,9 @@ internal partial class RestMethodInfoInternal
     /// <param name="methodInfo">The reflected method information.</param>
     /// <param name="refitSettings">The optional Refit settings to use.</param>
     /// <param name="clientPathPrefix">The shared route prefix declared by the client interface's <see cref="PathPrefixAttribute"/>, or null when none applies.</param>
+    /// <exception cref="InvalidOperationException"><paramref name="methodInfo"/> carries no <see cref="HttpMethodAttribute"/>, so it declares no HTTP verb or path.</exception>
     [RequiresUnreferencedCode("Building request metadata from reflected interface methods requires request object property metadata to be available at runtime.")]
-    public RestMethodInfoInternal(
+    internal RestMethodInfoInternal(
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
         Type targetInterface,
         MethodInfo methodInfo,
@@ -89,13 +91,7 @@ internal partial class RestMethodInfoInternal
         // A [Url] parameter supplies the complete absolute request URI, bypassing the base address. It provides the
         // full URL, so the method's path template must be empty; a non-empty template is an invalid combination.
         UrlParameterInfo = ResolveUrlParameter(ParameterInfoArray, parameterAttributeSets, RelativePath);
-
-        // An open generic method definition cannot resolve dotted {obj.Prop} placeholders yet — the generic parameter
-        // has no properties until the method is closed over a concrete type. This RestMethodInfo is only used for
-        // method selection; the closed instantiation (built on first call) resolves the placeholders, so leave any
-        // unmatched placeholder in place here instead of throwing.
-        var allowUnmatched = RefitSettings.AllowUnmatchedRouteParameters || methodInfo.IsGenericMethodDefinition;
-        (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray, allowUnmatched);
+        (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray, RefitSettings.AllowUnmatchedRouteParameters || methodInfo.IsGenericMethodDefinition);
         BodyParameterInfo = FindBodyParameter(ParameterInfoArray, parameterAttributeSets, IsMultipart, hma.Method);
         AuthorizeParameterInfo = FindAuthorizationParameter(parameterAttributeSets);
 
@@ -250,11 +246,13 @@ internal partial class RestMethodInfoInternal
         var index = 0;
         for (var i = 0; i < parameters.Length; i++)
         {
-            if (!IsCancellationTokenParameter(parameters[i]))
+            if (IsCancellationTokenParameter(parameters[i]))
             {
-                mappedParameters[index] = parameters[i];
-                index++;
+                continue;
             }
+
+            mappedParameters[index] = parameters[i];
+            index++;
         }
 
         return mappedParameters;
@@ -299,6 +297,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets the readable public instance properties of a parameter type.</summary>
     /// <param name="parameter">The parameter whose properties are enumerated.</param>
     /// <returns>The readable public instance properties.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [RequiresUnreferencedCode("Reading request object properties requires public property metadata to be available at runtime.")]
     internal static PropertyInfo[] GetParameterProperties(ParameterInfo parameter) =>
         ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(parameter.ParameterType);
@@ -306,6 +305,8 @@ internal partial class RestMethodInfoInternal
     /// <summary>Verifies that the relative URL path is well formed and free of injection characters.</summary>
     /// <param name="relativePath">The relative URL path to validate.</param>
     /// <param name="urlResolution">The URL resolution mode; the leading-slash requirement is relaxed under <see cref="UrlResolutionMode.Rfc3986"/>.</param>
+    /// <exception cref="ArgumentException"><paramref name="relativePath"/> contains a CR or LF character, or it does not
+    /// start with '/' under <see cref="UrlResolutionMode.RefitLegacy"/>.</exception>
     internal static void VerifyUrlPathIsSane(string relativePath, UrlResolutionMode urlResolution)
     {
         if (string.IsNullOrEmpty(relativePath))
@@ -415,6 +416,8 @@ internal partial class RestMethodInfoInternal
     /// <param name="adapterResultType">The wrapped result type of a matched return-type adapter, or
     /// <see langword="null"/> when the return type is a built-in shape or unadapted.</param>
     /// <returns>A tuple of the return type, result type, and deserialized result type.</returns>
+    /// <exception cref="ArgumentException"><paramref name="methodInfo"/> is an ordinary public interface method whose
+    /// return type is neither an awaitable shape nor one an adapter surfaces.</exception>
     internal static (Type ReturnType, Type ReturnResultType, Type DeserializedResultType) DetermineReturnTypeInfo(
         MethodInfo methodInfo,
         Type? adapterResultType)
@@ -491,7 +494,6 @@ internal partial class RestMethodInfoInternal
     /// <param name="deserializedResultType">The type the response content is deserialized into.</param>
     /// <returns><see langword="true"/> when the caller must dispose the response; otherwise <see langword="false"/>.</returns>
     internal static bool DetermineIfResponseMustBeDisposed(Type deserializedResultType) =>
-
         // Rest method caller will have to dispose if it's one of those 3
         deserializedResultType != typeof(HttpResponseMessage)
         && deserializedResultType != typeof(HttpContent)
@@ -592,6 +594,8 @@ internal partial class RestMethodInfoInternal
     /// <param name="isMultipart">A value indicating whether the request is multipart.</param>
     /// <param name="method">The HTTP method of the request.</param>
     /// <returns>The body parameter information, or null when there is no body parameter.</returns>
+    /// <exception cref="ArgumentException">A multipart method declares a <see cref="BodyAttribute"/> parameter, or more
+    /// than one parameter carries <see cref="BodyAttribute"/>.</exception>
     internal Tuple<BodySerializationMethod, bool, int>? FindBodyParameter(
         ParameterInfo[] parameterArray,
         ParameterAttributeSet[] sets,
@@ -642,6 +646,8 @@ internal partial class RestMethodInfoInternal
     /// <param name="parameterArray">The array of method parameters.</param>
     /// <param name="sets">The classified attribute set for each parameter.</param>
     /// <returns>The body parameter information, or null when there is no implicit body parameter.</returns>
+    /// <exception cref="ArgumentException">More than one parameter is an implicit body candidate, so the body is
+    /// ambiguous and must be marked with <see cref="BodyAttribute"/>.</exception>
     internal Tuple<BodySerializationMethod, bool, int>? FindImplicitBodyParameter(
         ParameterInfo[] parameterArray,
         ParameterAttributeSet[] sets)

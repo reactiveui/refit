@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Tests;
 
 /// <summary>A serializable body payload for the reflection body-serialization tests.</summary>
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 public sealed class BodyPayload
 {
     /// <summary>Gets or sets the payload name.</summary>

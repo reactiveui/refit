@@ -5,6 +5,7 @@ namespace Refit.NativeAotSmoke;
 
 /// <summary>An item used by the native AOT smoke test.</summary>
 /// <param name="Title">The item title.</param>
+[System.Diagnostics.DebuggerDisplay("{Id}")]
 public sealed record Todo(string Title)
 {
     /// <summary>Gets the item identifier.</summary>

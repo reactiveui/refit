@@ -25,6 +25,7 @@ internal abstract class DelegatingStream : Stream
     /// <param name="ownsInnerStream">
     /// <c>true</c> if the inner stream should be disposed when this stream is disposed; otherwise <c>false</c>.
     /// </param>
+    /// <exception cref="ArgumentNullException"><paramref name="innerStream"/> is <see langword="null"/>.</exception>
     protected DelegatingStream(Stream innerStream, bool ownsInnerStream = true)
     {
         InnerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));

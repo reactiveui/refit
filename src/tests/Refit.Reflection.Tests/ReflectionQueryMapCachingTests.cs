@@ -6,6 +6,7 @@ namespace Refit.Reflection.Tests;
 
 /// <summary>Pins the exact query string the reflection request builder flattens for a combined query object, including on
 /// the second call that reuses the cached per-type query-property metadata, and confirms it matches the generator.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionQueryMapCachingTests
 {
     /// <summary>The base address used when building request URIs.</summary>
@@ -51,13 +52,5 @@ public sealed class ReflectionQueryMapCachingTests
     /// <summary>Builds the canonical combined query model shared by the flattening assertions.</summary>
     /// <returns>A populated query model.</returns>
     private static ReflectionCachingQueryModel CreateModel() =>
-        new()
-        {
-            Id = ModelId,
-            Name = "widgets & gadgets",
-            Page = ModelPage,
-            Ignored = "secret",
-            Tags = _modelTags,
-            Inner = new() { Code = "abc", Label = "primary" },
-        };
+        new() { Id = ModelId, Name = "widgets & gadgets", Page = ModelPage, Ignored = "secret", Tags = _modelTags, Inner = new() { Code = "abc", Label = "primary" }, };
 }

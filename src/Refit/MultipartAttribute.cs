@@ -12,6 +12,7 @@ namespace Refit;
 /// Initializes a new instance of the <see cref="MultipartAttribute"/> class.
 /// </remarks>
 /// <param name="boundaryText">The boundary text.</param>
+[System.Diagnostics.DebuggerDisplay("{BoundaryText}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class MultipartAttribute(string boundaryText = "----MyGreatBoundary") : Attribute
 {

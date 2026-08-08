@@ -6,6 +6,7 @@ namespace Refit;
 
 /// <summary>Default Api exception factory.</summary>
 /// <param name="refitSettings">The Refit settings used when building exceptions.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultApiExceptionFactory(RefitSettings refitSettings)
 {
     /// <summary>Creates the asynchronous.</summary>
@@ -20,6 +21,7 @@ public class DefaultApiExceptionFactory(RefitSettings refitSettings)
     /// <param name="responseMessage">The response message.</param>
     /// <param name="refitSettings">The Refit settings.</param>
     /// <returns>The created exception.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="responseMessage"/> has no associated request message, which a custom <see cref="HttpMessageHandler"/> must set itself.</exception>
     internal static async ValueTask<Exception?> CreateExceptionAsync(
         HttpResponseMessage responseMessage,
         RefitSettings refitSettings)
@@ -30,10 +32,9 @@ public class DefaultApiExceptionFactory(RefitSettings refitSettings)
                 "The HttpResponseMessage has no associated RequestMessage. When supplying a "
                 + "custom HttpMessageHandler (for example in a test), ensure it sets "
                 + "HttpResponseMessage.RequestMessage.");
-        var method = requestMessage.Method;
 
         return await ApiException
-            .Create(requestMessage, method, responseMessage, refitSettings)
+            .Create(requestMessage, requestMessage.Method, responseMessage, refitSettings)
             .ConfigureAwait(false);
     }
 }

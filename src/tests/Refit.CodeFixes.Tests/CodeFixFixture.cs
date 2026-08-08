@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Composition.Hosting;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -37,6 +38,8 @@ internal static class CodeFixFixture
     /// <param name="source">The source to fix.</param>
     /// <param name="diagnosticId">The diagnostic ID to fix.</param>
     /// <returns>The updated source.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> did not compile, did not report exactly one
+    /// <paramref name="diagnosticId"/>, registered no code fix, or the fix dropped the document.</exception>
     internal static async Task<string> ApplyFirstFix(string source, string diagnosticId)
     {
         using var workspace = new AdhocWorkspace();
@@ -86,6 +89,7 @@ internal static class CodeFixFixture
 
     /// <summary>Gets the fix-all provider from the Refit code-fix provider.</summary>
     /// <returns>The fix-all provider.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static FixAllProvider? GetFixAllProvider() =>
         GetCodeFixProvider().GetFixAllProvider();
 
@@ -155,6 +159,7 @@ internal static class CodeFixFixture
 
     /// <summary>Gets the code-fix provider through its configured MEF shared export.</summary>
     /// <returns>The Refit code-fix provider.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static CodeFixProvider GetCodeFixProvider() =>
         CodeFixProviderHost.GetExport<CodeFixProvider>();
 
@@ -163,6 +168,7 @@ internal static class CodeFixFixture
     /// <param name="source">The source text.</param>
     /// <param name="marker">The marker text.</param>
     /// <returns>The created diagnostic.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="marker"/> does not occur in <paramref name="source"/>.</exception>
     private static Diagnostic CreateDiagnostic(string diagnosticId, string source, string marker)
     {
         var start = source.IndexOf(marker, StringComparison.Ordinal);

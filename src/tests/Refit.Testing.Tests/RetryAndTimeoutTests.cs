@@ -36,17 +36,7 @@ public sealed class RetryAndTimeoutTests
     public async Task RetryRecoversFromTransientErrorStatus()
     {
         // One-shot routes match in declared order, so the first attempt gets the 503 and the retry gets the user.
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(UserTemplate),
-                Reply.Status(HttpStatusCode.ServiceUnavailable)
-            },
-            {
-                Route.Get(UserTemplate),
-                Reply.With(new User(SampleUserId, SampleLogin))
-            },
-        };
+        var handler = new StubHttp { { Route.Get(UserTemplate), Reply.Status(HttpStatusCode.ServiceUnavailable) }, { Route.Get(UserTemplate), Reply.With(new User(SampleUserId, SampleLogin)) }, };
 
         var api = CreateRetryingClient(handler);
         var user = await api.GetUser(SampleUserId);
@@ -63,17 +53,7 @@ public sealed class RetryAndTimeoutTests
     {
         // The same exception NetworkBehavior injects at its configured failure rate, forced onto the first attempt.
         var failure = new NetworkBehavior().CreateFailure();
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(UserTemplate),
-                Reply.From(HttpResponseMessage (_) => throw failure)
-            },
-            {
-                Route.Get(UserTemplate),
-                Reply.With(new User(SampleUserId, SampleLogin))
-            },
-        };
+        var handler = new StubHttp { { Route.Get(UserTemplate), Reply.From(HttpResponseMessage (_) => throw failure) }, { Route.Get(UserTemplate), Reply.With(new User(SampleUserId, SampleLogin)) }, };
 
         var api = CreateRetryingClient(handler);
         var user = await api.GetUser(SampleUserId);
@@ -88,13 +68,7 @@ public sealed class RetryAndTimeoutTests
     [Test]
     public async Task ExhaustedRetriesSurfaceApiException()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = UserTemplate, Reusable = true },
-                Reply.Status(HttpStatusCode.ServiceUnavailable)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = UserTemplate, Reusable = true }, Reply.Status(HttpStatusCode.ServiceUnavailable) }, };
 
         var api = CreateRetryingClient(handler);
 
@@ -148,21 +122,9 @@ public sealed class RetryAndTimeoutTests
     /// <returns>The configured stub handler.</returns>
     private static StubHttp CreateDelayedHandler(TimeSpan delay)
     {
-        var behavior = new NetworkBehavior
-        {
-            Delay = delay,
-            Variance = 0D,
-            FailurePercent = 0D,
-            ErrorPercent = 0D,
-        };
+        var behavior = new NetworkBehavior { Delay = delay, Variance = 0D, FailurePercent = 0D, ErrorPercent = 0D, };
 
-        return new(behavior)
-        {
-            {
-                Route.Get(UserTemplate),
-                Reply.With(new User(SampleUserId, SampleLogin))
-            },
-        };
+        return new(behavior) { { Route.Get(UserTemplate), Reply.With(new User(SampleUserId, SampleLogin)) }, };
     }
 
     /// <summary>Creates a Refit client whose requests pass through a retrying handler stacked above the stub.</summary>

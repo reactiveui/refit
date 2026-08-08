@@ -465,10 +465,7 @@ internal static partial class Parser
             string.Empty,
             string.Empty,
             string.Empty,
-            BodyBufferMode.None)
-        {
-            Query = query,
-        };
+            BodyBufferMode.None) { Query = query, };
 
     /// <summary>Builds the implicit body parameter model for POST/PUT/PATCH methods.</summary>
     /// <param name="parameter">The parameter symbol.</param>

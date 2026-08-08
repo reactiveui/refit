@@ -6,6 +6,7 @@ using System.Net;
 namespace Refit.Benchmarks;
 
 /// <summary>An HttpMessageHandler that always responds with the contents of a file.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class StaticFileHttpResponseHandler : HttpMessageHandler
 {
     /// <summary>The status code returned for every response.</summary>
@@ -30,9 +31,5 @@ public class StaticFileHttpResponseHandler : HttpMessageHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken) =>
         Task.FromResult(
-            new HttpResponseMessage(_responseCode)
-            {
-                RequestMessage = request,
-                Content = new StringContent(_responsePayload)
-            });
+            new HttpResponseMessage(_responseCode) { RequestMessage = request, Content = new StringContent(_responsePayload), });
 }

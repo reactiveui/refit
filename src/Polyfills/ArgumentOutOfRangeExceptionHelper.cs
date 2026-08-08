@@ -14,6 +14,7 @@ internal static class ArgumentOutOfRangeExceptionHelper
     /// <summary>Throws when <paramref name="value"/> is negative.</summary>
     /// <param name="value">The value to validate.</param>
     /// <param name="paramName">The parameter name.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="value"/> is less than zero.</exception>
     internal static void ThrowIfNegative(int value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
         if (value >= 0)
@@ -27,6 +28,7 @@ internal static class ArgumentOutOfRangeExceptionHelper
     /// <summary>Throws when <paramref name="value"/> is negative or zero.</summary>
     /// <param name="value">The value to validate.</param>
     /// <param name="paramName">The parameter name.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="value"/> is zero or less.</exception>
     internal static void ThrowIfNegativeOrZero(int value, [CallerArgumentExpression(nameof(value))] string? paramName = null)
     {
         if (value > 0)

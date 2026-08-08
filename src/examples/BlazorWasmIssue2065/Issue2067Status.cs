@@ -10,8 +10,8 @@ public enum Issue2067Status
 {
     /// <summary>The item is fully ready.</summary>
     [JsonStringEnumMemberName("totally-ready")]
-    TotallyReady,
+    TotallyReady = 0,
 
     /// <summary>The item still needs review.</summary>
-    NeedsReview,
+    NeedsReview = 1,
 }

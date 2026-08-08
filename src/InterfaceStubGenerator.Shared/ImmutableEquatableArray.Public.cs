@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
 
@@ -64,11 +65,14 @@ internal readonly partial struct ImmutableEquatableArray<T>
     }
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<T>.Enumerator GetEnumerator() => new ReadOnlySpan<T>(_values ?? []).GetEnumerator();
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => ((IEnumerable<T>)(_values ?? [])).GetEnumerator();
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     IEnumerator IEnumerable.GetEnumerator() => (_values ?? []).GetEnumerator();
 }

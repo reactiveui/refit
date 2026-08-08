@@ -14,10 +14,10 @@ public static partial class LiveQueryApi
     {
         /// <summary>Sorts by descending date.</summary>
         [EnumMember(Value = "date-desc")]
-        DateDescending,
+        DateDescending = 0,
 
         /// <summary>Sorts by name.</summary>
-        Name,
+        Name = 1,
     }
 
     /// <summary>Exercises generated query, path, body, and custom-verb request construction.</summary>

@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -15,6 +16,7 @@ namespace Refit.Benchmarks;
 /// serialize/deserialize round-trip. The source-generated fast path is covered by the request body serialization
 /// benchmark; this isolates the reflection-metadata helpers.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -61,12 +63,14 @@ public class ContentSerializerHelperBenchmarks
 
     /// <summary>Serializes a JSON object to UTF-8 bytes through the reflection path.</summary>
     /// <returns>The serialized byte count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("RoundTrip")]
     public int SerializeToUtf8Bytes() => _serializer.SerializeToUtf8Bytes(_user).Length;
 
     /// <summary>Deserializes a JSON string through the reflection path.</summary>
     /// <returns>The deserialized identifier.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("RoundTrip")]
     public int DeserializeFromString() => _serializer.DeserializeFromString<User>(_json)!.Id;

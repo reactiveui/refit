@@ -39,9 +39,7 @@ internal static partial class Parser
         }
 
         var typeParameters = methodSymbol.TypeParameters;
-        var estimatedCapacity =
-            declaredBaseName.Length + GenericBracketLength + (typeParameters.Length * EstimatedTypeParameterLength);
-        var builder = new StringBuilder(estimatedCapacity)
+        var builder = new StringBuilder(declaredBaseName.Length + GenericBracketLength + (typeParameters.Length * EstimatedTypeParameterLength))
             .Append(declaredBaseName)
             .Append('<');
 

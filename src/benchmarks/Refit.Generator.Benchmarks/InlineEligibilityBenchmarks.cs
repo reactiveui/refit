@@ -11,6 +11,7 @@ namespace Refit.Generator.Benchmarks;
 /// <remarks>Each call parses the method's request through the shared classifier the generator and the RF006 analyzer both
 /// use, so this exercises the request-parsing decision path across scalar, collection, object, converter, and format
 /// query bindings. It is the analyzer's per-keystroke cost as well as part of the generator's parse.</remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]

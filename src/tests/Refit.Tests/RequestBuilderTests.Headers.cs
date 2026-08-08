@@ -175,11 +175,7 @@ public partial class RequestBuilderTests
     [Arguments(nameof(IDummyHttpApi.PatchSomeStuffWithDynamicHeaderCollection))]
     public async Task HeaderCollectionShouldBeInHeaders(string interfaceMethodName)
     {
-        var headerCollection = new Dictionary<string, string>
-        {
-            { "key1", "val1" },
-            { "key2", "val2" }
-        };
+        var headerCollection = new Dictionary<string, string> { { "key1", "val1" }, { "key2", "val2" }, };
 
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(interfaceMethodName);
@@ -208,10 +204,7 @@ public partial class RequestBuilderTests
     {
         const string authHeader = "LetMeIn";
         const int id = 6;
-        var headerCollection = new Dictionary<string, string>
-        {
-            { AuthorizationHeaderName, "OpenSesame" }
-        };
+        var headerCollection = new Dictionary<string, string> { { AuthorizationHeaderName, "OpenSesame" }, };
 
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
@@ -262,11 +255,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task HeaderCollectionCanUnsetHeaders()
     {
-        var headerCollection = new Dictionary<string, string>
-        {
-            { AuthorizationHeaderName, string.Empty },
-            { ApiVersionHeaderName, null! }
-        };
+        var headerCollection = new Dictionary<string, string> { { AuthorizationHeaderName, string.Empty }, { ApiVersionHeaderName, null! }, };
 
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(

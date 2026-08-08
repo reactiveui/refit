@@ -14,13 +14,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task EmptyQueryShouldBeEmpty()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooQueryUrl, ExactQuery = string.Empty },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooQueryUrl, ExactQuery = string.Empty }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -34,13 +28,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task WhiteSpaceQueryShouldBeEmpty()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooQueryUrl, ExactQuery = string.Empty },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooQueryUrl, ExactQuery = string.Empty }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -54,13 +42,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task EmptyQueryKeyShouldBeEmpty()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooQueryUrl, ExactQuery = string.Empty },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooQueryUrl, ExactQuery = string.Empty }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -74,13 +56,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task EmptyQueryValueShouldNotBeEmpty()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "https://github.com/foo?key=", ExactQuery = "key=" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "https://github.com/foo?key=", ExactQuery = "key=" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -94,13 +70,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task EmptyQueryKeyAndValueShouldBeEmpty()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooQueryUrl, ExactQuery = string.Empty },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooQueryUrl, ExactQuery = string.Empty }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -114,13 +84,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task UnescapedQueryShouldBeEscaped()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key%2C=value%2C&key1%28=value1%28" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key%2C=value%2C&key1%28=value1%28" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -134,13 +98,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task EscapedQueryShouldStillBeEscaped()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key%2C=value%2C&key1%28=value1%28" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key%2C=value%2C&key1%28=value1%28" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -154,13 +112,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ParameterMappedQueryShouldWork()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key1=value1" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key1=value1" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -174,13 +126,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ParameterMappedQueryShouldEscape()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key1%2C=value1%2C" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key1%2C=value1%2C" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -194,13 +140,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task NullableIntCollectionQuery()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "values=3%2C4%2C" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "values=3%2C4%2C" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IQueryApi>(GitHubBaseUrl);
 
@@ -214,13 +154,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ShouldStripFragment()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GitHubFooUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GitHubFooUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IFragmentApi>(GitHubBaseUrl);
 
@@ -234,13 +168,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ShouldStripEmptyFragment()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GitHubFooUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GitHubFooUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IFragmentApi>(GitHubBaseUrl);
 
@@ -254,13 +182,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ShouldStripManyFragments()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GitHubFooUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GitHubFooUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IFragmentApi>(GitHubBaseUrl);
 
@@ -274,13 +196,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ShouldStripParameterFragment()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GitHubFooUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GitHubFooUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IFragmentApi>(GitHubBaseUrl);
 
@@ -294,13 +210,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ShouldStripFragmentAfterQuery()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key=value" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = GitHubFooUrl, ExactQuery = "key=value" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IFragmentApi>(GitHubBaseUrl);
 
@@ -314,13 +224,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ShouldStripQueryAfterFragment()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GitHubFooUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GitHubFooUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IFragmentApi>(GitHubBaseUrl);
 

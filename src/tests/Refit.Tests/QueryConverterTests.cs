@@ -28,12 +28,7 @@ public class QueryConverterTests
     [Test]
     public async Task ConverterFlattensObjectValuedDictionary()
     {
-        IDictionary<string, object> filter = new Dictionary<string, object>
-        {
-            ["name"] = "ada",
-            ["age"] = Age,
-            ["skip"] = null!
-        };
+        IDictionary<string, object> filter = new Dictionary<string, object> { ["name"] = "ada", ["age"] = Age, ["skip"] = null!, };
 
         var generated = await SendAsync(api => api.Search(filter));
 
@@ -67,10 +62,7 @@ public class QueryConverterTests
     [Test]
     public async Task SystemTextJsonConverterFlattensRegisteredType()
     {
-        var settings = new RefitSettings
-        {
-            ContentSerializer = new SystemTextJsonContentSerializer(ReflectionSerializerOptions)
-        };
+        var settings = new RefitSettings { ContentSerializer = new SystemTextJsonContentSerializer(ReflectionSerializerOptions), };
         var filter = new StjFilter { Query = "ada", Count = CountValue, Sub = new StjNested { City = "wien" } };
 
         var generated = await SendAsync(settings, api => api.SearchStj(filter));

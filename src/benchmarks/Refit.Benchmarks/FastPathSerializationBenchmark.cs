@@ -2,12 +2,14 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using BenchmarkDotNet.Attributes;
 
 namespace Refit.Benchmarks;
 
 /// <summary>Compares sync JSON serialization: source-gen fast-path vs metadata walker vs Refit's default options (not fast-path eligible).</summary>
+[System.Diagnostics.DebuggerDisplay("{Count}")]
 [MemoryDiagnoser]
 public class FastPathSerializationBenchmark
 {
@@ -42,16 +44,19 @@ public class FastPathSerializationBenchmark
 
     /// <summary>Serializes using the source-generated fast-path writer.</summary>
     /// <returns>The serialized length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     public int FastPath() => JsonSerializer.Serialize(_items, FastPathSerializationContext.Default.ListFastItem).Length;
 
     /// <summary>Serializes using the source-generated metadata walker.</summary>
     /// <returns>The serialized length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int Metadata() => JsonSerializer.Serialize(_items, MetadataSerializationContext.Default.ListFastItem).Length;
 
     /// <summary>Serializes using Refit's default reflection-based options (converters + NumberHandling, no fast-path).</summary>
     /// <returns>The serialized length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int RefitDefault() => JsonSerializer.Serialize(_items, _defaultOptions).Length;
 }

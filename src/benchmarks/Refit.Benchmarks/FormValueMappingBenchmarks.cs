@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -14,6 +15,7 @@ namespace Refit.Benchmarks;
 /// both the reflection and source-generated descriptor paths (isolated from the <see cref="FormUrlEncodedContent"/>
 /// wrapping), its collection joining helper, and <see cref="DefaultFormUrlEncodedParameterFormatter"/> value formatting.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -46,14 +48,7 @@ public class FormValueMappingBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _body = new()
-        {
-            FirstName = "Ada",
-            LastName = "Lovelace",
-            Email = "ada@example.com",
-            Age = SampleAge,
-            Note = null,
-        };
+        _body = new() { FirstName = "Ada", LastName = "Lovelace", Email = "ada@example.com", Age = SampleAge, Note = null, };
         _body.Roles.Add("admin");
         _body.Roles.Add("author");
 
@@ -70,18 +65,21 @@ public class FormValueMappingBenchmarks
 
     /// <summary>Maps the payload to form entries through the reflection property walk.</summary>
     /// <returns>The number of mapped entries.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Mapping")]
     public int ReflectionCreate() => Count(FormValueMultimap.Create(_body, _settings));
 
     /// <summary>Maps the payload to form entries through the source-generated descriptors.</summary>
     /// <returns>The number of mapped entries.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Mapping")]
     public int DescriptorCreate() => Count(FormValueMultimap.CreateFromFields(_body, _fields, _settings));
 
     /// <summary>Joins a collection of values with the comma delimiter through the shared join helper.</summary>
     /// <returns>The joined value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Join")]
     public int JoinCsvValues() =>
@@ -89,18 +87,21 @@ public class FormValueMappingBenchmarks
 
     /// <summary>Formats a plain string value.</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("ValueFormat")]
     public int FormatString() => (_formatter.Format("widgets and gadgets", null) ?? string.Empty).Length;
 
     /// <summary>Formats an integer value (boxed through the invariant <c>string.Format</c> path).</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("ValueFormat")]
     public int FormatInt() => (_formatter.Format(SampleAge, null) ?? string.Empty).Length;
 
     /// <summary>Formats an enum value carrying an <c>[EnumMember]</c> override (exercises the enum-member cache).</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("ValueFormat")]
     public int FormatEnumMember() => (_formatter.Format(QuerySort.DateDescending, null) ?? string.Empty).Length;

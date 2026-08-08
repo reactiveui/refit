@@ -19,6 +19,7 @@ namespace Refit;
 /// back to System.Text.Json's reflection resolver. Nested objects are flattened under a dotted key; collections use the
 /// configured <see cref="RefitSettings.CollectionFormat"/>.
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class SystemTextJsonQueryConverter<T> : IQueryConverter<T>
 {
     /// <inheritdoc/>

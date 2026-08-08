@@ -201,13 +201,7 @@ public class StreamingResponseTests
     [Test]
     public async Task ErrorResponseThrowsOnEnumeration()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.Status(HttpStatusCode.InternalServerError)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Reusable = true }, Reply.Status(HttpStatusCode.InternalServerError) }, };
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
         var fixture = RestService.For<IStreamingApi>(BaseUrl, settings);
 
@@ -227,18 +221,9 @@ public class StreamingResponseTests
     [Test]
     public async Task NonStreamingSerializerThrowsNotSupported()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.Content(new StringContent("[{\"id\":1}]", System.Text.Encoding.UTF8, JsonMediaType))
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Reusable = true }, Reply.Content(new StringContent("[{\"id\":1}]", System.Text.Encoding.UTF8, JsonMediaType)) }, };
 
-        var settings = new RefitSettings(new NonStreamingContentSerializer())
-        {
-            HttpMessageHandlerFactory = () => handler,
-        };
+        var settings = new RefitSettings(new NonStreamingContentSerializer()) { HttpMessageHandlerFactory = () => handler, };
         var fixture = RestService.For<IStreamingApi>(BaseUrl, settings);
 
         await Assert
@@ -350,13 +335,7 @@ public class StreamingResponseTests
     [Test]
     public async Task StreamsJsonArrayWhenResponseHasNoContentType()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.Content(new ByteArrayContent("[{\"id\":7}]"u8.ToArray()))
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Reusable = true }, Reply.Content(new ByteArrayContent("[{\"id\":7}]"u8.ToArray())) }, };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
         var fixture = RestService.For<IStreamingApi>(BaseUrl, settings);
@@ -499,13 +478,7 @@ public class StreamingResponseTests
     /// <returns>The reflection request builder and its HTTP client.</returns>
     private static (RequestBuilderImplementation<IStreamingApi> Builder, HttpClient Client) CreateReflectionBuilder(string payload)
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.Content(new StringContent(payload, System.Text.Encoding.UTF8, JsonMediaType))
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Reusable = true }, Reply.Content(new StringContent(payload, System.Text.Encoding.UTF8, JsonMediaType)) }, };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
         var client = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
@@ -519,13 +492,7 @@ public class StreamingResponseTests
     /// <returns>The streaming API fixture.</returns>
     private static IStreamingApi CreateFixture(string mediaType, string payload, IHttpContentSerializer? serializer = null)
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.Content(new StringContent(payload, System.Text.Encoding.UTF8, mediaType))
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Reusable = true }, Reply.Content(new StringContent(payload, System.Text.Encoding.UTF8, mediaType)) }, };
 
         var settings = serializer is null ? new RefitSettings() : new RefitSettings(serializer);
         settings.HttpMessageHandlerFactory = () => handler;

@@ -63,18 +63,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheNpmJs()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://registry.npmjs.org/congruence"),
-                Reply.Json("{ \"_id\":\"congruence\", \"_rev\":\"rev\" , \"name\":\"name\"}")
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://registry.npmjs.org/congruence"), Reply.Json("{ \"_id\":\"congruence\", \"_rev\":\"rev\" , \"name\":\"name\"}") }, };
 
         var fixture = handler.CreateClient<INpmJs>("https://registry.npmjs.org");
         var result = await fixture.GetCongruence();
 
-        await Assert.That(result._id).IsEqualTo("congruence");
+        await Assert.That(result.Id).IsEqualTo("congruence");
 
         await handler.VerifyAllCalledAsync();
     }
@@ -84,13 +78,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostToRequestBin()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post(HttpBinPostUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Post(HttpBinPostUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl);
 
@@ -104,13 +92,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostStringDefaultToRequestBin()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Body = "raw string" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Body = "raw string" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl);
 
@@ -124,13 +106,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostBodyNamedLikeGeneratedLocalToRequestBin()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Body = "payload" },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Body = "payload" }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl);
 
@@ -216,17 +192,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostToRequestBinWithGenerics()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post(HttpBinPostUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-            {
-                Route.Post(HttpBinPostUrl),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Post(HttpBinPostUrl), Reply.Status(HttpStatusCode.OK) }, { Route.Post(HttpBinPostUrl), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl);
 
@@ -289,13 +255,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task UseMethodWithArgumentsParameter()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://httpbin.org/foo/something"),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { Route.Get("http://httpbin.org/foo/something"), Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl);
 
@@ -311,10 +271,7 @@ public partial class RestServiceIntegrationTests
     {
         const int bigDataByteCount = 800_000;
         const int byteModulus = 256;
-        var bigObject = new BigObject
-        {
-            BigData = [.. Enumerable.Range(0, bigDataByteCount).Select(static x => (byte)(x % byteModulus))]
-        };
+        var bigObject = new BigObject { BigData = [.. Enumerable.Range(0, bigDataByteCount).Select(static x => (byte)(x % byteModulus))], };
 
         var handler = new StubHttp
         {
@@ -334,10 +291,7 @@ public partial class RestServiceIntegrationTests
             },
 };
 
-        var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl, new RefitSettings
-        {
-            ContentSerializer = new SystemTextJsonContentSerializer()
-        });
+        var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl, new RefitSettings { ContentSerializer = new SystemTextJsonContentSerializer(), });
 
         await fixture.PostBig(bigObject);
 
@@ -482,12 +436,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = handler.ToSettings();
 
-        var myParams = new MyComplexQueryParams
-        {
-            FirstName = "John",
-            LastName = RamboLastName,
-            Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" },
-        };
+        var myParams = new MyComplexQueryParams { FirstName = "John", LastName = RamboLastName, Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" }, };
 
         myParams.MetaData.Add("Age", MetaDataAge);
         myParams.MetaData.Add("Initials", "JR");
@@ -531,12 +480,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = handler.ToSettings();
 
-        var myParams = new MyComplexQueryParams
-        {
-            FirstName = "John",
-            LastName = RamboLastName,
-            Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" },
-        };
+        var myParams = new MyComplexQueryParams { FirstName = "John", LastName = RamboLastName, Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" }, };
 
         myParams.MetaData.Add("Age", MetaDataAge);
         myParams.MetaData.Add("Initials", "JR");
@@ -608,18 +552,9 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task CaptureRequestContentExposesSentBodyOnApiException()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post(HttpBinFooUrl),
-                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
-            },
-        };
+        var handler = new StubHttp { { Route.Post(HttpBinFooUrl), Reply.Json(BadErrorJson, HttpStatusCode.BadRequest) }, };
 
-        var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl, new RefitSettings
-        {
-            CaptureRequestContent = true,
-        });
+        var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl, new RefitSettings { CaptureRequestContent = true, });
 
         var exception = await Assert
             .That(() => fixture.PostRawStringJson("hello"))
@@ -635,18 +570,9 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task CaptureRequestContentExposesSentBodyOnNonVoidResponse()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post(HttpBinFooUrl),
-                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
-            },
-        };
+        var handler = new StubHttp { { Route.Post(HttpBinFooUrl), Reply.Json(BadErrorJson, HttpStatusCode.BadRequest) }, };
 
-        var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl, new RefitSettings
-        {
-            CaptureRequestContent = true,
-        });
+        var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl, new RefitSettings { CaptureRequestContent = true, });
 
         var exception = await Assert
             .That(() => (Task)fixture.PostNonVoidReturnBodyBuffered(new { name = "bob" }))
@@ -662,13 +588,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task RequestContentNotCapturedByDefault()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post(HttpBinFooUrl),
-                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
-            },
-        };
+        var handler = new StubHttp { { Route.Post(HttpBinFooUrl), Reply.Json(BadErrorJson, HttpStatusCode.BadRequest) }, };
 
         var fixture = handler.CreateClient<IRequestBin>(HttpBinBaseUrl);
 

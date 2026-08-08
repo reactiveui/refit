@@ -174,14 +174,13 @@ public partial class RequestBuilderTests
     public async Task AuthorizationHeaderValueGetterReceivesMethodCancellationToken()
     {
         var observedCancellationToken = CancellationToken.None;
-        var settings = new RefitSettings
+        Func<HttpRequestMessage, CancellationToken, ValueTask<string>> captureToken = (_, cancellationToken) =>
         {
-            AuthorizationHeaderValueGetter = (_, cancellationToken) =>
-            {
-                observedCancellationToken = cancellationToken;
-                return new ValueTask<string>("tokenValue");
-            }
+            observedCancellationToken = cancellationToken;
+            return new("tokenValue");
         };
+
+        var settings = new RefitSettings { AuthorizationHeaderValueGetter = captureToken };
 
         var fixture = new RequestBuilderImplementation<IAuthenticatedCancellableMethods>(settings);
         var factory = fixture.RunRequest("GetWithAuthorizationAndCancellation");
@@ -209,10 +208,7 @@ public partial class RequestBuilderTests
         var task =
             (Task<ApiResponse<HttpContent>>)
                 factory(
-                    new(testHttpMessageHandler)
-                    {
-                        BaseAddress = new(ApiBaseUrlWithSlash)
-                    },
+                    new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                     [mpc])!;
         var result = await task;
 
@@ -242,10 +238,7 @@ public partial class RequestBuilderTests
         var task =
             (Task<HttpContent>)
                 factory(
-                    new(testHttpMessageHandler)
-                    {
-                        BaseAddress = new(ApiBaseUrlWithSlash)
-                    },
+                    new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                     [mpc])!;
         var result = await task;
 
@@ -295,7 +288,7 @@ public partial class RequestBuilderTests
             new[]
             {
                 new JsonLineRecord { Id = "124", Name = "Stark Industries" },
-                new JsonLineRecord { Id = "125", Name = "Acme Corp" }
+                new JsonLineRecord { Id = "125", Name = "Acme Corp" },
             }
         ]);
 
@@ -348,10 +341,7 @@ public partial class RequestBuilderTests
         var task =
             (Task<ApiResponse<Stream>>)
                 factory(
-                    new(testHttpMessageHandler)
-                    {
-                        BaseAddress = new(ApiBaseUrlWithSlash)
-                    },
+                    new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                     ["test-file"])!;
         var result = await task;
 
@@ -376,10 +366,7 @@ public partial class RequestBuilderTests
 
         var response = (IApiResponse<string>)
             factory(
-                new(testHttpMessageHandler)
-                {
-                    BaseAddress = new(ApiBaseUrlWithSlash)
-                },
+                new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                 [])!;
 
         await Assert.That(response.RequestMessage).IsSameReferenceAs(testHttpMessageHandler.RequestMessage);
@@ -406,10 +393,7 @@ public partial class RequestBuilderTests
         var task =
             (Task<Stream>)
                 factory(
-                    new(testHttpMessageHandler)
-                    {
-                        BaseAddress = new(ApiBaseUrlWithSlash)
-                    },
+                    new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                     ["test-file"])!;
         var result = await task;
 
@@ -428,10 +412,7 @@ public partial class RequestBuilderTests
 
         var valueTask = (ValueTask<string>)
             factory(
-                new(testHttpMessageHandler)
-                {
-                    BaseAddress = new(ApiBaseUrlWithSlash)
-                },
+                new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                 [ValueArgument])!;
 
         var result = await valueTask;
@@ -451,10 +432,7 @@ public partial class RequestBuilderTests
 
         var valueTask = (ValueTask<ApiResponse<string>>)
             factory(
-                new(testHttpMessageHandler)
-                {
-                    BaseAddress = new(ApiBaseUrlWithSlash)
-                },
+                new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                 [ValueArgument])!;
 
         using var response = await valueTask;
@@ -479,10 +457,7 @@ public partial class RequestBuilderTests
 
         var observable = (IObservable<string>)
             factory(
-                new(testHttpMessageHandler)
-                {
-                    BaseAddress = new(ApiBaseUrlWithSlash)
-                },
+                new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                 [ValueArgument, cts.Token])!;
 
         await Assert.That(() => (Task)ObservableTestHelpers.Await(observable)).ThrowsExactly<TaskCanceledException>();

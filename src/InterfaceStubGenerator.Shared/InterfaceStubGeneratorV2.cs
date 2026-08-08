@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -11,6 +12,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Refit.Generator;
 
 /// <summary>An incremental source generator that produces Refit interface stub implementations.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [Generator]
 public class InterfaceStubGeneratorV2 : IIncrementalGenerator
 {
@@ -99,11 +101,11 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
                         cancellationToken));
 
         var diagnostics = parseStep
-            .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
+            .Select(static (x, _) => x.Diagnostics.ToImmutableEquatableArray())
             .WithTrackingName(RefitGeneratorStepName.ReportDiagnostics);
         context.ReportDiagnostics(diagnostics);
 
-        var contextModel = parseStep.Select(static (x, _) => x.contextGenerationSpec);
+        var contextModel = parseStep.Select(static (x, _) => x.ContextGenerationSpec);
         var interfaceModels = contextModel
             .SelectMany(static (x, _) => x.Interfaces)
             .WithTrackingName(RefitGeneratorStepName.BuildRefit);
@@ -117,6 +119,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Combines built-in and potential custom HTTP method candidates.</summary>
     /// <param name="combined">The built-in and custom candidate arrays.</param>
     /// <returns>The combined candidates.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ImmutableArray<MethodDeclarationSyntax> CombineCandidateMethodsForTesting(
         (ImmutableArray<MethodDeclarationSyntax> StandardMethods,
         ImmutableArray<MethodDeclarationSyntax> CustomMethods) combined) =>
@@ -125,6 +128,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>Determines whether an attribute syntax name is a built-in Refit HTTP method attribute name.</summary>
     /// <param name="name">The attribute name syntax.</param>
     /// <returns><see langword="true"/> when the name is one of Refit's built-in HTTP method attributes.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool IsStandardHttpMethodAttributeNameForTesting(NameSyntax name) =>
         IsStandardHttpMethodAttributeName(name);
 
@@ -170,11 +174,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
 
         var standardMethods = deleteMethods
             .Combine(getMethods)
-            .Select(static (combined, _) => new StandardHttpMethodCandidates
-            {
-                DeleteMethods = combined.Left,
-                GetMethods = combined.Right
-            });
+            .Select(static (combined, _) => new StandardHttpMethodCandidates { DeleteMethods = combined.Left, GetMethods = combined.Right, });
 
         return standardMethods
             .Combine(headMethods)
@@ -194,6 +194,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="context">The generator initialization context.</param>
     /// <param name="metadataName">The fully qualified metadata name.</param>
     /// <returns>The matching method declarations.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static IncrementalValuesProvider<MethodDeclarationSyntax> CreateHttpMethodCandidateProvider(
         in IncrementalGeneratorInitializationContext context,
         string metadataName) =>
@@ -214,28 +215,17 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <returns>The combined candidates.</returns>
     internal static ImmutableArray<MethodDeclarationSyntax> CombineStandardHttpMethodCandidates(
         in StandardHttpMethodCandidates candidates)
-#if ROSLYN_5
-        =>
-        [
-            ..candidates.DeleteMethods,
-            ..candidates.GetMethods,
-            ..candidates.HeadMethods,
-            ..candidates.OptionsMethods,
-            ..candidates.PatchMethods,
-            ..candidates.PostMethods,
-            ..candidates.PutMethods
-        ];
-#else
     {
-        var count =
+        // Built through an exact-capacity builder on both Roslyn versions: MoveToImmutable hands
+        // over the array without copying, so this matches what a collection expression produces.
+        var builder = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(
             candidates.DeleteMethods.Length
             + candidates.GetMethods.Length
             + candidates.HeadMethods.Length
             + candidates.OptionsMethods.Length
             + candidates.PatchMethods.Length
             + candidates.PostMethods.Length
-            + candidates.PutMethods.Length;
-        var builder = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(count);
+            + candidates.PutMethods.Length);
         builder.AddRange(candidates.DeleteMethods);
         builder.AddRange(candidates.GetMethods);
         builder.AddRange(candidates.HeadMethods);
@@ -245,7 +235,6 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         builder.AddRange(candidates.PutMethods);
         return builder.MoveToImmutable();
     }
-#endif
 
     /// <summary>Combines built-in and potential custom HTTP method candidates.</summary>
     /// <param name="combined">The built-in and custom candidate arrays.</param>
@@ -253,27 +242,24 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     internal static ImmutableArray<MethodDeclarationSyntax> CombineCandidateMethods(
         (ImmutableArray<MethodDeclarationSyntax> StandardMethods,
         ImmutableArray<MethodDeclarationSyntax> CustomMethods) combined)
-#if ROSLYN_5
-        => [.. combined.StandardMethods, .. combined.CustomMethods];
-#else
     {
-        if (combined.StandardMethods.IsEmpty)
+        // Either side being empty makes the other array the answer outright, so the common
+        // single-attribute interface allocates nothing. The guards hold on both Roslyn versions.
+        if (combined.StandardMethods.IsEmpty || combined.CustomMethods.IsEmpty)
         {
-            return combined.CustomMethods;
+            return combined.StandardMethods.IsEmpty ? combined.CustomMethods : combined.StandardMethods;
         }
 
-        if (combined.CustomMethods.IsEmpty)
-        {
-            return combined.StandardMethods;
-        }
-
+#if ROSLYN_5
+        return [.. combined.StandardMethods, .. combined.CustomMethods];
+#else
         var builder = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(
             combined.StandardMethods.Length + combined.CustomMethods.Length);
         builder.AddRange(combined.StandardMethods);
         builder.AddRange(combined.CustomMethods);
         return builder.MoveToImmutable();
-    }
 #endif
+    }
 
     /// <summary>Determines whether syntax might be a method using a custom Refit HTTP method attribute.</summary>
     /// <param name="syntax">The syntax node to inspect.</param>
@@ -374,7 +360,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
 
     /// <summary>Creates an empty result when generation is explicitly disabled.</summary>
     /// <returns>The disabled generation result.</returns>
-    internal static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec)
+    internal static (List<Diagnostic> Diagnostics, ContextGenerationModel ContextGenerationSpec)
         CreateDisabledGenerationResult() =>
         new(
             [],

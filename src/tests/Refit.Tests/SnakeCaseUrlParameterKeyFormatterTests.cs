@@ -43,19 +43,12 @@ public class SnakeCaseUrlParameterKeyFormatterTests
     [Test]
     public async Task FormatKey_Returns_ExpectedValue()
     {
-        var refitSettings = new RefitSettings
-        {
-            UrlParameterKeyFormatter = new SnakeCaseUrlParameterKeyFormatter()
-        };
+        var refitSettings = new RefitSettings { UrlParameterKeyFormatter = new SnakeCaseUrlParameterKeyFormatter(), };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(refitSettings);
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
 
-        var complexQuery = new CamelCaselTestsRequest
-        {
-            AlreadyCamelCased = "value1",
-            NotcamelCased = "value2"
-        };
+        var complexQuery = new CamelCaselTestsRequest { AlreadyCamelCased = "value1", NotcamelCased = "value2", };
 
         var output = await factory([complexQuery]);
         await Assert.That(output.RequestUri).IsNotNull();

@@ -5,6 +5,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 #if NET6_0_OR_GREATER
 using System.Security.Cryptography;
 using System.Text;
@@ -155,8 +156,8 @@ public sealed partial class StubHttp
     /// <returns><see langword="true"/> when the header matches.</returns>
     private static bool HeaderMatches(HttpRequestMessage request, string name, string value)
     {
-        var present = TryGetHeader(request.Headers, name, out var actual) ||
-            (request.Content is not null && TryGetHeader(request.Content.Headers, name, out actual));
+        var present = TryGetHeader(request.Headers, name, out var actual)
+            || (request.Content is not null && TryGetHeader(request.Content.Headers, name, out actual));
         return present && FixedTimeEquals(actual, value);
     }
 
@@ -232,6 +233,7 @@ public sealed partial class StubHttp
     /// <summary>URL-decodes a single query or form token.</summary>
     /// <param name="value">The encoded token.</param>
     /// <returns>The decoded token.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string Decode(string value) => Uri.UnescapeDataString(value.Replace('+', ' '));
 
     /// <summary>Determines whether every expected pair is present in the actual pairs.</summary>

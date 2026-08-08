@@ -33,6 +33,7 @@ public sealed partial class QueryRequestBuildingLiveTests
 
         /// <summary>Takes the last captured request, clearing the slot.</summary>
         /// <returns>The captured request.</returns>
+        /// <exception cref="InvalidOperationException">No request has been sent through the handler since the last take.</exception>
         public HttpRequestMessage TakeLastRequest()
         {
             var request = _lastRequest ?? throw new InvalidOperationException("No request was captured.");
@@ -51,10 +52,7 @@ public sealed partial class QueryRequestBuildingLiveTests
             LastContent = request.Content is null
                 ? null
                 : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            return new(HttpStatusCode.OK)
-            {
-                Content = new StringContent("\"done\"", Encoding.UTF8, "application/json")
-            };
+            return new(HttpStatusCode.OK) { Content = new StringContent("\"done\"", Encoding.UTF8, "application/json"), };
         }
     }
 
@@ -298,6 +296,7 @@ public sealed partial class QueryRequestBuildingLiveTests
         /// <summary>Compiles the scenario interface and creates the generated and reflection clients.</summary>
         /// <param name="settings">The Refit settings, or null for defaults.</param>
         /// <returns>The live harness.</returns>
+        /// <exception cref="InvalidOperationException">The generator output failed to compile.</exception>
         [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
         public static LiveQueryHarness Create(RefitSettings? settings = null)
         {
@@ -315,6 +314,13 @@ public sealed partial class QueryRequestBuildingLiveTests
             var requestBuilder = RequestBuilder.ForType(interfaceType, settings);
             var generatedApi = RestService.For(interfaceType, client, requestBuilder);
             return new(handler, client, interfaceType, generatedApi, requestBuilder);
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            client.Dispose();
+            handler.Dispose();
         }
 
         /// <summary>Creates a compiled scenario enum value from its underlying value.</summary>
@@ -427,13 +433,6 @@ public sealed partial class QueryRequestBuildingLiveTests
             await Assert.That(generatedRequest.RequestUri!.AbsoluteUri)
                 .IsEqualTo(reflectionRequest.RequestUri!.AbsoluteUri);
             return generatedRequest;
-        }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            client.Dispose();
-            handler.Dispose();
         }
     }
 }

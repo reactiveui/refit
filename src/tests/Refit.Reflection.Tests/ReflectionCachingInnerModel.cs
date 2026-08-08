@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Tests;
 
 /// <summary>A nested query model flattened recursively under a dotted key.</summary>
+[System.Diagnostics.DebuggerDisplay("{Code}")]
 public sealed class ReflectionCachingInnerModel
 {
     /// <summary>Gets or sets the nested code.</summary>

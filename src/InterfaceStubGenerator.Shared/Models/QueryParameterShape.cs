@@ -7,27 +7,27 @@ namespace Refit.Generator;
 internal enum QueryParameterShape
 {
     /// <summary>A single <c>key=value</c> pair.</summary>
-    Scalar,
+    Scalar = 0,
 
     /// <summary>A collection expanded per the effective <c>CollectionFormat</c>.</summary>
-    Collection,
+    Collection = 1,
 
     /// <summary>A single valueless flag (<c>?name</c>) from <c>[QueryName]</c>.</summary>
-    Flag,
+    Flag = 2,
 
     /// <summary>A collection of valueless flags, one per element.</summary>
-    FlagCollection,
+    FlagCollection = 3,
 
     /// <summary>An object whose public readable properties are flattened into individual query pairs.</summary>
-    Object,
+    Object = 4,
 
     /// <summary>A dictionary whose entries become one query pair each, keyed by the formatted dictionary key.</summary>
-    Dictionary,
+    Dictionary = 5,
 
     /// <summary>A value flattened by a user-supplied <c>IQueryConverter&lt;T&gt;</c> named with <c>[QueryConverter]</c>.</summary>
-    Converter,
+    Converter = 6,
 
     /// <summary>A collection of objects whose properties are flattened with an indexed key prefix:
     /// <c>key[0].Prop=val&amp;key[1].Prop=val</c>, matching <c>CollectionFormat.Indexed</c>.</summary>
-    IndexedCollection
+    IndexedCollection = 7,
 }

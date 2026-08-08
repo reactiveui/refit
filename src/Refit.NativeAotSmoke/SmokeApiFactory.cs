@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 namespace Refit.NativeAotSmoke;
@@ -14,6 +15,7 @@ internal static class SmokeApiFactory
     /// <param name="client">The <see cref="HttpClient"/> the implementation will use.</param>
     /// <param name="jsonOptions">The source-generated JSON serializer options.</param>
     /// <returns>An AOT-safe implementation of <see cref="INativeAotApi"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static INativeAotApi Create(HttpClient client, JsonSerializerOptions jsonOptions) =>
         RestService.ForGenerated<INativeAotApi>(
             client,

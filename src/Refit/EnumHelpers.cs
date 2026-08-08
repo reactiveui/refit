@@ -99,6 +99,7 @@ internal static class EnumHelpers
         /// <summary>Reads a numeric enum value using the correct signedness for the enum backing type.</summary>
         /// <param name="reader">The reader positioned on the numeric token.</param>
         /// <returns>The enum value represented by the numeric token.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static TEnum ReadJsonNumericValue(ref Utf8JsonReader reader) =>
             ReadJsonNumericValue(_underlyingTypeCode, ref reader);
 
@@ -106,6 +107,7 @@ internal static class EnumHelpers
         /// <param name="underlyingTypeCode">The enum backing type code.</param>
         /// <param name="reader">The JSON reader positioned at a numeric token.</param>
         /// <returns>The enum value represented by the numeric token.</returns>
+        /// <exception cref="JsonException"><paramref name="underlyingTypeCode"/> is not one of the integral type codes an enum can be backed by.</exception>
         internal static TEnum ReadJsonNumericValue(TypeCode underlyingTypeCode, ref Utf8JsonReader reader) =>
             underlyingTypeCode switch
             {
@@ -137,6 +139,7 @@ internal static class EnumHelpers
         /// <summary>Converts an enum value to a signed 64-bit number without boxing.</summary>
         /// <param name="value">The enum value.</param>
         /// <returns>The signed numeric value.</returns>
+        /// <exception cref="JsonException"><typeparamref name="TEnum"/> is backed by an unsigned type, so it has no signed representation.</exception>
         internal static long ToInt64(TEnum value) =>
             _underlyingTypeCode switch
             {
@@ -150,6 +153,7 @@ internal static class EnumHelpers
         /// <summary>Converts an enum value to an unsigned 64-bit number without boxing.</summary>
         /// <param name="value">The enum value.</param>
         /// <returns>The unsigned numeric value.</returns>
+        /// <exception cref="JsonException"><typeparamref name="TEnum"/> is backed by a signed type, so it has no unsigned representation.</exception>
         internal static ulong ToUInt64(TEnum value) =>
             _underlyingTypeCode switch
             {
@@ -164,6 +168,7 @@ internal static class EnumHelpers
         /// <typeparam name="TUnderlying">The enum backing value type.</typeparam>
         /// <param name="value">The numeric backing value.</param>
         /// <returns>The enum value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static TEnum ToEnum<TUnderlying>(TUnderlying value)
             where TUnderlying : struct =>
             Unsafe.As<TUnderlying, TEnum>(ref value);

@@ -329,6 +329,7 @@ public static class Fixture
 
     /// <summary>Checks the generator and analyzer copies of request classification against every source method.</summary>
     /// <param name="compilation">The compilation containing the request-shape corpus.</param>
+    /// <exception cref="InvalidOperationException"><paramref name="compilation"/> lacks <c>Refit.HttpMethodAttribute</c>, or the two parser copies classify a method differently.</exception>
     private static void AssertInlineEligibilityParsersAgree(CSharpCompilation compilation)
     {
         var httpMethodAttribute = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")
@@ -479,6 +480,7 @@ public static class Fixture
     /// <param name="hintName">The generated source hint name.</param>
     /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
     /// <returns>The generated source text.</returns>
+    /// <exception cref="InvalidOperationException">The generator did not produce a file named <paramref name="hintName"/>.</exception>
     private static string Generate(
         string source,
         string hintName,
@@ -507,8 +509,7 @@ public static class Fixture
     /// <param name="disableSourceGenerator">Whether source generation is disabled.</param>
     private sealed class TestAnalyzerConfigOptionsProvider(
         bool? generatedRequestBuilding,
-        bool disableSourceGenerator = false)
-        : AnalyzerConfigOptionsProvider
+        bool disableSourceGenerator = false) : AnalyzerConfigOptionsProvider
     {
         /// <inheritdoc/>
         public override AnalyzerConfigOptions GlobalOptions { get; } =

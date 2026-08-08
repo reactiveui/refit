@@ -27,6 +27,7 @@ internal static class ReflectionRequestBuilderResolver
 
     /// <summary>Loads and instantiates the reflection request-builder factory.</summary>
     /// <returns>The factory instance.</returns>
+    /// <exception cref="NotSupportedException">The Refit.Reflection assembly is not present, so the factory type cannot be loaded.</exception>
     [RequiresUnreferencedCode("The reflection request builder requires runtime type lookup and request metadata.")]
     [ExcludeFromCodeCoverage] // The not-installed throw is unreachable in-process: Refit.Reflection is always present when this resolver runs.
     internal static IRequestBuilderFactory CreateFactory() =>

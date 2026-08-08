@@ -180,6 +180,7 @@ internal static partial class RequestExecutionHelpers
     /// <param name="timeoutMilliseconds">The per-call timeout in milliseconds; values that are not positive disable it.</param>
     /// <param name="cancellationToken">A token to cancel streaming.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    /// <exception cref="NotSupportedException">The serializer configured on <paramref name="settings"/> does not implement <see cref="IStreamingContentSerializer"/>.</exception>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",

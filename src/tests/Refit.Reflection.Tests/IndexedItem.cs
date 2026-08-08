@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Tests;
 
 /// <summary>Indexed query element with a null property that opts into serialization.</summary>
+[System.Diagnostics.DebuggerDisplay("{Value}")]
 public sealed class IndexedItem
 {
     /// <summary>Gets the optional value.</summary>

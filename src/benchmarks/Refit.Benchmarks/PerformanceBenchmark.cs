@@ -2,11 +2,13 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Net;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 
 namespace Refit.Benchmarks;
 
 /// <summary>Benchmarks measuring Refit request dispatch performance.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 public class PerformanceBenchmark
 {
@@ -31,41 +33,40 @@ public class PerformanceBenchmark
         _service =
             RestService.For<IPerformanceService>(
                 Host,
-                new(systemTextJsonContentSerializer)
-                {
-                    HttpMessageHandlerFactory = static () =>
-                        new StaticValueHttpResponseHandler(
-                            "Ok",
-                            HttpStatusCode.OK)
-                });
+                new(systemTextJsonContentSerializer) { HttpMessageHandlerFactory = static () => new StaticValueHttpResponseHandler("Ok", HttpStatusCode.OK), });
 
         return Task.CompletedTask;
     }
 
     /// <summary>Benchmarks a request to a constant route.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<HttpResponseMessage> ConstantRouteAsync() => _service.ConstantRouteAsync();
 
     /// <summary>Benchmarks a request to a route with a single dynamic segment.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<HttpResponseMessage> DynamicRouteAsync() => _service.DynamicRouteAsync(SampleUserId);
 
     /// <summary>Benchmarks a request to a route with multiple dynamic segments.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<HttpResponseMessage> ComplexDynamicRouteAsync() =>
         _service.ComplexDynamicRouteAsync(SampleUserId, "tom", "yCxv");
 
     /// <summary>Benchmarks a request that sends an object as query parameters.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<HttpResponseMessage> ObjectRequestAsync() =>
         _service.ObjectRequestAsync(new() { SomeProperty = "myProperty", SomeQuery = "myQuery" });
 
     /// <summary>Benchmarks a request combining dynamic routes, objects, and collections.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<HttpResponseMessage> ComplexRequestAsync() => _service.ComplexRequestAsync(
         SampleUserId,

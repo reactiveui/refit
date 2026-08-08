@@ -32,9 +32,9 @@ internal static class HttpClientFactoryCore
     internal static IHttpClientBuilder AddRefitClientCore(
         IServiceCollection services,
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         Func<IServiceProvider, RefitSettings?>? settings,
         string? httpClientName)
@@ -99,9 +99,9 @@ internal static class HttpClientFactoryCore
     [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
     internal static IHttpClientBuilder AddRefitClientCore<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(
         IServiceCollection services,
         Func<IServiceProvider, RefitSettings?>? settings,
@@ -145,9 +145,9 @@ internal static class HttpClientFactoryCore
     internal static IHttpClientBuilder AddKeyedRefitClientCore(
         IServiceCollection services,
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         object? serviceKey,
         Func<IServiceProvider, RefitSettings?>? settings,
@@ -218,9 +218,9 @@ internal static class HttpClientFactoryCore
     [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
     internal static IHttpClientBuilder AddKeyedRefitClientCore<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(
         IServiceCollection services,
         object? serviceKey,
@@ -362,6 +362,7 @@ internal static class HttpClientFactoryCore
 
     /// <summary>Finds the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
     /// <returns>The matching method definition.</returns>
+    /// <exception cref="InvalidOperationException"><see cref="RequestBuilder"/> declares no single-parameter generic <c>ForType</c> method, or more than one.</exception>
     [RequiresUnreferencedCode("Resolving RequestBuilder.ForType by reflection requires method metadata to be available at runtime.")]
     [ExcludeFromCodeCoverage] // RequestBuilder declares exactly one single-parameter generic ForType, so the duplicate-match and no-match guards are unreachable.
     private static MethodInfo FindRequestBuilderGenericForTypeMethod()

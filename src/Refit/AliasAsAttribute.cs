@@ -9,6 +9,7 @@ namespace Refit;
 /// Initializes a new instance of the <see cref="AliasAsAttribute"/> class.
 /// </remarks>
 /// <param name="name">The name.</param>
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
 public sealed class AliasAsAttribute(string name) : Attribute
 {

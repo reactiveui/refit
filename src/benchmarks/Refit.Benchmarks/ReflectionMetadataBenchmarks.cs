@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -13,6 +14,7 @@ namespace Refit.Benchmarks;
 /// property enumeration (all-readable fast path and the filtered slow path) and <see cref="GeneratedParameterAttributeProvider"/>
 /// attribute flattening and lookups (uncached first access, memoized access, and type-filtered access).
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -47,6 +49,7 @@ public class ReflectionMetadataBenchmarks
 
     /// <summary>Enumerates the readable public properties of an all-readable type (fast path).</summary>
     /// <returns>The readable property count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Properties")]
     public int GetReadablePropertiesFastPath() =>
@@ -54,6 +57,7 @@ public class ReflectionMetadataBenchmarks
 
     /// <summary>Enumerates the readable public properties of a mixed-readability type (filtered path).</summary>
     /// <returns>The readable property count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Properties")]
     public int GetReadablePropertiesFiltered() =>
@@ -61,24 +65,28 @@ public class ReflectionMetadataBenchmarks
 
     /// <summary>Flattens the per-type attribute arrays into a single array.</summary>
     /// <returns>The flattened attribute count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Attributes")]
     public int FlattenAttributes() => GeneratedParameterAttributeProvider.FlattenAttributes(_attributes).Length;
 
     /// <summary>Flattens all attributes on first access through a fresh provider (uncached).</summary>
     /// <returns>The flattened attribute count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Attributes")]
     public int GetAllAttributesUncached() => new GeneratedParameterAttributeProvider(_attributes).GetCustomAttributes(true).Length;
 
     /// <summary>Returns the memoized flattened attributes on a warmed provider.</summary>
     /// <returns>The flattened attribute count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Attributes")]
     public int GetAllAttributesCached() => _cachedProvider.GetCustomAttributes(true).Length;
 
     /// <summary>Returns the attributes of a single requested type (dictionary lookup).</summary>
     /// <returns>The matching attribute count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Attributes")]
     public int GetAttributesByType() => _cachedProvider.GetCustomAttributes(typeof(QueryAttribute), true).Length;

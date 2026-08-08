@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -34,19 +35,22 @@ internal static partial class Parser
         {
             foreach (var member in current.GetMembers())
             {
-                if (member is IPropertySymbol property && IsReadableFormProperty(property) && seen.Add(property.Name))
+                // seen.Add still runs only for a readable property: || short-circuits the same way && did.
+                if (member is not IPropertySymbol property || !IsReadableFormProperty(property) || !seen.Add(property.Name))
                 {
-                    // A nested complex object, dictionary, or collection of non-simple elements needs the reflection
-                    // path's recursive flattening (FormValueMultimap). Keep descriptors to the flat scalar and
-                    // collection-of-simple shapes and route the whole body through reflection otherwise, matching the
-                    // existing dictionary-body precedent.
-                    if (!IsDescriptorSafeFormProperty(property, context.FormattableSymbol))
-                    {
-                        return null;
-                    }
-
-                    fields.Add(BuildFormFieldModel(property, context));
+                    continue;
                 }
+
+                // A nested complex object, dictionary, or collection of non-simple elements needs the reflection
+                // path's recursive flattening (FormValueMultimap). Keep descriptors to the flat scalar and
+                // collection-of-simple shapes and route the whole body through reflection otherwise, matching the
+                // existing dictionary-body precedent.
+                if (!IsDescriptorSafeFormProperty(property, context.FormattableSymbol))
+                {
+                    return null;
+                }
+
+                fields.Add(BuildFormFieldModel(property, context));
             }
         }
 
@@ -171,6 +175,7 @@ internal static partial class Parser
     /// <summary>Parses the form-relevant members of a <c>[Query]</c> attribute applied to a property.</summary>
     /// <param name="attribute">The query attribute data.</param>
     /// <returns>The parsed form query data.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static QueryFormData ParseFormQueryAttribute(AttributeData attribute) =>
         ApplyQueryNamedArguments(attribute, ParseQueryConstructorArguments(attribute));
 

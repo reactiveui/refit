@@ -94,11 +94,13 @@ internal static class ReturnTypeAdapterResolver
     {
         foreach (var implemented in adapter.GetInterfaces())
         {
-            if (IsAdapterInterface(implemented) && implemented.GetGenericArguments()[0] == returnType)
+            if (!(IsAdapterInterface(implemented) && implemented.GetGenericArguments()[0] == returnType))
             {
-                resultType = implemented.GetGenericArguments()[1];
-                return true;
+                continue;
             }
+
+            resultType = implemented.GetGenericArguments()[1];
+            return true;
         }
 
         resultType = null;

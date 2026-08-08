@@ -89,7 +89,7 @@ public partial class MultipartTests
                 await using var str = await parts[0].ReadAsStreamAsync();
                 await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -118,7 +118,7 @@ public partial class MultipartTests
                 await using var str = await parts[0].ReadAsStreamAsync();
                 await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -155,7 +155,7 @@ public partial class MultipartTests
                 await using var str = await parts[0].ReadAsStreamAsync();
                 await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -191,8 +191,8 @@ public partial class MultipartTests
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo(name);
                 await Assert.That(parts[0].Headers.ContentType).IsNull();
                 await using (var str = await parts[0].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream(TestFilePath))
                 {
+                    await using var src = GetTestFileStream(TestFilePath);
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
 
@@ -200,20 +200,18 @@ public partial class MultipartTests
                 await Assert.That(parts[1].Headers.ContentDisposition!.FileName).IsEqualTo(name);
                 await Assert.That(parts[1].Headers.ContentType).IsNull();
                 await using (var str = await parts[1].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream(TestFilePath))
                 {
+                    await using var src = GetTestFileStream(TestFilePath);
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
 
                 await Assert.That(parts[additionalFilePartIndex].Headers.ContentDisposition!.Name).IsEqualTo("anotherFile");
                 await Assert.That(parts[additionalFilePartIndex].Headers.ContentDisposition!.FileName).IsEqualTo(name);
                 await Assert.That(parts[additionalFilePartIndex].Headers.ContentType).IsNull();
-                await using (var str = await parts[additionalFilePartIndex].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream(TestFilePath))
-                {
-                    await Assert.That(StreamsEqual(src, str)).IsTrue();
-                }
-            }
+                await using var additionalStr = await parts[additionalFilePartIndex].ReadAsStreamAsync();
+                await using var additionalSrc = GetTestFileStream(TestFilePath);
+                await Assert.That(StreamsEqual(additionalSrc, additionalStr)).IsTrue();
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -221,8 +219,8 @@ public partial class MultipartTests
         try
         {
             await using (var stream = GetTestFileStream(TestFilePath))
-            await using (var outStream = File.OpenWrite(fileName))
             {
+                await using var outStream = File.OpenWrite(fileName);
                 await stream.CopyToAsync(outStream);
                 await outStream.FlushAsync();
             }
@@ -259,7 +257,7 @@ public partial class MultipartTests
                 await Assert.That(parts[0].Headers.ContentType!.CharSet).IsEqualTo(Utf8CharSet);
                 var str = await parts[0].ReadAsStringAsync();
                 await Assert.That(str).IsEqualTo(text);
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -295,7 +293,7 @@ public partial class MultipartTests
                 await Assert
                     .That(timestampText)
                     .IsEqualTo(timestamp.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -316,14 +314,10 @@ public partial class MultipartTests
                 var parts = content.ToList();
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("id");
                 await Assert.That(await parts[0].ReadAsStringAsync()).IsEqualTo(string.Empty);
-            }
+            },
         };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            FormUrlEncodedParameterFormatter = new NullReturningFormUrlEncodedParameterFormatter()
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, FormUrlEncodedParameterFormatter = new NullReturningFormUrlEncodedParameterFormatter(), };
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadFormattableValues(Guid.NewGuid(), DateTimeOffset.UnixEpoch);
@@ -375,7 +369,7 @@ public partial class MultipartTests
                 await Assert.That(parts[0].Headers.ContentType!.CharSet).IsEqualTo(Utf8CharSet);
                 var str = await parts[0].ReadAsStringAsync();
                 await Assert.That(str).IsEqualTo(text);
-            }
+            },
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
@@ -390,6 +384,7 @@ public partial class MultipartTests
     /// <summary>Loads an embedded test resource as a stream.</summary>
     /// <param name="relativeFilePath">The relative path of the embedded resource.</param>
     /// <returns>A stream over the embedded resource contents.</returns>
+    /// <exception cref="InvalidOperationException">No embedded resource in the calling assembly matches <paramref name="relativeFilePath"/>, or the matching resource cannot be opened.</exception>
     internal static Stream GetTestFileStream(string relativeFilePath)
     {
         const char namespaceSeparator = '.';

@@ -4,6 +4,7 @@
 namespace Refit.Analyzers.Tests;
 
 /// <summary>White-box tests for Refit interface analyzer implementation details.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class RefitInterfaceAnalyzerTests
 {
     /// <summary>Verifies HTTP path extraction handles missing attribute data.</summary>

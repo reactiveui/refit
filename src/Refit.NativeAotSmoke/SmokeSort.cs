@@ -10,8 +10,8 @@ public enum SmokeSort
 {
     /// <summary>Sort by date, newest first.</summary>
     [EnumMember(Value = "date-desc")]
-    DateDescending,
+    DateDescending = 0,
 
     /// <summary>Sort by name.</summary>
-    Name,
+    Name = 1,
 }

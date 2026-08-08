@@ -18,13 +18,7 @@ public sealed class NetworkBehaviorTests
     public async Task FailureRateAlwaysThrows()
     {
         var behavior = new NetworkBehavior { Delay = TimeSpan.Zero, FailurePercent = 1D, ErrorPercent = 0D };
-        var handler = new StubHttp(behavior)
-        {
-            {
-                Route.Any(Endpoint),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp(behavior) { { Route.Any(Endpoint), Reply.Status(HttpStatusCode.OK) }, };
 
         await Assert.That(async () => _ = await SendAsync(handler, Endpoint)).ThrowsExactly<HttpRequestException>();
     }
@@ -34,20 +28,8 @@ public sealed class NetworkBehaviorTests
     [Test]
     public async Task ErrorRateReturnsErrorStatus()
     {
-        var behavior = new NetworkBehavior
-        {
-            Delay = TimeSpan.Zero,
-            FailurePercent = 0D,
-            ErrorPercent = 1D,
-            ErrorStatusCode = HttpStatusCode.ServiceUnavailable,
-        };
-        var handler = new StubHttp(behavior)
-        {
-            {
-                Route.Any(Endpoint),
-                Reply.Json("{}")
-            },
-        };
+        var behavior = new NetworkBehavior { Delay = TimeSpan.Zero, FailurePercent = 0D, ErrorPercent = 1D, ErrorStatusCode = HttpStatusCode.ServiceUnavailable, };
+        var handler = new StubHttp(behavior) { { Route.Any(Endpoint), Reply.Json("{}") }, };
 
         var response = await SendAsync(handler, Endpoint);
 
@@ -60,13 +42,7 @@ public sealed class NetworkBehaviorTests
     public async Task NoFaultsYieldStubbedResponse()
     {
         var behavior = new NetworkBehavior { Delay = TimeSpan.Zero, FailurePercent = 0D, ErrorPercent = 0D };
-        var handler = new StubHttp(behavior)
-        {
-            {
-                Route.Any(Endpoint),
-                Reply.Text("ok")
-            },
-        };
+        var handler = new StubHttp(behavior) { { Route.Any(Endpoint), Reply.Text("ok") }, };
 
         var response = await SendAsync(handler, Endpoint);
 

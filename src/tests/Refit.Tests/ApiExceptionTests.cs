@@ -69,16 +69,8 @@ public sealed partial class ApiExceptionTests
     public async Task CreateHandlesMissingAndUnreadableContent()
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
-        using var noContentResponse = new HttpResponseMessage(HttpStatusCode.BadGateway)
-        {
-            RequestMessage = request,
-            Content = null
-        };
-        using var throwingContentResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            RequestMessage = request,
-            Content = new ThrowingReadContent()
-        };
+        using var noContentResponse = new HttpResponseMessage(HttpStatusCode.BadGateway) { RequestMessage = request, Content = null, };
+        using var throwingContentResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = request, Content = new ThrowingReadContent(), };
 
         var noContentException = await ApiException.Create(request, HttpMethod.Get, noContentResponse, new());
         var throwingContentException = await ApiException.Create(
@@ -380,7 +372,7 @@ public sealed partial class ApiExceptionTests
                 ex.RequestMessage.Headers.Authorization = null;
                 ex.RequestContent = RedactedText;
                 ((ApiException)ex).Content = RedactedText;
-            }
+            },
         };
 
         var exception = await ApiException.Create(
@@ -400,11 +392,7 @@ public sealed partial class ApiExceptionTests
     /// <returns>The response message.</returns>
     private static HttpResponseMessage CreateErrorResponse(string content, string? mediaType = null)
     {
-        var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            RequestMessage = new(HttpMethod.Get, ExampleUri),
-            Content = new StringContent(content)
-        };
+        var response = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = new(HttpMethod.Get, ExampleUri), Content = new StringContent(content), };
 
         if (mediaType is not null)
         {

@@ -160,9 +160,9 @@ public partial class RestServiceIntegrationTests
 
         await Assert.That(generated!.Client).IsSameReferenceAs(client);
         await Assert.That(generated.Settings).IsSameReferenceAs(settings);
-
-        var generatedApiType = typeof(IGeneratedSettingsFactoryApi);
-        var typedInstance = RestService.ForGenerated(generatedApiType, client, settings);
+        var apiType = typeof(IGeneratedSettingsFactoryApi);
+        var typedInstance = RestService.ForGenerated(apiType, client, settings);
+        await Assert.That(apiType.IsInstanceOfType(typedInstance)).IsTrue();
         var typedGenerated = await Assert.That(typedInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
 
         await Assert.That(typedGenerated!.Client).IsSameReferenceAs(client);
@@ -322,13 +322,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ValueTaskMethodsShouldWork()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(FooValueUrl),
-                Reply.Text("test", "text/plain")
-            },
-        };
+        var handler = new StubHttp { { Route.Get(FooValueUrl), Reply.Text("test", "text/plain") }, };
         var fixture = handler.CreateClient<IValueTaskApi>(BaseUrl);
 
         var result = await fixture.GetValue("value");
@@ -346,27 +340,16 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher
-                {
-                    Template = "*",
-                    Reusable = true
-                },
+                new RouteMatcher { Template = "*", Reusable = true, },
                 Reply.From(request =>
                 {
                     captured = request.RequestUri;
-                    return new(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent("test")
-                    };
+                    return new(HttpStatusCode.OK) { Content = new StringContent("test"), };
                 })
             },
         };
 
-        var settings = new RefitSettings
-        {
-            AllowUnmatchedRouteParameters = true,
-            HttpMessageHandlerFactory = () => handler,
-        };
+        var settings = new RefitSettings { AllowUnmatchedRouteParameters = true, HttpMessageHandlerFactory = () => handler, };
 
         var fixture = RestService.For<IUrlNoMatchingParameters>(BaseUrl, settings);
 
@@ -393,13 +376,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ValueTaskApiResponseMethodsShouldWork()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(FooValueUrl),
-                Reply.Text("test", "text/plain")
-            },
-        };
+        var handler = new StubHttp { { Route.Get(FooValueUrl), Reply.Text("test", "text/plain") }, };
         var fixture = handler.CreateClient<IValueTaskApiResponseApi>(BaseUrl);
 
         using var response = await fixture.GetValue("value");
@@ -442,13 +419,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNoParametersTest()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<ITrimTrailingForwardSlashApi>(BaseUrl);
 
@@ -461,13 +432,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNoContentResponseReturnsDefault()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://foo/values"),
-                Reply.Status(HttpStatusCode.NoContent)
-            },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/values"), Reply.Status(HttpStatusCode.NoContent) }, };
 
         var fixture = handler.CreateClient<INoContentApi>(BaseUrl);
 
@@ -482,13 +447,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNoContentApiResponseReturnsNullContent()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://foo/values"),
-                Reply.Status(HttpStatusCode.NoContent)
-            },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/values"), Reply.Status(HttpStatusCode.NoContent) }, };
 
         var fixture = handler.CreateClient<INoContentApi>(BaseUrl);
 
@@ -505,13 +464,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task BaseAddressFromHttpClientMatchesTest()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var client = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
 
@@ -526,13 +479,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task BaseAddressWithTrailingSlashFromHttpClientMatchesTest()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var client = new HttpClient(handler) { BaseAddress = new(BaseUrlWithSlash) };
 
@@ -574,13 +521,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNoParametersTestTrailingSlashInBase()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<ITrimTrailingForwardSlashApi>(BaseUrlWithSlash);
 
@@ -593,13 +534,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task DoesntAddAutoAddContentToGetRequest()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FooNobodyUrl, Where = static r => r.Content is null },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = FooNobodyUrl, Where = static r => r.Content is null }, Reply.Json("Ok") }, };
         var fixture = handler.CreateClient<IBodylessApi>(BaseUrl);
 
         await fixture.Get();
@@ -612,13 +547,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task DoesntAddAutoAddContentToHeadRequest()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Head, Template = FooNobodyUrl, Where = static r => r.Content is null },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Head, Template = FooNobodyUrl, Where = static r => r.Content is null }, Reply.Json("Ok") }, };
         var fixture = handler.CreateClient<IBodylessApi>(BaseUrl);
 
         await fixture.Head();
@@ -629,6 +558,7 @@ public partial class RestServiceIntegrationTests
     /// <summary>Opens the embedded test resource at the given relative path as a stream.</summary>
     /// <param name="relativeFilePath">The path of the embedded resource relative to the assembly root.</param>
     /// <returns>A stream over the matching embedded resource.</returns>
+    /// <exception cref="InvalidOperationException">No embedded resource in the calling assembly matches <paramref name="relativeFilePath"/>, or the matching resource cannot be opened.</exception>
     internal static Stream GetTestFileStream(string relativeFilePath)
     {
         const char namespaceSeparator = '.';
@@ -664,8 +594,7 @@ public partial class RestServiceIntegrationTests
     /// <summary>Hand-written generated implementation for Type-based generated factory tests.</summary>
     /// <param name="client">The HTTP client supplied by Refit.</param>
     /// <param name="builder">The request builder supplied by Refit.</param>
-    private sealed class GeneratedTypeFactoryApiClient(HttpClient client, IRequestBuilder builder)
-        : IGeneratedTypeFactoryApi
+    private sealed class GeneratedTypeFactoryApiClient(HttpClient client, IRequestBuilder builder) : IGeneratedTypeFactoryApi
     {
         /// <summary>Gets the HTTP client supplied to the factory.</summary>
         public HttpClient Client { get; } = client;
@@ -677,8 +606,7 @@ public partial class RestServiceIntegrationTests
     /// <summary>Client used to verify typed generated request-builder factories.</summary>
     /// <param name="client">The HTTP client supplied to the generated factory.</param>
     /// <param name="builder">The generated-only request builder supplied to the generated factory.</param>
-    private sealed class GeneratedTypedFactoryApiClient(HttpClient client, IRequestBuilder builder)
-        : IGeneratedTypedFactoryApi
+    private sealed class GeneratedTypedFactoryApiClient(HttpClient client, IRequestBuilder builder) : IGeneratedTypedFactoryApi
     {
         /// <summary>Gets the HTTP client supplied to the generated factory.</summary>
         public HttpClient Client { get; } = client;
@@ -690,8 +618,7 @@ public partial class RestServiceIntegrationTests
     /// <summary>Client used to verify generated settings factory fallbacks.</summary>
     /// <param name="client">The HTTP client supplied to the generated factory.</param>
     /// <param name="settings">The Refit settings supplied to the generated factory.</param>
-    private sealed class GeneratedTypedSettingsFallbackApiClient(HttpClient client, RefitSettings settings)
-        : IGeneratedTypedSettingsFallbackApi
+    private sealed class GeneratedTypedSettingsFallbackApiClient(HttpClient client, RefitSettings settings) : IGeneratedTypedSettingsFallbackApi
     {
         /// <summary>Gets the HTTP client supplied to the generated factory.</summary>
         public HttpClient Client { get; } = client;

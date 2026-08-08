@@ -10,7 +10,7 @@ internal readonly struct MethodTableKey : IEquatable<MethodTableKey>
     /// <param name="methodName">Represents the methods name.</param>
     /// <param name="parameters">Array containing the methods parameters.</param>
     /// <param name="genericArguments">Array containing the methods generic arguments.</param>
-    public MethodTableKey(string methodName, Type[] parameters, Type[] genericArguments)
+    internal MethodTableKey(string methodName, Type[] parameters, Type[] genericArguments)
     {
         MethodName = methodName;
         Parameters = parameters;

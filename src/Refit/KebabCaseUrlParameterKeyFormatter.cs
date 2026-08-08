@@ -2,13 +2,17 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
+
 namespace Refit;
 
 /// <summary>Provides an implementation of <see cref="IUrlParameterKeyFormatter"/> that formats URL parameter keys in kebab-case.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class KebabCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
 {
     /// <summary>Formats the specified key.</summary>
     /// <param name="key">The key.</param>
     /// <returns>The kebab-case form of the key.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string Format(string key) => SeparatedCaseFormatter.Format(key, '-');
 }

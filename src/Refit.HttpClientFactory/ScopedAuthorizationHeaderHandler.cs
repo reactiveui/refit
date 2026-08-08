@@ -30,7 +30,7 @@ internal sealed class ScopedAuthorizationHeaderHandler : DelegatingHandler
     /// <param name="rootServiceProvider">The root service provider used to create a per-request scope.</param>
     /// <param name="getToken">The delegate that resolves the token from a per-request service provider.</param>
     /// <exception cref="ArgumentNullException"><paramref name="rootServiceProvider"/> or <paramref name="getToken"/> is null.</exception>
-    public ScopedAuthorizationHeaderHandler(
+    internal ScopedAuthorizationHeaderHandler(
         IServiceProvider rootServiceProvider,
         Func<IServiceProvider, HttpRequestMessage, CancellationToken, ValueTask<string>> getToken)
     {

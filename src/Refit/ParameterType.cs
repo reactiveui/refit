@@ -8,8 +8,8 @@ namespace Refit;
 public enum ParameterType
 {
     /// <summary>The parameter is treated normally.</summary>
-    Normal,
+    Normal = 0,
 
     /// <summary>The parameter is round-tripped.</summary>
-    RoundTripping
+    RoundTripping = 1,
 }

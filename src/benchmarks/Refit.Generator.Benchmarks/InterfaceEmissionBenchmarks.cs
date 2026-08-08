@@ -9,6 +9,7 @@ namespace Refit.Generator.Benchmarks;
 /// <summary>Profiles the emitter over parsed models, isolated from parsing.</summary>
 /// <remarks>This is the build-time half of a cold run: string interpolation, member concatenation, and pooled-buffer
 /// churn. Models are parsed once in setup, so the benchmark attributes cost purely to source emission.</remarks>
+[System.Diagnostics.DebuggerDisplay("{Size}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]

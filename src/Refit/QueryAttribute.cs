@@ -7,8 +7,9 @@ namespace Refit;
 /// <summary>
 /// Associated value will be added to the request Uri as query-string, using a delimiter to split the values. (default: '.').
 /// </summary>
-[AttributeUsage(AttributeTargets.Parameter |
-                AttributeTargets.Property)] // Property is to allow for form url encoded data
+[System.Diagnostics.DebuggerDisplay("{TreatAsString}")]
+[AttributeUsage(AttributeTargets.Parameter
+                | AttributeTargets.Property)] // Property is to allow for form url encoded data
 public sealed class QueryAttribute : Attribute
 {
     /// <summary>The collection format, or <see langword="null"/> when not explicitly specified.</summary>
@@ -92,17 +93,9 @@ public sealed class QueryAttribute : Attribute
     /// </code>
     /// Calling <c>serverApi.addExpense(5)</c> will result in a URI of <c>{baseUri}/expenses?expense=5.00</c>.
     /// </example>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Usage",
-        "CA1019:Define accessors for attribute arguments",
-        Justification = "The public setter is required so the value can also be supplied as a named attribute argument.")]
     public string? Format { get; set; }
 
     /// <summary>Gets or sets how the collection should be encoded.</summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Usage",
-        "CA1019:Define accessors for attribute arguments",
-        Justification = "The public setter is required so the value can also be supplied as a named attribute argument.")]
     public CollectionFormat CollectionFormat
     {
         // Cannot make property nullable due to Attribute restrictions

@@ -13,6 +13,7 @@ namespace Refit.Benchmarks;
 /// within the default rented buffer, writing past it to force pooled growth, and detaching the buffer into a
 /// <c>PooledMemoryStream</c> that is then read to completion.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
