@@ -3,12 +3,14 @@
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 
 namespace Refit;
 
 /// <summary>An ApiException that is raised according to RFC 7807, which contains problem details for validation exceptions.</summary>
+[System.Diagnostics.DebuggerDisplay("{Content}")]
 [SuppressMessage(
     "Design",
     "SST1488:Exception types should declare the standard constructors",
@@ -62,7 +64,6 @@ public class ValidationApiException : ApiException
             apiException.ReasonPhrase,
             apiException.Headers,
             apiException.RefitSettings) =>
-
         // Carry over the content headers from the originating ApiException so callers
         // can inspect them on the validation exception too (#1945).
         ContentHeaders = apiException.ContentHeaders;
@@ -108,6 +109,7 @@ public class ValidationApiException : ApiException
     /// <summary>Validates the exception content and builds the base validation exception.</summary>
     /// <param name="exception">The API exception to convert.</param>
     /// <returns>A new validation exception wrapping the API exception.</returns>
+    /// <exception cref="ArgumentException">The content of <paramref name="exception"/> is null, empty, or whitespace, so it cannot be an 'application/problem+json' payload.</exception>
     internal static ValidationApiException CreateCore(ApiException exception)
     {
         ArgumentExceptionHelper.ThrowIfNull(exception);
@@ -128,6 +130,7 @@ public class ValidationApiException : ApiException
     /// <summary>Deserializes RFC 7807 problem details without requiring public setters on extension data.</summary>
     /// <param name="content">The JSON problem details content.</param>
     /// <returns>The deserialized problem details.</returns>
+    /// <exception cref="JsonException"><paramref name="content"/> is not valid JSON, or its root value is not an object.</exception>
     internal static ProblemDetails DeserializeProblemDetails(string content)
     {
 #if NET10_0_OR_GREATER
@@ -200,6 +203,7 @@ public class ValidationApiException : ApiException
     /// <param name="property">The JSON property.</param>
     /// <param name="name">The expected property name.</param>
     /// <returns><see langword="true"/> when the names match.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool IsJsonProperty(JsonProperty property, string name) =>
         string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase);
 

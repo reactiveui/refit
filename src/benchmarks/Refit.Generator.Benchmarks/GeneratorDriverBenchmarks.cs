@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using Microsoft.CodeAnalysis;
@@ -11,6 +12,7 @@ namespace Refit.Generator.Benchmarks;
 /// <summary>End-to-end generator throughput through <see cref="CSharpGeneratorDriver"/> for cold and incremental runs.</summary>
 /// <remarks>Cold is a first-time run from a fresh driver; incremental re-runs a primed driver after an unrelated edit,
 /// which is what the IDE pays per keystroke. CPU sampling attributes wall-clock to parser vs emitter vs Roslyn driver.</remarks>
+[System.Diagnostics.DebuggerDisplay("{Size}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]
@@ -49,12 +51,14 @@ public class GeneratorDriverBenchmarks
 
     /// <summary>Runs the generator from a cold driver.</summary>
     /// <returns>The updated generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver Cold() =>
         _coldDriver.RunGeneratorsAndUpdateCompilation(_coldCompilation, out _, out _);
 
     /// <summary>Re-runs a primed driver after an unrelated edit, exercising the incremental cache.</summary>
     /// <returns>The updated generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver Incremental() =>
         _incrementalDriver.RunGeneratorsAndUpdateCompilation(_incrementalCompilation, out _, out _);

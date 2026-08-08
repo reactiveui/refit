@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -9,6 +10,7 @@ namespace Refit.Generator.Benchmarks;
 /// <summary>Micro-benchmarks for the emitter's identifier and type-name formatting primitives.</summary>
 /// <remarks>These are invoked per emitted method, parameter, and HTTP verb, so their allocation profile scales with
 /// interface size. Inputs are instance fields so the JIT cannot constant-fold them into the call.</remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -28,21 +30,25 @@ public class IdentifierEmissionBenchmarks
 
     /// <summary>Adds the global alias prefix to an unprefixed type name.</summary>
     /// <returns>The prefixed type name.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public string EnsureGlobalPrefixUnprefixed() => Emitter.EnsureGlobalPrefix(_unprefixedTypeName);
 
     /// <summary>Returns an already-prefixed type name unchanged (fast path).</summary>
     /// <returns>The type name.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public string EnsureGlobalPrefixPrefixed() => Emitter.EnsureGlobalPrefix(_prefixedTypeName);
 
     /// <summary>Maps an HTTP verb to its generated <c>HttpMethod</c> expression.</summary>
     /// <returns>The generated expression.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public string HttpMethodExpression() => Emitter.ToHttpMethodExpression(_httpVerb);
 
     /// <summary>Strips the explicit-interface prefix from a member name.</summary>
     /// <returns>The bare member name.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public string StripExplicitPrefix() => Emitter.StripExplicitInterfacePrefix(_explicitMemberName);
 }

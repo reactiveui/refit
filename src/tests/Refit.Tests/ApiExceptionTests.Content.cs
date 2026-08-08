@@ -185,11 +185,7 @@ public sealed partial class ApiExceptionTests
     [Test]
     public async Task CreateReadsContentThatCompletesAsynchronously()
     {
-        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            RequestMessage = new(HttpMethod.Get, ExampleUri),
-            Content = new AsyncReadContent("{\"Value\":7}")
-        };
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = new(HttpMethod.Get, ExampleUri), Content = new AsyncReadContent("{\"Value\":7}"), };
 
         var exception = await ApiException.Create(
             response.RequestMessage!,

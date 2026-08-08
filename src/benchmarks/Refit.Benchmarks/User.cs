@@ -4,6 +4,7 @@
 namespace Refit.Benchmarks;
 
 /// <summary>Represents a GitHub user used in the benchmarks.</summary>
+[System.Diagnostics.DebuggerDisplay("{Id}")]
 public class User
 {
     /// <summary>Gets or sets the user identifier.</summary>

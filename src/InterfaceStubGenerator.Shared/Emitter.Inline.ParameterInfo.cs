@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
 
@@ -11,6 +12,7 @@ internal static partial class Emitter
     /// <param name="parameterName">The source parameter name.</param>
     /// <param name="uniqueNames">The unique member name builder for the interface scope.</param>
     /// <returns>The unique generated field name.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string GetParameterInfoFieldName(string parameterName, UniqueNameBuilder uniqueNames) =>
         uniqueNames.New($"______{parameterName}AttributeProvider");
 
@@ -27,6 +29,7 @@ internal static partial class Emitter
     /// <param name="sb">The target builder.</param>
     /// <param name="separator">The separator to append before the value.</param>
     /// <returns>The same builder for chaining.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static PooledStringBuilder AppendJoining(string value, int i, PooledStringBuilder sb, string separator = ", ") => AppendSeparator(i, sb, separator).Append(value);
 
     /// <summary>Appends a C# attribute construction expression to the builder.</summary>

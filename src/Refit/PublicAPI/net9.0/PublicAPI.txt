@@ -4,11 +4,13 @@
 namespace Refit;
 
 [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 public sealed class AliasAsAttribute : System.Attribute
 {
     public AliasAsAttribute(string name) { }
     public string Name { get; }
 }
+[System.Diagnostics.DebuggerDisplay("{StatusCode}")]
 public class ApiException : Refit.ApiExceptionBase
 {
     protected ApiException(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders headers, Refit.RefitSettings refitSettings) { }
@@ -25,11 +27,14 @@ public class ApiException : Refit.ApiExceptionBase
     public T? GetContentAs<T>() { }
     public System.Threading.Tasks.Task<T?> GetContentAsAsync<T>() { }
     public bool TryGetContentAs<T>(out T? content) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static System.Threading.Tasks.Task<Refit.ApiException> Create(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings) { }
     public static System.Threading.Tasks.Task<Refit.ApiException> Create(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static System.Threading.Tasks.Task<Refit.ApiException> Create(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings) { }
     public static System.Threading.Tasks.Task<Refit.ApiException> Create(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
 }
+[System.Diagnostics.DebuggerDisplay("{HttpMethod}")]
 public abstract class ApiExceptionBase : System.Exception
 {
     protected ApiExceptionBase(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings, System.Exception innerException) { }
@@ -43,12 +48,14 @@ public abstract class ApiExceptionBase : System.Exception
     public System.Net.Http.HttpRequestMessage RequestMessage { get; }
     public System.Uri? Uri { get; }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class ApiRequestException : Refit.ApiExceptionBase
 {
     public ApiRequestException(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings, System.Exception innerException) { }
     public ApiRequestException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings) { }
     public ApiRequestException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
 }
+[System.Diagnostics.DebuggerDisplay("{Content}")]
 public sealed class ApiResponse<T> : Refit.IApiResponse<T>
 {
     public ApiResponse(System.Net.Http.HttpResponseMessage response, T? content, Refit.RefitSettings settings) { }
@@ -80,6 +87,7 @@ public sealed class ApiResponse<T> : Refit.IApiResponse<T>
     public Refit.RefitSettings Settings { get; }
     public System.Net.HttpStatusCode? StatusCode { get; }
     public System.Version? Version { get; }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public void Dispose() { }
     public System.Threading.Tasks.ValueTask<Refit.ApiResponse<T>> EnsureSuccessStatusCodeAsync() { }
     public System.Threading.Tasks.ValueTask<Refit.ApiResponse<T>> EnsureSuccessfulAsync() { }
@@ -93,13 +101,14 @@ public static class ApiResponseExtensions
         public System.Threading.Tasks.ValueTask<Refit.IApiResponse> EnsureSuccessStatusCodeAsync() { }
         public System.Threading.Tasks.ValueTask<Refit.IApiResponse> EnsureSuccessfulAsync() { }
     }
-    extension(Refit.IApiResponse<T> response)
+    extension<T>(Refit.IApiResponse<T> response)
     {
         public System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>> EnsureSuccessStatusCodeAsync() { }
         public System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>> EnsureSuccessfulAsync() { }
     }
 }
 [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 [System.Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem", false)]
 public sealed class AttachmentNameAttribute : System.Attribute
 {
@@ -107,12 +116,14 @@ public sealed class AttachmentNameAttribute : System.Attribute
     public string Name { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{Scheme}")]
 public sealed class AuthorizeAttribute : System.Attribute
 {
     public AuthorizeAttribute(string scheme = "Bearer") { }
     public string Scheme { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{Buffered}")]
 public sealed class BodyAttribute : System.Attribute
 {
     public BodyAttribute() { }
@@ -131,12 +142,14 @@ public enum BodySerializationMethod
     Serialized = 3,
     JsonLines = 4,
 }
+[System.Diagnostics.DebuggerDisplay("{Value}")]
 public class ByteArrayPart : Refit.MultipartItem
 {
     public ByteArrayPart(byte[] value, string fileName, string? contentType = null, string? name = null) { }
     public byte[] Value { get; }
     protected override System.Net.Http.HttpContent CreateContent() { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class CamelCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
 {
     public CamelCaseUrlParameterKeyFormatter() { }
@@ -152,39 +165,48 @@ public enum CollectionFormat
     Multi = 5,
     Indexed = 6,
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultApiExceptionFactory
 {
     public DefaultApiExceptionFactory(Refit.RefitSettings refitSettings) { }
     public System.Threading.Tasks.ValueTask<System.Exception?> CreateAsync(System.Net.Http.HttpResponseMessage responseMessage) { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultFormUrlEncodedParameterFormatter : Refit.IFormUrlEncodedParameterFormatter
 {
     public DefaultFormUrlEncodedParameterFormatter() { }
     public virtual string? Format(object? value, string? formatString) { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultUrlParameterFormatter : Refit.IUrlParameterFormatter
 {
     public DefaultUrlParameterFormatter() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public void AddFormat<TParameter>(string format) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public void AddFormat<TContainer, TParameter>(string format) { }
     public virtual string? Format(object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
 {
     public DefaultUrlParameterKeyFormatter() { }
     public virtual string Format(string key) { }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 public sealed class DeleteAttribute : Refit.HttpMethodAttribute
 {
     public DeleteAttribute(string path) { }
     public override System.Net.Http.HttpMethod Method { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class EncodedAttribute : System.Attribute
 {
     public EncodedAttribute() { }
 }
+[System.Diagnostics.DebuggerDisplay("{Value}")]
 public class FileInfoPart : Refit.MultipartItem
 {
     public FileInfoPart(System.IO.FileInfo value, string fileName, string? contentType = null, string? name = null) { }
@@ -192,6 +214,7 @@ public class FileInfoPart : Refit.MultipartItem
     protected override System.Net.Http.HttpContent CreateContent() { }
 }
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[System.Diagnostics.DebuggerDisplay("{Getter}")]
 public sealed class FormField<TBody>
 {
     public FormField(System.Func<TBody, object?> getter, string clrName, string? explicitName, string? prefixSegment, string? format, Refit.CollectionFormat? collectionFormat, bool serializeNull) { }
@@ -205,19 +228,23 @@ public sealed class FormField<TBody>
     public string? ResolveFieldName(Refit.IUrlParameterKeyFormatter urlParameterKeyFormatter) { }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class FormObjectAttribute : System.Attribute
 {
     public FormObjectAttribute() { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class GeneratedParameterAttributeProvider : System.Reflection.ICustomAttributeProvider
 {
     public GeneratedParameterAttributeProvider(System.Collections.Generic.Dictionary<System.Type, object[]> attributes) { }
     public static readonly Refit.GeneratedParameterAttributeProvider Empty;
     public object[] GetCustomAttributes(bool inherit) { }
     public object[] GetCustomAttributes(System.Type attributeType, bool inherit) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public bool IsDefined(System.Type attributeType, bool inherit) { }
 }
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public ref struct GeneratedQueryStringBuilder
 {
     public GeneratedQueryStringBuilder(string relativePath) { }
@@ -239,30 +266,37 @@ public static class GeneratedRequestRunner
     public static void AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, System.Type interfaceType) { }
     public static void AddFormattedCollectionProperty(ref Refit.GeneratedQueryStringBuilder builder, Refit.RefitSettings settings, System.Collections.IEnumerable? values, string key, Refit.CollectionFormat collectionFormat, bool preEncoded, (System.Type ElementProviderType, System.Reflection.ICustomAttributeProvider JoinedProvider, System.Type JoinedType) formatting) { }
     public static void AddHeaderCollection(System.Net.Http.HttpRequestMessage request, System.Collections.Generic.IDictionary<string, string>? headers, bool validateHeaders) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static void AddRequestProperty<TValue>(System.Net.Http.HttpRequestMessage request, string key, TValue value) { }
     public static string BuildQueryKey(Refit.RefitSettings settings, string clrName, string? explicitName, string? prefixSegment) { }
     public static System.Uri BuildRelativeUri(System.Net.Http.HttpClient client, string relativePath, Refit.UrlResolutionMode urlResolution) { }
     public static System.Uri BuildRelativeUri(System.Net.Http.HttpClient client, string relativePath, Refit.UrlResolutionMode urlResolution, System.UriFormat queryUriFormat) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter) { }
-    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value)> uriParams) { }
-    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value, bool preEncoded)> uriParams) { }
-    public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value) where T : System.ISpanFormattable { }
-    public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value, string? format) where T : System.ISpanFormattable { }
+    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int StartIdx, int EndIdx) Range, string? Value)> uriParams) { }
+    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int StartIdx, int EndIdx) Range, string? Value, bool PreEncoded)> uriParams) { }
+    public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int StartIdx, int EndIdx) range, T value) where T : System.ISpanFormattable { }
+    public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int StartIdx, int EndIdx) range, T value, string? format) where T : System.ISpanFormattable { }
     public static bool CanUnrollForm(object? body) { }
     public static System.Net.Http.HttpContent CreateBodyContent<TBody>(Refit.RefitSettings settings, TBody body, Refit.BodySerializationMethod serializationMethod, bool streamBody) { }
     public static System.Net.Http.HttpContent CreateJsonLinesBodyContent<TBody>(Refit.RefitSettings settings, TBody body) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static System.Net.Http.HttpContent CreateStreamContent(System.IO.Stream stream) { }
     public static System.Net.Http.HttpContent CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings settings, TBody body) { }
     public static System.Net.Http.HttpContent CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings settings, TBody body, Refit.FormField<TBody>[] fields) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static string FormatInvariant<T>(T value, string? format) where T : System.IFormattable { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static string? FormatUrlParameter(Refit.RefitSettings settings, object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
     public static string RequireAbsoluteUrl(object? url) { }
     public static string RoundTripEscapePath(string? value, Refit.RefitSettings settings, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
     public static System.Threading.Tasks.Task<T?> SendAsync<T, TBody>(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static System.IObservable<T?> SendObservable<T, TBody>(System.Net.Http.HttpClient client, System.Func<System.Net.Http.HttpRequestMessage> requestFactory, Refit.RefitSettings settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken methodCancellationToken) { }
     public static System.Threading.Tasks.Task SendVoidAsync(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, bool bufferBody, System.Threading.CancellationToken cancellationToken) { }
     public static System.Net.Http.HttpContent SerializeMultipartPart<T>(Refit.RefitSettings settings, T value, string fieldName) { }
     public static void SetHeader(System.Net.Http.HttpRequestMessage request, string name, string? value, bool validateHeaders) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static void SetRequestTimeout(System.Net.Http.HttpRequestMessage request, int timeoutMilliseconds) { }
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public static System.Collections.Generic.IAsyncEnumerable<T?> StreamAsync<T>(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, System.Threading.CancellationToken methodCancellationToken, System.Threading.CancellationToken cancellationToken = default) { }
@@ -270,42 +304,50 @@ public static class GeneratedRequestRunner
     public static bool UsesDefaultUrlParameterFormatting(Refit.RefitSettings settings) { }
     public static bool UsesDefaultUrlParameterKeyFormatting(Refit.RefitSettings settings) { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class GeneratedSingleTypeParameterAttributeProvider : System.Reflection.ICustomAttributeProvider
 {
     public GeneratedSingleTypeParameterAttributeProvider(System.Type type, object[] attributes) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public object[] GetCustomAttributes(bool inherit) { }
     public object[] GetCustomAttributes(System.Type attributeType, bool inherit) { }
     public bool IsDefined(System.Type attributeType, bool inherit) { }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 public sealed class GetAttribute : Refit.HttpMethodAttribute
 {
     public GetAttribute(string path) { }
     public override System.Net.Http.HttpMethod Method { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 public sealed class HeadAttribute : Refit.HttpMethodAttribute
 {
     public HeadAttribute(string path) { }
     public override System.Net.Http.HttpMethod Method { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{Header}")]
 public sealed class HeaderAttribute : System.Attribute
 {
     public HeaderAttribute(string header) { }
     public string Header { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class HeaderCollectionAttribute : System.Attribute
 {
     public HeaderCollectionAttribute() { }
 }
 [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Interface)]
+[System.Diagnostics.DebuggerDisplay("{Headers}")]
 public sealed class HeadersAttribute : System.Attribute
 {
     public HeadersAttribute(params string[] headers) { }
     public string[] Headers { get; }
 }
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 public abstract class HttpMethodAttribute : System.Attribute
 {
     protected HttpMethodAttribute(string path) { }
@@ -403,6 +445,7 @@ public interface IUrlParameterKeyFormatter
     string Format(string key) { }
 }
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [System.Obsolete("Use NewtonsoftJsonContentSerializer in the Refit.Newtonsoft.Json package instead", true)]
 public class JsonContentSerializer : Refit.IHttpContentSerializer
 {
@@ -411,6 +454,7 @@ public class JsonContentSerializer : Refit.IHttpContentSerializer
     public string GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class JsonLinesContent : System.Net.Http.HttpContent
 {
     public JsonLinesContent(System.Collections.IEnumerable items, Refit.IHttpContentSerializer serializer) { }
@@ -418,17 +462,21 @@ public sealed class JsonLinesContent : System.Net.Http.HttpContent
     protected override System.Threading.Tasks.Task SerializeToStreamAsync(System.IO.Stream stream, System.Net.TransportContext? context) { }
     protected override bool TryComputeLength(out long length) { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class KebabCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
 {
     public KebabCaseUrlParameterKeyFormatter() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string Format(string key) { }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{BoundaryText}")]
 public sealed class MultipartAttribute : System.Attribute
 {
     public MultipartAttribute(string boundaryText = "----MyGreatBoundary") { }
     public string BoundaryText { get; }
 }
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 public abstract class MultipartItem
 {
     protected MultipartItem(string fileName, string? contentType) { }
@@ -439,6 +487,7 @@ public abstract class MultipartItem
     protected abstract System.Net.Http.HttpContent CreateContent() { }
     public System.Net.Http.HttpContent ToContent() { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class ObjectToInferredTypesConverter : System.Text.Json.Serialization.JsonConverter<object>
 {
     public ObjectToInferredTypesConverter() { }
@@ -446,6 +495,7 @@ public class ObjectToInferredTypesConverter : System.Text.Json.Serialization.Jso
     public override void Write(System.Text.Json.Utf8JsonWriter writer, object value, System.Text.Json.JsonSerializerOptions options) { }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 public sealed class OptionsAttribute : Refit.HttpMethodAttribute
 {
     public OptionsAttribute(string path) { }
@@ -457,23 +507,27 @@ public enum ParameterType
     RoundTripping = 1,
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 public sealed class PatchAttribute : Refit.HttpMethodAttribute
 {
     public PatchAttribute(string path) { }
     public override System.Net.Http.HttpMethod Method { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Interface)]
+[System.Diagnostics.DebuggerDisplay("{Prefix}")]
 public sealed class PathPrefixAttribute : System.Attribute
 {
     public PathPrefixAttribute(string prefix) { }
     public string Prefix { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 public sealed class PostAttribute : Refit.HttpMethodAttribute
 {
     public PostAttribute(string path) { }
     public override System.Net.Http.HttpMethod Method { get; }
 }
+[System.Diagnostics.DebuggerDisplay("{Errors}")]
 public class ProblemDetails
 {
     public ProblemDetails() { }
@@ -487,6 +541,7 @@ public class ProblemDetails
     public string? Type { get; set; }
 }
 [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{Key}")]
 public sealed class PropertyAttribute : System.Attribute
 {
     public PropertyAttribute() { }
@@ -494,12 +549,14 @@ public sealed class PropertyAttribute : System.Attribute
     public string? Key { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 public sealed class PutAttribute : Refit.HttpMethodAttribute
 {
     public PutAttribute(string path) { }
     public override System.Net.Http.HttpMethod Method { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{TreatAsString}")]
 public sealed class QueryAttribute : System.Attribute
 {
     public QueryAttribute() { }
@@ -516,22 +573,26 @@ public sealed class QueryAttribute : System.Attribute
     public bool TreatAsString { get; set; }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{ConverterType}")]
 public sealed class QueryConverterAttribute : System.Attribute
 {
     public QueryConverterAttribute(System.Type converterType) { }
     public System.Type ConverterType { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class QueryNameAttribute : System.Attribute
 {
     public QueryNameAttribute() { }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{UriFormat}")]
 public sealed class QueryUriFormatAttribute : System.Attribute
 {
     public QueryUriFormatAttribute(System.UriFormat uriFormat) { }
     public System.UriFormat UriFormat { get; }
 }
+[System.Diagnostics.DebuggerDisplay("{AuthorizationHeaderValueGetter}")]
 public class RefitSettings
 {
     public RefitSettings() { }
@@ -564,8 +625,11 @@ public class RefitSettings
     public bool ValidateHeaders { get; set; }
     public System.Version Version { get; set; }
     public System.Net.Http.HttpVersionPolicy VersionPolicy { get; set; }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.RefitSettings CamelCase() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.RefitSettings KebabCase() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.RefitSettings SnakeCase() { }
 }
 public enum RequestBodySerializationMode
@@ -577,14 +641,19 @@ public enum RequestBodySerializationMode
 public static class RequestBuilder
 {
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType) { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.IRequestBuilder<T> ForType<T>() { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.IRequestBuilder<T> ForType<T>(Refit.RefitSettings? settings) { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public record RestMethodInfo : System.IEquatable<Refit.RestMethodInfo>
 {
     public RestMethodInfo(string Name, System.Type HostingType, System.Reflection.MethodInfo MethodInfo, string RelativePath, System.Type ReturnType) { }
@@ -594,6 +663,7 @@ public record RestMethodInfo : System.IEquatable<Refit.RestMethodInfo>
     public string RelativePath { get; init; }
     public System.Type ReturnType { get; init; }
 }
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 public class RestMethodParameterInfo
 {
     public RestMethodParameterInfo(bool isObjectPropertyParameter, System.Reflection.ParameterInfo parameterInfo) { }
@@ -604,6 +674,7 @@ public class RestMethodParameterInfo
     public System.Collections.Generic.List<Refit.RestMethodParameterProperty> ParameterProperties { get; init; }
     public Refit.ParameterType Type { get; set; }
 }
+[System.Diagnostics.DebuggerDisplay("{Name}")]
 public class RestMethodParameterProperty
 {
     public RestMethodParameterProperty(string name, System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo> propertyChain) { }
@@ -616,8 +687,10 @@ public static class RestService
 {
     public static System.Net.Http.HttpClient CreateHttpClient(string hostUrl, Refit.RefitSettings? settings) { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client) { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static object For(System.Type refitInterfaceType, string hostUrl) { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client by Type requires runtime type lookup and constructor metadata.")]
     public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.IRequestBuilder builder) { }
@@ -626,8 +699,10 @@ public static class RestService
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
     public static object For(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings? settings) { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static T For<T>(System.Net.Http.HttpClient client) { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static T For<T>(string hostUrl) { }
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and constructor metadata.")]
     public static T For<T>(System.Net.Http.HttpClient client, Refit.IRequestBuilder<T> builder) { }
@@ -637,7 +712,9 @@ public static class RestService
     public static T For<T>(string hostUrl, Refit.RefitSettings? settings) { }
     public static object ForGenerated(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings settings) { }
     public static object ForGenerated(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings settings) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static T ForGenerated<T>(System.Net.Http.HttpClient client) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static T ForGenerated<T>(string hostUrl) { }
     public static T ForGenerated<T>(System.Net.Http.HttpClient client, Refit.RefitSettings settings) { }
     public static T ForGenerated<T>(string hostUrl, Refit.RefitSettings settings) { }
@@ -648,11 +725,14 @@ public static class RestService
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static void RegisterGeneratedSettingsFactory<T>(System.Func<System.Net.Http.HttpClient, Refit.RefitSettings, T> factory) { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class SnakeCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
 {
     public SnakeCaseUrlParameterKeyFormatter() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public string Format(string key) { }
 }
+[System.Diagnostics.DebuggerDisplay("{Value}")]
 public class StreamPart : Refit.MultipartItem
 {
     public StreamPart(System.IO.Stream value, string fileName, string? contentType = null, string? name = null) { }
@@ -665,13 +745,16 @@ public enum StreamingContentFormat
     JsonLines = 1,
     ServerSentEvents = 2,
 }
+[System.Diagnostics.DebuggerDisplay("{SerializerOptions}")]
 public sealed class SystemTextJsonContentSerializer : Refit.IHttpContentSerializer, Refit.IStreamingContentSerializer, Refit.ISynchronousContentDeserializer, Refit.ISynchronousContentSerializer
 {
     public SystemTextJsonContentSerializer() { }
     public SystemTextJsonContentSerializer(System.Text.Json.JsonSerializerOptions jsonSerializerOptions) { }
     public System.Text.Json.JsonSerializerOptions SerializerOptions { get; }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public T? DeserializeFromString<T>(string content) { }
     public System.Collections.Generic.IAsyncEnumerable<T?> DeserializeStreamAsync<T>(System.IO.Stream stream, Refit.StreamingContentFormat format, System.Threading.CancellationToken cancellationToken = default) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
     public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
@@ -680,12 +763,14 @@ public sealed class SystemTextJsonContentSerializer : Refit.IHttpContentSerializ
     public static System.Text.Json.JsonSerializerOptions GetDefaultJsonSerializerOptions() { }
     public static System.Text.Json.JsonSerializerOptions GetFastPathJsonSerializerOptions() { }
 }
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class SystemTextJsonQueryConverter<T> : Refit.IQueryConverter<T>
 {
     public SystemTextJsonQueryConverter() { }
     public void Flatten(T value, string keyPrefix, ref Refit.GeneratedQueryStringBuilder builder, Refit.RefitSettings settings) { }
 }
 [System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{Milliseconds}")]
 public sealed class TimeoutAttribute : System.Attribute
 {
     public TimeoutAttribute(int milliseconds) { }
@@ -695,10 +780,13 @@ public static class UniqueName
 {
     public static string ForType(System.Type refitInterfaceType) { }
     public static string ForType(System.Type refitInterfaceType, object? serviceKey) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static string ForType<T>() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static string ForType<T>(object? serviceKey) { }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class UrlAttribute : System.Attribute
 {
     public UrlAttribute() { }
@@ -708,6 +796,7 @@ public enum UrlResolutionMode
     RefitLegacy = 0,
     Rfc3986 = 1,
 }
+[System.Diagnostics.DebuggerDisplay("{Content}")]
 public class ValidationApiException : Refit.ApiException
 {
     public ValidationApiException(string message) { }

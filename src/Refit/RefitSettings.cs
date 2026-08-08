@@ -3,11 +3,13 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 namespace Refit;
 
 /// <summary>Defines various parameters on how Refit should work.</summary>
+[System.Diagnostics.DebuggerDisplay("{AuthorizationHeaderValueGetter}")]
 [SuppressMessage(
     "Reliability",
     "SST2403:'this' escapes from a constructor before the object is fully built",
@@ -61,6 +63,7 @@ public class RefitSettings
     /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>).</param>
     /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>).</param>
     /// <param name="urlParameterKeyFormatter">The <see cref="IUrlParameterKeyFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterKeyFormatter"/>).</param>
+    /// <exception cref="ArgumentNullException"><paramref name="contentSerializer"/> is <see langword="null"/>.</exception>
     public RefitSettings(
         IHttpContentSerializer contentSerializer,
         IUrlParameterFormatter? urlParameterFormatter,
@@ -298,16 +301,19 @@ public class RefitSettings
 
     /// <summary>Creates settings whose query keys, form-url-encoded keys, and JSON body property names are all formatted in camelCase.</summary>
     /// <returns>A new <see cref="RefitSettings"/> instance configured for camelCase naming.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static RefitSettings CamelCase() =>
         ForNamingConvention(JsonNamingPolicy.CamelCase, new CamelCaseUrlParameterKeyFormatter());
 
     /// <summary>Creates settings whose query keys, form-url-encoded keys, and JSON body property names are all formatted in snake_case.</summary>
     /// <returns>A new <see cref="RefitSettings"/> instance configured for snake_case naming.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static RefitSettings SnakeCase() =>
         ForNamingConvention(SeparatedCaseJsonNamingPolicy.Snake, new SnakeCaseUrlParameterKeyFormatter());
 
     /// <summary>Creates settings whose query keys, form-url-encoded keys, and JSON body property names are all formatted in kebab-case.</summary>
     /// <returns>A new <see cref="RefitSettings"/> instance configured for kebab-case naming.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static RefitSettings KebabCase() =>
         ForNamingConvention(SeparatedCaseJsonNamingPolicy.Kebab, new KebabCaseUrlParameterKeyFormatter());
 
@@ -321,10 +327,7 @@ public class RefitSettings
     {
         var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
         options.PropertyNamingPolicy = jsonNamingPolicy;
-        return new(new SystemTextJsonContentSerializer(options))
-        {
-            UrlParameterKeyFormatter = urlParameterKeyFormatter,
-        };
+        return new(new SystemTextJsonContentSerializer(options)) { UrlParameterKeyFormatter = urlParameterKeyFormatter, };
     }
 
     /// <summary>Returns the default <see cref="TransportExceptionFactory"/> delegate for this instance.</summary>
@@ -333,7 +336,7 @@ public class RefitSettings
     /// <see cref="CancellationToken.IsCancellationRequested"/> is <see langword="true"/>, and wraps every
     /// other exception in an <see cref="ApiRequestException"/> that captures the request and these settings.
     /// </returns>
-    internal Func<HttpRequestMessage, Exception, CancellationToken, Exception> DefaultTransportExceptionFactory()
-        => (req, ex, ct) =>
+    internal Func<HttpRequestMessage, Exception, CancellationToken, Exception> DefaultTransportExceptionFactory() =>
+        (req, ex, ct) =>
              ex is OperationCanceledException && ct.IsCancellationRequested ? ex : new ApiRequestException(req, req.Method, this, ex);
 }

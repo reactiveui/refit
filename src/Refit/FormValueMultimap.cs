@@ -82,9 +82,11 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
 
     /// <summary>Returns an enumerator over the form key/value entries.</summary>
     /// <returns>An enumerator over the entries.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public IEnumerator<KeyValuePair<string?, string?>> GetEnumerator() => _formEntries.GetEnumerator();
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <summary>Creates a form value map using the declared source type for property discovery.</summary>
@@ -141,12 +143,13 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Resolves the cached per-property attribute metadata for the given source type.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns>The cached attribute metadata for each readable public property.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage(
         "Trimming",
         "IL2111:Method with DynamicallyAccessedMembersAttribute is accessed via reflection",
         Justification = "The cache callback receives the same Type key that carries the public property metadata requirement.")]
-    internal static FormPropertyMetadata[] GetCachedMetadata(Type type)
-        => _metadataCache.GetValue(type, BuildMetadata);
+    internal static FormPropertyMetadata[] GetCachedMetadata(Type type) =>
+        _metadataCache.GetValue(type, BuildMetadata);
 
     /// <summary>Resolves the cached per-property attribute metadata for the given declared source type.</summary>
     /// <typeparam name="TSource">The declared source type to inspect.</typeparam>
@@ -375,8 +378,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         // A collection formats and joins (or repeats) its elements per the resolved collection format.
         if (value is IEnumerable enumerable)
         {
-            var collectionFormat = explicitCollectionFormat ?? settings.CollectionFormat;
-            AddCollection(fieldName, enumerable, value, format, collectionFormat, settings);
+            AddCollection(fieldName, enumerable, value, format, explicitCollectionFormat ?? settings.CollectionFormat, settings);
             return;
         }
 
@@ -416,8 +418,8 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     }
 
     /// <summary>Leaves the most recently entered complex value, restoring the recursion path for the next sibling.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void ExitComplex() =>
-
         // _ancestors is non-null here: TryEnterComplex allocated it and pushed the matching value.
         _ancestors!.RemoveAt(_ancestors.Count - 1);
 
@@ -480,6 +482,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Adds a key/value pair to the form entries.</summary>
     /// <param name="key">The form field key.</param>
     /// <param name="value">The form field value.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Add(string? key, string? value) => _formEntries.Add(new(key, value));
 
     /// <summary>Returns each key from the collected form entries.</summary>

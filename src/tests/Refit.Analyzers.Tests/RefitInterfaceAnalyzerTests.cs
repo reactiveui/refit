@@ -4,6 +4,7 @@
 namespace Refit.Analyzers.Tests;
 
 /// <summary>Tests for Refit interface contract diagnostics.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class RefitInterfaceAnalyzerTests
 {
     /// <summary>The diagnostic identifier for non-Refit interface members.</summary>

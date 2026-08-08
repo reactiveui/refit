@@ -8,11 +8,11 @@ namespace Refit;
 public enum StreamingContentFormat
 {
     /// <summary>The body is a single JSON array whose elements are yielded as they are read.</summary>
-    JsonArray,
+    JsonArray = 0,
 
     /// <summary>The body is newline-delimited JSON (JSON Lines): one JSON value per line. See <see href="https://jsonlines.org"/>.</summary>
-    JsonLines,
+    JsonLines = 1,
 
     /// <summary>The body is a server-sent events (SSE) stream: each event's <c>data</c> payload is a JSON value, yielded live as it arrives.</summary>
-    ServerSentEvents
+    ServerSentEvents = 2,
 }

@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Benchmarks;
 
 /// <summary>A nested request model exercised by the nested-property path binding and recursive query-flattening benchmarks.</summary>
+[System.Diagnostics.DebuggerDisplay("{Code}")]
 public sealed class ReflectionInnerModel
 {
     /// <summary>Gets or sets the code, bound to <c>{request.inner.code}</c> path placeholders.</summary>

@@ -20,7 +20,9 @@ dotnet_diagnostic.S5332.severity = none # Using http protocol is insecure (test 
 ###################
 # StyleSharp (SST) — relaxed for test projects
 ###################
+dotnet_diagnostic.SST1300.severity = none # Element names should be PascalCase — fixtures declare deliberately non-conforming names to exercise naming behaviour, and renaming them changes what the test measures
 dotnet_diagnostic.SST2016.severity = none # Prefer DateTimeOffset over DateTime on a visible signature — test models exercise DateTime handling deliberately
+dotnet_diagnostic.SST2334.severity = none # A publicly visible type has no [DebuggerDisplay] — a test class has no summary worth showing in the debugger
 dotnet_diagnostic.SST2410.severity = none # A created disposable is never disposed — test-local disposables are short-lived and GC-reclaimed
 
 ###################
@@ -30,3 +32,4 @@ performancesharp.avoid_linq_on_hot_path = false
 dotnet_diagnostic.PSH1100.severity = none # Tests can use LINQ for clarity
 dotnet_diagnostic.PSH1101.severity = error # In tests, simplify LINQ Where plus terminal calls instead of banning LINQ
 dotnet_diagnostic.PSH1102.severity = error # In tests, simplify LINQ type filters instead of banning LINQ
+dotnet_diagnostic.PSH1410.severity = none # Mark trivial forwarders for aggressive inlining — call overhead in a test helper is not worth an attribute

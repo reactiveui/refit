@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 namespace Refit;
 
 /// <summary>The object representing the details about a ValidationException caught by a service implementing RFC 7807.</summary>
+[System.Diagnostics.DebuggerDisplay("{Errors}")]
 public class ProblemDetails
 {
     /// <summary>Gets the collection of resulting errors for the request.</summary>

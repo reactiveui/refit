@@ -2,11 +2,13 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 
 namespace Refit.Benchmarks;
 
 /// <summary>Benchmarks producing a Refit JSON request body three ways.</summary>
+[System.Diagnostics.DebuggerDisplay("{Count}")]
 [MemoryDiagnoser]
 public class RequestBodySerializationBenchmark
 {
@@ -47,18 +49,21 @@ public class RequestBodySerializationBenchmark
 
     /// <summary>Synchronous serialization with fast-path-eligible options (the fast-path engages).</summary>
     /// <returns>The number of bytes produced.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     public Task<long> SyncFastPathAsync() =>
         ProduceAsync(((ISynchronousContentSerializer)_fastPath).ToHttpContentSynchronous(_items));
 
     /// <summary>Synchronous serialization with Refit's default options (no fast-path, due to converters and NumberHandling).</summary>
     /// <returns>The number of bytes produced.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<long> SyncDefaultAsync() =>
         ProduceAsync(((ISynchronousContentSerializer)_default).ToHttpContentSynchronous(_items));
 
     /// <summary>Asynchronous serialization with Refit's default options (today's default request-body path).</summary>
     /// <returns>The number of bytes produced.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<long> AsyncDefaultAsync() => ProduceAsync(_default.ToHttpContent(_items));
 

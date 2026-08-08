@@ -7,17 +7,17 @@ namespace Refit.Generator;
 internal enum InlineFormatKind
 {
     /// <summary>No reflection-free rendering is provable; always call the configured URL parameter formatter.</summary>
-    FormatterOnly,
+    FormatterOnly = 0,
 
     /// <summary>The value is a string and is used as-is.</summary>
-    String,
+    String = 1,
 
     /// <summary>The value renders via <c>ToString()</c> (bool, char, and non-formattable values), ignoring any format.</summary>
-    ToStringOnly,
+    ToStringOnly = 2,
 
     /// <summary>The value renders via <c>GeneratedRequestRunner.FormatInvariant</c> with the compile-time format.</summary>
-    Formattable,
+    Formattable = 3,
 
     /// <summary>The value renders through a generated per-enum switch that resolves member names at compile time.</summary>
-    Enum
+    Enum = 4,
 }

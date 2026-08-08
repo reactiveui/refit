@@ -15,15 +15,9 @@ public partial class GeneratedRequestRunnerTests
     {
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.Accepted)
-                {
-                    Content = new StringContent("accepted")
-                }));
+                new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent("accepted"), }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath)
-        {
-            Content = new StringContent("body")
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath) { Content = new StringContent("body"), };
         request.Headers.Authorization = new("Bearer");
         var exception = new InvalidOperationException("factory failure");
         var settings = CreateSettings();
@@ -73,10 +67,7 @@ public partial class GeneratedRequestRunnerTests
         var exception = new InvalidOperationException("factory failure");
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.BadRequest)
-                {
-                    Content = new StringContent("bad")
-                }));
+                new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("bad"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings();
@@ -151,16 +142,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncReturnsApiResponseWithResponseException()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializedValue = new GeneratedResult(SuccessResultValue)
-        };
+        var serializer = new RecordingContentSerializer { DeserializedValue = new GeneratedResult(SuccessResultValue), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.BadRequest)
-                {
-                    Content = new StringContent("bad")
-                }));
+                new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("bad"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings(serializer);
@@ -185,16 +170,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncApiResponseSuppressesDeserializationExceptionWhenFactoryReturnsNull()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializeException = new FormatException(BadContentMessage)
-        };
+        var serializer = new RecordingContentSerializer { DeserializeException = new FormatException(BadContentMessage), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("bad")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("bad"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings(serializer);
@@ -219,16 +198,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncThrowsConfiguredDeserializationExceptionForNonApiResponses()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializeException = new FormatException(BadContentMessage)
-        };
+        var serializer = new RecordingContentSerializer { DeserializeException = new FormatException(BadContentMessage), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("bad")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("bad"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var replacement = new InvalidOperationException("replacement");
@@ -255,16 +228,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncThrowsDefaultApiExceptionForNonApiResponseDeserializationFailures()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializeException = new FormatException(BadContentMessage)
-        };
+        var serializer = new RecordingContentSerializer { DeserializeException = new FormatException(BadContentMessage), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("bad")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("bad"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -289,16 +256,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncRethrowsCancellationRequestedDuringDeserialization()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializeException = new OperationCanceledException("cancelled")
-        };
+        var serializer = new RecordingContentSerializer { DeserializeException = new OperationCanceledException("cancelled"), };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("cancelled")
-                }));
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("cancelled"), }));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         using var tokenSource = new CancellationTokenSource();
@@ -322,10 +283,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task SendAsyncStopsBeforeDeserializationWhenCancelledDuringBuffering()
     {
-        var serializer = new RecordingContentSerializer
-        {
-            DeserializedValue = new GeneratedResult(DeserializedResultValue)
-        };
+        var serializer = new RecordingContentSerializer { DeserializedValue = new GeneratedResult(DeserializedResultValue), };
         using var tokenSource = new CancellationTokenSource();
 
         // Cancel once the response exists, so cancellation lands on buffering rather than on the send itself.
@@ -333,10 +291,7 @@ public partial class GeneratedRequestRunnerTests
             async (_, _) =>
             {
                 await tokenSource.CancelAsync();
-                return new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("buffered")
-                };
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("buffered"), };
             });
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);

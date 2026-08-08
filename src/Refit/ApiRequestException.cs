@@ -10,6 +10,7 @@ namespace Refit;
 /// This exception will wrap those thrown by <see cref="HttpClient.SendAsync(HttpRequestMessage)"/>,
 /// such as <see cref="HttpRequestException"/> and <see cref="OperationCanceledException"/>.
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [SuppressMessage(
     "Design",
     "SST1488:Exception types should declare the standard constructors",

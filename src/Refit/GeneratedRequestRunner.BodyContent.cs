@@ -4,6 +4,7 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Refit;
@@ -19,6 +20,7 @@ public static partial class GeneratedRequestRunner
     /// request (and thus its content) closes only the wrapper, never the caller's stream. Streams Refit opens
     /// itself are sent through a plain owning <c>StreamContent</c> so Refit still closes them.
     /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static HttpContent CreateStreamContent(Stream stream) =>
         new StreamContent(new NonDisposingStream(stream));
 

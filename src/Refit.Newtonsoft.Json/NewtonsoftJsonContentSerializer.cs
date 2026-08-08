@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -13,6 +14,7 @@ namespace Refit;
 /// Creates a new <see cref="NewtonsoftJsonContentSerializer"/> instance with the specified parameters.
 /// </remarks>
 /// <param name="jsonSerializerSettings">The serialization settings to use for the current instance</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class NewtonsoftJsonContentSerializer(
     JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer, ISynchronousContentDeserializer
 {
@@ -48,6 +50,7 @@ public sealed class NewtonsoftJsonContentSerializer(
     }
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage(
         "Trimming",
         "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
@@ -113,6 +116,7 @@ public sealed class NewtonsoftJsonContentSerializer(
     }
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage(
         "Trimming",
         "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
@@ -145,6 +149,7 @@ public sealed class NewtonsoftJsonContentSerializer(
     /// <summary>Resolves the text encoding from the content type charset, if present.</summary>
     /// <param name="content">The HTTP content to inspect.</param>
     /// <returns>The resolved encoding, or null when no charset is specified.</returns>
+    /// <exception cref="InvalidOperationException">The charset on the content type header does not name an encoding this platform knows.</exception>
     private static Encoding? GetEncoding(HttpContent content)
     {
         var charset = content.Headers.ContentType?.CharSet;

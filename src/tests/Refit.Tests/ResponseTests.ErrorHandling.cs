@@ -18,18 +18,9 @@ public sealed partial class ResponseTests
     [Test]
     public async Task When_SerializationErrorOnSuccessStatusCode_IsSuccessful_ShouldReturnFalse()
     {
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(InvalidJsonContent)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(InvalidJsonContent), };
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetApiResponseTestObjectUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GetApiResponseTestObjectUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         using var response = await fixture.GetApiResponseTestObject();
@@ -45,18 +36,9 @@ public sealed partial class ResponseTests
     [Test]
     public async Task When_SerializationErrorOnSuccessStatusCode_EnsureSuccesStatusCodeAsync_DoNotThrowApiException()
     {
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(InvalidJsonContent)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(InvalidJsonContent), };
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetApiResponseTestObjectUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GetApiResponseTestObjectUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         using var response = await fixture.GetApiResponseTestObject();
@@ -73,18 +55,9 @@ public sealed partial class ResponseTests
     [Test]
     public async Task When_SerializationErrorOnSuccessStatusCode_EnsureSuccessfulAsync_ThrowsApiException()
     {
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(InvalidJsonContent)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(InvalidJsonContent), };
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetApiResponseTestObjectUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GetApiResponseTestObjectUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         using var response = await fixture.GetApiResponseTestObject();
@@ -102,19 +75,10 @@ public sealed partial class ResponseTests
     [Test]
     public async Task BadRequestWithEmptyContent_ShouldReturnApiException()
     {
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(HelloWorldContent)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(HelloWorldContent), };
         expectedResponse.Content.Headers.Clear();
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ApiException>();
@@ -128,19 +92,10 @@ public sealed partial class ResponseTests
     [Test]
     public async Task BadRequestWithEmptyContent_ShouldReturnApiResponse()
     {
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(HelloWorldContent)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(HelloWorldContent), };
         expectedResponse.Content.Headers.Clear();
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetApiResponseTestObject)}"),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetApiResponseTestObject)}"), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var apiResponse = await fixture.GetApiResponseTestObject();
@@ -157,19 +112,10 @@ public sealed partial class ResponseTests
     [Test]
     public async Task BadRequestWithStringContent_ShouldReturnIApiResponse()
     {
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(HelloWorldContent)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(HelloWorldContent), };
         expectedResponse.Content.Headers.Clear();
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetIApiResponse)}"),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetIApiResponse)}"), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var apiResponse = await fixture.GetIApiResponse();
@@ -186,19 +132,10 @@ public sealed partial class ResponseTests
     [Test]
     public async Task BadRequestWithStringContent_ShouldReturnValueTaskIApiResponse()
     {
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(HelloWorldContent)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(HelloWorldContent), };
         expectedResponse.Content.Headers.Clear();
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetValueTaskIApiResponse)}"),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetValueTaskIApiResponse)}"), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var apiResponse = await fixture.GetValueTaskIApiResponse();
@@ -216,19 +153,10 @@ public sealed partial class ResponseTests
     public async Task WithHtmlResponse_ShouldReturnApiException()
     {
         const string htmlResponse = "<html><body>Hello world</body></html>";
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(htmlResponse)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(htmlResponse), };
         expectedResponse.Content.Headers.Clear();
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ApiException>();
@@ -244,19 +172,10 @@ public sealed partial class ResponseTests
     public async Task WithHtmlResponse_ShouldReturnApiResponse()
     {
         const string htmlResponse = "<html><body>Hello world</body></html>";
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(htmlResponse)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(htmlResponse), };
         expectedResponse.Content.Headers.Clear();
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetApiResponseTestObject)}"),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetApiResponseTestObject)}"), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var apiResponse = await fixture.GetApiResponseTestObject();

@@ -7,11 +7,11 @@ namespace Refit.Generator.Benchmarks;
 public enum CorpusSize
 {
     /// <summary>A single small CRUD interface.</summary>
-    Small,
+    Small = 0,
 
     /// <summary>A handful of varied interfaces.</summary>
-    Medium,
+    Medium = 1,
 
     /// <summary>Many interfaces with many methods each.</summary>
-    Large,
+    Large = 2,
 }

@@ -12,6 +12,7 @@ namespace Refit.Benchmarks;
 /// path and query construction: appending characters, strings, and spans (including the pooled-buffer growth path),
 /// reserving a span to fill directly, and inserting a prefix.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]

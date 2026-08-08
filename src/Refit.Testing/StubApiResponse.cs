@@ -23,6 +23,7 @@ namespace Refit.Testing;
 /// test is handed an <see cref="IApiResponse{T}"/> directly.
 /// </remarks>
 /// <typeparam name="T">The deserialized response content type.</typeparam>
+[System.Diagnostics.DebuggerDisplay("{Content}")]
 public sealed class StubApiResponse<T> : IApiResponse<T>
 {
     /// <summary>Gets the deserialized response content.</summary>

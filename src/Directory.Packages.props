@@ -9,7 +9,7 @@
     <TUnitVersion>1.61.38</TUnitVersion>
 
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>3.38.1</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>3.41.14</SharpAnalyzersVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
@@ -50,7 +50,7 @@
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.31.0.145097"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
-    <PackageVersion Include="PublicApiSharp.Analyzers" Version="1.0.1"/>
+    <PackageVersion Include="PublicApiSharp.Analyzers" Version="1.0.7"/>
   </ItemGroup>
 
   <!-- Roslyn toolchain. Versions are intentionally held at their current bands:

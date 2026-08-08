@@ -5,6 +5,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Refit.GeneratedCode.TestModels.Scenarios
 {
@@ -14,25 +15,17 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
     {
         /// <summary>Initializes a new instance of the <see cref="GeneratedQueryParameter"/> struct with the specified value.</summary>
         /// <param name="value">The value of the query parameter.</param>
-        public GeneratedQueryParameter(string value)
-        {
-            Value = value;
-        }
+        public GeneratedQueryParameter(string value) => Value = value;
 
         /// <summary>Gets the value of the query parameter.</summary>
         public string Value { get; }
 
         /// <inheritdoc/>
-        public static bool operator ==(GeneratedQueryParameter left, GeneratedQueryParameter right)
-        {
-            return left.Equals(right);
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(GeneratedQueryParameter left, GeneratedQueryParameter right) => left.Equals(right);
 
         /// <inheritdoc/>
-        public static bool operator !=(GeneratedQueryParameter left, GeneratedQueryParameter right)
-        {
-            return !left.Equals(right);
-        }
+        public static bool operator !=(GeneratedQueryParameter left, GeneratedQueryParameter right) => !left.Equals(right);
 
         /// <inheritdoc/>
         public bool Equals(GeneratedQueryParameter other) => Value == other.Value;

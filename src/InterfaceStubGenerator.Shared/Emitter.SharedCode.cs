@@ -25,14 +25,12 @@ internal static partial class Emitter
             + "global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | "
             + "global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | "
             + "global::System.AttributeTargets.Delegate)]";
-
-        var generatedCodeAttribute = GeneratedCodeAttribute;
         var attributeText = $$"""
             {{generatedFileHeader}}
             namespace {{model.RefitInternalNamespace}}
             {
                 /// <summary>Identifies generated members that should be preserved by tools that honor this attribute.</summary>
-                {{generatedCodeAttribute}}
+                {{GeneratedCodeAttribute}}
                 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
                 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
                 {{attributeUsageLine}}
@@ -61,13 +59,12 @@ internal static partial class Emitter
         string generatedFileHeader,
         Action<string, SourceText> addSource)
     {
-        var generatedCodeAttribute = GeneratedCodeAttribute;
         var generatedSource = $$"""
             {{generatedFileHeader}}
             namespace Refit.Implementation
             {
                 /// <summary>Registers generated Refit factories for interfaces discovered at compile time.</summary>
-                {{generatedCodeAttribute}}
+                {{GeneratedCodeAttribute}}
                 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
                 [global::System.Diagnostics.DebuggerNonUserCode]
                 [{{model.PreserveAttributeDisplayName}}]

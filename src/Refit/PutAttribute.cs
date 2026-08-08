@@ -11,6 +11,7 @@ namespace Refit;
 /// Initializes a new instance of the <see cref="PutAttribute"/> class.
 /// </remarks>
 /// <param name="path">The path.</param>
+[System.Diagnostics.DebuggerDisplay("{Method}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class PutAttribute(string path) : HttpMethodAttribute(path)
 {

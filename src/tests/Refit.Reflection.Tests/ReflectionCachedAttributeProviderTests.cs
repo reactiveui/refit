@@ -6,6 +6,7 @@ namespace Refit.Reflection.Tests;
 
 /// <summary>Pins that formatting which reads a parameter's <c>[Query(Format = ...)]</c> attribute stays correct when the
 /// reflection request builder reuses its cached attribute provider across separate builder instances.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionCachedAttributeProviderTests
 {
     /// <summary>The base address used when building request URIs.</summary>

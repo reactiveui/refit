@@ -8,6 +8,7 @@ namespace Refit.Reflection.Tests;
 
 /// <summary>A query model combining a scalar, an aliased scalar, an ignored property, a multi-expanded collection and a
 /// nested object, exercising every branch of the reflection request builder's per-type query-property metadata.</summary>
+[System.Diagnostics.DebuggerDisplay("{Id}")]
 public sealed class ReflectionCachingQueryModel
 {
     /// <summary>Gets or sets a plain scalar rendered under its CLR name.</summary>

@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using HttpClientDiagnostics;
 using Meow.Responses;
 using Refit;
@@ -8,6 +9,7 @@ using Refit;
 namespace Meow;
 
 /// <summary>Provides access to the cats API over a configured HTTP client.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class CatsService : IDisposable
 {
     /// <summary>The HTTP client used to call the cats API.</summary>
@@ -27,9 +29,11 @@ public sealed class CatsService : IDisposable
     /// <summary>Searches for cats matching the given breed.</summary>
     /// <param name="breed">The breed to search for.</param>
     /// <returns>The matching search results.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Task<IEnumerable<SearchResult>> SearchAsync(string breed) =>
         _theCatsApi.SearchAsync(breed);
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose() => _httpClient.Dispose();
 }

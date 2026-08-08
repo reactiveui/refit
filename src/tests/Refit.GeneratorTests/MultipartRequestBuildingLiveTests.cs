@@ -281,6 +281,7 @@ public sealed class MultipartRequestBuildingLiveTests
 
         /// <summary>Compiles the multipart interface and creates the generated and reflection clients.</summary>
         /// <returns>The live harness.</returns>
+        /// <exception cref="InvalidOperationException">The generated compilation reported errors.</exception>
         [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
         public static LiveMultipartHarness Create()
         {
@@ -297,6 +298,17 @@ public sealed class MultipartRequestBuildingLiveTests
             var requestBuilder = RequestBuilder.ForType(interfaceType, new());
             var generatedApi = RestService.For(interfaceType, client, requestBuilder);
             return new(handler, client, interfaceType, generatedApi, requestBuilder);
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            client.Dispose();
+            handler.Dispose();
+            foreach (var path in _tempFiles)
+            {
+                File.Delete(path);
+            }
         }
 
         /// <summary>Creates an instance of a compiled scenario type with the given properties assigned.</summary>
@@ -368,17 +380,6 @@ public sealed class MultipartRequestBuildingLiveTests
                 await Assert.That(generatedPart.Body.SequenceEqual(reflectionPart.Body)).IsTrue();
             }
         }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            client.Dispose();
-            handler.Dispose();
-            foreach (var path in _tempFiles)
-            {
-                File.Delete(path);
-            }
-        }
     }
 
     /// <summary>Captures each outgoing multipart request, snapshotting its boundary and parts before disposal.</summary>
@@ -389,6 +390,7 @@ public sealed class MultipartRequestBuildingLiveTests
 
         /// <summary>Takes the snapshot captured for the last request, clearing the slot.</summary>
         /// <returns>The captured multipart snapshot.</returns>
+        /// <exception cref="InvalidOperationException">No multipart request has been sent through the handler since the last take.</exception>
         public MultipartSnapshot TakeSnapshot()
         {
             var snapshot = _snapshot ?? throw new InvalidOperationException("No multipart content was captured.");
@@ -418,10 +420,7 @@ public sealed class MultipartRequestBuildingLiveTests
             }
 
             _snapshot = new(boundary, parts);
-            return new(HttpStatusCode.OK)
-            {
-                Content = new StringContent("\"done\"", Encoding.UTF8, "application/json"),
-            };
+            return new(HttpStatusCode.OK) { Content = new StringContent("\"done\"", Encoding.UTF8, "application/json"), };
         }
     }
 

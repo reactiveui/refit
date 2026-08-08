@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,6 +41,7 @@ namespace Refit.Testing;
 /// including typed inspection of the sent body via <see cref="LastRequestBodyAsync{T}"/>.
 /// </para>
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{Requests}")]
 public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
 {
     /// <summary>The default timeout used by the parameterless <see cref="VerifyAllCalledAsync()"/>.</summary>
@@ -111,6 +113,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
     /// <summary>Wraps this handler in a fresh <see cref="RefitSettings"/> that routes requests through it.</summary>
     /// <returns>New settings whose handler factory returns this handler.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public RefitSettings ToSettings() => ToSettings(new());
 
     /// <summary>Points an existing <see cref="RefitSettings"/> at this handler and adopts its content serializer.</summary>
@@ -134,6 +137,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <typeparam name="T">The Refit interface to implement.</typeparam>
     /// <param name="hostUrl">The base address the client sends requests to.</param>
     /// <returns>A Refit client that sends every request to this handler.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -141,9 +145,9 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     [RequiresUnreferencedCode("Creating a Refit client through the reflection path requires runtime type lookup and request metadata.")]
     public T CreateClient<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
     T>(string hostUrl) => CreateClient<T>(hostUrl, new());
 
     /// <summary>
@@ -155,6 +159,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="hostUrl">The base address the client sends requests to.</param>
     /// <param name="baseSettings">The settings to route through this handler.</param>
     /// <returns>A Refit client that sends every request to this handler.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -162,9 +167,9 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     [RequiresUnreferencedCode("Creating a Refit client through the reflection path requires runtime type lookup and request metadata.")]
     public T CreateClient<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
     T>(string hostUrl, RefitSettings baseSettings) => RestService.For<T>(hostUrl, ToSettings(baseSettings));
 
     /// <summary>
@@ -176,6 +181,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="hostUrl">The base address the client sends requests to.</param>
     /// <returns>A source-generated Refit client that sends every request to this handler.</returns>
     /// <exception cref="InvalidOperationException">No generated implementation is registered for <typeparamref name="T"/>.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -191,6 +197,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="baseSettings">The settings to route through this handler.</param>
     /// <returns>A source-generated Refit client that sends every request to this handler.</returns>
     /// <exception cref="InvalidOperationException">No generated implementation is registered for <typeparamref name="T"/>.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -248,6 +255,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
     /// <summary>Asserts every non-reusable route was matched by a request.</summary>
     /// <exception cref="InvalidOperationException">One or more expected routes were never hit.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void VerifyAllCalled() => ThrowIfOutstanding();
 
     /// <summary>
@@ -256,6 +264,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// send) and may not have completed at the point of verification.
     /// </summary>
     /// <returns>A task that completes when all routes are hit, or faults with the outstanding list on timeout.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Task VerifyAllCalledAsync() => VerifyAllCalledAsync(DefaultVerifyTimeout);
 
     /// <summary>Asynchronously waits up to <paramref name="timeout"/> for every non-reusable route to be hit, then asserts.</summary>
@@ -300,6 +309,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     }
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<RouteMatcher>)this).GetEnumerator();
 
     /// <inheritdoc/>
@@ -373,8 +383,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="route">The candidate route.</param>
     /// <param name="request">The incoming request.</param>
     /// <returns><see langword="true"/> when both predicates pass (or are absent).</returns>
-    private static async Task<bool> MatchesPredicatesAsync(RouteMatcher route, HttpRequestMessage request)
-        => (route.Where is null || route.Where(request))
+    private static async Task<bool> MatchesPredicatesAsync(RouteMatcher route, HttpRequestMessage request) =>
+        (route.Where is null || route.Where(request))
             && (route.WhereAsync is null || await route.WhereAsync(request).ConfigureAwait(false));
 
     /// <summary>Cancels the token source, using the async cancellation path where the framework provides it.</summary>

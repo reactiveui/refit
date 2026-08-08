@@ -73,10 +73,7 @@ public partial class RequestBuilderTests
         var task =
             (Task<ApiResponse<string>>)
                 factory(
-                    new(testHttpMessageHandler)
-                    {
-                        BaseAddress = new(ApiBaseUrlWithSlash)
-                    },
+                    new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash), },
                     [AlternateSampleId])!;
         var result = await task;
 
@@ -169,14 +166,7 @@ public partial class RequestBuilderTests
         const string nameProp2 = "UnitTest.Property2";
         object valueProp2 = new List<string> { "123", "345" };
         var fixture = new RequestBuilderImplementation<IContainAandB>(
-            new()
-            {
-                HttpRequestMessageOptions = new()
-                {
-                    [nameProp1] = valueProp1,
-                    [nameProp2] = valueProp2,
-                },
-            });
+            new() { HttpRequestMessageOptions = new() { [nameProp1] = valueProp1, [nameProp2] = valueProp2, }, });
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
         var output = await factory([]);
 
@@ -373,10 +363,7 @@ public partial class RequestBuilderTests
         var testHttpMessageHandler = new TestHttpMessageHandler();
 
         var task = (Task)factory(
-            new(testHttpMessageHandler)
-            {
-                BaseAddress = new("http://api/foo/bar")
-            },
+            new(testHttpMessageHandler) { BaseAddress = new("http://api/foo/bar"), },
             [])!;
         await task;
 
@@ -393,10 +380,7 @@ public partial class RequestBuilderTests
         var testHttpMessageHandler = new TestHttpMessageHandler();
 
         var task = (Task)factory(
-            new(testHttpMessageHandler)
-            {
-                BaseAddress = new("http://api/foo/bar")
-            },
+            new(testHttpMessageHandler) { BaseAddress = new("http://api/foo/bar"), },
             [])!;
         await task;
 
@@ -500,10 +484,7 @@ public partial class RequestBuilderTests
     public async Task CustomParmeterFormatter()
     {
         const int id = 5;
-        var settings = new RefitSettings
-        {
-            UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter")
-        };
+        var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter"), };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
@@ -518,10 +499,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task QueryStringWithEnumerablesCanBeFormatted()
     {
-        var settings = new RefitSettings
-        {
-            UrlParameterFormatter = new TestEnumerableUrlParameterFormatter()
-        };
+        var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter(), };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
@@ -536,10 +514,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task QueryStringWithArrayCanBeFormatted()
     {
-        var settings = new RefitSettings
-        {
-            UrlParameterFormatter = new TestEnumerableUrlParameterFormatter()
-        };
+        var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter(), };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithArray");

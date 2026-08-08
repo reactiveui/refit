@@ -17,46 +17,46 @@ internal enum DynamicallyAccessedMemberTypes
     None = 0,
 
     /// <summary>The public parameterless constructor.</summary>
-    PublicParameterlessConstructor = 1,
+    PublicParameterlessConstructor = 1 << 0,
 
     /// <summary>All public constructors.</summary>
     PublicConstructors = 3,
 
     /// <summary>All non-public constructors.</summary>
-    NonPublicConstructors = 4,
+    NonPublicConstructors = 1 << 2,
 
     /// <summary>All public methods.</summary>
-    PublicMethods = 8,
+    PublicMethods = 1 << 3,
 
     /// <summary>All non-public methods.</summary>
-    NonPublicMethods = 16,
+    NonPublicMethods = 1 << 4,
 
     /// <summary>All public fields.</summary>
-    PublicFields = 32,
+    PublicFields = 1 << 5,
 
     /// <summary>All non-public fields.</summary>
-    NonPublicFields = 64,
+    NonPublicFields = 1 << 6,
 
     /// <summary>All public nested types.</summary>
-    PublicNestedTypes = 128,
+    PublicNestedTypes = 1 << 7,
 
     /// <summary>All non-public nested types.</summary>
-    NonPublicNestedTypes = 256,
+    NonPublicNestedTypes = 1 << 8,
 
     /// <summary>All public properties.</summary>
-    PublicProperties = 512,
+    PublicProperties = 1 << 9,
 
     /// <summary>All non-public properties.</summary>
-    NonPublicProperties = 1024,
+    NonPublicProperties = 1 << 10,
 
     /// <summary>All public events.</summary>
-    PublicEvents = 2048,
+    PublicEvents = 1 << 11,
 
     /// <summary>All non-public events.</summary>
-    NonPublicEvents = 4096,
+    NonPublicEvents = 1 << 12,
 
     /// <summary>All interfaces implemented by the type.</summary>
-    Interfaces = 8192,
+    Interfaces = 1 << 13,
 
     /// <summary>All members.</summary>
     All = -1,

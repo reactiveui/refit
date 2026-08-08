@@ -2,15 +2,19 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
+
 namespace Refit.Reflection.Tests;
 
 /// <summary>Pins how the reflection request builder merges an absolute <c>[Url]</c>'s existing query string with an
 /// appended <c>[Query]</c> parameter: existing entries come first, values are URL-decoded (<c>+</c> to space, percent
 /// escapes), duplicate keys are comma-joined, and blank or valueless keys are dropped.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionExistingQueryMergeTests
 {
     /// <summary>Verifies an existing single query parameter is preserved before the appended one.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Test]
     public Task ExistingParameterPrecedesAppended() =>
         AssertMergeAsync(
@@ -19,6 +23,7 @@ public sealed class ReflectionExistingQueryMergeTests
 
     /// <summary>Verifies duplicate keys in the existing query are comma-joined (then percent-escaped).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Test]
     public Task DuplicateExistingKeysAreCommaJoined() =>
         AssertMergeAsync(
@@ -27,6 +32,7 @@ public sealed class ReflectionExistingQueryMergeTests
 
     /// <summary>Verifies existing query values are URL-decoded: <c>+</c> becomes a space, percent escapes are decoded.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Test]
     public Task ExistingValuesAreUrlDecoded() =>
         AssertMergeAsync(
@@ -35,6 +41,7 @@ public sealed class ReflectionExistingQueryMergeTests
 
     /// <summary>Verifies a blank key and a valueless key in the existing query are dropped.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Test]
     public Task BlankAndValuelessKeysAreDropped() =>
         AssertMergeAsync(
@@ -43,6 +50,7 @@ public sealed class ReflectionExistingQueryMergeTests
 
     /// <summary>Verifies duplicate keys are joined while an interleaved distinct key keeps its first-seen position.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Test]
     public Task InterleavedDuplicateKeysJoinInFirstSeenOrder() =>
         AssertMergeAsync(
@@ -51,6 +59,7 @@ public sealed class ReflectionExistingQueryMergeTests
 
     /// <summary>Verifies keys that differ only by case are treated as duplicates and joined under the first casing.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Test]
     public Task CaseDifferingKeysAreJoinedUnderFirstCasing() =>
         AssertMergeAsync(
@@ -59,6 +68,7 @@ public sealed class ReflectionExistingQueryMergeTests
 
     /// <summary>Verifies an absolute URL with no existing query still receives the appended parameter.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Test]
     public Task NoExistingQueryStillAppends() =>
         AssertMergeAsync(

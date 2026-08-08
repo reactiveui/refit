@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -251,6 +252,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="request">The request message to send.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized result, or default when there is no content.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",

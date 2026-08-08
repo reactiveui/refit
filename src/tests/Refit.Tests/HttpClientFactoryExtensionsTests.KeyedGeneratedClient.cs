@@ -191,11 +191,7 @@ public partial class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
         var builder = services.AddKeyedRefitGeneratedClient<IGeneratedSettingsFactoryApi>(
             GeneratedServiceKey,
-            new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => recordingHandler,
-                AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("generated-keyed-token")
-            });
+            new RefitSettings { HttpMessageHandlerFactory = () => recordingHandler, AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("generated-keyed-token"), });
         var serviceProvider = services.BuildServiceProvider();
         var client = serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(builder.Name);
         client.DefaultRequestHeaders.Authorization = new("Bearer", "placeholder");

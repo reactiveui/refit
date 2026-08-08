@@ -156,12 +156,7 @@ public class QueryObjectFlatteningTests
     [Test]
     public async Task CollectionPropertiesFlattenLikeReflection()
     {
-        var query = new CollectionPropertyQueryObject
-        {
-            Ids = [0, 1],
-            Tags = [QuerySort.DateDescending, QuerySort.Name],
-            Names = ["a", "b"]
-        };
+        var query = new CollectionPropertyQueryObject { Ids = [0, 1], Tags = [QuerySort.DateDescending, QuerySort.Name], Names = ["a", "b"], };
 
         await AssertParityAsync(
             "/coll?Ids=0%2C1&Tags=date-desc&Tags=Name&n=a%2Cb",
@@ -181,12 +176,7 @@ public class QueryObjectFlatteningTests
     public async Task CollectionPropertiesWithCustomFormatterMatchReflection()
     {
         var settings = new RefitSettings { UrlParameterFormatter = new BracketUrlParameterFormatter() };
-        var query = new CollectionPropertyQueryObject
-        {
-            Ids = [0, 1],
-            Tags = [QuerySort.Name],
-            Names = ["a"]
-        };
+        var query = new CollectionPropertyQueryObject { Ids = [0, 1], Tags = [QuerySort.Name], Names = ["a"], };
 
         var generated = await SendGeneratedAsync(settings, api => api.FlattenCollections(query));
         var reflected = await new RequestBuilderImplementation<IQueryObjectApi>(settings)
@@ -327,11 +317,7 @@ public class QueryObjectFlatteningTests
     [Test]
     public async Task DictionaryExpandsLikeReflection()
     {
-        IDictionary<string, string> query = new Dictionary<string, string>
-        {
-            ["key0"] = "a b",
-            ["key1"] = "two"
-        };
+        IDictionary<string, string> query = new Dictionary<string, string> { ["key0"] = "a b", ["key1"] = "two", };
 
         await AssertParityAsync(
             "/dict?key0=a%20b&key1=two",
@@ -348,11 +334,7 @@ public class QueryObjectFlatteningTests
     {
         const int firstValue = 10;
         const int secondValue = 20;
-        var query = new Dictionary<QuerySort, int>
-        {
-            [QuerySort.DateDescending] = firstValue,
-            [QuerySort.Name] = secondValue
-        };
+        var query = new Dictionary<QuerySort, int> { [QuerySort.DateDescending] = firstValue, [QuerySort.Name] = secondValue, };
 
         await AssertParityAsync(
             "/dict/enum?date-desc=10&Name=20",
@@ -382,11 +364,7 @@ public class QueryObjectFlatteningTests
     [Test]
     public async Task DictionaryOmitsNullValuedEntries()
     {
-        IDictionary<string, string> query = new Dictionary<string, string>
-        {
-            ["kept"] = "yes",
-            ["dropped"] = null!
-        };
+        IDictionary<string, string> query = new Dictionary<string, string> { ["kept"] = "yes", ["dropped"] = null!, };
 
         await AssertParityAsync(
             "/dict?kept=yes",
@@ -432,17 +410,7 @@ public class QueryObjectFlatteningTests
         const int number = 7;
         const double price = 5D;
 
-        return new()
-        {
-            Name = "ada",
-            Number = number,
-            Price = price,
-            Kept = null,
-            Skipped = null,
-            Sort = QuerySort.DateDescending,
-            Hidden = "hidden",
-            Secret = "secret"
-        };
+        return new() { Name = "ada", Number = number, Price = price, Kept = null, Skipped = null, Sort = QuerySort.DateDescending, Hidden = "hidden", Secret = "secret", };
     }
 
     /// <summary>Sends one request through the source-generated client and returns the relative URI it produced.</summary>

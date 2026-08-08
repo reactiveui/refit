@@ -11,8 +11,8 @@ public enum QuerySort
 {
     /// <summary>Newest first, renamed by <see cref="EnumMemberAttribute"/>.</summary>
     [EnumMember(Value = "date-desc")]
-    DateDescending,
+    DateDescending = 0,
 
     /// <summary>Alphabetical, rendered as the member name.</summary>
-    Name
+    Name = 1,
 }

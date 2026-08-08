@@ -69,10 +69,7 @@ internal static class HeaderValidationScenarios
     /// <returns>A task that represents the asynchronous operation.</returns>
     internal static async Task FallsBackToContentHeaderWithValidation(ApplyHeader applyHeader, string requestUri)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
-        {
-            Content = new StringContent("body")
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Post, requestUri) { Content = new StringContent("body"), };
 
         applyHeader(request, ContentHeaderName, ContentHeaderValue, validateHeaders: true);
 

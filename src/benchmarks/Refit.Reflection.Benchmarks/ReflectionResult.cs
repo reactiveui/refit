@@ -6,6 +6,7 @@ namespace Refit.Reflection.Benchmarks;
 
 /// <summary>A sample return-wrapper type surfaced by the return-type adapters under benchmark.</summary>
 /// <typeparam name="T">The wrapped result type.</typeparam>
+[System.Diagnostics.DebuggerDisplay("{Value}")]
 public sealed class ReflectionResult<T>
 {
     /// <summary>Gets or sets the wrapped value.</summary>

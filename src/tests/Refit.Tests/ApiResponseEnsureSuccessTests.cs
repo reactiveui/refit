@@ -38,9 +38,7 @@ public sealed class ApiResponseEnsureSuccessTests
         using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var okResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
         using var success = new ApiResponse<string>(okResponse, "body", new());
-
-        IApiResponse<string> okInterface = success;
-        await Assert.That(await okInterface.EnsureSuccessfulAsync()).IsSameReferenceAs(success);
+        await Assert.That(await success.EnsureSuccessfulAsync()).IsSameReferenceAs(success);
 
         using var badResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = request };
         var error = await ApiException.Create(request, HttpMethod.Get, badResponse, new());
@@ -90,9 +88,7 @@ public sealed class ApiResponseEnsureSuccessTests
         using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var okResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
         using var success = new ApiResponse<string>(okResponse, "body", new());
-
-        IApiResponse okInterface = success;
-        await Assert.That(await okInterface.EnsureSuccessStatusCodeAsync()).IsSameReferenceAs(success);
+        await Assert.That(await success.EnsureSuccessStatusCodeAsync()).IsSameReferenceAs(success);
 
         using var badResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = request };
         var error = await ApiException.Create(request, HttpMethod.Get, badResponse, new());
@@ -112,9 +108,7 @@ public sealed class ApiResponseEnsureSuccessTests
         using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var okResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
         using var success = new ApiResponse<string>(okResponse, "body", new());
-
-        IApiResponse okInterface = success;
-        await Assert.That(await okInterface.EnsureSuccessfulAsync()).IsSameReferenceAs(success);
+        await Assert.That(await success.EnsureSuccessfulAsync()).IsSameReferenceAs(success);
 
         // No response was received, so the captured error is an ApiRequestException (a transport failure).
         var requestError = new ApiRequestException("no response", request, HttpMethod.Get, new());

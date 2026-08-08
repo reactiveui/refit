@@ -96,13 +96,7 @@ public sealed partial class ResponseTests
     [Test]
     public async Task JsonPropertyCanBeUsedToAliasFieldNamesInResponses()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.Json("{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}")
-            },
-        };
+        var handler = new StubHttp { { Route.Get(AliasTestUrl), Reply.Json("{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}") }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var result = await fixture.GetTestObject();
@@ -118,13 +112,7 @@ public sealed partial class ResponseTests
     [Test]
     public async Task AliasAsCannotBeUsedToAliasFieldNamesInResponses()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.Json("{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}")
-            },
-        };
+        var handler = new StubHttp { { Route.Get(AliasTestUrl), Reply.Json("{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}") }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var result = await fixture.GetTestObject();
@@ -140,29 +128,16 @@ public sealed partial class ResponseTests
         var expectedContent = new ProblemDetails
         {
             Detail = DetailValue,
-            Errors =
-            {
-                { FieldOneKey, _field1Problems },
-                { FieldTwoKey, _field2Problems }
-            },
+            Errors = { { FieldOneKey, _field1Problems }, { FieldTwoKey, _field2Problems }, },
             Instance = InstanceValue,
             Status = 1,
             Title = TitleValue,
-            Type = "type"
+            Type = "type",
         };
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(JsonSerializer.Serialize(expectedContent))
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(JsonSerializer.Serialize(expectedContent)), };
         expectedResponse.Content.Headers.ContentType =
             new(ProblemJsonMediaType);
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
@@ -185,19 +160,10 @@ public sealed partial class ResponseTests
     public async Task ValidationApiExceptionPropagatesContentHeaders()
     {
         var expectedContent = new ProblemDetails { Detail = DetailValue, Title = TitleValue };
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(JsonSerializer.Serialize(expectedContent))
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(JsonSerializer.Serialize(expectedContent)), };
         expectedResponse.Content.Headers.ContentType = new(
             ProblemJsonMediaType);
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
@@ -218,20 +184,11 @@ public sealed partial class ResponseTests
     [Test]
     public async Task ValidationApiExceptionUsesConfiguredContentSerializer()
     {
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent("{\"Title\":\"mapped\",\"detail\":\"unmapped\"}")
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"Title\":\"mapped\",\"detail\":\"unmapped\"}"), };
         expectedResponse.Content.Headers.ContentType = new(
             ProblemJsonMediaType);
 
-        var localHandler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var localHandler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, };
         var localFixture = localHandler.CreateClient<IMyAliasService>(BaseAddress, new(
             new SystemTextJsonContentSerializer(_caseSensitiveSerializerOptions)));
 
@@ -250,31 +207,18 @@ public sealed partial class ResponseTests
         var expectedContent = new ProblemDetails
         {
             Detail = DetailValue,
-            Errors =
-            {
-                { FieldOneKey, _field1Problems },
-                { FieldTwoKey, _field2Problems }
-            },
+            Errors = { { FieldOneKey, _field1Problems }, { FieldTwoKey, _field2Problems }, },
             Instance = InstanceValue,
             Status = 1,
             Title = TitleValue,
-            Type = "type"
+            Type = "type",
         };
 
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(JsonSerializer.Serialize(expectedContent))
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(JsonSerializer.Serialize(expectedContent)), };
 
         expectedResponse.Content.Headers.ContentType =
             new(ProblemJsonMediaType);
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(GetApiResponseTestObjectUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(GetApiResponseTestObjectUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         using var response = await fixture.GetApiResponseTestObject();
@@ -304,24 +248,11 @@ public sealed partial class ResponseTests
             Foo: "bar",
             Baz: 123.5D);
 
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(JsonSerializer.Serialize(expectedContent))
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(JsonSerializer.Serialize(expectedContent)), };
 
         expectedResponse.Content.Headers.ContentType =
             new(ProblemJsonMediaType);
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-            {
-                Route.Get("http://api/soloyolo"),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, { Route.Get("http://api/soloyolo"), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
@@ -345,11 +276,7 @@ public sealed partial class ResponseTests
     [Test]
     public async Task WithNonSeekableStream_UsingSystemTextJsonContentSerializer()
     {
-        var model = new TestAliasObject
-        {
-            ShortNameForAlias = nameof(WithNonSeekableStream_UsingSystemTextJsonContentSerializer),
-            ShortNameForJsonProperty = nameof(TestAliasObject)
-        };
+        var model = new TestAliasObject { ShortNameForAlias = nameof(WithNonSeekableStream_UsingSystemTextJsonContentSerializer), ShortNameForJsonProperty = nameof(TestAliasObject), };
 
         using var utf8BufferWriter = new PooledBufferWriter();
 
@@ -367,29 +294,14 @@ public sealed partial class ResponseTests
 
         contentStream.CanGetLength = false;
 
-        var httpContent = new StreamContent(contentStream)
-        {
-            Headers =
-            {
-                ContentType = new(JsonMediaType)
-                {
-                    CharSet = Encoding.UTF8.WebName
-                }
-            }
-        };
+        var httpContent = new StreamContent(contentStream) { Headers = { ContentType = new(JsonMediaType) { CharSet = Encoding.UTF8.WebName, }, }, };
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
         expectedResponse.Content.Headers.ContentType = new(JsonMediaType);
         expectedResponse.StatusCode = HttpStatusCode.OK;
 
-        var localHandler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var localHandler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, };
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var localFixture = RestService.For<IMyAliasService>(BaseAddress, localHandler.ToSettings(settings));
@@ -424,13 +336,7 @@ public sealed partial class ResponseTests
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
-        var localHandler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var localHandler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, };
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var localFixture = RestService.For<IMyAliasService>(BaseAddress, localHandler.ToSettings(settings));
@@ -462,13 +368,7 @@ public sealed partial class ResponseTests
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
-        var localHandler = new StubHttp
-        {
-            {
-                Route.Get("http://api/xmlTest"),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var localHandler = new StubHttp { { Route.Get("http://api/xmlTest"), Reply.From(req => expectedResponse) }, };
         var settings = new RefitSettings(new XmlContentSerializer());
 
         var localFixture = RestService.For<IXmlResponseService>(BaseAddress, localHandler.ToSettings(settings));
@@ -484,28 +384,12 @@ public sealed partial class ResponseTests
     [Test]
     public async Task ValidationApiException_HydratesBaseContent()
     {
-        var expectedProblemDetails = new ProblemDetails
-        {
-            Detail = DetailValue,
-            Instance = InstanceValue,
-            Status = 1,
-            Title = TitleValue,
-            Type = "type"
-        };
+        var expectedProblemDetails = new ProblemDetails { Detail = DetailValue, Instance = InstanceValue, Status = 1, Title = TitleValue, Type = "type", };
         var expectedContent = JsonSerializer.Serialize(expectedProblemDetails);
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
-        {
-            Content = new StringContent(expectedContent)
-        };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent(expectedContent), };
         expectedResponse.Content.Headers.ContentType = new(
             ProblemJsonMediaType);
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(AliasTestUrl),
-                Reply.From(req => expectedResponse)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(AliasTestUrl), Reply.From(req => expectedResponse) }, };
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ValidationApiException>();

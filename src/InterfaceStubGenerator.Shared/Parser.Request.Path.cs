@@ -299,10 +299,7 @@ internal static partial class Parser
             string.Empty,
             string.Empty,
             string.Empty,
-            BodyBufferMode.None)
-        {
-            PathObjectBindings = bindings,
-        };
+            BodyBufferMode.None) { PathObjectBindings = bindings, };
 
     /// <summary>Determines whether a placeholder name already appeared before a given index (case-insensitively).</summary>
     /// <param name="occurrences">The placeholder occurrences in template order.</param>

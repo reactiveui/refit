@@ -4,6 +4,7 @@
 namespace Refit.Benchmarks;
 
 /// <summary>A small payload item used by the fast-path serialization benchmark.</summary>
+[System.Diagnostics.DebuggerDisplay("{Id}")]
 public sealed class FastItem
 {
     /// <summary>Gets or sets the item identifier.</summary>

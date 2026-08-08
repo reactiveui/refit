@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -8,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Refit.Benchmarks;
 
 /// <summary>Benchmarks measuring the source generator throughput for cold and cached runs.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 public class SourceGeneratorBenchmark
 {
@@ -25,6 +27,7 @@ public class SourceGeneratorBenchmark
 
     /// <summary>Runs the generator against the small interface from a cold state.</summary>
     /// <returns>The resulting generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver Compile() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
 
@@ -36,6 +39,7 @@ public class SourceGeneratorBenchmark
 
     /// <summary>Runs the generator against the small interface from a primed cached state.</summary>
     /// <returns>The resulting generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver Cached() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
 
@@ -47,6 +51,7 @@ public class SourceGeneratorBenchmark
 
     /// <summary>Runs the generator against many interfaces from a cold state.</summary>
     /// <returns>The resulting generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver CompileMany() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
 
@@ -58,6 +63,7 @@ public class SourceGeneratorBenchmark
 
     /// <summary>Runs the generator against many interfaces from a primed cached state.</summary>
     /// <returns>The resulting generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver CachedMany() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
 
@@ -69,6 +75,7 @@ public class SourceGeneratorBenchmark
 
     /// <summary>Benchmarks a cold generator run over the query-heavy interface.</summary>
     /// <returns>The updated generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver CompileQueryHeavy() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
 
@@ -80,6 +87,7 @@ public class SourceGeneratorBenchmark
 
     /// <summary>Benchmarks a cached generator run over the query-heavy interface.</summary>
     /// <returns>The updated generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver CachedQueryHeavy() => _driver.RunGeneratorsAndUpdateCompilation(_compilation, out _, out _);
 }

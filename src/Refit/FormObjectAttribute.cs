@@ -37,5 +37,6 @@ namespace Refit;
 /// </code>
 /// Each public property of <c>SetupModel</c> is sent as its own form field alongside the <c>recipe</c> file part.
 /// </example>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class FormObjectAttribute : Attribute;

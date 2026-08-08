@@ -34,6 +34,7 @@ public static class Issue2056And2058Demo
     /// <summary>Validates that per-request customer id headers are not shared across concurrent requests.</summary>
     /// <param name="api">The demo API client.</param>
     /// <returns>A task that completes when the validation has finished.</returns>
+    /// <exception cref="InvalidOperationException">Any concurrent response echoed a customer id header that does not match the one its request sent.</exception>
     private static async Task ValidateIssue2056Async(IIssueDemoApi api)
     {
         const int firstCustomerId = 1000;
@@ -42,8 +43,7 @@ public static class Issue2056And2058Demo
         var requests = new Task<(int Expected, string? Actual)>[customerCount];
         for (var i = 0; i < requests.Length; i++)
         {
-            var customerId = firstCustomerId + i;
-            requests[i] = EchoCustomerAsync(api, customerId);
+            requests[i] = EchoCustomerAsync(api, firstCustomerId + i);
         }
 
         var responses = await Task.WhenAll(requests).ConfigureAwait(false);
@@ -78,6 +78,7 @@ public static class Issue2056And2058Demo
     /// <summary>Validates that a large async-only payload is fully read and deserialized.</summary>
     /// <param name="api">The demo API client.</param>
     /// <returns>A task that completes when the validation has finished.</returns>
+    /// <exception cref="InvalidOperationException">The deserialized payload does not contain every item the request asked for.</exception>
     private static async Task ValidateIssue2058Async(IIssueDemoApi api)
     {
         var payload = await api.GetLargePayloadAsync(LargePayloadItemCount).ConfigureAwait(false);

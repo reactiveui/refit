@@ -21,10 +21,10 @@ public partial class DefaultUrlParameterFormatterTests
         None = 0,
 
         /// <summary>The first flag.</summary>
-        First = 1,
+        First = 1 << 0,
 
         /// <summary>The second flag.</summary>
-        Second = 2
+        Second = 1 << 1,
     }
 
     /// <summary>Verifies a null parameter value formats to null.</summary>
@@ -32,10 +32,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task NullParameterValue_ReturnsNull()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTime = null
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTime = null, };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
 
@@ -52,10 +49,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task NoFormatters_UseDefaultFormat()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
 
@@ -72,10 +66,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task QueryAttributeFormatOnly_UseQueryAttributeFormat()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
 
@@ -92,10 +83,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task QueryAttributeAndGeneralFormat_UseQueryAttributeFormat()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DateTime>(GeneralDateFormat);
@@ -113,10 +101,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task QueryAttributeAndSpecificFormat_UseQueryAttributeFormat()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>(GeneralDateFormat);
@@ -134,10 +119,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task AllFormats_UseQueryAttributeFormat()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DateTime>(GeneralDateFormat);
@@ -156,10 +138,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task GeneralFormatOnly_UseGeneralFormat()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DateTime>("yyyy");
@@ -177,10 +156,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task SpecificFormatOnly_UseSpecificFormat()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>("yyyy");
@@ -198,10 +174,7 @@ public partial class DefaultUrlParameterFormatterTests
     [Test]
     public async Task GeneralAndSpecificFormats_UseSpecificFormat()
     {
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DateTime>(GeneralDateFormat);
@@ -228,10 +201,7 @@ public partial class DefaultUrlParameterFormatterTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
-        var parameters = new DefaultUrlParameterFormatterTestRequest
-        {
-            DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified),
-        };
+        var parameters = new DefaultUrlParameterFormatterTestRequest { DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), };
 
         var output = await factory([parameters]);
         var uri = new Uri(new(BaseUrl), output.RequestUri!);
@@ -285,11 +255,7 @@ public partial class DefaultUrlParameterFormatterTests
         const int secondEntryKey = 2;
         var parameters = new DefaultUrlParameterFormatterTestRequest
         {
-            DateTimeDictionary = new Dictionary<int, DateTime>
-            {
-                { 1, new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
-                { secondEntryKey, new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
-            },
+            DateTimeDictionary = new Dictionary<int, DateTime> { { 1, new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) }, { secondEntryKey, new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) }, },
         };
 
         var output = await factory([parameters]);

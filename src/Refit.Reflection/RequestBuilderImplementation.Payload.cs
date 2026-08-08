@@ -327,6 +327,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="fileName">The file name used in the error message.</param>
     /// <param name="parameterName">The form field name for the part.</param>
     /// <param name="itemValue">The value to serialize and add.</param>
+    /// <exception cref="ArgumentException">The content serializer cannot turn <paramref name="itemValue"/> into multipart content.</exception>
     internal void AddSerializedMultipartItem(
         MultipartFormDataContent multiPartContent,
         string fileName,

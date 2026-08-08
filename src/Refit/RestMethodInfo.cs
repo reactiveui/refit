@@ -12,6 +12,7 @@ namespace Refit;
 /// <param name="MethodInfo">The reflected method information.</param>
 /// <param name="RelativePath">The relative URL path template for the method.</param>
 /// <param name="ReturnType">The declared return type of the method.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed record RestMethodInfo(
     string Name,
     Type HostingType,

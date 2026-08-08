@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 namespace Meow.Responses;
 
 /// <summary>Describes a cat breed.</summary>
+[System.Diagnostics.DebuggerDisplay("{Weight}")]
 public class Breed
 {
     /// <summary>Gets or sets the weight of the breed.</summary>

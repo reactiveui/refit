@@ -2,12 +2,14 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Refit.Analyzers;
 
 /// <summary>Analyzes Refit interface contracts independently of the source generation path.</summary>
+[System.Diagnostics.DebuggerDisplay("{SupportedDiagnostics}")]
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
 {
@@ -506,6 +508,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <param name="method">The Refit method.</param>
     /// <param name="parameter">The parameter to locate the diagnostic at.</param>
     /// <returns>The diagnostic.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Diagnostic MethodShapeDiagnostic(DiagnosticDescriptor descriptor, IMethodSymbol method, IParameterSymbol parameter) =>
         Diagnostic.Create(descriptor, FirstLocation(parameter), method.ContainingType.Name, method.Name);
 
@@ -571,15 +574,17 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
 
         foreach (var parameter in method.Parameters)
         {
-            if (HasBodyAttribute(parameter))
+            if (!HasBodyAttribute(parameter))
             {
-                reportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.MultipartBodyParameter,
-                    FirstLocation(parameter),
-                    method.ContainingType.Name,
-                    method.Name));
-                return;
+                continue;
             }
+
+            reportDiagnostic(Diagnostic.Create(
+                DiagnosticDescriptors.MultipartBodyParameter,
+                FirstLocation(parameter),
+                method.ContainingType.Name,
+                method.Name));
+            return;
         }
     }
 
@@ -609,6 +614,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <summary>Gets the first source location for a symbol.</summary>
     /// <param name="symbol">The symbol.</param>
     /// <returns>The first available location, or <see langword="null"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Location? FirstLocation(ISymbol symbol) =>
         symbol.Locations.FirstOrDefault();
 

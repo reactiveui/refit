@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 
@@ -19,6 +20,7 @@ internal static partial class Parser
     /// <summary>Resolves the <c>Refit.IReturnTypeAdapter`2</c> interface symbol, or null when Refit is unavailable.</summary>
     /// <param name="compilation">The compilation to resolve against.</param>
     /// <returns>The interface symbol, or <see langword="null"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static INamedTypeSymbol? ResolveReturnTypeAdapterInterface(Compilation compilation) =>
         compilation.GetTypeByMetadataName(ReturnTypeAdapterMetadataName);
 
@@ -124,12 +126,14 @@ internal static partial class Parser
             }
 
             var implemented = FindConstructedAdapterInterface(closed, namedReturn, adapterInterface);
-            if (implemented is not null)
+            if (implemented is null)
             {
-                closedAdapter = closed;
-                resultType = implemented.TypeArguments[1];
-                return true;
+                continue;
             }
+
+            closedAdapter = closed;
+            resultType = implemented.TypeArguments[1];
+            return true;
         }
 
         return false;

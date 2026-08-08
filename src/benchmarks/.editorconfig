@@ -11,3 +11,12 @@ dotnet_diagnostic.CA1063.severity = none # Implement IDisposable correctly
 dotnet_diagnostic.CA1065.severity = none # Do not raise exceptions in unexpected locations
 dotnet_diagnostic.CA1812.severity = none # Avoid uninstantiated internal classes (benchmark DTOs)
 dotnet_diagnostic.CA2213.severity = none # Disposable fields should be disposed
+
+###################
+# StyleSharp (SST) — relaxed for benchmark projects
+###################
+# A BenchmarkDotNet method measures one call against the state its own [GlobalSetup(Target = ...)]
+# prepared, so several methods sharing an identical body is the design rather than a copy that was
+# meant to differ. The rule's remedy - have one call another - puts an extra frame inside the
+# measured region and shifts the numbers the benchmark exists to report.
+dotnet_diagnostic.SST2318.severity = none # A method has the same body as another method

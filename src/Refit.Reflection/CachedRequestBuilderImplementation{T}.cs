@@ -12,7 +12,7 @@ internal class CachedRequestBuilderImplementation<T>
 {
     /// <summary>Initializes a new instance of the <see cref="CachedRequestBuilderImplementation{T}"/> class.</summary>
     /// <param name="innerBuilder">The typed request builder whose results are cached.</param>
-    public CachedRequestBuilderImplementation(IRequestBuilder<T> innerBuilder)
+    internal CachedRequestBuilderImplementation(IRequestBuilder<T> innerBuilder)
         : base(innerBuilder)
     {
     }

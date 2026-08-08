@@ -94,10 +94,10 @@ public partial class SerializedContentTests
     {
         /// <summary>The ready status, serialized as "totally-ready".</summary>
         [JsonStringEnumMemberName("totally-ready")]
-        TotallyReady,
+        TotallyReady = 0,
 
         /// <summary>The needs-review status.</summary>
-        NeedsReview
+        NeedsReview = 1,
     }
 
     /// <summary>Color enum used to verify JsonStringEnumMemberName handling with an attributed converter.</summary>
@@ -106,11 +106,11 @@ public partial class SerializedContentTests
     {
         /// <summary>The green color, serialized as "GREEN".</summary>
         [JsonStringEnumMemberName("GREEN")]
-        Green,
+        Green = 0,
 
         /// <summary>The red color, serialized as "RED".</summary>
         [JsonStringEnumMemberName("RED")]
-        Red
+        Red = 1,
     }
 #endif
 
@@ -120,8 +120,8 @@ public partial class SerializedContentTests
         /// <summary>The first value, serialized as "valueOne".</summary>
         ValueOne = 1,
 
-        /// <summary>An already-lowercase value, serialized unchanged as "alreadyLowercase".</summary>
-        alreadyLowercase = 2
+        /// <summary>A value serialized as "alreadyLowercase".</summary>
+        AlreadyLowercase = 2,
     }
 
     /// <summary>Enum with an unsigned backing type used to verify large numeric values.</summary>
@@ -131,7 +131,7 @@ public partial class SerializedContentTests
         Small = 1,
 
         /// <summary>The maximum unsigned value, serialized as "large".</summary>
-        Large = ulong.MaxValue
+        Large = ulong.MaxValue,
     }
 
     /// <summary>
@@ -218,6 +218,7 @@ public partial class SerializedContentTests
     /// <summary>Verifies that a request requiring a serialized body completes without deadlocking.</summary>
     /// <param name="contentSerializerType">The content serializer implementation under test.</param>
     /// <returns>A task that represents the asynchronous test operation.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(SystemTextJsonContentSerializer))]
     [Arguments(typeof(XmlContentSerializer))]
@@ -230,11 +231,7 @@ public partial class SerializedContentTests
                 $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
         }
 
-        var handler = new MockPushStreamContentHttpMessageHandler
-        {
-            Asserts = static async content =>
-                new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
-        };
+        var handler = new MockPushStreamContentHttpMessageHandler { Asserts = static async content => new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false)), };
 
         var settings = new RefitSettings(serializer) { HttpMessageHandlerFactory = () => handler };
 
@@ -249,6 +246,7 @@ public partial class SerializedContentTests
     /// <summary>Verifies that a request body is serialized and round-trips back to the original model.</summary>
     /// <param name="contentSerializerType">The content serializer implementation under test.</param>
     /// <returns>A task that represents the asynchronous test operation.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(SystemTextJsonContentSerializer))]
     [Arguments(typeof(XmlContentSerializer))]
@@ -261,12 +259,7 @@ public partial class SerializedContentTests
                 $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
         }
 
-        var model = new User
-        {
-            Name = "Wile E. Coyote",
-            CreatedAt = new DateOnly(SampleCreatedYear, SampleCreatedMonth, SampleCreatedDay).ToString(),
-            Company = "ACME",
-        };
+        var model = new User { Name = "Wile E. Coyote", CreatedAt = new DateOnly(SampleCreatedYear, SampleCreatedMonth, SampleCreatedDay).ToString(), Company = "ACME", };
 
         var handler = new MockPushStreamContentHttpMessageHandler
         {
@@ -284,7 +277,7 @@ public partial class SerializedContentTests
 
                 // Returns some content so that the serializer does not complain.
                 return stringContent;
-            }
+            },
         };
 
         var settings = new RefitSettings(serializer) { HttpMessageHandlerFactory = () => handler };
@@ -313,11 +306,7 @@ public partial class SerializedContentTests
     [Test]
     public async Task StreamDeserialization_UsingSystemTextJsonContentSerializer()
     {
-        var model = new TestAliasObject
-        {
-            ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
-            ShortNameForJsonProperty = nameof(TestAliasObject)
-        };
+        var model = new TestAliasObject { ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer), ShortNameForJsonProperty = nameof(TestAliasObject), };
 
         var serializer = new SystemTextJsonContentSerializer();
 
@@ -335,11 +324,7 @@ public partial class SerializedContentTests
     [Test]
     public async Task StreamDeserialization_UsingSystemTextJsonContentSerializer_SetsCorrectHeaders()
     {
-        var model = new TestAliasObject
-        {
-            ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
-            ShortNameForJsonProperty = nameof(TestAliasObject)
-        };
+        var model = new TestAliasObject { ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer), ShortNameForJsonProperty = nameof(TestAliasObject), };
 
         var serializer = new SystemTextJsonContentSerializer();
 
@@ -398,10 +383,7 @@ public partial class SerializedContentTests
         var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
         var settings = new RefitSettings(
             new SystemTextJsonContentSerializer(
-                new(JsonSerializerDefaults.Web)
-                {
-                    TypeInfoResolver = resolver
-                }))
+                new(JsonSerializerDefaults.Web) { TypeInfoResolver = resolver, }))
         {
             HttpMessageHandlerFactory = static () => new StubHttpMessageHandler(
                 static _ => Task.FromResult(
@@ -410,8 +392,8 @@ public partial class SerializedContentTests
                         Content = new StringContent(
                             "{\"name\":\"Road Runner\",\"company\":\"ACME\",\"createdAt\":\"1949-09-17\"}",
                             Encoding.UTF8,
-                            JsonMediaType)
-                    }))
+                            JsonMediaType),
+                    })),
         };
 
         var api = RestService.For<IGitHubApi>(BaseAddress, settings);
@@ -436,11 +418,8 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
-                };
-            })
+                return new(HttpStatusCode.OK) { Content = new StringContent("{}", Encoding.UTF8, JsonMediaType), };
+            }),
         };
 
         var api = RestService.For<IPolymorphicRequestApi>(BaseAddress, settings);
@@ -466,30 +445,17 @@ public partial class SerializedContentTests
                     return;
                 }
 
-                typeInfo.PolymorphismOptions = new()
-                {
-                    TypeDiscriminatorPropertyName = "$type",
-                    DerivedTypes =
-                    {
-                        new(typeof(ResolverLaserWeaponRequest), "laser")
-                    }
-                };
+                typeInfo.PolymorphismOptions = new() { TypeDiscriminatorPropertyName = "$type", DerivedTypes = { new(typeof(ResolverLaserWeaponRequest), "laser"), }, };
             });
         var settings = new RefitSettings(
             new SystemTextJsonContentSerializer(
-                new(JsonSerializerDefaults.Web)
-                {
-                    TypeInfoResolver = resolver
-                }))
+                new(JsonSerializerDefaults.Web) { TypeInfoResolver = resolver, }))
         {
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
-                };
-            })
+                return new(HttpStatusCode.OK) { Content = new StringContent("{}", Encoding.UTF8, JsonMediaType), };
+            }),
         };
 
         var api = RestService.For<IResolverPolymorphicRequestApi>(BaseAddress, settings);
@@ -511,11 +477,8 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
-                };
-            })
+                return new(HttpStatusCode.OK) { Content = new StringContent("{}", Encoding.UTF8, JsonMediaType), };
+            }),
         };
 
         var api = RestService.For<IInterfaceRequestApi>(BaseAddress, settings);
@@ -537,11 +500,8 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
-                };
-            })
+                return new(HttpStatusCode.OK) { Content = new StringContent("{}", Encoding.UTF8, JsonMediaType), };
+            }),
         };
 
         var api = RestService.For<IInterfaceRequestApi>(BaseAddress, settings);
@@ -562,11 +522,8 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
-                };
-            })
+                return new(HttpStatusCode.OK) { Content = new StringContent("{}", Encoding.UTF8, JsonMediaType), };
+            }),
         };
 
         var api = RestService.For<IAbstractRequestApi>(BaseAddress, settings);
@@ -737,8 +694,7 @@ public partial class SerializedContentTests
 
     /// <summary>HTTP handler that delegates response production to a supplied responder delegate.</summary>
     /// <param name="responder">The delegate that produces a response for each request.</param>
-    private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> responder)
-        : HttpMessageHandler
+    private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> responder) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,

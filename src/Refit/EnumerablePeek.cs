@@ -8,11 +8,11 @@ namespace Refit;
 internal enum EnumerablePeek
 {
     /// <summary>The sequence contained no elements.</summary>
-    Empty,
+    Empty = 0,
 
     /// <summary>The sequence contained exactly one element.</summary>
-    Single,
+    Single = 1,
 
     /// <summary>The sequence contained more than one element.</summary>
-    Many
+    Many = 2,
 }

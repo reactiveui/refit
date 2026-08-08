@@ -126,11 +126,7 @@ public sealed class SystemTextJsonQueryConverterTests
     /// <param name="resolver">The type-info resolver to use.</param>
     /// <returns>The configured settings.</returns>
     private static RefitSettings SettingsFor(IJsonTypeInfoResolver resolver) =>
-        new()
-        {
-            ContentSerializer = new SystemTextJsonContentSerializer(
-                new JsonSerializerOptions { TypeInfoResolver = resolver })
-        };
+        new() { ContentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions { TypeInfoResolver = resolver }), };
 
     /// <summary>Builds a self-referential chain whose deepest node carries a leaf value.</summary>
     /// <param name="depth">The number of nested nodes to create.</param>

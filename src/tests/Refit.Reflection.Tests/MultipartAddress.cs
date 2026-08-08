@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Tests;
 
 /// <summary>An address flattened into individual multipart form-data parts by a <see cref="FormObjectAttribute"/> parameter.</summary>
+[System.Diagnostics.DebuggerDisplay("{City}")]
 public sealed class MultipartAddress
 {
     /// <summary>Gets or sets the city, emitted as its own form-data part.</summary>

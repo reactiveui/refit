@@ -7,32 +7,32 @@ namespace Refit.Generator;
 internal enum RequestParameterKind
 {
     /// <summary>The parameter is not yet supported by generated request construction.</summary>
-    Unsupported,
+    Unsupported = 0,
 
     /// <summary>The parameter supplies the request body.</summary>
-    Body,
+    Body = 1,
 
     /// <summary>The parameter supplies one dynamic request header.</summary>
-    Header,
+    Header = 2,
 
     /// <summary>The parameter supplies a collection of dynamic request headers.</summary>
-    HeaderCollection,
+    HeaderCollection = 3,
 
     /// <summary>The parameter supplies one request property/option value.</summary>
-    Property,
+    Property = 4,
 
     /// <summary>The parameter supplies the request cancellation token.</summary>
-    CancellationToken,
+    CancellationToken = 5,
 
     /// <summary>The parameter supplies a value for a placeholder in the path.</summary>
-    Path,
+    Path = 6,
 
     /// <summary>The parameter supplies the complete absolute request URI, bypassing the client base address.</summary>
-    Url,
+    Url = 7,
 
     /// <summary>The parameter supplies one or more query string values or flags.</summary>
-    Query,
+    Query = 8,
 
     /// <summary>The parameter supplies one (or, for an enumerable, each) part of a multipart form body.</summary>
-    MultipartPart
+    MultipartPart = 9,
 }

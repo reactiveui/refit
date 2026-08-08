@@ -14,6 +14,7 @@ namespace Refit;
 /// the call. A value that is not positive is ignored, leaving the request without a per-call deadline.
 /// </remarks>
 /// <param name="milliseconds">The timeout, in milliseconds. Must be positive to take effect.</param>
+[System.Diagnostics.DebuggerDisplay("{Milliseconds}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class TimeoutAttribute(int milliseconds) : Attribute
 {

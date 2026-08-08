@@ -3,12 +3,14 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
 /// <summary>Provides the attributes declared on a parameter, keyed by attribute type. Use
 /// <see cref="GeneratedSingleTypeParameterAttributeProvider"/> instead when every attribute has the same type.</summary>
 /// <param name="attributes">The attribute information.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[]> attributes) : ICustomAttributeProvider
 {
     /// <summary>A shared provider for parameters that declare no attributes, avoiding a per-parameter empty dictionary.</summary>
@@ -38,6 +40,7 @@ public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[
     }
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsDefined(Type attributeType, bool inherit) => attributes.ContainsKey(attributeType);
 
     /// <summary>Flattens the per-type attribute arrays into a single array without nested iteration.</summary>

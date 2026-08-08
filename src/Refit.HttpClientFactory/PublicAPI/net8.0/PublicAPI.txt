@@ -105,6 +105,7 @@ public interface ISettingsFor
 {
     Refit.RefitSettings? Settings { get; }
 }
+[System.Diagnostics.DebuggerDisplay("{Settings}")]
 public class SettingsFor<T> : Refit.ISettingsFor
 {
     public SettingsFor(Refit.RefitSettings? settings) { }

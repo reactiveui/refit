@@ -7,8 +7,8 @@ namespace Refit.Tests;
 public enum AnEnum
 {
     /// <summary>The first enumeration value.</summary>
-    Val1,
+    Val1 = 0,
 
     /// <summary>The second enumeration value.</summary>
-    Val2,
+    Val2 = 1,
 }

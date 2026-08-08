@@ -10,6 +10,7 @@ using BenchmarkDotNet.Diagnosers;
 namespace Refit.Benchmarks;
 
 /// <summary>EventPipe CPU-sampling profile of Refit streaming, to show whether time is spent in Refit or in System.Text.Json.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]
@@ -40,10 +41,7 @@ public class StreamingProfiledBenchmarks
 
         _service = RestService.For<IStreamingService>(
             Host,
-            new(new SystemTextJsonContentSerializer(options))
-            {
-                HttpMessageHandlerFactory = () => new StaticValueHttpResponseHandler(payload, HttpStatusCode.OK),
-            });
+            new(new SystemTextJsonContentSerializer(options)) { HttpMessageHandlerFactory = () => new StaticValueHttpResponseHandler(payload, HttpStatusCode.OK), });
     }
 
     /// <summary>Streams and counts the response through Refit's IAsyncEnumerable support.</summary>

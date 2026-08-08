@@ -18,7 +18,7 @@ public partial class GeneratedRequestRunnerTests
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     [InstanceMethodDataSource(typeof(GeneratedRequestRunnerTestsDataSources), nameof(GeneratedRequestRunnerTestsDataSources.BuildRequestPathReplacesParametersData))]
-    public async Task BuildRequestPathReplacesParameters(string expectedResult, string path, bool allowUnmatchedRouteParameters, params ((int start, int end) location, string? value)[] uriParams)
+    public async Task BuildRequestPathReplacesParameters(string expectedResult, string path, bool allowUnmatchedRouteParameters, params ((int Start, int End) Location, string? Value)[] uriParams)
     {
         var result = GeneratedRequestRunner.BuildRequestPath(path, allowUnmatchedRouteParameters, uriParams);
 
@@ -32,7 +32,7 @@ public partial class GeneratedRequestRunnerTests
         await Assert
             .That(static () =>
             {
-                ((int startIdx, int endIdx) range, string? value)[] uriParams = [];
+                ((int StartIdx, int EndIdx) Range, string? Value)[] uriParams = [];
                 _ = GeneratedRequestRunner.BuildRequestPath("/user/{id}", false, uriParams);
             })
             .Throws<ArgumentException>()
@@ -110,7 +110,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRequestPathReturnsTemplateForEmptyPreEncodedParameters()
     {
-        ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams = [];
+        ((int StartIdx, int EndIdx) Range, string? Value, bool PreEncoded)[] uriParams = [];
 
         var result = GeneratedRequestRunner.BuildRequestPath("/plain", true, uriParams);
 
@@ -128,7 +128,7 @@ public partial class GeneratedRequestRunnerTests
         const int firstEnd = 6;
         const int secondStart = 7;
         const int secondEnd = 10;
-        ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams =
+        ((int StartIdx, int EndIdx) Range, string? Value, bool PreEncoded)[] uriParams =
         [
             ((firstStart, firstEnd), "a b", false),
             ((secondStart, secondEnd), "c d", true)
@@ -147,7 +147,7 @@ public partial class GeneratedRequestRunnerTests
         // "/a/{v?}" places {v?} at [3, 7); a null pre-encoded value drops the segment and the '/' in front of it.
         const int start = 3;
         const int end = 7;
-        ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams = [((start, end), null, true)];
+        ((int StartIdx, int EndIdx) Range, string? Value, bool PreEncoded)[] uriParams = [((start, end), null, true)];
 
         var result = GeneratedRequestRunner.BuildRequestPath("/a/{v?}", false, uriParams);
 
@@ -163,7 +163,7 @@ public partial class GeneratedRequestRunnerTests
         // The placeholder occupies template[0..1); an end offset below the "?}" marker length cannot be an optional
         // segment, so the null value drops the placeholder text without probing the template for a marker or trimming
         // a preceding slash - and never reads before index 0.
-        ((int startIdx, int endIdx) range, string? value)[] uriParams = [((0, 1), null)];
+        ((int StartIdx, int EndIdx) Range, string? Value)[] uriParams = [((0, 1), null)];
 
         var result = GeneratedRequestRunner.BuildRequestPath("1rest", true, uriParams);
 
@@ -175,10 +175,11 @@ public partial class GeneratedRequestRunnerTests
     {
         /// <summary>Data source for the <see cref="BuildRequestPathReplacesParameters"/> test.</summary>
         /// <returns>Test data.</returns>
-        internal static
-            IEnumerable<TestDataRow<(string expectedResult, string path, bool allowUnmatchedRouteParameters, ((int start, int end) location
-                ,
-                string? value)[] uriParams)>> BuildRequestPathReplacesParametersData()
+        internal static IEnumerable<TestDataRow<(
+            string ExpectedResult,
+            string Path,
+            bool AllowUnmatchedRouteParameters,
+            ((int Start, int End) Location, string? Value)[] UriParams)>> BuildRequestPathReplacesParametersData()
         {
             const string usersId = "/users/{id}";
             const string usersIdOrders = "/users/{id}/orders";
@@ -218,9 +219,9 @@ public partial class GeneratedRequestRunnerTests
         /// <param name="template">The templated path.</param>
         /// <param name="values">The value for each placeholder, in order.</param>
         /// <returns>The located parameters paired with their values.</returns>
-        private static ((int start, int end) location, string? value)[] Bind(string template, params string?[] values)
+        private static ((int Start, int End) Location, string? Value)[] Bind(string template, params string?[] values)
         {
-            var located = new List<((int start, int end) location, string? value)>();
+            var located = new List<((int Start, int End) Location, string? Value)>();
             var search = 0;
             var index = 0;
             int open;

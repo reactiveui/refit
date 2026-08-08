@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
 
@@ -352,6 +353,7 @@ internal static partial class Emitter
     /// <summary>Appends the return statement for a <c>Task&lt;HttpRequestMessage&gt;</c> method that returns the built request.</summary>
     /// <param name="builder">The buffer accumulating the interface's generated method source.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void AppendInlineRequestMessageReturn(PooledStringBuilder builder, string requestLocal) =>
         builder.Append(Indent(MethodBodyIndentation))
             .Append("return global::System.Threading.Tasks.Task.FromResult(").Append(requestLocal).AppendLine(");");
@@ -416,6 +418,7 @@ internal static partial class Emitter
     /// <param name="bodyIndent">The method-body indentation.</param>
     /// <remarks>The adapter receives a deferred send: the request is built eagerly and captured, so the deferred call is
     /// single-use (a second invocation would send a disposed request).</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void AppendInlineAdapterReturn(
         PooledStringBuilder builder,
         in RequestModel request,
@@ -542,6 +545,7 @@ internal static partial class Emitter
     /// <param name="nameExpression">The header-name expression.</param>
     /// <param name="valueExpression">The header-value expression.</param>
     /// <param name="settingsLocal">The generated settings local name, read for the header validation flag.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void AppendSetHeader(
         PooledStringBuilder sb,
         string bodyIndent,
@@ -646,13 +650,14 @@ internal static partial class Emitter
     /// <summary>Builds the body serialization enum expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter.</param>
     /// <returns>The serialization method expression.</returns>
-    internal static string BuildBodySerializationMethodExpression(in RequestParameterModel bodyParameter)
-    {
-        var serializationMethod = bodyParameter.BodySerializationMethod == "Json"
-            ? "Serialized"
-            : bodyParameter.BodySerializationMethod;
-        return $"global::Refit.BodySerializationMethod.{serializationMethod}";
-    }
+    internal static string BuildBodySerializationMethodExpression(in RequestParameterModel bodyParameter) =>
+        $"global::Refit.BodySerializationMethod.{BodySerializationMemberName(bodyParameter.BodySerializationMethod)}";
+
+    /// <summary>Maps the obsolete <c>Json</c> member onto the name it was replaced by.</summary>
+    /// <param name="serializationMethod">The serialization method named on the body parameter.</param>
+    /// <returns>The member name to emit.</returns>
+    private static string BodySerializationMemberName(string serializationMethod) =>
+        serializationMethod == "Json" ? "Serialized" : serializationMethod;
 
     /// <summary>The shared locals and rendered fragments used to emit one unrolled form body.</summary>
     /// <param name="BodyExpr">The body value expression.</param>

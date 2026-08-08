@@ -7,6 +7,7 @@ namespace Refit.Reflection.Tests;
 /// <summary>Pins the exact relative URI the reflection request builder produces when an object argument binds a path
 /// segment and is simultaneously flattened into the query string: the path-bound property is dropped from the query while
 /// every remaining property is flattened, and the contract holds on the second call that reuses the cached metadata.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionObjectPathBindingTests
 {
     /// <summary>The exact relative URI the builder must produce: the identifier renders as a path segment and is omitted

@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using LibraryWithSDKandRefitService;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,24 +12,28 @@ namespace RestApiforTest.Controllers;
 /// using RESTful conventions. Each action corresponds to a specific HTTP verb and route, allowing clients to
 /// interact with value resources. The controller is intended for demonstration or template purposes and can be
 /// extended to implement actual data operations.</remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [Route("api/[controller]")]
 [ApiController]
 public class ValuesController : ControllerBase
 {
     /// <summary>Handles HTTP GET requests and returns a confirmation message indicating that the API was called without arguments.</summary>
     /// <returns>An <see cref="ActionResult{String}"/> containing a message that the API was called with no arguments.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [HttpGet]
     public ActionResult<string> Get() => "Get Api with no argument was Called";
 
     /// <summary>Retrieves a string response for the specified identifier.</summary>
     /// <param name="id">The identifier for which to retrieve the response.</param>
     /// <returns>An <see cref="ActionResult{String}"/> containing the response string for the specified identifier.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [HttpGet("{id}")]
     public ActionResult<string> Get(int id) => "Get Api was called";
 
     /// <summary>Handles HTTP POST requests to create a new resource using the provided test object.</summary>
     /// <param name="testObject">The object containing the data to be processed in the POST request. Cannot be null.</param>
     /// <returns>An ActionResult containing a string that indicates the result of the POST operation.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [HttpPost]
     public ActionResult<string> Post([FromBody] ModelForTest testObject) => "Post Api was Called";
 
@@ -36,12 +41,14 @@ public class ValuesController : ControllerBase
     /// <param name="id">The unique identifier of the resource to update.</param>
     /// <param name="testObject">The data used to update the resource. Cannot be null.</param>
     /// <returns>An ActionResult containing a confirmation message indicating that the update operation was called.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [HttpPut("{id}")]
     public ActionResult<string> Put(int id, [FromBody] ModelForTest testObject) => "Put Api was called";
 
     /// <summary>Deletes the resource identified by the specified ID.</summary>
     /// <param name="id">The unique identifier of the resource to delete.</param>
     /// <returns>An ActionResult containing a message indicating that the delete operation was called.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [HttpDelete("{id}")]
     public ActionResult<string> Delete(int id) => "Delete Api was Called";
 }

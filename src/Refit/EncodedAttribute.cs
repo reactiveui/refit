@@ -10,5 +10,6 @@ namespace Refit;
 /// <c>{**param}</c> segments), query values, and <see cref="QueryNameAttribute"/> flags. The caller becomes
 /// responsible for producing valid encoded output; malformed values are sent as-is.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class EncodedAttribute : Attribute;

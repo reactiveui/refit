@@ -13,6 +13,7 @@ namespace Refit.Benchmarks;
 /// wrapping a JSON object, a raw string, and a JSON Lines sequence into <see cref="HttpContent"/>. The dispatch and
 /// wrapper allocation are measured; the actual serialization happens later on copy, so it is not part of the signal.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]

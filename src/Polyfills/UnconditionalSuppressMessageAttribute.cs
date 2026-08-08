@@ -13,8 +13,7 @@ namespace System.Diagnostics.CodeAnalysis;
     AllowMultiple = true,
     Inherited = false)]
 [ExcludeFromCodeCoverage]
-internal sealed class UnconditionalSuppressMessageAttribute(string category, string checkId)
-    : Attribute, UnconditionalSuppressMessageAttribute.IMetadata
+internal sealed class UnconditionalSuppressMessageAttribute(string category, string checkId) : Attribute, UnconditionalSuppressMessageAttribute.IMetadata
 {
     /// <summary>Defines the analysis-required public metadata contract.</summary>
     internal interface IMetadata

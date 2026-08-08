@@ -26,10 +26,7 @@ public sealed class NewtonsoftJsonSecurityTests
     public async Task GlobalTypeNameHandlingIsForcedOffWhenNoExplicitSettings()
     {
         var previous = JsonConvert.DefaultSettings;
-        JsonConvert.DefaultSettings = static () => new JsonSerializerSettings
-        {
-            TypeNameHandling = TypeNameHandling.All
-        };
+        JsonConvert.DefaultSettings = static () => new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All, };
 
         try
         {

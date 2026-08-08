@@ -11,10 +11,6 @@ using System.Threading.Tasks;
 /// analyzers are suppressed here rather than worked around.
 /// </summary>
 [SuppressMessage(
-    "Design",
-    "CA1050:Declare types in namespaces",
-    Justification = "Intentionally namespace-less so UniqueName.ForType's null-Namespace branch is reachable.")]
-[SuppressMessage(
     "RoslynCommonAnalyzers",
     "SST2312:Move type into a named namespace",
     Justification = "Intentionally namespace-less so UniqueName.ForType's null-Namespace branch is reachable.")]

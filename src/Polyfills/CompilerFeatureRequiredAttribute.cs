@@ -9,8 +9,7 @@ namespace System.Runtime.CompilerServices;
 /// <param name="featureName">The name of the required compiler feature.</param>
 [Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
-internal sealed class CompilerFeatureRequiredAttribute(string featureName)
-    : Attribute, CompilerFeatureRequiredAttribute.IMetadata
+internal sealed class CompilerFeatureRequiredAttribute(string featureName) : Attribute, CompilerFeatureRequiredAttribute.IMetadata
 {
     /// <summary>The <see cref="FeatureName"/> value used for the <c>required</c> members feature.</summary>
     internal const string RequiredMembers = nameof(RequiredMembers);

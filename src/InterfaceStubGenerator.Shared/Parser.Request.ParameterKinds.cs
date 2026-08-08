@@ -195,10 +195,7 @@ internal static partial class Parser
                     string.Empty,
                     string.Empty,
                     bodyInfo.SerializationMethod,
-                bodyInfo.BufferMode)
-            {
-                FormFields = formFields,
-            };
+                bodyInfo.BufferMode) { FormFields = formFields, };
             return true;
         }
 
@@ -222,8 +219,8 @@ internal static partial class Parser
             }
 
             var arguments = attribute.ConstructorArguments;
-            if (arguments.IsEmpty || arguments[0].Value is not string candidateHeaderName ||
-                string.IsNullOrWhiteSpace(candidateHeaderName))
+            if (arguments.IsEmpty || arguments[0].Value is not string candidateHeaderName
+                || string.IsNullOrWhiteSpace(candidateHeaderName))
             {
                 continue;
             }
@@ -407,10 +404,7 @@ internal static partial class Parser
             "Authorization",
             string.Empty,
             string.Empty,
-            BodyBufferMode.None)
-        {
-            HeaderValuePrefix = $"{scheme} ",
-        };
+            BodyBufferMode.None) { HeaderValuePrefix = $"{scheme} ", };
 
     /// <summary>Builds an unsupported request parameter model.</summary>
     /// <param name="parameter">The parameter symbol.</param>
@@ -537,7 +531,7 @@ internal static partial class Parser
     /// <returns>The source expression, or <c>"null"</c> when the value is null.</returns>
     internal static string ConstantValueToString(TypedConstant argument, in InterfaceGenerationContext context)
     {
-        string? result = string.Empty;
+        var result = string.Empty;
 
         if (!argument.IsNull)
         {

@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using Microsoft.CodeAnalysis;
@@ -9,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Refit.Benchmarks;
 
 /// <summary>EventPipe GC-verbose allocation profile of the Refit source generator (per-call-site allocations).</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 public class SourceGeneratorProfiledAllocBenchmarks
@@ -33,6 +35,7 @@ public class SourceGeneratorProfiledAllocBenchmarks
 
     /// <summary>Runs the generator against the cold compilation.</summary>
     /// <returns>The resulting generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver CompileMany() =>
         _coldDriver.RunGeneratorsAndUpdateCompilation(_coldCompilation, out _, out _);
@@ -45,6 +48,7 @@ public class SourceGeneratorProfiledAllocBenchmarks
 
     /// <summary>Runs the generator against the primed cached compilation.</summary>
     /// <returns>The resulting generator driver.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public GeneratorDriver CachedMany() =>
         _cachedDriver.RunGeneratorsAndUpdateCompilation(_cachedCompilation, out _, out _);

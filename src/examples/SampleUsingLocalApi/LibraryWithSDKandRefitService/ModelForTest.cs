@@ -4,6 +4,7 @@
 namespace LibraryWithSDKandRefitService;
 
 /// <summary>Sample model used by the local API example.</summary>
+[System.Diagnostics.DebuggerDisplay("{TestVariable}")]
 public class ModelForTest
 {
     /// <summary>Gets or sets the test variable.</summary>

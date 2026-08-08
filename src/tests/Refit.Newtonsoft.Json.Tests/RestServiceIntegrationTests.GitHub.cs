@@ -46,31 +46,15 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheGitHubUserApiAsApiResponse()
     {
-        var responseMessage = new HttpResponseMessage
-        {
-            StatusCode = HttpStatusCode.OK,
-            Content = new StringContent(
-                UserJson,
-                Encoding.UTF8,
-                JsonMediaType),
-        };
+        var responseMessage = new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(UserJson, Encoding.UTF8, JsonMediaType), };
         responseMessage.Headers.Add(CookieHeaderName, CookieHeaderValue);
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(OctocatUserUrl),
-                Reply.From(req => responseMessage)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(OctocatUserUrl), Reply.From(req => responseMessage) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await fixture.GetUserWithMetadata(OctocatLogin);
@@ -92,21 +76,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheNonExistentApiAsApiResponse()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://api.github.com/give-me-some-404-action"),
-                Reply.Status(HttpStatusCode.NotFound)
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://api.github.com/give-me-some-404-action"), Reply.Status(HttpStatusCode.NotFound) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         using var result = await fixture.NothingToSeeHereWithMetadata();
@@ -125,21 +100,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheNonExistentApi()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://api.github.com/give-me-some-404-action"),
-                Reply.Status(HttpStatusCode.NotFound)
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://api.github.com/give-me-some-404-action"), Reply.Status(HttpStatusCode.NotFound) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         try
@@ -159,31 +125,15 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheGitHubUserApiAsObservableApiResponse()
     {
-        var responseMessage = new HttpResponseMessage
-        {
-            StatusCode = HttpStatusCode.OK,
-            Content = new StringContent(
-                UserJson,
-                Encoding.UTF8,
-                JsonMediaType),
-        };
+        var responseMessage = new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(UserJson, Encoding.UTF8, JsonMediaType), };
         responseMessage.Headers.Add(CookieHeaderName, CookieHeaderValue);
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(OctocatUserUrl),
-                Reply.From(req => responseMessage)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(OctocatUserUrl), Reply.From(req => responseMessage) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await ObservableTestHelpers.AwaitWithTimeout(
@@ -206,31 +156,15 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheGitHubUserApiAsObservableIApiResponse()
     {
-        var responseMessage = new HttpResponseMessage
-        {
-            StatusCode = HttpStatusCode.OK,
-            Content = new StringContent(
-                UserJson,
-                Encoding.UTF8,
-                JsonMediaType),
-        };
+        var responseMessage = new HttpResponseMessage { StatusCode = HttpStatusCode.OK, Content = new StringContent(UserJson, Encoding.UTF8, JsonMediaType), };
         responseMessage.Headers.Add(CookieHeaderName, CookieHeaderValue);
 
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(OctocatUserUrl),
-                Reply.From(req => responseMessage)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(OctocatUserUrl), Reply.From(req => responseMessage) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await ObservableTestHelpers.AwaitWithTimeout(
@@ -253,21 +187,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheGitHubUserApi()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(OctocatUserUrl),
-                Reply.Json(UserJson)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(OctocatUserUrl), Reply.Json(UserJson) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await fixture.GetUser(OctocatLogin);
@@ -283,21 +208,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitWithCamelCaseParameter()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(OctocatUserUrl),
-                Reply.Json(UserJson)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(OctocatUserUrl), Reply.Json(UserJson) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await ObservableTestHelpers.AwaitWithTimeout(fixture.GetUserCamelCase(OctocatLogin));
@@ -313,21 +229,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheGitHubOrgMembersApi()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(OrgMembersUrl),
-                Reply.Json(OrgMembersJson)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(OrgMembersUrl), Reply.Json(OrgMembersJson) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await fixture.GetOrgMembers(OrgName);
@@ -343,25 +250,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheGitHubOrgMembersApiInParallel()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(OrgMembersUrl),
-                Reply.Json(OrgMembersJson)
-            },
-            {
-                Route.Get(OrgMembersUrl),
-                Reply.Json(OrgMembersJson)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(OrgMembersUrl), Reply.Json(OrgMembersJson) }, { Route.Get(OrgMembersUrl), Reply.Json(OrgMembersJson) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var task1 = fixture.GetOrgMembers(OrgName);
@@ -397,10 +291,7 @@ public partial class RestServiceIntegrationTests
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await fixture.FindUsers("tom repos:>42 followers:>1000");
@@ -415,21 +306,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheGitHubUserApiAsObservable()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get(OctocatUserUrl),
-                Reply.Json(UserJson)
-            },
-        };
+        var handler = new StubHttp { { Route.Get(OctocatUserUrl), Reply.Json(UserJson) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await ObservableTestHelpers.AwaitWithTimeout(fixture.GetUserObservable(OctocatLogin));
@@ -445,21 +327,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task HitTheGitHubUserApiAsObservableAndSubscribeAfterTheFact()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = OctocatUserUrl, Reusable = true },
-                Reply.Json(UserJson)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = OctocatUserUrl, Reusable = true }, Reply.Json(UserJson) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var obs = ObservableTestHelpers.WithTimeout(fixture.GetUserObservable(OctocatLogin));
@@ -480,7 +353,7 @@ public partial class RestServiceIntegrationTests
         var input = new TestHttpMessageHandler
         {
             // we need to use a factory here to ensure each request gets its own httpcontent instance
-            ContentFactory = static () => new StringContent("test")
+            ContentFactory = static () => new StringContent("test"),
         };
 
         var client = new HttpClient(input) { BaseAddress = new("http://foo") };
@@ -507,21 +380,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ShouldRetHttpResponseMessage()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "https://api.github.com/", Reusable = true },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "https://api.github.com/", Reusable = true }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
         var result = await fixture.GetIndex();
 
@@ -534,21 +398,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ShouldRetHttpResponseMessageWithNestedInterface()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "https://api.github.com/", Reusable = true },
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "https://api.github.com/", Reusable = true }, Reply.Status(HttpStatusCode.OK) }, };
 
         var fixture = handler.CreateClient<TestNested.INestedGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
         var result = await fixture.GetIndex();
 

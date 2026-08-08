@@ -14,6 +14,7 @@ namespace Refit.Benchmarks;
 /// entry points that sanitize, replace, and stamp request and content headers. Each benchmark builds a fresh request
 /// so header state does not accumulate across invocations; the request allocation is part of the measured cost.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]

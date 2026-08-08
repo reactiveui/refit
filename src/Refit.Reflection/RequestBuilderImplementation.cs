@@ -5,6 +5,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 #if NET8_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
@@ -55,8 +56,9 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <summary>Initializes a new instance of the <see cref="RequestBuilderImplementation"/> class for the given interface type.</summary>
     /// <param name="refitInterfaceType">The Refit interface type to build requests for.</param>
     /// <param name="refitSettings">The settings to use, or null for defaults.</param>
+    /// <exception cref="ArgumentException"><paramref name="refitInterfaceType"/> is null or is not an interface type.</exception>
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    public RequestBuilderImplementation(
+    internal RequestBuilderImplementation(
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.Interfaces
             | DynamicallyAccessedMemberTypes.PublicMethods
@@ -160,6 +162,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <summary>Finds a method declared on this implementation type by name, caching the resolved metadata by name.</summary>
     /// <param name="name">The method name.</param>
     /// <returns>The declared method.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static MethodInfo FindDeclaredMethod(string name) =>
         DeclaredMethodCache.GetOrAdd(name, DeclaredMethodFactory);
 
@@ -231,6 +234,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
 
     /// <summary>Runs an asynchronous task factory synchronously and waits for completion.</summary>
     /// <param name="taskFactory">The task factory to run.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Usage",
         "VSTHRD002:Avoid problematic synchronous waits",
@@ -246,6 +250,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <typeparam name="T">The result type.</typeparam>
     /// <param name="taskFactory">The task factory to run.</param>
     /// <returns>The result produced by the task.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Usage",
         "VSTHRD002:Avoid problematic synchronous waits",
@@ -354,6 +359,9 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="parameterTypes">The parameter types to match, or null to match a single overload.</param>
     /// <param name="genericArgumentTypes">The generic argument types to close over, or null.</param>
     /// <returns>The matching rest method info.</returns>
+    /// <exception cref="ArgumentException">No method matching <paramref name="key"/> carries an HTTP method attribute,
+    /// or the name is overloaded and <paramref name="parameterTypes"/> was not supplied to disambiguate it.</exception>
+    /// <exception cref="InvalidOperationException">None of the overloads accept <paramref name="parameterTypes"/> once closed over <paramref name="genericArgumentTypes"/>.</exception>
     [RequiresUnreferencedCode("Resolving generic Refit methods from reflected metadata requires generic method metadata to be available at runtime.")]
     [RequiresDynamicCode("Resolving generic Refit methods from reflected metadata requires runtime generic method instantiation.")]
     internal RestMethodInfoInternal FindMatchingRestMethodInfo(
@@ -475,8 +483,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     internal Func<HttpClient, object[], object?> BuildAdapterFuncForMethodGeneric<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
-        var builder = this;
-        var taskFunc = builder.BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
+        var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
         // This runs only when HasReturnTypeAdapter already matched an adapter for this exact return type and adapter
         // set, so ResolveClosedAdapterType resolves the same match and never returns null here.
@@ -577,8 +584,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     internal Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
-        var builder = this;
-        var taskFunc = builder.BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
+        var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
         return (client, paramList) =>
             new FromAsyncSignal<T?>(ct =>
@@ -633,8 +639,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     internal Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
-        var builder = this;
-        var ret = builder.BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
+        var ret = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
         return (client, paramList) =>
             restMethod.CancellationToken is not null
@@ -655,8 +660,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     internal Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
         RestMethodInfoInternal restMethod)
     {
-        var builder = this;
-        var ret = builder.BuildTaskFuncForMethod<T, TBody>(restMethod);
+        var ret = BuildTaskFuncForMethod<T, TBody>(restMethod);
 
         return (client, paramList) => new(ret(client, paramList));
     }

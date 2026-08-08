@@ -19,9 +19,9 @@ internal interface IRequestBuilderFactory
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     IRequestBuilder<T> Create<
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(RefitSettings? settings);
 
     /// <summary>Creates a request builder for the specified interface type.</summary>
@@ -31,9 +31,9 @@ internal interface IRequestBuilderFactory
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     IRequestBuilder Create(
         [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces |
-            DynamicallyAccessedMemberTypes.PublicMethods |
-            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            DynamicallyAccessedMemberTypes.Interfaces
+            | DynamicallyAccessedMemberTypes.PublicMethods
+            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         RefitSettings? settings);
 }

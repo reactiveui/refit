@@ -5,6 +5,7 @@
 namespace Refit;
 
 /// <summary>Default form Url-encoded parameter formatter.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
 {
     /// <summary>Formats the specified parameter value.</summary>

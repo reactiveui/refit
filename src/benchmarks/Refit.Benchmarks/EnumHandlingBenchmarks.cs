@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
@@ -15,6 +16,7 @@ namespace Refit.Benchmarks;
 /// build, the undefined-value numeric formatting, the <c>CamelCaseStringEnumConverter</c> name helpers and
 /// serialized-name dictionary construction, and a JSON round-trip through the camelCase enum converter.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -60,6 +62,7 @@ public class EnumHandlingBenchmarks
 
     /// <summary>Looks up the cached <c>[EnumMember]</c> value for a member that declares one.</summary>
     /// <returns>The looked-up value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Lookup")]
     public int GetEnumMemberValueWithMember() =>
@@ -67,6 +70,7 @@ public class EnumHandlingBenchmarks
 
     /// <summary>Looks up the cached <c>[EnumMember]</c> value for a member that declares none.</summary>
     /// <returns>The looked-up value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Lookup")]
     public int GetEnumMemberValueNoMember() =>
@@ -74,6 +78,7 @@ public class EnumHandlingBenchmarks
 
     /// <summary>Builds the uncached <c>[EnumMember]</c> value map for the enum type.</summary>
     /// <returns>The map entry count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Build")]
     public int CreateEnumMemberValueMap() => EnumHelpers.CreateEnumMemberValueMap(_enumType).Count;
@@ -91,24 +96,28 @@ public class EnumHandlingBenchmarks
 
     /// <summary>Formats an undefined enum value through the numeric backing-type path.</summary>
     /// <returns>The formatted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Format")]
     public int FormatNumericValue() => EnumHelpers.Info<QuerySort>.FormatNumericValue(_undefinedValue).Length;
 
     /// <summary>Converts a Pascal-cased name to camelCase.</summary>
     /// <returns>The converted value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Format")]
     public int ToCamelCase() => CamelCaseStringEnumConverter.ToCamelCase(_pascalName).Length;
 
     /// <summary>Resolves the preferred serialized name for an enum field.</summary>
     /// <returns>The resolved name length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Format")]
     public int GetPreferredSerializedName() => CamelCaseStringEnumConverter.GetPreferredSerializedName(_memberField).Length;
 
     /// <summary>Serializes a defined enum value through the camelCase converter.</summary>
     /// <returns>The serialized name length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("RoundTrip")]
     public int SerializeEnum() => JsonSerializer.Serialize(_definedValue, _options).Length;

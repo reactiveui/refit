@@ -13,5 +13,4 @@ namespace Refit;
 /// plain owning <c>StreamContent</c> instead, so Refit still closes them.
 /// </remarks>
 /// <param name="innerStream">The caller-owned stream to wrap without taking ownership.</param>
-internal sealed class NonDisposingStream(Stream innerStream)
-    : DelegatingStream(innerStream, ownsInnerStream: false);
+internal sealed class NonDisposingStream(Stream innerStream) : DelegatingStream(innerStream, ownsInnerStream: false);

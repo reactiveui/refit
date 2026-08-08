@@ -26,13 +26,7 @@ public sealed class RouteTableFeatureTests
     [Test]
     public async Task TemplatePlaceholderMatchesPathSegment()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("/users/{id}"),
-                Reply.With(new User(SampleUserId, SampleLogin))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("/users/{id}"), Reply.With(new User(SampleUserId, SampleLogin)) }, };
 
         var api = handler.CreateClient<IUserApi>(BaseUrl);
         var user = await api.GetUser(SampleUserId);
@@ -74,13 +68,7 @@ public sealed class RouteTableFeatureTests
     [Test]
     public async Task TypedReplyIsSerializedByClientSerializer()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("/users/1"),
-                Reply.With(new User(1, "hubot"))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("/users/1"), Reply.With(new User(1, "hubot")) }, };
 
         var api = handler.CreateClient<IUserApi>(BaseUrl);
         var user = await api.GetUser(1);
@@ -94,13 +82,7 @@ public sealed class RouteTableFeatureTests
     public async Task LastRequestBodyDeserializesSentPayload()
     {
         const int createdUserId = 2;
-        var handler = new StubHttp
-        {
-            {
-                Route.Post("/users"),
-                Reply.With(new User(createdUserId, "created"), HttpStatusCode.Created)
-            },
-        };
+        var handler = new StubHttp { { Route.Post("/users"), Reply.With(new User(createdUserId, "created"), HttpStatusCode.Created) }, };
 
         var api = handler.CreateClient<IUserApi>(BaseUrl);
         _ = await api.CreateUser(new("mona"));
@@ -117,13 +99,7 @@ public sealed class RouteTableFeatureTests
     public async Task TypedReplyCarriesStatusCode()
     {
         const int createdUserId = 3;
-        var handler = new StubHttp
-        {
-            {
-                Route.Post("/users"),
-                Reply.With(new User(createdUserId, "created"), HttpStatusCode.Created)
-            },
-        };
+        var handler = new StubHttp { { Route.Post("/users"), Reply.With(new User(createdUserId, "created"), HttpStatusCode.Created) }, };
 
         var api = handler.CreateClient<IUserApi>(BaseUrl);
         using var response = await api.CreateUserResponse(new("lee"));

@@ -32,10 +32,7 @@ public partial class RestServiceIntegrationTests
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
         try
         {
@@ -57,21 +54,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ErrorsFromApiReturnErrorContent()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post("https://api.github.com/users"),
-                Reply.Json("{ 'errors': [ 'error1', 'message' ]}", HttpStatusCode.BadRequest)
-            },
-        };
+        var handler = new StubHttp { { Route.Post("https://api.github.com/users"), Reply.Json("{ 'errors': [ 'error1', 'message' ]}", HttpStatusCode.BadRequest) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         var result = await Assert.That(
@@ -95,21 +83,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ErrorsFromApiReturnErrorContentWhenApiResponse()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post("https://api.github.com/users"),
-                Reply.Json("{ 'errors': [ 'error1', 'message' ]}", HttpStatusCode.BadRequest)
-            },
-        };
+        var handler = new StubHttp { { Route.Post("https://api.github.com/users"), Reply.Json("{ 'errors': [ 'error1', 'message' ]}", HttpStatusCode.BadRequest) }, };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
+                new() { ContractResolver = new SnakeCasePropertyNamesContractResolver(), }),
         });
 
         using var response = await fixture.CreateUserWithMetadata(new() { Name = "foo" });

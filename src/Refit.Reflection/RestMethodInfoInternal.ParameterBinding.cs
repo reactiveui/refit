@@ -130,6 +130,8 @@ internal partial class RestMethodInfoInternal
     /// placeholder needs it.</param>
     /// <param name="match">The parameterized URL match being resolved.</param>
     /// <param name="allowUnmatchedRouteParameters">When true, an unmatched placeholder is left in the path verbatim instead of throwing.</param>
+    /// <exception cref="ArgumentException">The placeholder binds neither a method parameter nor a property on one, and
+    /// <paramref name="allowUnmatchedRouteParameters"/> is <see langword="false"/>.</exception>
     [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
     internal static void AddFragmentForMatch(
         string relativePath,
@@ -226,6 +228,8 @@ internal partial class RestMethodInfoInternal
     /// <param name="owner">The parameter whose property chain binds the placeholder.</param>
     /// <param name="propertyChain">The ordered property navigation from the parameter to the bound value.</param>
     /// <param name="isOptional">Whether the placeholder was declared optional with the <c>{name?}</c> syntax.</param>
+    /// <exception cref="ArgumentException"><paramref name="owner"/> is already bound as a route parameter in its own
+    /// right, so it cannot also supply a nested property.</exception>
     internal static void AddObjectPropertyParameter(
         ParameterInfo[] parameterInfo,
         Dictionary<int, RestMethodParameterInfo> ret,
@@ -365,6 +369,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Finds the single cancellation token parameter for the method.</summary>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <returns>The cancellation token parameter, or null when none is present.</returns>
+    /// <exception cref="ArgumentException"><paramref name="methodInfo"/> declares more than one <c>CancellationToken</c> parameter.</exception>
     internal static ParameterInfo? FindCancellationTokenParameter(MethodInfo methodInfo)
     {
         var parameters = methodInfo.GetParameters();

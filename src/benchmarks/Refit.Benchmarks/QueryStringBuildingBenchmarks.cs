@@ -13,6 +13,7 @@ namespace Refit.Benchmarks;
 /// (escaped scalar, pre-escaped key, span-formatted value, joined and multi collections, and a valueless flag) and
 /// materializes the result so the buffer work is not elided.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]

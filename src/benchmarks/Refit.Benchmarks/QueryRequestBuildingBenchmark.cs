@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Net;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 
@@ -12,6 +13,7 @@ namespace Refit.Benchmarks;
 /// method shapes, with allocation tracking. The generated rows go through the source-generated client;
 /// the reflection rows invoke the cached reflection request delegate the fallback path uses.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [CategoriesColumn]
@@ -64,10 +66,7 @@ public class QueryRequestBuildingBenchmark
     public void Setup()
     {
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
-        _client = new(new StaticValueHttpResponseHandler("Ok", HttpStatusCode.OK))
-        {
-            BaseAddress = new(Host),
-        };
+        _client = new(new StaticValueHttpResponseHandler("Ok", HttpStatusCode.OK)) { BaseAddress = new(Host), };
 
         _generated = RestService.ForGenerated<IQueryRequestService>(_client, settings);
 
@@ -81,11 +80,13 @@ public class QueryRequestBuildingBenchmark
     }
 
     /// <summary>Cleans up the HTTP client.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [GlobalCleanup]
     public void Cleanup() => _client.Dispose();
 
     /// <summary>Benchmarks one generated query parameter.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("SingleQuery")]
     public Task<HttpResponseMessage> GeneratedSingleQueryAsync() => _generated.SingleQueryAsync("widgets and gadgets");
@@ -99,6 +100,7 @@ public class QueryRequestBuildingBenchmark
 
     /// <summary>Benchmarks five generated scalar query parameters including an enum.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("MultiParameter")]
     public Task<HttpResponseMessage> GeneratedMultiParameterAsync() =>
@@ -115,6 +117,7 @@ public class QueryRequestBuildingBenchmark
 
     /// <summary>Benchmarks a generated csv-joined collection.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("CsvCollection")]
     public Task<HttpResponseMessage> GeneratedCsvCollectionAsync() => _generated.CsvCollectionAsync(_sampleIds);
@@ -128,6 +131,7 @@ public class QueryRequestBuildingBenchmark
 
     /// <summary>Benchmarks a generated multi-expanded collection.</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("MultiCollection")]
     public Task<HttpResponseMessage> GeneratedMultiCollectionAsync() => _generated.MultiCollectionAsync(_sampleIds);
@@ -141,18 +145,21 @@ public class QueryRequestBuildingBenchmark
 
     /// <summary>Benchmarks a generated valueless query flag (source-generation only).</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("SourceGenOnly")]
     public Task<HttpResponseMessage> GeneratedFlagAsync() => _generated.FlagAsync("ready");
 
     /// <summary>Benchmarks a generated caller-encoded value (source-generation only).</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("SourceGenOnly")]
     public Task<HttpResponseMessage> GeneratedEncodedAsync() => _generated.EncodedAsync("a%2Fb%2Fc");
 
     /// <summary>Benchmarks a generated span-formattable query value that requires escaping (span-escape path).</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("TimestampQuery")]
     public Task<HttpResponseMessage> GeneratedTimestampQueryAsync() => _generated.TimestampQueryAsync(_sampleTimestamp);
@@ -166,6 +173,7 @@ public class QueryRequestBuildingBenchmark
 
     /// <summary>Benchmarks a generated span-formattable path value that requires escaping (path span-escape).</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("TimestampPath")]
     public Task<HttpResponseMessage> GeneratedTimestampPathAsync() => _generated.TimestampPathAsync(_sampleTimestamp);
@@ -179,6 +187,7 @@ public class QueryRequestBuildingBenchmark
 
     /// <summary>Benchmarks a generated custom-verb request, exercising the cached verb instance (source-generation only).</summary>
     /// <returns>The HTTP response message.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("SourceGenOnly")]
     public Task<HttpResponseMessage> GeneratedCustomVerbAsync() => _generated.CustomVerbAsync(QueryText);

@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Refit;
 
 /// <summary>Represents an error that occurred while sending an API request.</summary>
+[System.Diagnostics.DebuggerDisplay("{HttpMethod}")]
 [SuppressMessage(
     "Design",
     "SST1488:Exception types should declare the standard constructors",

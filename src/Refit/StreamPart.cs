@@ -15,6 +15,7 @@ namespace Refit;
 /// <param name="contentType">Type of the content.</param>
 /// <param name="name">The name.</param>
 /// <exception cref="System.ArgumentNullException">value</exception>
+[System.Diagnostics.DebuggerDisplay("{Value}")]
 public class StreamPart(
     Stream value,
     string fileName,

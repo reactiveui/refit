@@ -144,11 +144,7 @@ public sealed class ParserCoverageTests
     {
         var emptyOptions = new DictionaryAnalyzerConfigOptions(new Dictionary<string, string>());
         var buildOptions = new DictionaryAnalyzerConfigOptions(
-            new Dictionary<string, string>
-            {
-                ["build_property.RefitOption"] = "build",
-                ["AnalyzerOption"] = "analyzer"
-            });
+            new Dictionary<string, string> { ["build_property.RefitOption"] = "build", ["AnalyzerOption"] = "analyzer", });
 
         var defaultConstant = default(TypedConstant);
 
@@ -576,8 +572,7 @@ public sealed class ParserCoverageTests
 
     /// <summary>Analyzer config options backed by a dictionary for direct helper tests.</summary>
     /// <param name="values">The option values.</param>
-    private sealed class DictionaryAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values)
-        : AnalyzerConfigOptions
+    private sealed class DictionaryAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions
     {
         /// <inheritdoc/>
         public override bool TryGetValue(string key, out string value) => values.TryGetValue(key, out value!);

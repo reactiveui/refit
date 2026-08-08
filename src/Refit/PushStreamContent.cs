@@ -33,7 +33,7 @@ internal class PushStreamContent : HttpContent
     /// HTTP request or response will be completed.
     /// </summary>
     /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
-    public PushStreamContent(Action<Stream, HttpContent, TransportContext?> onStreamAvailable)
+    internal PushStreamContent(Action<Stream, HttpContent, TransportContext?> onStreamAvailable)
         : this(Taskify(onStreamAvailable), (MediaTypeHeaderValue?)null)
     {
     }
@@ -41,7 +41,7 @@ internal class PushStreamContent : HttpContent
     /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class.</summary>
     /// <param name="onStreamAvailable">The action to call when an output stream is available. The stream is automatically
     /// closed when the return task is completed.</param>
-    public PushStreamContent(
+    internal PushStreamContent(
         Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable)
         : this(onStreamAvailable, (MediaTypeHeaderValue?)null)
     {
@@ -50,7 +50,7 @@ internal class PushStreamContent : HttpContent
     /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class with the given media type.</summary>
     /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
     /// <param name="mediaType">The media type to use for the content.</param>
-    public PushStreamContent(
+    internal PushStreamContent(
         Action<Stream, HttpContent, TransportContext?> onStreamAvailable,
         string mediaType)
         : this(Taskify(onStreamAvailable), new MediaTypeHeaderValue(mediaType))
@@ -60,7 +60,7 @@ internal class PushStreamContent : HttpContent
     /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class with the given media type.</summary>
     /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
     /// <param name="mediaType">The media type to use for the content.</param>
-    public PushStreamContent(
+    internal PushStreamContent(
         Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable,
         string mediaType)
         : this(onStreamAvailable, new MediaTypeHeaderValue(mediaType))
@@ -70,7 +70,7 @@ internal class PushStreamContent : HttpContent
     /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.</summary>
     /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
     /// <param name="mediaType">The media type to use for the content.</param>
-    public PushStreamContent(
+    internal PushStreamContent(
         Action<Stream, HttpContent, TransportContext?> onStreamAvailable,
         MediaTypeHeaderValue? mediaType)
         : this(Taskify(onStreamAvailable), mediaType)
@@ -80,7 +80,8 @@ internal class PushStreamContent : HttpContent
     /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.</summary>
     /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
     /// <param name="mediaType">The media type to use for the content.</param>
-    public PushStreamContent(
+    /// <exception cref="ArgumentNullException"><paramref name="onStreamAvailable"/> is <see langword="null"/>.</exception>
+    internal PushStreamContent(
         Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable,
         MediaTypeHeaderValue? mediaType)
     {
@@ -152,7 +153,8 @@ internal class PushStreamContent : HttpContent
         /// <summary>Initializes a new instance of the <see cref="CompleteTaskOnCloseStream"/> class.</summary>
         /// <param name="innerStream">The stream to delegate to.</param>
         /// <param name="serializeToStreamTask">The task to signal when the stream closes.</param>
-        public CompleteTaskOnCloseStream(
+        /// <exception cref="ArgumentNullException"><paramref name="serializeToStreamTask"/> is <see langword="null"/>.</exception>
+        internal CompleteTaskOnCloseStream(
             Stream innerStream,
             TaskCompletionSource<bool> serializeToStreamTask)
             : base(innerStream, ownsInnerStream: false) =>

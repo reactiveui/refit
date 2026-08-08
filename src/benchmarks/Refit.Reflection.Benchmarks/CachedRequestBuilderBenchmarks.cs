@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -12,6 +13,7 @@ namespace Refit.Reflection.Benchmarks;
 /// method-table key and returning the already-built delegate for a parameterless, a parameter-typed, and a generic
 /// method lookup.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -45,18 +47,21 @@ public class CachedRequestBuilderBenchmarks
 
     /// <summary>Returns the cached delegate for a parameterless method.</summary>
     /// <returns>The cached result delegate.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Func<HttpClient, object[], object?> CacheHitParameterless() =>
         _cached.BuildRestResultFuncForMethod(nameof(IReflectionRequestService.ConstantRouteAsync));
 
     /// <summary>Returns the cached delegate for a method keyed by parameter types.</summary>
     /// <returns>The cached result delegate.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Func<HttpClient, object[], object?> CacheHitParameterTypes() =>
         _cached.BuildRestResultFuncForMethod(nameof(IReflectionRequestService.UserByIdAsync), _intParameters);
 
     /// <summary>Returns the cached delegate for a generic method keyed by parameter and generic argument types.</summary>
     /// <returns>The cached result delegate.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Func<HttpClient, object[], object?> CacheHitGeneric() =>
         _cached.BuildRestResultFuncForMethod(nameof(IReflectionRequestService.TypedItemAsync), _stringParameters, _genericArguments);

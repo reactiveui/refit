@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -12,6 +13,7 @@ namespace Refit.Reflection.Benchmarks;
 /// discovering every interface method (constructor), resolving a method by name and parameter types, filtering
 /// overload candidates, closing a generic method, resolving a private delegate factory, and building a result delegate.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -51,35 +53,41 @@ public class ReflectionRequestBuilderConstructionBenchmarks
 
     /// <summary>Constructs the request builder, parsing metadata for every interface method.</summary>
     /// <returns>The constructed request builder.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public object ConstructBuilder() => new RequestBuilderImplementation(typeof(IReflectionRequestService), _settings);
 
     /// <summary>Resolves a method by name and parameter types.</summary>
     /// <returns>The resolved method metadata.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public object FindMatchingRestMethodInfo() =>
         _builder.FindMatchingRestMethodInfo(nameof(IReflectionRequestService.UserByIdAsync), _singleIntParameter, null);
 
     /// <summary>Filters the candidate methods by parameter count and generic arity.</summary>
     /// <returns>The number of matching candidates, returned to retain the filtered array.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int FilterPossibleMethods() =>
         RequestBuilderImplementation.FilterPossibleMethods(_candidateMethods, _singleIntParameter, null).Length;
 
     /// <summary>Closes the generic method over a concrete type argument.</summary>
     /// <returns>The closed method metadata.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public object CloseGenericMethodIfNeeded() =>
         _builder.CloseGenericMethodIfNeeded(_genericMethod, _genericArguments);
 
     /// <summary>Resolves a private delegate factory method by name.</summary>
     /// <returns>The resolved factory method.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public object FindDeclaredMethod() =>
         RequestBuilderImplementation.FindDeclaredMethod(nameof(RequestBuilderImplementation.BuildTaskFuncForMethod));
 
     /// <summary>Builds a result delegate for a dynamic-route method.</summary>
     /// <returns>The built result delegate.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod() =>
         _builder.BuildRestResultFuncForMethod(nameof(IReflectionRequestService.UserByIdAsync));

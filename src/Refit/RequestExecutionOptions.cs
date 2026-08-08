@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
+
 namespace Refit;
 
 /// <summary>Controls request sending and response handling for generated and reflection-built requests.</summary>
@@ -37,6 +39,7 @@ internal readonly struct RequestExecutionOptions : IEquatable<RequestExecutionOp
     internal bool ApplyAuthorizationHeader { get; }
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(RequestExecutionOptions left, RequestExecutionOptions right) =>
         left.Equals(right);
 

@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Tests;
 
 /// <summary>A request object supplying a nested property chain for path binding and remaining properties for the query.</summary>
+[System.Diagnostics.DebuggerDisplay("{Id}")]
 public sealed class ReflectionParseShapeModel
 {
     /// <summary>Gets or sets the scalar identifier flattened into the query.</summary>

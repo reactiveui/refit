@@ -4,8 +4,7 @@
 namespace Refit.Tests;
 
 /// <summary>Contract resolver that renders property names in snake_case.</summary>
-public class SnakeCasePropertyNamesContractResolver
-    : DeliminatorSeparatedPropertyNamesContractResolver
+public class SnakeCasePropertyNamesContractResolver : DeliminatorSeparatedPropertyNamesContractResolver
 {
     /// <summary>Initializes a new instance of the <see cref="SnakeCasePropertyNamesContractResolver"/> class.</summary>
     public SnakeCasePropertyNamesContractResolver()

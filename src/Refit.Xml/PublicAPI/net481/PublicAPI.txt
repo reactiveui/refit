@@ -1,5 +1,6 @@
 namespace Refit;
 
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class XmlContentSerializer : Refit.IHttpContentSerializer, Refit.ISynchronousContentDeserializer
 {
     public XmlContentSerializer() { }
@@ -9,6 +10,7 @@ public class XmlContentSerializer : Refit.IHttpContentSerializer, Refit.ISynchro
     public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
+[System.Diagnostics.DebuggerDisplay("{XmlDefaultNamespace}")]
 public class XmlContentSerializerSettings
 {
     public XmlContentSerializerSettings() { }
@@ -17,6 +19,7 @@ public class XmlContentSerializerSettings
     public System.Xml.Serialization.XmlSerializerNamespaces XmlNamespaces { get; set; }
     public Refit.XmlReaderWriterSettings XmlReaderWriterSettings { get; set; }
 }
+[System.Diagnostics.DebuggerDisplay("{ReaderSettings}")]
 public class XmlReaderWriterSettings
 {
     public XmlReaderWriterSettings() { }

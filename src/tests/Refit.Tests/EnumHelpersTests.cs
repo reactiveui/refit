@@ -27,7 +27,7 @@ public sealed class EnumHelpersTests
 
         /// <summary>Custom serialized member name.</summary>
         [EnumMember(Value = "custom-value")]
-        Custom = 2
+        Custom = 2,
     }
 
     /// <summary>Signed byte-backed enum.</summary>
@@ -38,7 +38,7 @@ public sealed class EnumHelpersTests
         None = 0,
 
         /// <summary>Negative value.</summary>
-        Value = -8
+        Value = -8,
     }
 
     /// <summary>Byte-backed enum.</summary>
@@ -49,7 +49,7 @@ public sealed class EnumHelpersTests
         None = 0,
 
         /// <summary>High byte value.</summary>
-        Value = 250
+        Value = 250,
     }
 
     /// <summary>Signed 16-bit enum.</summary>
@@ -60,7 +60,7 @@ public sealed class EnumHelpersTests
         None = 0,
 
         /// <summary>Negative value.</summary>
-        Value = -1234
+        Value = -1234,
     }
 
     /// <summary>Unsigned 16-bit enum.</summary>
@@ -71,7 +71,7 @@ public sealed class EnumHelpersTests
         None = 0,
 
         /// <summary>High unsigned value.</summary>
-        Value = 65_000
+        Value = 65_000,
     }
 
     /// <summary>Signed 32-bit enum.</summary>
@@ -81,7 +81,7 @@ public sealed class EnumHelpersTests
         None = 0,
 
         /// <summary>Negative value.</summary>
-        Value = -123_456
+        Value = -123_456,
     }
 
     /// <summary>Unsigned 32-bit enum.</summary>
@@ -92,7 +92,7 @@ public sealed class EnumHelpersTests
         None = 0,
 
         /// <summary>High unsigned value.</summary>
-        Value = 4_000_000_000
+        Value = 4_000_000_000,
     }
 
     /// <summary>Signed 64-bit enum.</summary>
@@ -103,7 +103,7 @@ public sealed class EnumHelpersTests
         None = 0,
 
         /// <summary>Negative value.</summary>
-        Value = -1_234_567_890_123
+        Value = -1_234_567_890_123,
     }
 
     /// <summary>Unsigned 64-bit enum.</summary>
@@ -114,7 +114,7 @@ public sealed class EnumHelpersTests
         None = 0,
 
         /// <summary>Maximum unsigned value.</summary>
-        Value = ulong.MaxValue
+        Value = ulong.MaxValue,
     }
 
     /// <summary>Verifies enum-member lookup handles enum, non-enum, and undefined enum values.</summary>

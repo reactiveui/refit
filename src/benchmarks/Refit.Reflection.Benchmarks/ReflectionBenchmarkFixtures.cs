@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Refit.Reflection.Benchmarks;
 
@@ -38,6 +39,7 @@ internal static class ReflectionBenchmarkFixtures
     /// <summary>Resolves a declared method on the sample interface by name.</summary>
     /// <param name="name">The method name.</param>
     /// <returns>The reflected method information.</returns>
+    /// <exception cref="MissingMethodException"><paramref name="name"/> is not a public method on <see cref="IReflectionRequestService"/>.</exception>
     internal static MethodInfo Method(string name) =>
         typeof(IReflectionRequestService).GetMethod(name)
         ?? throw new MissingMethodException(nameof(IReflectionRequestService), name);
@@ -45,6 +47,7 @@ internal static class ReflectionBenchmarkFixtures
     /// <summary>Gets the reflected parameters of a sample interface method, excluding cancellation tokens.</summary>
     /// <param name="name">The method name.</param>
     /// <returns>The parameters used for request mapping.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ParameterInfo[] MappedParameters(string name) =>
         RestMethodInfoInternal.GetNonCancellationTokenParameters(Method(name).GetParameters());
 

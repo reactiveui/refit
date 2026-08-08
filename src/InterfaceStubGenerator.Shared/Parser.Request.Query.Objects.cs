@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -129,6 +130,7 @@ internal static partial class Parser
     /// declared type. The reflection request builder instead walks the value's <em>runtime</em> type, so passing a
     /// derived instance through a base-typed parameter no longer contributes the derived type's extra properties.
     /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ImmutableEquatableArray<QueryObjectPropertyModel>? TryBuildQueryObjectProperties(
         ITypeSymbol type,
         string? parameterPrefixSegment,

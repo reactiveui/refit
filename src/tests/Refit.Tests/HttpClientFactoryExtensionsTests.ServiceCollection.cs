@@ -110,11 +110,7 @@ public partial class HttpClientFactoryExtensionsTests
             static o => o.Serializer = new(EmptySerializerOptions));
         _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
             static _ =>
-                new()
-                {
-                    ContentSerializer = _.GetRequiredService<
-                        IOptions<ClientOptions>>().Value.Serializer!
-                });
+                new() { ContentSerializer = _.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!, });
         var serviceProvider = serviceCollection.BuildServiceProvider();
         await Assert.That(
             serviceProvider
@@ -134,11 +130,7 @@ public partial class HttpClientFactoryExtensionsTests
         _ = serviceCollection.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             static _ =>
-                new()
-                {
-                    ContentSerializer = _.GetRequiredService<
-                        IOptions<ClientOptions>>().Value.Serializer!
-                });
+                new() { ContentSerializer = _.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!, });
         var serviceProvider = serviceCollection.BuildServiceProvider();
         await Assert.That(
             serviceProvider
@@ -219,10 +211,7 @@ public partial class HttpClientFactoryExtensionsTests
         var builder = services.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             ServiceKey,
-            static serviceProvider => new()
-            {
-                ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
-            },
+            static serviceProvider => new() { ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!, },
             ServiceClientName);
 
         await Assert.That(builder.Name).IsEqualTo(ServiceClientName);

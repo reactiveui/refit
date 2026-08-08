@@ -9,6 +9,7 @@ namespace Refit.Reflection.Tests;
 /// request-shaping attributes; these assertions guard that per-parameter classification (path binding, headers, header
 /// collection, authorization, request property, body, multipart and absolute URL) against silent regressions when the
 /// constructor's attribute reads are restructured for allocation.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionConstructorParseShapeTests
 {
     /// <summary>The count of static headers a constant route inherits from the interface plus its method.</summary>
@@ -227,6 +228,7 @@ public sealed class ReflectionConstructorParseShapeTests
     /// <summary>Builds the parsed metadata for a method on the shape interface.</summary>
     /// <param name="name">The method name to parse.</param>
     /// <returns>The parsed method metadata.</returns>
+    /// <exception cref="MissingMethodException"><paramref name="name"/> is not a public method on <see cref="IReflectionParseShapeApi"/>.</exception>
     private static RestMethodInfoInternal Parse(string name) =>
         new(
             typeof(IReflectionParseShapeApi),

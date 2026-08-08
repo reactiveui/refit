@@ -34,10 +34,7 @@ public sealed class ReturnTypeAdapterTests
     [Test]
     public async Task ReflectionPathAdaptsCustomReturnTypeThroughSeam()
     {
-        var handler = new TestHttpMessageHandler
-        {
-            ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType),
-        };
+        var handler = new TestHttpMessageHandler { ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType), };
         var client = new HttpClient(handler) { BaseAddress = new(ClientBaseAddress) };
 
         var settings = new RefitSettings();
@@ -67,10 +64,7 @@ public sealed class ReturnTypeAdapterTests
     [Test]
     public async Task ReflectionPathAdapterThreadsMethodCancellationToken()
     {
-        var handler = new TestHttpMessageHandler
-        {
-            ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType),
-        };
+        var handler = new TestHttpMessageHandler { ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType), };
         var client = new HttpClient(handler) { BaseAddress = new(ClientBaseAddress) };
 
         var settings = new RefitSettings();
@@ -93,10 +87,7 @@ public sealed class ReturnTypeAdapterTests
     [Test]
     public async Task GeneratedPathAdaptsCustomReturnTypeThroughSeam()
     {
-        var handler = new TestHttpMessageHandler
-        {
-            ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType),
-        };
+        var handler = new TestHttpMessageHandler { ContentFactory = static () => new StringContent(UserJson, Encoding.UTF8, JsonMediaType), };
         var client = new HttpClient(handler) { BaseAddress = new(ClientBaseAddress) };
 
         // No adapter is registered on the settings: the generated code discovered it at compile time. If this used the

@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -13,6 +14,7 @@ namespace Refit.Reflection.Benchmarks;
 /// constructing a <see cref="RestMethodInfoInternal"/>: header parsing, parameter/property/query map building,
 /// body/authorization/URL/cancellation-token discovery, and return-type classification.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -79,12 +81,14 @@ public class RestMethodMetadataParsingBenchmarks
 
     /// <summary>Reads every parameter's request-shaping attributes in a single metadata pass.</summary>
     /// <returns>The classified attribute set per parameter, returned as an object to keep the internal type off the public benchmark surface.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public object BuildParameterAttributeSets() =>
         RestMethodInfoInternal.BuildParameterAttributeSets(_headerParameters);
 
     /// <summary>Parses the static headers declared across the interface hierarchy and the method.</summary>
     /// <returns>The parsed header map.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Dictionary<string, string?> ParseHeaders() =>
         RestMethodInfoInternal.ParseHeaders(typeof(IReflectionRequestService), _headerMethod);
@@ -102,6 +106,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and builds the map of parameter indexes to header names, measuring the classifier's
     /// true per-call cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The header parameter map.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Dictionary<int, string> BuildHeaderParameterMap() =>
         RestMethodInfoInternal.BuildHeaderParameterMap(
@@ -110,6 +115,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and builds the map of parameter indexes to request property keys, measuring the
     /// classifier's true per-call cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The request property map.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Dictionary<int, string> BuildRequestPropertyMap() =>
         RestMethodInfoInternal.BuildRequestPropertyMap(
@@ -118,6 +124,7 @@ public class RestMethodMetadataParsingBenchmarks
 
     /// <summary>Strips cancellation-token parameters, exercising the array-copy path.</summary>
     /// <returns>The parameters used for request mapping.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public ParameterInfo[] GetNonCancellationTokenParameters() =>
         RestMethodInfoInternal.GetNonCancellationTokenParameters(_cancelableRawParameters);
@@ -125,6 +132,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and finds the header-collection parameter index, measuring the classifier's true
     /// per-call cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The index of the header-collection parameter.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int GetHeaderCollectionParameterIndex() =>
         RestMethodInfoInternal.GetHeaderCollectionParameterIndex(
@@ -133,6 +141,7 @@ public class RestMethodMetadataParsingBenchmarks
 
     /// <summary>Classifies the method's return, result, and deserialized result types.</summary>
     /// <returns>The classified return type tuple.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public (Type ReturnType, Type ReturnResultType, Type DeserializedResultType) DetermineReturnTypeInfo() =>
         RestMethodInfoInternal.DetermineReturnTypeInfo(_returnTypeMethod, null);
@@ -140,6 +149,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and scans the body method's parameters for an explicit body attribute, measuring
     /// the classifier's true per-call cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The body attribute match tuple.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public (BodyAttribute? Attribute, int Index, bool HasMultiple) FindBodyAttribute() =>
         RestMethodInfoInternal.FindBodyAttribute(
@@ -148,6 +158,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and finds the body parameter for a POST method, measuring the classifier's true
     /// per-call cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The body parameter information.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Tuple<BodySerializationMethod, bool, int>? FindBodyParameter() =>
         _bodyMethodInfo.FindBodyParameter(
@@ -159,6 +170,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and finds the implicit body parameter for a POST method, measuring the classifier's
     /// true per-call cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The body parameter information.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Tuple<BodySerializationMethod, bool, int>? FindImplicitBodyParameter() =>
         _bodyMethodInfo.FindImplicitBodyParameter(
@@ -168,6 +180,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and finds the authorization parameter, measuring the classifier's true per-call
     /// cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The authorization parameter information.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Tuple<string, int>? FindAuthorizationParameter() =>
         RestMethodInfoInternal.FindAuthorizationParameter(
@@ -175,6 +188,7 @@ public class RestMethodMetadataParsingBenchmarks
 
     /// <summary>Finds the single cancellation-token parameter.</summary>
     /// <returns>The cancellation-token parameter.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public ParameterInfo? FindCancellationTokenParameter() =>
         RestMethodInfoInternal.FindCancellationTokenParameter(_cancelableMethod);
@@ -182,6 +196,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and finds the <c>[Url]</c> parameter index, measuring the classifier's true per-call
     /// cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The URL parameter index.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int FindUrlParameter() =>
         RestMethodInfoInternal.FindUrlParameter(
@@ -191,6 +206,7 @@ public class RestMethodMetadataParsingBenchmarks
     /// <summary>Reads the attribute sets and resolves the <c>[Url]</c> parameter against an empty path template, measuring
     /// the classifier's true per-call cost including the single attribute pass a real parse performs first.</summary>
     /// <returns>The URL parameter index.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int ResolveUrlParameter() =>
         RestMethodInfoInternal.ResolveUrlParameter(
@@ -200,12 +216,14 @@ public class RestMethodMetadataParsingBenchmarks
 
     /// <summary>Builds the map of parameter indexes to query-string names.</summary>
     /// <returns>The query parameter map.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Dictionary<int, string> BuildQueryParameterMap() =>
         _scalarQueryMethodInfo.BuildQueryParameterMap();
 
     /// <summary>Builds the map of parameter indexes to multipart attachment names.</summary>
     /// <returns>The attachment name map.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Dictionary<int, Tuple<string, string>> BuildAttachmentNameMap() =>
         _multipartMethodInfo.BuildAttachmentNameMap();

@@ -8,6 +8,7 @@ namespace Refit.Generator;
 
 /// <summary>Resolves and caches well-known named type symbols from a compilation.</summary>
 /// <param name="compilation">The compilation used to resolve type symbols.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class WellKnownTypes(Compilation compilation)
 {
     /// <summary>Caches resolved type symbols by their full metadata name.</summary>
@@ -53,6 +54,7 @@ public class WellKnownTypes(Compilation compilation)
     /// <summary>Resolves a type symbol by full name, throwing if it cannot be found.</summary>
     /// <param name="typeFullName">Full name of the type.</param>
     /// <returns>The resolved named type symbol.</returns>
+    /// <exception cref="InvalidOperationException">The compilation contains no type with the metadata name <paramref name="typeFullName"/>.</exception>
     private INamedTypeSymbol Get(string typeFullName) =>
         TryGet(typeFullName) ?? throw new InvalidOperationException($"Could not get type {typeFullName}");
 }

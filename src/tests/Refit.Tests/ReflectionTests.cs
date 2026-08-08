@@ -89,13 +89,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task UrlParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/bar"),
-                Reply.Json(nameof(IBasicApi.GetParam))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/bar"), Reply.Json(nameof(IBasicApi.GetParam)) }, };
 
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetParam))!;
         var parameterInfo = methodInfo.GetParameters()[0];
@@ -112,13 +106,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task DerivedUrlParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/DerivedRecord%20%7B%20Value%20%3D%20Derived%20%7D"),
-                Reply.Json(nameof(IBasicApi.GetDerivedParam))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/DerivedRecord%20%7B%20Value%20%3D%20Derived%20%7D"), Reply.Json(nameof(IBasicApi.GetDerivedParam)) }, };
 
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetDerivedParam))!;
         var parameterInfo = methodInfo.GetParameters()[0];
@@ -135,13 +123,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task PropertyParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/propVal"),
-                Reply.Json(nameof(IBasicApi.GetPropertyParam))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/propVal"), Reply.Json(nameof(IBasicApi.GetPropertyParam)) }, };
 
         var propertyInfo = typeof(MyParams).GetProperties()[0];
 
@@ -157,13 +139,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task GenericParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/genericVal"),
-                Reply.Json(nameof(IBasicApi.GetGenericParam))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/genericVal"), Reply.Json(nameof(IBasicApi.GetGenericParam)) }, };
 
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetGenericParam))!;
         var stringMethod = methodInfo.MakeGenericMethod(typeof(string));
@@ -361,13 +337,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task OverloadedGenericParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/Empty"),
-                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/Empty"), Reply.Json(nameof(IGenericMethod.GetGenericParameter)) }, };
 
         var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0)])!;
         var parameterInfo = methodInfo.MakeGenericMethod(typeof(string)).GetParameters()[0];
@@ -375,11 +345,7 @@ public sealed class ReflectionTests
         var formatter = new TestUrlFormatter(
             [parameterInfo],
             [typeof(string)]);
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            UrlParameterFormatter = formatter
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, UrlParameterFormatter = formatter, };
         var service = RestService.For<IGenericMethod>(BaseUrl, settings);
 
         await service.GetGenericParameter(RouteValue);
@@ -391,13 +357,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task OverloadedGenericParameterWithNonGenericShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/Empty/10"),
-                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/Empty/10"), Reply.Json(nameof(IGenericMethod.GetGenericParameter)) }, };
 
         var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0), typeof(int)])!.MakeGenericMethod(typeof(string));
         var parameterInfo1 = methodInfo.GetParameters()[0];
@@ -406,11 +366,7 @@ public sealed class ReflectionTests
         var formatter = new TestUrlFormatter(
             [parameterInfo1, parameterInfo2],
             [typeof(string), typeof(int)]);
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            UrlParameterFormatter = formatter
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, UrlParameterFormatter = formatter, };
         var service = RestService.For<IGenericMethod>(BaseUrl, settings);
 
         await service.GetGenericParameter("Empty", IntegerValue);
@@ -422,13 +378,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task OverloadedWithTwoGenericParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/Empty/10"),
-                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/Empty/10"), Reply.Json(nameof(IGenericMethod.GetGenericParameter)) }, };
 
         const int genericParameterCount = 2;
         var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), genericParameterCount, [Type.MakeGenericMethodParameter(0), Type.MakeGenericMethodParameter(1)])!;
@@ -439,11 +389,7 @@ public sealed class ReflectionTests
         var formatter = new TestUrlFormatter(
             [parameterInfo1, parameterInfo2],
             [typeof(string), typeof(long)]);
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            UrlParameterFormatter = formatter
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, UrlParameterFormatter = formatter, };
         var service = RestService.For<IGenericMethod>(BaseUrl, settings);
 
         await service.GetGenericParameter(RouteValue, LongValue);
@@ -455,13 +401,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task GenericOverloadedInterfaceWithGenericParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/10"),
-                Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/10"), Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter)) }, };
 
         var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(nameof(IGenericMethodAndInterface<>.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0)])!;
         methodInfo = methodInfo.MakeGenericMethod(typeof(int));
@@ -470,11 +410,7 @@ public sealed class ReflectionTests
         var formatter = new TestUrlFormatter(
             [parameterInfo1],
             [typeof(int)]);
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            UrlParameterFormatter = formatter
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, UrlParameterFormatter = formatter, };
         var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
 
         await service.GetGenericParameter(IntegerValue);
@@ -486,13 +422,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task GenericOverloadedInterfaceWithNonGenericShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/10/10"),
-                Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/10/10"), Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter)) }, };
 
         var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(nameof(IGenericMethodAndInterface<>.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0), typeof(int)])!;
         methodInfo = methodInfo.MakeGenericMethod(typeof(long));
@@ -502,11 +432,7 @@ public sealed class ReflectionTests
         var formatter = new TestUrlFormatter(
             [parameterInfo1, parameterInfo2],
             [typeof(long), typeof(int)]);
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            UrlParameterFormatter = formatter
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, UrlParameterFormatter = formatter, };
         var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
 
         await service.GetGenericParameter(LongValue, IntegerValue);
@@ -518,13 +444,7 @@ public sealed class ReflectionTests
     [Test]
     public async Task GenericOverloadedInterfaceWithTwoGenericParameterShouldBeExpectedReflection()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("https://foo/10/Empty"),
-                Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter))
-            },
-        };
+        var handler = new StubHttp { { Route.Get("https://foo/10/Empty"), Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter)) }, };
 
         var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(
             nameof(IGenericMethodAndInterface<>.GetGenericParameter),
@@ -537,11 +457,7 @@ public sealed class ReflectionTests
         var formatter = new TestUrlFormatter(
             [parameterInfo1, parameterInfo2],
             [typeof(string), typeof(string)]);
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            UrlParameterFormatter = formatter
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, UrlParameterFormatter = formatter, };
         var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
 
         await service.GetGenericParameter("10", "Empty");

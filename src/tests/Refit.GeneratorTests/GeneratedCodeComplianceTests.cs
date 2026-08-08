@@ -245,10 +245,7 @@ public class GeneratedCodeComplianceTests
             }
             """;
         var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
-        var syntaxTrees = new List<SyntaxTree>(result.GeneratedSources.Count + 1)
-        {
-            ParseComplianceSource(source, "Consumer.cs")
-        };
+        var syntaxTrees = new List<SyntaxTree>(result.GeneratedSources.Count + 1) { ParseComplianceSource(source, "Consumer.cs"), };
 
         foreach (var generatedSource in result.GeneratedSources)
         {

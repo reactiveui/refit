@@ -149,10 +149,7 @@ internal static partial class Parser
             string.Empty,
             string.Empty,
             string.Empty,
-            BodyBufferMode.None)
-        {
-            MultipartPart = part,
-        };
+            BodyBufferMode.None) { MultipartPart = part, };
 
     /// <summary>Classifies a declared parameter type into a multipart dispatch arm and enumerable expansion flag.</summary>
     /// <param name="type">The declared parameter type.</param>

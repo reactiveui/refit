@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -15,6 +16,7 @@ namespace Refit.Benchmarks;
 /// Construction is what a generated static field pays once; the query benchmarks are what a request pays whenever a
 /// non-default URL parameter formatter forces the formatter path.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -42,19 +44,14 @@ public class ParameterAttributeProviderBenchmarks
     public void Setup()
     {
         _single = new(typeof(QueryAttribute), [new QueryAttribute()]);
-        _many = new(new Dictionary<Type, object[]>
-        {
-            [typeof(QueryAttribute)] = [new QueryAttribute()],
-        });
+        _many = new(new Dictionary<Type, object[]> { [typeof(QueryAttribute)] = [new QueryAttribute()], });
         _singleMiss = new(typeof(AliasAsAttribute), [new AliasAsAttribute("field")]);
-        _manyMiss = new(new Dictionary<Type, object[]>
-        {
-            [typeof(AliasAsAttribute)] = [new AliasAsAttribute("field")],
-        });
+        _manyMiss = new(new Dictionary<Type, object[]> { [typeof(AliasAsAttribute)] = [new AliasAsAttribute("field")], });
     }
 
     /// <summary>Builds the single-type provider a generated static field initializes.</summary>
     /// <returns>The constructed provider.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Construction")]
     public ICustomAttributeProvider CreateSingleTypeProvider() =>
@@ -62,16 +59,15 @@ public class ParameterAttributeProviderBenchmarks
 
     /// <summary>Builds the dictionary-backed provider for the same one-attribute parameter.</summary>
     /// <returns>The constructed provider.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Construction")]
     public ICustomAttributeProvider CreateManyTypeProvider() =>
-        new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]>
-        {
-            [_attributeType] = [new QueryAttribute()],
-        });
+        new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]> { [_attributeType] = [new QueryAttribute()], });
 
     /// <summary>Resolves the query attribute through the single-type provider.</summary>
     /// <returns>The resolved attribute.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("QueryAttributeHit")]
     public QueryAttribute? ResolveQueryAttributeFromSingleType() =>
@@ -79,6 +75,7 @@ public class ParameterAttributeProviderBenchmarks
 
     /// <summary>Resolves the query attribute through the dictionary-backed provider.</summary>
     /// <returns>The resolved attribute.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("QueryAttributeHit")]
     public QueryAttribute? ResolveQueryAttributeFromManyType() =>
@@ -86,6 +83,7 @@ public class ParameterAttributeProviderBenchmarks
 
     /// <summary>Probes for an absent query attribute through the single-type provider.</summary>
     /// <returns>The resolved attribute, which is null.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("QueryAttributeMiss")]
     public QueryAttribute? ProbeMissingQueryAttributeOnSingleType() =>
@@ -93,6 +91,7 @@ public class ParameterAttributeProviderBenchmarks
 
     /// <summary>Probes for an absent query attribute through the dictionary-backed provider.</summary>
     /// <returns>The resolved attribute, which is null.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("QueryAttributeMiss")]
     public QueryAttribute? ProbeMissingQueryAttributeOnManyType() =>
@@ -100,12 +99,14 @@ public class ParameterAttributeProviderBenchmarks
 
     /// <summary>Reads every attribute from the single-type provider.</summary>
     /// <returns>The attribute count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("AllAttributes")]
     public int GetAllAttributesFromSingleType() => _single.GetCustomAttributes(true).Length;
 
     /// <summary>Reads every attribute from the dictionary-backed provider, which memoizes the flattened array.</summary>
     /// <returns>The attribute count.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("AllAttributes")]
     public int GetAllAttributesFromManyType() => _many.GetCustomAttributes(true).Length;

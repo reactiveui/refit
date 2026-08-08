@@ -177,6 +177,7 @@ public sealed class RelativePathResolutionLiveTests
 
         /// <summary>Takes the last captured request, clearing the slot.</summary>
         /// <returns>The captured request.</returns>
+        /// <exception cref="InvalidOperationException">No request has been sent through the handler since the last take.</exception>
         public HttpRequestMessage TakeLastRequest()
         {
             var request = _lastRequest ?? throw new InvalidOperationException("No request was captured.");
@@ -190,10 +191,7 @@ public sealed class RelativePathResolutionLiveTests
             CancellationToken cancellationToken)
         {
             _lastRequest = request;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("\"done\"", Encoding.UTF8, "application/json")
-            });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("\"done\"", Encoding.UTF8, "application/json"), });
         }
     }
 }

@@ -68,8 +68,7 @@ internal partial class RequestBuilderImplementation
     {
         foreach (var attributeData in propertyInfo.GetCustomAttributesData())
         {
-            var fullName = attributeData.AttributeType.FullName;
-            if (fullName is "System.Runtime.Serialization.IgnoreDataMemberAttribute"
+            if (attributeData.AttributeType.FullName is "System.Runtime.Serialization.IgnoreDataMemberAttribute"
                 or "System.Text.Json.Serialization.JsonIgnoreAttribute"
                 or "Newtonsoft.Json.JsonIgnoreAttribute")
             {
@@ -110,6 +109,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Extracts any query parameters already present on the URI into the pending list.</summary>
     /// <param name="uri">The URI builder whose query is read.</param>
     /// <param name="queryParamsToAdd">The pending query parameter list, created if needed.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void ParseExistingQueryString(UriBuilder uri, ref List<QueryParameterEntry>? queryParamsToAdd) =>
         ParseQueryStringInto(uri.Query, ref queryParamsToAdd);
 
@@ -220,11 +220,13 @@ internal partial class RequestBuilderImplementation
         parsed ??= [];
         for (var i = 0; i < parsed.Count; i++)
         {
-            if (string.Equals(parsed[i].Key, key, StringComparison.InvariantCultureIgnoreCase))
+            if (!string.Equals(parsed[i].Key, key, StringComparison.InvariantCultureIgnoreCase))
             {
-                parsed[i] = new(parsed[i].Key, $"{parsed[i].Value},{value}");
-                return;
+                continue;
             }
+
+            parsed[i] = new(parsed[i].Key, $"{parsed[i].Value},{value}");
+            return;
         }
 
         parsed.Add(new(key, value));
@@ -281,6 +283,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Strips CR and LF characters from a header value to prevent header injection.</summary>
     /// <param name="value">The value to sanitize.</param>
     /// <returns>The value with carriage-return and line-feed characters removed.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string EnsureSafe(string value) => StringHelpers.RemoveCrOrLf(value);
 
     /// <summary>Determines whether the HTTP method must not carry a request body.</summary>
@@ -308,6 +311,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Gets the cached query-property metadata for the given type.</summary>
     /// <param name="type">The object type to inspect.</param>
     /// <returns>The readable public instance properties with their attribute-derived facts.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static QueryPropertyMetadata[] GetCachedQueryProperties(Type type) =>
         QueryPropertyCache.GetValue(type, QueryPropertyFactory);
 
@@ -315,6 +319,7 @@ internal partial class RequestBuilderImplementation
     /// materialized once and reused for every formatted value.</summary>
     /// <param name="provider">The underlying attribute provider.</param>
     /// <returns>The cached attribute provider.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ICustomAttributeProvider GetCachedAttributeProvider(ICustomAttributeProvider provider) =>
         AttributeProviderCache.GetValue(provider, static p => new CachedAttributeProvider(p));
 
@@ -345,6 +350,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="request">The request to add the header to.</param>
     /// <param name="cancellationToken">A token to cancel the getter.</param>
     /// <returns>A task that completes when the header has been set.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
         RequestExecutionHelpers.AddAuthorizationHeaderFromGetterAsync(request, _settings, cancellationToken);
 
@@ -629,6 +635,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="kvps">The accumulating list of query pairs.</param>
     /// <param name="queryAttribute">The property's query attribute, if any.</param>
     /// <param name="collectionFormat">The collection format for enumerable values.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void AppendEnumerablePropertyValues(
         IEnumerable values,
         PropertyInfo propertyInfo,

@@ -177,13 +177,13 @@ public sealed class EscapedIdentifierGenerationTests
     private static async Task AssertCompilesAsync(string members)
     {
         const string header =
-            "using System.Collections.Generic;\n" +
-            "using System.Net.Http;\n" +
-            "using System.Threading;\n" +
-            "using System.Threading.Tasks;\n" +
-            "using Refit;\n\n" +
-            "namespace Refit.EscapedIdentifierScenarios;\n\n" +
-            "public interface IEscapedIdentifierApi\n{\n";
+            "using System.Collections.Generic;\n"
+            + "using System.Net.Http;\n"
+            + "using System.Threading;\n"
+            + "using System.Threading.Tasks;\n"
+            + "using Refit;\n\n"
+            + "namespace Refit.EscapedIdentifierScenarios;\n\n"
+            + "public interface IEscapedIdentifierApi\n{\n";
         const string footer = "\n}\n";
 
         var result = Fixture.RunGenerator(header + members + footer, generatedRequestBuilding: true);

@@ -20,6 +20,7 @@ public class MultipartNewtonsoftTests
     /// <param name="contentSerializerType">The serializer type to exercise.</param>
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(NewtonsoftJsonContentSerializer), "application/json")]
     public async Task MultipartUploadShouldWorkWithAnObject(
@@ -50,14 +51,10 @@ public class MultipartNewtonsoftTests
                     .ConfigureAwait(false);
                 await Assert.That(result0!.Property1).IsEqualTo(model1.Property1);
                 await Assert.That(result0!.Property2).IsEqualTo(model1.Property2);
-            }
+            },
         };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            ContentSerializer = serializer
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, ContentSerializer = serializer, };
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadJsonObject(model1);
@@ -67,6 +64,7 @@ public class MultipartNewtonsoftTests
     /// <param name="contentSerializerType">The serializer type to exercise.</param>
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
     /// <returns>A task representing the asynchronous test.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(NewtonsoftJsonContentSerializer), "application/json")]
     public async Task MultipartUploadShouldWorkWithObjects(
@@ -109,14 +107,10 @@ public class MultipartNewtonsoftTests
                     .ConfigureAwait(false);
                 await Assert.That(result1!.Property1).IsEqualTo(model2.Property1);
                 await Assert.That(result1!.Property2).IsEqualTo(model2.Property2);
-            }
+            },
         };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            ContentSerializer = serializer
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, ContentSerializer = serializer, };
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadJsonObjects([model1, model2]);

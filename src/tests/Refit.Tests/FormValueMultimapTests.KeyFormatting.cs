@@ -16,10 +16,7 @@ public partial class FormValueMultimapTests
     public async Task KeyFormattingHonorsSettingsAcrossRepeatedConstructionForSameType()
     {
         var source = new MultiWordNameForm { FirstName = "Ada" };
-        var snakeSettings = new RefitSettings
-        {
-            UrlParameterKeyFormatter = new SnakeCaseUrlParameterKeyFormatter()
-        };
+        var snakeSettings = new RefitSettings { UrlParameterKeyFormatter = new SnakeCaseUrlParameterKeyFormatter(), };
 
         var defaultFirst = new FormValueMultimap(source, _settings).Keys.ToArray();
         var snake = new FormValueMultimap(source, snakeSettings).Keys.ToArray();

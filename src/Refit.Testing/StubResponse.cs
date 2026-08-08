@@ -12,6 +12,7 @@ namespace Refit.Testing;
 /// the <see cref="Reply"/> factory rather than constructing it directly; the properties are exposed so a
 /// test can read what a reply carries.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{Status}")]
 public sealed class StubResponse
 {
     /// <summary>Gets the response status code. Defaults to <see cref="HttpStatusCode.OK"/>.</summary>

@@ -98,6 +98,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="bufferBody">Whether request content should be buffered before sending.</param>
     /// <param name="methodCancellationToken">The cancellation token supplied as a method argument, if any.</param>
     /// <returns>A cold observable of the deserialized or wrapped response.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -182,6 +183,7 @@ public static partial class GeneratedRequestRunner
     /// <param name="request">The generated request message to annotate.</param>
     /// <param name="timeoutMilliseconds">The per-call timeout in milliseconds.</param>
     /// <remarks>Emitted by the source generator only for methods that declare a positive timeout.</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void SetRequestTimeout(HttpRequestMessage request, int timeoutMilliseconds) =>
         AddRequestProperty(request, TimeoutOptionKey, timeoutMilliseconds);
 

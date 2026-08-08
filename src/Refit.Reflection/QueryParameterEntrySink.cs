@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
+
 namespace Refit;
 
 /// <summary>Appends formatted enumerable values as <see cref="QueryParameterEntry"/> items under a fixed key.</summary>
@@ -10,5 +12,6 @@ namespace Refit;
 internal readonly record struct QueryParameterEntrySink(List<QueryParameterEntry> Entries, string Key) : IQueryValueSink
 {
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Add(string? value) => Entries.Add(new(Key, value));
 }

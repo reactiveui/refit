@@ -20,7 +20,7 @@ internal sealed class AuthenticatedHttpClientHandler : DelegatingHandler
     /// of <see cref="HttpClientHandler"/>, when <paramref name="innerHandler"/> is <c>null</c>. This is
     /// a behavior which is incompatible with the <c>IHttpClientBuilder</c>.
     /// </remarks>
-    public AuthenticatedHttpClientHandler(
+    internal AuthenticatedHttpClientHandler(
         Func<HttpRequestMessage, CancellationToken, ValueTask<string>> getToken,
         HttpMessageHandler? innerHandler = null)
         : base(innerHandler ?? new HttpClientHandler())
@@ -39,7 +39,7 @@ internal sealed class AuthenticatedHttpClientHandler : DelegatingHandler
     /// which is different from the old (legacy) constructor, and compliant with the behavior expected
     /// by the <c>IHttpClientBuilder</c>.
     /// </remarks>
-    public AuthenticatedHttpClientHandler(
+    internal AuthenticatedHttpClientHandler(
         HttpMessageHandler? innerHandler,
         Func<HttpRequestMessage, CancellationToken, ValueTask<string>> getToken)
     {

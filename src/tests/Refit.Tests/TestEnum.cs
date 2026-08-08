@@ -8,11 +8,11 @@ namespace Refit.Tests;
 public enum TestEnum
 {
     /// <summary>The A value.</summary>
-    A,
+    A = 0,
 
     /// <summary>The B value.</summary>
-    B,
+    B = 1,
 
     /// <summary>The C value.</summary>
-    C
+    C = 2,
 }

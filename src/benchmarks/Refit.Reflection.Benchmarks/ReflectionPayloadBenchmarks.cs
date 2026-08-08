@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -11,6 +12,7 @@ namespace Refit.Reflection.Benchmarks;
 /// EventPipe GC-verbose allocation profile of body and multipart payload assembly: setting a serialized JSON body,
 /// serializing a body by runtime type, and adding text, byte-array and stream multipart parts.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
@@ -83,6 +85,7 @@ public class ReflectionPayloadBenchmarks
 
     /// <summary>Serializes a body by its runtime type.</summary>
     /// <returns>The serialized body content.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public HttpContent SerializeBody() =>
         RequestBuilderImplementation.SerializeBody(_serializer, _userValue, typeof(ReflectionUserModel));

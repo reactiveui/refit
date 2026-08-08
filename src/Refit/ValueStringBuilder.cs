@@ -139,17 +139,20 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Returns a span over the current contents of the builder.</summary>
     /// <returns>A span over the contents of the builder.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal readonly ReadOnlySpan<char> AsSpan() => _chars[.._pos];
 
     /// <summary>Returns a span over the contents from the given start index to the end.</summary>
     /// <param name="start">The start index.</param>
     /// <returns>A span over the requested portion of the builder.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal readonly ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
 
     /// <summary>Returns a span over the contents at the given start index with the given length.</summary>
     /// <param name="start">The start index.</param>
     /// <param name="length">The length of the span.</param>
     /// <returns>A span over the requested portion of the builder.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal readonly ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
 
     /// <summary>Attempts to copy the contents of the builder into the destination span.</summary>
@@ -181,8 +184,7 @@ internal ref struct ValueStringBuilder
             Grow(count);
         }
 
-        var remaining = _pos - index;
-        _chars.Slice(index, remaining).CopyTo(_chars[(index + count)..]);
+        _chars.Slice(index, _pos - index).CopyTo(_chars[(index + count)..]);
         _chars.Slice(index, count).Fill(value);
         _pos += count;
     }
@@ -204,8 +206,7 @@ internal ref struct ValueStringBuilder
             Grow(count);
         }
 
-        var remaining = _pos - index;
-        _chars.Slice(index, remaining).CopyTo(_chars[(index + count)..]);
+        _chars.Slice(index, _pos - index).CopyTo(_chars[(index + count)..]);
         s
 #if !NETCOREAPP
             .AsSpan()
@@ -243,8 +244,8 @@ internal ref struct ValueStringBuilder
         }
 
         var pos = _pos;
-        if (s.Length == 1 &&
-            (uint)pos < (uint)_chars
+        if (s.Length == 1
+            && (uint)pos < (uint)_chars
                 .Length) // very common case, e.g. appending strings from NumberFormatInfo like separators, percent symbols, etc.
         {
             _chars[pos] = s[0];
@@ -279,8 +280,7 @@ internal ref struct ValueStringBuilder
     /// <param name="value">The characters to append.</param>
     internal void Append(scoped ReadOnlySpan<char> value)
     {
-        var pos = _pos;
-        if (pos > _chars.Length - value.Length)
+        if (_pos > _chars.Length - value.Length)
         {
             Grow(value.Length);
         }

@@ -14,6 +14,7 @@ namespace Refit.Benchmarks;
 /// streaming-format detection in <c>RequestExecutionHelpers</c>. Linked sources allocated by the helpers are disposed
 /// inside each benchmark.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]

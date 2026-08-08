@@ -14,6 +14,7 @@ namespace Refit;
 /// <remarks>
 /// Initializes a new instance of the <see cref="XmlContentSerializer"/> class.
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentDeserializer
 {
     /// <summary>Explains why the trimming warning is suppressed for XML reflection.</summary>

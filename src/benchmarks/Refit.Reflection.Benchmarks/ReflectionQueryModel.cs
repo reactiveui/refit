@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Benchmarks;
 
 /// <summary>A request model exercised by the reflection query-flattening and object-path benchmarks.</summary>
+[System.Diagnostics.DebuggerDisplay("{Id}")]
 public sealed class ReflectionQueryModel
 {
     /// <summary>Gets or sets the identifier, bound to <c>{request.id}</c> path placeholders.</summary>

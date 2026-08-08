@@ -53,13 +53,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task TaskFuncForMethodPassesTheDeclaredCancellationToken()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Template = "*", Reusable = true },
-                Reply.Content(new StringContent("ok"))
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Reusable = true }, Reply.Content(new StringContent("ok")) }, };
 
         var fixture = new RequestBuilderImplementation<ICancellableMethods>();
         var func = fixture.BuildRestResultFuncForMethod(nameof(ICancellableMethods.GetWithCancellationAndReturn));

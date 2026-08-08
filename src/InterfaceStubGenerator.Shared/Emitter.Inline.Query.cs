@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
 
@@ -386,6 +387,7 @@ internal static partial class Emitter
     /// <returns>The C# string literal, URI-data-escaped unless <paramref name="preEncoded"/>.</returns>
     /// <remarks>Escaping here rather than on every request matches the reflection builder's output because
     /// <c>Uri.EscapeDataString</c> follows RFC 3986 consistently across the supported target frameworks.</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string BuildPreEscapedQueryKeyLiteral(string key, bool preEncoded) =>
         ToCSharpStringLiteral(preEncoded ? key : System.Uri.EscapeDataString(key));
 

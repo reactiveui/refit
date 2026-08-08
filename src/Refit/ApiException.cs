@@ -5,10 +5,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
 /// <summary>Represents an error that occurred after a response was received from the server.</summary>
+[System.Diagnostics.DebuggerDisplay("{StatusCode}")]
 [SuppressMessage(
     "Design",
     "SST1488:Exception types should declare the standard constructors",
@@ -170,6 +172,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="response">The HTTP Response message.</param>
     /// <param name="refitSettings">Refit settings used to sent the request.</param>
     /// <returns>A newly created <see cref="ApiException"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Usage",
         "VSTHRD200:Use \"Async\" suffix for async methods",
@@ -188,6 +191,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="refitSettings">Refit settings used to sent the request.</param>
     /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
     /// <returns>A newly created <see cref="ApiException"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="response"/> carries a success status code, so there is no failure to represent.</exception>
     [SuppressMessage("Usage", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "Public API name preserved for backwards compatibility.")]
     public static Task<ApiException> Create(
         HttpRequestMessage message,
@@ -220,6 +224,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="response">The HTTP Response message.</param>
     /// <param name="refitSettings">Refit settings used to send the request.</param>
     /// <returns>A newly created <see cref="ApiException"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage("Usage", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "Public API name preserved for backwards compatibility.")]
     public static Task<ApiException> Create(
         string exceptionMessage,
@@ -260,10 +265,7 @@ public class ApiException : ApiExceptionBase
             response.ReasonPhrase,
             response.Headers,
             refitSettings,
-            innerException)
-        {
-            RequestContent = GetCapturedRequestContent(message)
-        };
+            innerException) { RequestContent = GetCapturedRequestContent(message), };
 
         if (response.Content is not null)
         {

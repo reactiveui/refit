@@ -5,6 +5,7 @@
 namespace Refit.Benchmarks;
 
 /// <summary>A nested address used by the query-flattening benchmark to exercise the recursive object walk.</summary>
+[System.Diagnostics.DebuggerDisplay("{City}")]
 public sealed class QueryAddressModel
 {
     /// <summary>Gets or sets the city.</summary>

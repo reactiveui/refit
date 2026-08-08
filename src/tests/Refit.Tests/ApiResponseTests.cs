@@ -63,9 +63,7 @@ public sealed class ApiResponseTests
         using var response = new ApiResponse<string>(httpResponse, "body", new());
 
         await Assert.That(response.HasContent).IsTrue();
-
-        IApiResponse<string> asInterface = response;
-        var ensured = await asInterface.EnsureSuccessStatusCodeAsync();
+        var ensured = await response.EnsureSuccessStatusCodeAsync();
         await Assert.That(ensured).IsSameReferenceAs(response);
     }
 
@@ -615,9 +613,5 @@ public sealed class ApiResponseTests
     /// <param name="content">The response content.</param>
     /// <returns>The response message.</returns>
     private static HttpResponseMessage CreateResponse(HttpStatusCode statusCode, string content) =>
-        new(statusCode)
-        {
-            RequestMessage = new(HttpMethod.Get, ExampleUri),
-            Content = new StringContent(content)
-        };
+        new(statusCode) { RequestMessage = new(HttpMethod.Get, ExampleUri), Content = new StringContent(content), };
 }

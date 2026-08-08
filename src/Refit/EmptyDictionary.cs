@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
+
 namespace Refit;
 
 /// <summary>Provides a shared empty dictionary instance.</summary>
@@ -15,5 +17,6 @@ internal static class EmptyDictionary<TKey, TValue>
 
     /// <summary>Gets the shared empty dictionary.</summary>
     /// <returns>The shared empty dictionary instance.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Dictionary<TKey, TValue> Get() => _value;
 }

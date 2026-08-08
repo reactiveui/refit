@@ -7,14 +7,14 @@ namespace Refit.Generator;
 internal enum BodyBufferMode
 {
     /// <summary>The method has no request body.</summary>
-    None,
+    None = 0,
 
     /// <summary>The generated method should use <c>RefitSettings.Buffered</c> at runtime.</summary>
-    Settings,
+    Settings = 1,
 
     /// <summary>The body is explicitly buffered.</summary>
-    Buffered,
+    Buffered = 2,
 
     /// <summary>The body is explicitly streamed.</summary>
-    Streaming
+    Streaming = 3,
 }

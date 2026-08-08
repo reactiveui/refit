@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -119,6 +120,7 @@ internal static class GeneratorHarness
     /// <param name="compilation">The compilation to parse.</param>
     /// <param name="candidates">The pre-collected syntactic candidates.</param>
     /// <returns>The context generation model produced by the parser.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ContextGenerationModel Parse(
         CSharpCompilation compilation,
         (ImmutableArray<MethodDeclarationSyntax> Methods, ImmutableArray<InterfaceDeclarationSyntax> Interfaces) candidates) =>
@@ -129,7 +131,7 @@ internal static class GeneratorHarness
             emitGeneratedCodeMarkers: true,
             candidates.Methods,
             candidates.Interfaces,
-            CancellationToken.None).contextGenerationSpec;
+            CancellationToken.None).ContextGenerationSpec;
 
     /// <summary>Resolves the Refit base HTTP method attribute symbol for a compilation.</summary>
     /// <param name="compilation">The compilation to resolve against.</param>
@@ -140,6 +142,7 @@ internal static class GeneratorHarness
     /// <summary>Resolves <c>System.IFormattable</c> for a compilation.</summary>
     /// <param name="compilation">The compilation to resolve against.</param>
     /// <returns>The resolved symbol, or null when unavailable.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static INamedTypeSymbol? GetFormattableSymbol(CSharpCompilation compilation) =>
         compilation.GetTypeByMetadataName("System.IFormattable");
 

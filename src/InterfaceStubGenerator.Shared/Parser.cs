@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,8 +28,8 @@ internal static partial class Parser
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The collected diagnostics and the model used to generate the stubs.</returns>
     internal static (
-        List<Diagnostic> diagnostics,
-        ContextGenerationModel contextGenerationSpec) GenerateInterfaceStubs(
+        List<Diagnostic> Diagnostics,
+        ContextGenerationModel ContextGenerationSpec) GenerateInterfaceStubs(
         CSharpCompilation compilation,
         string? refitInternalNamespace,
         bool generatedRequestBuilding,
@@ -105,7 +106,7 @@ internal static partial class Parser
     /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
     /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <returns>The diagnostics paired with an empty context model.</returns>
-    internal static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec) CreateEmptyResult(
+    internal static (List<Diagnostic> Diagnostics, ContextGenerationModel ContextGenerationSpec) CreateEmptyResult(
         List<Diagnostic> diagnostics,
         string refitInternalNamespace,
         string generatedClassName,
@@ -604,6 +605,7 @@ internal static partial class Parser
     /// <param name="method">The candidate method.</param>
     /// <param name="disposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
     /// <returns><see langword="true"/> if the method is declared on <c>IDisposable</c>; otherwise, <see langword="false"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool IsDisposeMethod(IMethodSymbol method, ISymbol? disposableInterfaceSymbol) =>
         method.ContainingType.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default);
 

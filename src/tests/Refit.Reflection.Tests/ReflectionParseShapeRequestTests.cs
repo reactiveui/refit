@@ -8,6 +8,7 @@ namespace Refit.Reflection.Tests;
 /// <see cref="IReflectionParseShapeApi"/> and pins the resulting URI, headers, request options, JSON body and multipart
 /// parts. These end-to-end assertions guard the whole per-call build against regressions in the constructor's
 /// per-parameter attribute classification.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionParseShapeRequestTests
 {
     /// <summary>The serialized JSON body produced for the body payload fixture.</summary>

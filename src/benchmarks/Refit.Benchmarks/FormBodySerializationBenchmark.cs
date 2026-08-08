@@ -2,12 +2,14 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
 namespace Refit.Benchmarks;
 
 /// <summary>Benchmarks producing a URL-encoded form body via the reflection, generated descriptor, and unrolled paths.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 public class FormBodySerializationBenchmark
@@ -31,14 +33,7 @@ public class FormBodySerializationBenchmark
     [GlobalSetup]
     public void Setup()
     {
-        _body = new FormBenchmarkModel
-        {
-            FirstName = "Ada",
-            LastName = "Lovelace",
-            Email = "ada@example.com",
-            Age = SampleAge,
-            Note = null
-        };
+        _body = new FormBenchmarkModel { FirstName = "Ada", LastName = "Lovelace", Email = "ada@example.com", Age = SampleAge, Note = null, };
         _body.Roles.Add("admin");
         _body.Roles.Add("author");
 
@@ -57,12 +52,14 @@ public class FormBodySerializationBenchmark
 
     /// <summary>Serializes the form body through the reflection-based <c>FormValueMultimap</c> path.</summary>
     /// <returns>The number of bytes produced.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     public Task<long> ReflectionAsync() =>
         ProduceAsync(GeneratedRequestRunner.CreateUrlEncodedBodyContent(_settings, _body));
 
     /// <summary>Serializes the form body through the generated reflection-free descriptor path.</summary>
     /// <returns>The number of bytes produced.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<long> DescriptorAsync() =>
         ProduceAsync(GeneratedRequestRunner.CreateUrlEncodedBodyContent(_settings, _body, _fields));
@@ -70,6 +67,7 @@ public class FormBodySerializationBenchmark
     /// <summary>Serializes the form body through the straight-line unrolled path (no descriptor array, delegates, or
     /// value boxing) exactly as an unrolled source generator would emit it.</summary>
     /// <returns>The number of bytes produced.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public Task<long> UnrolledAsync() => ProduceAsync(BuildUnrolled(_body));
 
@@ -134,6 +132,7 @@ public class FormBodySerializationBenchmark
     }
 
     /// <summary>Fails setup unless the unrolled fast path produces byte-identical output to the descriptor path.</summary>
+    /// <exception cref="InvalidOperationException">The unrolled path and the descriptor path serialize the payload differently.</exception>
     private void VerifyUnrolledMatchesDescriptor()
     {
         var descriptor = ReadSynchronously(GeneratedRequestRunner.CreateUrlEncodedBodyContent(_settings, _body, _fields));

@@ -8,6 +8,7 @@ namespace Meow;
 
 /// <summary>HTTP content backed by a stream that only supports asynchronous reads.</summary>
 /// <param name="json">The JSON content to serve.</param>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class AsyncOnlyJsonHttpContent(string json) : HttpContent
 {
     /// <summary>The UTF-8 encoded content buffer.</summary>

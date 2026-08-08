@@ -21,6 +21,7 @@ public class SerializedContentNewtonsoftTests
     /// <summary>Verifies that a request requiring a serialized body completes without deadlocking under Newtonsoft.</summary>
     /// <param name="contentSerializerType">The content serializer implementation under test.</param>
     /// <returns>A task that represents the asynchronous test operation.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(NewtonsoftJsonContentSerializer))]
     public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
@@ -32,11 +33,7 @@ public class SerializedContentNewtonsoftTests
                 $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
         }
 
-        var handler = new MockPushStreamContentHttpMessageHandler
-        {
-            Asserts = static async content =>
-                new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
-        };
+        var handler = new MockPushStreamContentHttpMessageHandler { Asserts = static async content => new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false)), };
 
         var settings = new RefitSettings(serializer) { HttpMessageHandlerFactory = () => handler };
 
@@ -51,6 +48,7 @@ public class SerializedContentNewtonsoftTests
     /// <summary>Verifies that a request body is serialized and round-trips back to the original model under Newtonsoft.</summary>
     /// <param name="contentSerializerType">The content serializer implementation under test.</param>
     /// <returns>A task that represents the asynchronous test operation.</returns>
+    /// <exception cref="ArgumentException"><paramref name="contentSerializerType"/> does not implement <see cref="IHttpContentSerializer"/>.</exception>
     [Test]
     [Arguments(typeof(NewtonsoftJsonContentSerializer))]
     public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
@@ -65,12 +63,7 @@ public class SerializedContentNewtonsoftTests
         const int sampleCreatedYear = 1949;
         const int sampleCreatedMonth = 9;
         const int sampleCreatedDay = 16;
-        var model = new User
-        {
-            Name = "Wile E. Coyote",
-            CreatedAt = new DateOnly(sampleCreatedYear, sampleCreatedMonth, sampleCreatedDay).ToString(),
-            Company = "ACME",
-        };
+        var model = new User { Name = "Wile E. Coyote", CreatedAt = new DateOnly(sampleCreatedYear, sampleCreatedMonth, sampleCreatedDay).ToString(), Company = "ACME", };
 
         var handler = new MockPushStreamContentHttpMessageHandler
         {
@@ -88,7 +81,7 @@ public class SerializedContentNewtonsoftTests
 
                 // Returns some content so that the serializer does not complain.
                 return stringContent;
-            }
+            },
         };
 
         var settings = new RefitSettings(serializer) { HttpMessageHandlerFactory = () => handler };

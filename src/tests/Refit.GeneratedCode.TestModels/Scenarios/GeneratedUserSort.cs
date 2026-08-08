@@ -10,9 +10,9 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
     {
         /// <summary>Sort by creation date, newest first.</summary>
         [EnumMember(Value = "date-desc")]
-        DateDescending,
+        DateDescending = 0,
 
         /// <summary>Sort by user name.</summary>
-        Name,
+        Name = 1,
     }
 }

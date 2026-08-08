@@ -11,5 +11,6 @@ namespace Refit;
 /// through <see cref="RefitSettings.UrlParameterFormatter"/> like any other query value, and is URL-encoded
 /// unless the parameter also carries <see cref="EncodedAttribute"/>.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class QueryNameAttribute : Attribute;

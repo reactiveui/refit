@@ -108,6 +108,9 @@ internal partial class RestMethodInfoInternal
     /// <param name="parameterArray">The array of method parameters.</param>
     /// <param name="sets">The classified attribute set for each parameter.</param>
     /// <returns>The index of the header collection parameter, or a negative value when none exists.</returns>
+    /// <exception cref="ArgumentException">A header collection parameter is not assignable from
+    /// <c>IDictionary&lt;string, string&gt;</c>, or more than one parameter carries
+    /// <see cref="HeaderCollectionAttribute"/>.</exception>
     internal static int GetHeaderCollectionParameterIndex(ParameterInfo[] parameterArray, ParameterAttributeSet[] sets)
     {
         var headerIndex = -1;
@@ -150,14 +153,16 @@ internal partial class RestMethodInfoInternal
         for (var i = 0; i < parameterArray.Length; i++)
         {
             var propertyAttribute = sets[i].Property;
-            if (propertyAttribute is not null)
+            if (propertyAttribute is null)
             {
-                var propertyKey = !string.IsNullOrEmpty(propertyAttribute.Key)
-                    ? propertyAttribute.Key
-                    : parameterArray[i].Name!;
-                propertyMap ??= [];
-                propertyMap[i] = propertyKey!;
+                continue;
             }
+
+            var propertyKey = !string.IsNullOrEmpty(propertyAttribute.Key)
+                ? propertyAttribute.Key
+                : parameterArray[i].Name!;
+            propertyMap ??= [];
+            propertyMap[i] = propertyKey!;
         }
 
         return propertyMap ?? EmptyDictionary<int, string>.Get();
@@ -174,11 +179,13 @@ internal partial class RestMethodInfoInternal
         {
             var header = sets[i].Header?.Header;
 
-            if (!string.IsNullOrWhiteSpace(header))
+            if (string.IsNullOrWhiteSpace(header))
             {
-                ret ??= [];
-                ret[i] = header!.Trim();
+                continue;
             }
+
+            ret ??= [];
+            ret[i] = header!.Trim();
         }
 
         return ret ?? EmptyDictionary<int, string>.Get();
@@ -214,6 +221,7 @@ internal partial class RestMethodInfoInternal
     /// <summary>Finds the parameter that carries the authorization value.</summary>
     /// <param name="sets">The classified attribute set for each parameter.</param>
     /// <returns>The authorization parameter information, or null when there is no authorize parameter.</returns>
+    /// <exception cref="ArgumentException">More than one parameter carries <see cref="AuthorizeAttribute"/>.</exception>
     internal static Tuple<string, int>? FindAuthorizationParameter(ParameterAttributeSet[] sets)
     {
         AuthorizeAttribute? authorizeAttribute = null;

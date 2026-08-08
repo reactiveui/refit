@@ -10,9 +10,9 @@ namespace Refit.Tests;
 public enum FooWithEnumMember
 {
     /// <summary>The A value.</summary>
-    A,
+    A = 0,
 
     /// <summary>The B value, serialized as "b".</summary>
     [EnumMember(Value = "b")]
-    B
+    B = 1,
 }

@@ -34,17 +34,8 @@ public class ExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichAlwaysReturnsNull_WithResult()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://api/get-with-result"),
-                new StubResponse { Status = HttpStatusCode.NotFound, Content = new StringContent("error-result") }
-            },
-        };
-        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
-        {
-            ExceptionFactory = static _ => new ValueTask<Exception?>((Exception?)null)
-        });
+        var handler = new StubHttp { { Route.Get("http://api/get-with-result"), new StubResponse { Status = HttpStatusCode.NotFound, Content = new StringContent("error-result") } }, };
+        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings { ExceptionFactory = static _ => new ValueTask<Exception?>((Exception?)null), });
 
         var result = await fixture.GetWithResult();
 
@@ -58,17 +49,8 @@ public class ExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichAlwaysReturnsNull_WithoutResult()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Put("http://api/put-without-result"),
-                Reply.Status(HttpStatusCode.NotFound)
-            },
-        };
-        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
-        {
-            ExceptionFactory = static _ => new ValueTask<Exception?>((Exception?)null)
-        });
+        var handler = new StubHttp { { Route.Put("http://api/put-without-result"), Reply.Status(HttpStatusCode.NotFound) }, };
+        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings { ExceptionFactory = static _ => new ValueTask<Exception?>((Exception?)null), });
 
         await fixture.PutWithoutResult();
 
@@ -81,17 +63,8 @@ public class ExceptionFactoryTests
     public async Task ProvideFactoryWhichAlwaysReturnsException_WithResult()
     {
         var exception = new InvalidOperationException("I like to fail");
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://api/get-with-result"),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("success-result") }
-            },
-        };
-        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
-        {
-            ExceptionFactory = _ => new ValueTask<Exception?>(exception)
-        });
+        var handler = new StubHttp { { Route.Get("http://api/get-with-result"), new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("success-result") } }, };
+        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings { ExceptionFactory = _ => new ValueTask<Exception?>(exception), });
 
         var thrownException = await Assert.That(() => (Task)fixture.GetWithResult()).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrownException).IsEqualTo(exception);
@@ -105,17 +78,8 @@ public class ExceptionFactoryTests
     public async Task ProvideFactoryWhichAlwaysReturnsException_WithoutResult()
     {
         var exception = new InvalidOperationException("I like to fail");
-        var handler = new StubHttp
-        {
-            {
-                Route.Put("http://api/put-without-result"),
-                Reply.Status(HttpStatusCode.OK)
-            },
-        };
-        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
-        {
-            ExceptionFactory = _ => new ValueTask<Exception?>(exception)
-        });
+        var handler = new StubHttp { { Route.Put("http://api/put-without-result"), Reply.Status(HttpStatusCode.OK) }, };
+        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings { ExceptionFactory = _ => new ValueTask<Exception?>(exception), });
 
         var thrownException = await Assert.That(fixture.PutWithoutResult).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrownException).IsEqualTo(exception);

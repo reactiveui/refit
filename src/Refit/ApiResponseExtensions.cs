@@ -42,6 +42,10 @@ public static class ApiResponseExtensions
                 ? new(checkedResponse)
                 : new(Task.FromException<IApiResponse>(GetError(checkedResponse)));
         }
+
+        /// <summary>Gets the captured error, or a fallback when an unsuccessful response did not record one.</summary>
+        /// <returns>The exception to surface to the caller.</returns>
+        internal Exception GetError() => (Exception?)response.Error ?? new InvalidOperationException("The response was unsuccessful but did not capture an error.");
     }
 
     /// <summary>Success-guard helpers on <see cref="IApiResponse{T}"/>.</summary>
@@ -81,11 +85,4 @@ public static class ApiResponseExtensions
                 : new(Task.FromException<IApiResponse<T>>(GetError(checkedResponse)));
         }
     }
-
-    /// <summary>Gets the captured error, or a fallback when an unsuccessful response did not record one.</summary>
-    /// <param name="response">The unsuccessful response.</param>
-    /// <returns>The exception to surface to the caller.</returns>
-    internal static Exception GetError(IApiResponse response) =>
-        (Exception?)response.Error
-        ?? new InvalidOperationException("The response was unsuccessful but did not capture an error.");
 }

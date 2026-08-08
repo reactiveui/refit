@@ -75,27 +75,16 @@ public class UrlResolutionModeTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher
-                {
-                    Template = "*",
-                    Reusable = true
-                },
+                new RouteMatcher { Template = "*", Reusable = true, },
                 Reply.From(request =>
                 {
                     captured = request.RequestUri;
-                    return new(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent("test")
-                    };
+                    return new(HttpStatusCode.OK) { Content = new StringContent("test"), };
                 })
             },
         };
 
-        var settings = new RefitSettings
-        {
-            UrlResolution = UrlResolutionMode.Rfc3986,
-            HttpMessageHandlerFactory = () => handler,
-        };
+        var settings = new RefitSettings { UrlResolution = UrlResolutionMode.Rfc3986, HttpMessageHandlerFactory = () => handler, };
 
         var api = RestService.For<IRfcUrlResolutionApi>(baseAddress, settings);
         _ = await call(api);

@@ -74,8 +74,8 @@ internal static partial class Emitter
                || ((knownConstraints & KnownTypeConstraint.Unmanaged) != 0 && !isOverrideOrExplicitImplementation)
                || (knownConstraints & KnownTypeConstraint.Struct) != 0
                || ((knownConstraints & KnownTypeConstraint.NotNull) != 0 && !isOverrideOrExplicitImplementation)
-               || (!isOverrideOrExplicitImplementation && (typeParameter.Constraints.Count > 0 ||
-                                                           (knownConstraints & KnownTypeConstraint.New) != 0));
+               || (!isOverrideOrExplicitImplementation && (typeParameter.Constraints.Count > 0
+                                                           || (knownConstraints & KnownTypeConstraint.New) != 0));
     }
 
     /// <summary>Appends the comma-separated constraint list for a type parameter.</summary>

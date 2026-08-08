@@ -23,6 +23,7 @@ namespace Refit;
 /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters.
 /// </remarks>
 /// <param name="jsonSerializerOptions">The serialization options to use for the current instance.</param>
+[System.Diagnostics.DebuggerDisplay("{SerializerOptions}")]
 public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
     : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer, ISynchronousContentDeserializer
 {
@@ -55,7 +56,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             NumberHandling = JsonNumberHandling.AllowReadingFromString,
 #if NET10_0_OR_GREATER
-            AllowDuplicateProperties = false
+            AllowDuplicateProperties = false,
 #endif
         };
         jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
@@ -89,7 +90,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 #if NET10_0_OR_GREATER
-            AllowDuplicateProperties = false
+            AllowDuplicateProperties = false,
 #endif
         };
 
@@ -131,7 +132,6 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [SuppressMessage("Roslynator", "RCS1261:Resource can be disposed asynchronously", Justification = "Newer .NET versions only.")]
     public HttpContent ToStreamingHttpContent<T>(T item)
     {
         var content = new PushStreamContent(
@@ -154,6 +154,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     }
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -170,6 +171,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 #endif
 
     /// <inheritdoc/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -324,6 +326,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="item">The item to serialize.</param>
     /// <param name="runtimeType">The runtime type to serialize the item as.</param>
     /// <returns>The serialized HTTP content.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     internal JsonContent ToHttpContentRuntimeReflection(object item, Type runtimeType) =>
@@ -333,6 +336,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
     /// <param name="item">The item to serialize.</param>
     /// <returns>The serialized HTTP content.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     internal JsonContent ToHttpContentReflection<T>(T item) =>
@@ -343,6 +347,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="content">The HTTP content to read from.</param>
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     /// <returns>The deserialized value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -356,6 +361,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
     /// <param name="item">The item to serialize.</param>
     /// <returns>The UTF-8 encoded JSON.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -373,6 +379,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
     /// <param name="item">The item to serialize.</param>
     /// <returns>The UTF-8 encoded JSON.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
@@ -386,6 +393,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
     /// <param name="item">The item to serialize.</param>
     /// <param name="writer">The writer to serialize into.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -410,6 +418,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
     /// <param name="item">The item to serialize.</param>
     /// <param name="writer">The writer to serialize into.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(
@@ -491,6 +500,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type to deserialize.</typeparam>
     /// <param name="content">The buffered content string.</param>
     /// <returns>The deserialized value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     [SuppressMessage(

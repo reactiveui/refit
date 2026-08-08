@@ -15,6 +15,7 @@ namespace Refit;
 /// implement <see cref="IQueryConverter{T}"/> for the parameter's declared type and expose a public parameterless
 /// constructor.
 /// </remarks>
+[System.Diagnostics.DebuggerDisplay("{ConverterType}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class QueryConverterAttribute : Attribute
 {

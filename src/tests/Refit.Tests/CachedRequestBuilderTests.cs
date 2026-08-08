@@ -102,11 +102,11 @@ public class CachedRequestBuilderTests
     /// <summary>Request-builder test double that records how many functions the cache asks it to build.</summary>
     private sealed class CountingRequestBuilder : IRequestBuilder
     {
-        /// <summary>Gets the number of build calls received.</summary>
-        public int BuildCount { get; private set; }
-
         /// <inheritdoc />
         public RefitSettings Settings { get; } = new(new NullContentSerializer());
+
+        /// <summary>Gets the number of build calls received.</summary>
+        public int BuildCount { get; private set; }
 
         /// <inheritdoc />
         public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(

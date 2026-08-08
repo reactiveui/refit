@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Benchmarks;
 
 /// <summary>A request body model exercised by the reflection body-serialization benchmarks.</summary>
+[System.Diagnostics.DebuggerDisplay("{Id}")]
 public sealed class ReflectionUserModel
 {
     /// <summary>Gets or sets the identifier.</summary>

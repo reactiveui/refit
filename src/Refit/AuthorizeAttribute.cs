@@ -12,6 +12,7 @@ namespace Refit;
 /// Initializes a new instance of the <see cref="AuthorizeAttribute"/> class.
 /// </remarks>
 /// <param name="scheme">The scheme.</param>
+[System.Diagnostics.DebuggerDisplay("{Scheme}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class AuthorizeAttribute(string scheme = "Bearer") : Attribute
 {

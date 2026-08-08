@@ -9,6 +9,7 @@ namespace Refit;
 /// <typeparam name="T">The Refit interface type the settings belong to.</typeparam>
 /// <remarks>Initializes a new instance of the <see cref="SettingsFor{T}"/> class.</remarks>
 /// <param name="settings">The settings.</param>
+[System.Diagnostics.DebuggerDisplay("{Settings}")]
 [SuppressMessage(
     "StyleSharp",
     "SST1452:Unused type parameters should be removed",

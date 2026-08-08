@@ -173,10 +173,7 @@ public class AuthenticatedClientHandlerTests
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
-        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
-        {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
-        });
+        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue), });
 
         var result = await fixture.GetUnauthenticated();
 
@@ -197,10 +194,7 @@ public class AuthenticatedClientHandlerTests
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
-        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
-        {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
-        });
+        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue), });
 
         var result = await fixture.GetAuthenticated();
 
@@ -221,10 +215,7 @@ public class AuthenticatedClientHandlerTests
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
-        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
-        {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(string.Empty)
-        });
+        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(string.Empty), });
 
         var result = await fixture.GetAuthenticated();
 
@@ -245,10 +236,7 @@ public class AuthenticatedClientHandlerTests
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
-        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
-        {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("   ")
-        });
+        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("   "), });
 
         var result = await fixture.GetAuthenticated();
 
@@ -267,10 +255,7 @@ public class AuthenticatedClientHandlerTests
             terminalHandler,
             static (_, _) => new ValueTask<string>(string.Empty));
         var httpClient = new HttpClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, AuthUrl)
-        {
-            Headers = { Authorization = new("Bearer", TokenValue) }
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Get, AuthUrl) { Headers = { Authorization = new("Bearer", TokenValue) }, };
 
         using var response = await httpClient.SendAsync(request);
 
@@ -304,11 +289,7 @@ public class AuthenticatedClientHandlerTests
     [Test]
     public async Task AuthenticatedHandlerWithTokenInHeaderCollectionUsesAuth()
     {
-        var headers = new Dictionary<string, string>
-        {
-            { UserAgentHeader, RefitValue },
-            { AuthorizationHeader, BearerTokenValue }
-        };
+        var headers = new Dictionary<string, string> { { UserAgentHeader, RefitValue }, { AuthorizationHeader, BearerTokenValue }, };
 
         var handler = new StubHttp
         {
@@ -331,18 +312,9 @@ public class AuthenticatedClientHandlerTests
     [Test]
     public async Task AuthenticatedHandlerWithAuthorizeAttributeAndHeaderCollectionUsesAuth()
     {
-        var expectedHeaders = new Dictionary<string, string>
-        {
-            { AuthorizationHeader, BearerTokenValue },
-            { UserAgentHeader, RefitValue },
-            { ForwardedForHeader, RefitValue }
-        };
+        var expectedHeaders = new Dictionary<string, string> { { AuthorizationHeader, BearerTokenValue }, { UserAgentHeader, RefitValue }, { ForwardedForHeader, RefitValue }, };
 
-        var headerCollectionHeaders = new Dictionary<string, string>
-        {
-            { UserAgentHeader, RefitValue },
-            { ForwardedForHeader, RefitValue }
-        };
+        var headerCollectionHeaders = new Dictionary<string, string> { { UserAgentHeader, RefitValue }, { ForwardedForHeader, RefitValue }, };
 
         var handler = new StubHttp
         {
@@ -367,19 +339,9 @@ public class AuthenticatedClientHandlerTests
     [Test]
     public async Task AuthenticatedHandlerWithDuplicatedAuthorizationHeaderUsesAuth()
     {
-        var expectedHeaders = new Dictionary<string, string>
-        {
-            { AuthorizationHeader, BearerTokenValue2 },
-            { UserAgentHeader, RefitValue },
-            { ForwardedForHeader, RefitValue }
-        };
+        var expectedHeaders = new Dictionary<string, string> { { AuthorizationHeader, BearerTokenValue2 }, { UserAgentHeader, RefitValue }, { ForwardedForHeader, RefitValue }, };
 
-        var headerCollectionHeaders = new Dictionary<string, string>
-        {
-            { AuthorizationHeader, BearerTokenValue2 },
-            { UserAgentHeader, RefitValue },
-            { ForwardedForHeader, RefitValue }
-        };
+        var headerCollectionHeaders = new Dictionary<string, string> { { AuthorizationHeader, BearerTokenValue2 }, { UserAgentHeader, RefitValue }, { ForwardedForHeader, RefitValue }, };
 
         var handler = new StubHttp
         {
@@ -407,11 +369,7 @@ public class AuthenticatedClientHandlerTests
         const int id = 1;
         var someRequestData = new SomeRequestData { ReadablePropertyName = 1 };
 
-        var headers = new Dictionary<string, string>
-        {
-            { AuthorizationHeader, BearerTokenValue2 },
-            { "ThingId", id.ToString() }
-        };
+        var headers = new Dictionary<string, string> { { AuthorizationHeader, BearerTokenValue2 }, { "ThingId", id.ToString() }, };
 
         var handler = new StubHttp
         {
@@ -446,7 +404,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeaders>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue),
         });
 
         var result = await fixture.GetThingFromBase();
@@ -470,7 +428,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeaders>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue),
         });
 
         var result = await fixture.GetInheritedThing();
@@ -496,7 +454,7 @@ public class AuthenticatedClientHandlerTests
         {
             var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeadersCrlf>(BaseUrl, new RefitSettings
             {
-                AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
+                AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue),
             });
 
             await fixture.GetInheritedThing();
@@ -517,10 +475,7 @@ public class AuthenticatedClientHandlerTests
         };
         var httpClient = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
 
-        var settings = new RefitSettings
-        {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
-        };
+        var settings = new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue), };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
 
@@ -544,14 +499,13 @@ public class AuthenticatedClientHandlerTests
         };
         var httpClient = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
 
-        var settings = new RefitSettings
+        static async ValueTask<string> YieldTokenAsync()
         {
-            AuthorizationHeaderValueGetter = static async (_, _) =>
-            {
-                await Task.Yield();
-                return TokenValue;
-            }
-        };
+            await Task.Yield();
+            return TokenValue;
+        }
+
+        var settings = new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => YieldTokenAsync() };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
 
@@ -575,10 +529,7 @@ public class AuthenticatedClientHandlerTests
         };
         var httpClient = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
 
-        var settings = new RefitSettings
-        {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(string.Empty)
-        };
+        var settings = new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(string.Empty), };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
 
@@ -602,10 +553,7 @@ public class AuthenticatedClientHandlerTests
         };
         var httpClient = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
 
-        var settings = new RefitSettings
-        {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("   ")
-        };
+        var settings = new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("   "), };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
 
@@ -631,10 +579,7 @@ public class AuthenticatedClientHandlerTests
         const string getterToken = "token-from-getter";
         const string parameterToken = "token-from-parameter";
 
-        var settings = new RefitSettings
-        {
-            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(getterToken)
-        };
+        var settings = new RefitSettings { AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(getterToken), };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
 

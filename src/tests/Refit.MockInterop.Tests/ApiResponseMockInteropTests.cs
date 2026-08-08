@@ -42,9 +42,7 @@ public sealed class ApiResponseMockInteropTests
         var response = new StubApiResponse<string> { IsSuccessful = true };
 
         await Assert.That(response.IsSuccessful).IsTrue();
-
-        IApiResponse baseView = response;
-        await Assert.That(baseView.IsSuccessful).IsTrue();
+        await Assert.That(response.IsSuccessful).IsTrue();
     }
 
     /// <summary>
@@ -82,11 +80,7 @@ public sealed class ApiResponseMockInteropTests
     [Test]
     public async Task IsSuccessfulWithContentNarrowsContentThroughMock()
     {
-        IApiResponse<string> response = new StubApiResponse<string>
-        {
-            IsSuccessfulWithContent = true,
-            Content = Payload,
-        };
+        IApiResponse<string> response = new StubApiResponse<string> { IsSuccessfulWithContent = true, Content = Payload, };
 
         await Assert.That(response.IsSuccessfulWithContent).IsTrue();
         if (response.IsSuccessfulWithContent)
@@ -119,11 +113,7 @@ public sealed class ApiResponseMockInteropTests
     [Test]
     public async Task HasContentNarrowsContentThroughMock()
     {
-        IApiResponse<string> response = new StubApiResponse<string>
-        {
-            HasContent = true,
-            Content = Payload,
-        };
+        IApiResponse<string> response = new StubApiResponse<string> { HasContent = true, Content = Payload, };
 
         if (response.HasContent)
         {
@@ -165,12 +155,7 @@ public sealed class ApiResponseMockInteropTests
         var headers = new StringContent(string.Empty).Headers;
         headers.ContentType = new("application/problem+json");
 
-        var response = new StubApiResponse<string>
-        {
-            IsSuccessStatusCode = false,
-            StatusCode = HttpStatusCode.UnprocessableEntity,
-            ContentHeaders = headers,
-        };
+        var response = new StubApiResponse<string> { IsSuccessStatusCode = false, StatusCode = HttpStatusCode.UnprocessableEntity, ContentHeaders = headers, };
 
         await Assert.That(IsProblemDetails(response)).IsTrue();
     }

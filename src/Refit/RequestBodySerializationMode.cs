@@ -11,14 +11,14 @@ public enum RequestBodySerializationMode
     /// The default: the body is serialized asynchronously (via <c>JsonContent</c>). This uses the metadata-based
     /// System.Text.Json logic, never the source-generated fast-path.
     /// </summary>
-    Default,
+    Default = 0,
 
     /// <summary>
     /// The body is serialized synchronously into a buffer and sent as a <c>ByteArrayContent</c>. This lets the
     /// source-generated fast-path engage (with fast-path-eligible options) and sets a <c>Content-Length</c> header.
     /// Best for small-to-medium bodies. Requires an <see cref="ISynchronousContentSerializer"/>.
     /// </summary>
-    Buffered,
+    Buffered = 1,
 
     /// <summary>
     /// The body is serialized through a <c>Utf8JsonWriter</c> written to the request stream and flushed
@@ -26,5 +26,5 @@ public enum RequestBodySerializationMode
     /// pooled chunks rather than materializing the whole body), at the cost of a <c>Content-Length</c> header. Best
     /// for large uploads. Requires an <see cref="ISynchronousContentSerializer"/>.
     /// </summary>
-    Streamed
+    Streamed = 2,
 }

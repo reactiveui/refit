@@ -4,6 +4,7 @@
 namespace BlazorWasmIssue2065;
 
 /// <summary>Response model containing the sample status.</summary>
+[System.Diagnostics.DebuggerDisplay("{Status}")]
 public sealed class Issue2067Response
 {
     /// <summary>Gets or sets the status value.</summary>

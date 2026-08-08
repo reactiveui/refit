@@ -24,8 +24,7 @@ public class TestEnumUrlParameterFormatter : DefaultUrlParameterFormatter
     {
         if (value is TestEnum enumValue)
         {
-            var enumBackingValue = (int)enumValue;
-            return enumBackingValue.ToString();
+            return ((int)enumValue).ToString();
         }
 
         return value is string stringValue

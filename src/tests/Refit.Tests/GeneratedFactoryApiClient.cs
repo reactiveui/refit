@@ -10,8 +10,7 @@ namespace Refit.Tests;
 /// <summary>A hand-written implementation of <see cref="IGeneratedFactoryApi"/> used to verify that a registered generated factory is invoked.</summary>
 /// <param name="client">The HTTP client supplied by Refit.</param>
 /// <param name="builder">The request builder supplied by Refit.</param>
-internal sealed class GeneratedFactoryApiClient(HttpClient client, IRequestBuilder builder)
-    : IGeneratedFactoryApi
+internal sealed class GeneratedFactoryApiClient(HttpClient client, IRequestBuilder builder) : IGeneratedFactoryApi
 {
     /// <summary>Gets the HTTP client supplied to the factory.</summary>
     internal HttpClient Client { get; } = client;

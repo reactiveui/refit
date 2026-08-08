@@ -14,13 +14,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObject()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -35,13 +29,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithGenericPathBoundObject()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -56,13 +44,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithGenericConstrainedPathBoundObject()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -78,13 +60,7 @@ public partial class RestServiceIntegrationTests
     {
         const int pathRepeatCount = 1000;
         var longPathString = string.Concat(Enumerable.Repeat(BarNoneValue, pathRepeatCount));
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = $"http://foo/foos/12345/bar/{longPathString}", ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = $"http://foo/foos/12345/bar/{longPathString}", ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -98,13 +74,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectDifferentCasing()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -118,13 +88,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndParameter()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/myId/22/bar/bart", ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/myId/22/bar/bart", ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -171,12 +135,7 @@ public partial class RestServiceIntegrationTests
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetFooBarsDerived(
-            new()
-            {
-                SomeProperty = 1,
-                SomeProperty2 = BarNoneValue,
-                SomeProperty3 = "test"
-            });
+            new() { SomeProperty = 1, SomeProperty2 = BarNoneValue, SomeProperty3 = "test", });
         await handler.VerifyAllCalledAsync();
     }
 
@@ -190,28 +149,12 @@ public partial class RestServiceIntegrationTests
         // request builder flattens the declared (base) type's properties, so SomeProperty2 flattens into the query
         // while the derived-only SomeProperty3 does not contribute through a base-typed parameter — mirroring how the
         // System.Text.Json source generator treats a declared type.
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher
-                {
-                    Method = HttpMethod.Get,
-                    Template = "http://foo/foos/1/bar",
-                    ExactQueryParams = [(SomeProperty2Key, BarNoneValue)],
-                },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/1/bar", ExactQueryParams = [(SomeProperty2Key, BarNoneValue)], }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetBarsByFoo(
-            new PathBoundDerivedObject
-            {
-                SomeProperty = 1,
-                SomeProperty2 = BarNoneValue,
-                SomeProperty3 = "test"
-            });
+            new PathBoundDerivedObject { SomeProperty = 1, SomeProperty2 = BarNoneValue, SomeProperty3 = "test", });
         await handler.VerifyAllCalledAsync();
     }
 
@@ -220,13 +163,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndQueryParameter()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/22/bar", ExactQueryParams = [(SomeProperty2Key, "bart")] },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/22/bar", ExactQueryParams = [(SomeProperty2Key, "bart")] }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -240,13 +177,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostFooBarPathBoundObject()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Post("http://foo/foos/22/bar/bart"),
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { Route.Post("http://foo/foos/22/bar/bart"), Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -261,26 +192,13 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PathBoundObjectsRespectFormatter()
     {
-        var handler = new StubHttp
-        {
-            {
-                Route.Get("http://foo/foos/22%2C23"),
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/foos/22%2C23"), Reply.Json("Ok") }, };
 
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            UrlParameterFormatter = new TestEnumerableUrlParameterFormatter()
-        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler, UrlParameterFormatter = new TestEnumerableUrlParameterFormatter(), };
         var fixture = RestService.For<IApiBindPathToObject>(BaseUrl, settings);
 
         await fixture.GetFoos(
-            new()
-            {
-                Values = [FooId, SecondFooValue]
-            });
+            new() { Values = [FooId, SecondFooValue], });
         await handler.VerifyAllCalledAsync();
     }
 
@@ -289,23 +207,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndQuery()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = "SomeQuery=test" },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = "SomeQuery=test" }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetFooBars(
-            new PathBoundObjectWithQuery
-            {
-                SomeProperty = 1,
-                SomeProperty2 = BarNoneValue,
-                SomeQuery = "test"
-            });
+            new PathBoundObjectWithQuery { SomeProperty = 1, SomeProperty2 = BarNoneValue, SomeQuery = "test", });
         await handler.VerifyAllCalledAsync();
     }
 
@@ -314,21 +221,12 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndQueryWithFormat()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foo", ExactQuery = "SomeQueryWithFormat=2020-03-05T13:55:00Z" },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foo", ExactQuery = "SomeQueryWithFormat=2020-03-05T13:55:00Z" }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetBarsWithCustomQueryFormat(
-            new()
-            {
-                SomeQueryWithFormat = new DateTimeOffset(2020, 03, 05, 13, 55, 00, TimeSpan.Zero).UtcDateTime
-            });
+            new() { SomeQueryWithFormat = new DateTimeOffset(2020, 03, 05, 13, 55, 00, TimeSpan.Zero).UtcDateTime, });
 
         await handler.VerifyAllCalledAsync();
     }
@@ -338,13 +236,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndQueryObject()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = FoosBarBarNoneUrl, ExactQuery = "Property1=test&Property2=test2" },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = FoosBarBarNoneUrl, ExactQuery = "Property1=test&Property2=test2" }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -359,13 +251,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostFooBarPathMultipart()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = string.Empty },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = string.Empty }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -381,24 +267,13 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostFooBarPathQueryMultipart()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = "SomeQuery=test" },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = "SomeQuery=test" }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await using var stream = GetTestFileStream(TestFilePath);
         await fixture.PostFooBarStreamPart(
-            new PathBoundObjectWithQuery
-            {
-                SomeProperty = FooId,
-                SomeProperty2 = "bar",
-                SomeQuery = "test"
-            },
+            new PathBoundObjectWithQuery { SomeProperty = FooId, SomeProperty2 = "bar", SomeQuery = "test", },
             new(stream, TestFileName, PdfMediaType));
         await handler.VerifyAllCalledAsync();
     }
@@ -408,13 +283,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostFooBarPathQueryObjectMultipart()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = "Property1=test&Property2=test2" },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = "Property1=test&Property2=test2" }, Reply.Json("Ok") }, };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
@@ -431,13 +300,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithDecimal()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [(DecimalQueryKey, "3.456")] },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [(DecimalQueryKey, "3.456")] }, Reply.Json("Ok") }, };
         var fixture = handler.CreateClient<IApiWithDecimal>(BaseUrl);
 
         const decimal val = 3.456M;
@@ -452,13 +315,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithDecimalGenerated()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [(DecimalQueryKey, "3.456")] },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [(DecimalQueryKey, "3.456")] }, Reply.Json("Ok") }, };
         var fixture = handler.CreateClient<IApiWithDecimal>(BaseUrl);
 
         const decimal val = 3.456M;
@@ -473,10 +330,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathParameterGenerated()
     {
-        var handler = new StubHttp
-        {
-            { Route.Get("http://foo/bar"), Reply.Json("Ok") },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/bar"), Reply.Json("Ok") }, };
         var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetPath("bar");
@@ -519,13 +373,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithQueryParameterGenerated()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", ExactQueryParams = [("q", "bar")] },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", ExactQueryParams = [("q", "bar")] }, Reply.Json("Ok") }, };
         var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetQuery("bar");
@@ -538,13 +386,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithAliasedQueryParameterGenerated()
     {
-        var handler = new StubHttp
-        {
-            {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", ExactQueryParams = [("q", "bar")] },
-                Reply.Json("Ok")
-            },
-        };
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", ExactQueryParams = [("q", "bar")] }, Reply.Json("Ok") }, };
         var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetQueryAlias("bar");
@@ -561,10 +403,7 @@ public partial class RestServiceIntegrationTests
         const int width = 800;
         const int height = 600;
 
-        var handler = new StubHttp
-        {
-            { Route.Get("http://foo/1/800x600/foo"), Reply.Json("Ok") },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/1/800x600/foo"), Reply.Json("Ok") }, };
         var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.FetchSomethingWithMultipleParametersPerSegment(id, width, height);
@@ -580,10 +419,7 @@ public partial class RestServiceIntegrationTests
         const int id = 1;
         const int size = 300;
 
-        var handler = new StubHttp
-        {
-            { Route.Get("http://foo/1/300x300/foo"), Reply.Json("Ok") },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/1/300x300/foo"), Reply.Json("Ok") }, };
         var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.FetchSomethingWithMultipleRepeatedParametersPerSegment(id, size);
@@ -596,10 +432,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNullableParameterGenerated()
     {
-        var handler = new StubHttp
-        {
-            { Route.Get("http://foo/a//b"), Reply.Json("Ok") },
-        };
+        var handler = new StubHttp { { Route.Get("http://foo/a//b"), Reply.Json("Ok") }, };
         var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetNullableParam(null);
@@ -612,10 +445,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNullRoundTripParameterGenerated()
     {
-        var handler = new StubHttp
-        {
-            { Route.Get(BaseUrlWithSlash), Reply.Json("Ok") },
-        };
+        var handler = new StubHttp { { Route.Get(BaseUrlWithSlash), Reply.Json("Ok") }, };
         var fixture = handler.CreateClient<IRoundTrippingNullString>(BaseUrl);
 
         _ = await fixture.GetValue(null);

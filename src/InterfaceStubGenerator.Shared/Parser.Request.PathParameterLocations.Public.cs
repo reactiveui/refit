@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
+
 namespace Refit.Generator;
 
 /// <summary>Provides request parsing helpers for the Refit source generator.</summary>
@@ -14,6 +16,7 @@ internal static partial class Parser
         /// <param name="left">The left value.</param>
         /// <param name="right">The right value.</param>
         /// <returns><see langword="true"/> when both wrap the same occurrence array.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(PathParameterLocations left, PathParameterLocations right) => left.Equals(right);
 
         /// <summary>Determines whether two placeholder sets wrap different backing occurrences.</summary>
@@ -23,6 +26,7 @@ internal static partial class Parser
         public static bool operator !=(PathParameterLocations left, PathParameterLocations right) => !left.Equals(right);
 
         /// <inheritdoc/>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(PathParameterLocations other) => ReferenceEquals(_occurrences, other._occurrences);
 
         /// <inheritdoc/>

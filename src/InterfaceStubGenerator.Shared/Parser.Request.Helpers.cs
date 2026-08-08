@@ -138,8 +138,7 @@ internal static partial class Parser
                 continue;
             }
 
-            var partLength = i - partStart;
-            AppendNonEmptyQueryPart(path, queryStart, partStart, partLength, ref queryBuffer, ref queryLength);
+            AppendNonEmptyQueryPart(path, queryStart, partStart, i - partStart, ref queryBuffer, ref queryLength);
             partStart = i + 1;
         }
 
@@ -160,8 +159,7 @@ internal static partial class Parser
             return true;
         }
 
-        var end = start + length;
-        for (var i = start; i < end; i++)
+        for (var i = start; i < (start + length); i++)
         {
             if (!char.IsWhiteSpace(value[i]))
             {

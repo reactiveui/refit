@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 
@@ -12,6 +13,7 @@ namespace Refit.Benchmarks;
 /// escaping (both the whole-string and in-place span variants) and the CR/LF header sanitization that runs on every
 /// generated header name and value.
 /// </summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -34,11 +36,13 @@ public class StringSanitizationBenchmarks
 
     /// <summary>Escapes a whole string for a URI data component.</summary>
     /// <returns>The escaped value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int EscapeDataString() => StringHelpers.EscapeDataString(_reservedValue).Length;
 
     /// <summary>Escapes a slice of a string for a URI data component.</summary>
     /// <returns>The escaped value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int EscapeDataStringSlice() => StringHelpers.EscapeDataString(_reservedValue, SliceStart, SliceLength).Length;
 
@@ -54,11 +58,13 @@ public class StringSanitizationBenchmarks
 
     /// <summary>Sanitizes a header value that contains no CR or LF (the returns-unchanged fast path).</summary>
     /// <returns>The sanitized value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     public int RemoveCrOrLfClean() => StringHelpers.RemoveCrOrLf(_cleanHeaderValue).Length;
 
     /// <summary>Sanitizes a header value that contains CR/LF (the builder-copy path).</summary>
     /// <returns>The sanitized value length.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     public int RemoveCrOrLfInjected() => StringHelpers.RemoveCrOrLf(_injectedHeaderValue).Length;
 }

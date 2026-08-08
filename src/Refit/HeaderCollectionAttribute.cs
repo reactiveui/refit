@@ -5,5 +5,6 @@
 namespace Refit;
 
 /// <summary>Allows you to provide a Dictionary of headers to be added to the request.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class HeaderCollectionAttribute : Attribute;

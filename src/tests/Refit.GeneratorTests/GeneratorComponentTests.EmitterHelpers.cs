@@ -134,8 +134,8 @@ public static partial class GeneratorComponentTests
             Emitter.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
 
             await Assert.That(source.ToString()).Contains(
-                "{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute()} }, " +
-                "{ typeof(global::Refit.AliasAsAttribute), new object[] { new global::Refit.AliasAsAttribute()} }");
+                "{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute()} }, "
+                + "{ typeof(global::Refit.AliasAsAttribute), new object[] { new global::Refit.AliasAsAttribute()} }");
         }
 
         /// <summary>Verifies a parameter carrying attributes of one type is emitted without a keyed dictionary.</summary>
@@ -168,8 +168,8 @@ public static partial class GeneratorComponentTests
 
             var generated = source.ToString();
             await Assert.That(generated).Contains(
-                "new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(global::Refit.QueryAttribute), " +
-                "new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute() });");
+                "new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(global::Refit.QueryAttribute), "
+                + "new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute() });");
             await Assert.That(generated).DoesNotContain("Dictionary");
         }
 

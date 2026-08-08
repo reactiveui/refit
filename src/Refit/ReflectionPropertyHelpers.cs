@@ -36,11 +36,13 @@ internal static class ReflectionPropertyHelpers
         var index = 0;
         for (var i = 0; i < properties.Length; i++)
         {
-            if (IsReadablePublicProperty(properties[i]))
+            if (!IsReadablePublicProperty(properties[i]))
             {
-                readableProperties[index] = properties[i];
-                index++;
+                continue;
             }
+
+            readableProperties[index] = properties[i];
+            index++;
         }
 
         return readableProperties;

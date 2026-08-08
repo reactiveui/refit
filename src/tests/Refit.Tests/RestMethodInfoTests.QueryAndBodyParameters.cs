@@ -195,12 +195,7 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
-        var param = new ComplexQueryObject
-        {
-            TestAlias1 = "one",
-            InternalUseOnlyIgnoredByDataMember = "nope",
-            InternalUseOnlyIgnoredBySystemTextJson = "nope"
-        };
+        var param = new ComplexQueryObject { TestAlias1 = "one", InternalUseOnlyIgnoredByDataMember = "nope", InternalUseOnlyIgnoredBySystemTextJson = "nope", };
 
         var output = await factory([param]);
 
@@ -217,10 +212,7 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
-        var param = new ComplexQueryObject
-        {
-            EnumCollectionMulti = [TestEnum.A, TestEnum.B]
-        };
+        var param = new ComplexQueryObject { EnumCollectionMulti = [TestEnum.A, TestEnum.B], };
 
         var output = await factory([param]);
 
@@ -238,10 +230,7 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
-        var param = new ComplexQueryObject
-        {
-            ObjectCollectionMulti = [TestEnum.A, TestEnum.B]
-        };
+        var param = new ComplexQueryObject { ObjectCollectionMulti = [TestEnum.A, TestEnum.B], };
 
         var output = await factory([param]);
 
@@ -259,10 +248,7 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
-        var param = new ComplexQueryObject
-        {
-            EnumCollectionCsv = [TestEnum.A, TestEnum.B]
-        };
+        var param = new ComplexQueryObject { EnumCollectionCsv = [TestEnum.A, TestEnum.B], };
 
         var output = await factory([param]);
 
@@ -279,10 +265,7 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
-        var param = new ComplexQueryObject
-        {
-            ObjectCollectionCcv = [TestEnum.A, TestEnum.B]
-        };
+        var param = new ComplexQueryObject { ObjectCollectionCcv = [TestEnum.A, TestEnum.B], };
 
         var output = await factory([param]);
 
@@ -314,10 +297,7 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.ComplexTypeQueryWithoutQueryAttribute));
 
-        var param = new ComplexQueryObject
-        {
-            EnumCollectionMulti = [TestEnum.A, TestEnum.B]
-        };
+        var param = new ComplexQueryObject { EnumCollectionMulti = [TestEnum.A, TestEnum.B], };
         var output = await factory([param]);
         var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 

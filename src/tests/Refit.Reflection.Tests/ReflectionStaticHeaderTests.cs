@@ -6,6 +6,7 @@ namespace Refit.Reflection.Tests;
 
 /// <summary>Pins that class-level static headers are emitted unchanged, and that a dynamic header parameter overriding a
 /// static header does not corrupt the shared static header set for subsequent calls.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionStaticHeaderTests
 {
     /// <summary>The static header emitted unchanged on every call.</summary>

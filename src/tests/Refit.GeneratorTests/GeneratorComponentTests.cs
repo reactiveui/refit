@@ -349,6 +349,7 @@ public static partial class GeneratorComponentTests
         /// <param name="compilation">The compilation to search.</param>
         /// <param name="typeName">The metadata name of the type to find.</param>
         /// <returns>The resolved type symbol.</returns>
+        /// <exception cref="InvalidOperationException"><paramref name="compilation"/> contains no type with the metadata name <paramref name="typeName"/>.</exception>
         private static INamedTypeSymbol GetType(Compilation compilation, string typeName) =>
             compilation.GetTypeByMetadataName(typeName)
             ?? throw new InvalidOperationException($"Type '{typeName}' was not found.");

@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
@@ -12,6 +13,7 @@ namespace Refit.Benchmarks;
 /// <summary>Compares the chained concatenation and interpolated-string forms emitted for nested query-object keys.</summary>
 /// <remarks>The inputs mirror generated code: the parent key is known only at runtime, while the delimiter, property
 /// prefix, alias, and CLR property name are compile-time literals.</remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 [ShortRunJob]
@@ -35,7 +37,6 @@ public class NestedQueryKeyCompositionBenchmarks
     /// <returns>The composed query key.</returns>
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Alias")]
-    [SuppressMessage("Roslynator", "RCS1190", Justification = "The benchmark intentionally measures the generated concatenation shape.")]
     [SuppressMessage("Style", "SST2249", Justification = "The benchmark intentionally measures the generated concatenation shape.")]
     public string ConcatenationAlias() => _parentKey + NestedPrefix + "postal_code";
 
@@ -49,7 +50,6 @@ public class NestedQueryKeyCompositionBenchmarks
     /// <returns>The composed query key.</returns>
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("PreEscaped")]
-    [SuppressMessage("Roslynator", "RCS1190", Justification = "The benchmark intentionally measures the generated concatenation shape.")]
     [SuppressMessage("Style", "SST2249", Justification = "The benchmark intentionally measures the generated concatenation shape.")]
     public string ConcatenationPreEscaped() => _parentKey + NestedPrefix + PropertyName;
 
@@ -61,6 +61,7 @@ public class NestedQueryKeyCompositionBenchmarks
 
     /// <summary>Builds the nested prefix passed to the key formatter using the current generated concatenation.</summary>
     /// <returns>The formatted query key.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Formatted")]
     [SuppressMessage("Style", "SST2249", Justification = "The benchmark intentionally measures the generated concatenation shape.")]
@@ -69,6 +70,7 @@ public class NestedQueryKeyCompositionBenchmarks
 
     /// <summary>Builds the nested prefix passed to the key formatter using the proposed generated interpolation.</summary>
     /// <returns>The formatted query key.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Formatted")]
     public string InterpolationFormatted() =>

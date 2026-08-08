@@ -9,6 +9,7 @@ namespace Refit.Generator.Benchmarks;
 /// <summary>Micro-benchmarks for <see cref="PooledStringBuilder"/>, the emitter's fluent accumulation buffer.</summary>
 /// <remarks>The emitter builds many transient fragments through this buffer; the pooled backing array is meant to be
 /// reused across emissions instead of allocating fresh chunks. This measures the rent, append, grow, and return cycle.</remarks>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [ShortRunJob]
 [MemoryDiagnoser]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]

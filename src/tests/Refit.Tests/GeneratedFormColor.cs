@@ -8,8 +8,8 @@ namespace Refit.Tests;
 public enum GeneratedFormColor
 {
     /// <summary>The red colour.</summary>
-    Red,
+    Red = 0,
 
     /// <summary>The green colour.</summary>
-    Green,
+    Green = 1,
 }

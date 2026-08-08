@@ -8,6 +8,7 @@ using BenchmarkDotNet.Attributes;
 namespace Refit.Benchmarks;
 
 /// <summary>Benchmarks the full request and response pipeline for each return type that Refit supports.</summary>
+[System.Diagnostics.DebuggerDisplay("{HttpStatusCode}")]
 [MemoryDiagnoser]
 public class EndToEndBenchmark
 {
@@ -29,27 +30,27 @@ public class EndToEndBenchmark
         IDictionary<HttpStatusCode, IGitHubService>> _refitClient = new()
     {
         { SerializationStrategy.SystemTextJson, new Dictionary<HttpStatusCode, IGitHubService>() },
-        { SerializationStrategy.NewtonsoftJson, new Dictionary<HttpStatusCode, IGitHubService>() }
+        { SerializationStrategy.NewtonsoftJson, new Dictionary<HttpStatusCode, IGitHubService>() },
     };
 
     /// <summary>The content serialization strategy used by a benchmark.</summary>
     public enum SerializationStrategy
     {
         /// <summary>Uses the System.Text.Json serializer.</summary>
-        SystemTextJson,
+        SystemTextJson = 0,
 
         /// <summary>Uses the Newtonsoft.Json serializer.</summary>
-        NewtonsoftJson
+        NewtonsoftJson = 1,
     }
 
     /// <summary>The HTTP verb used by a benchmark.</summary>
     public enum HttpVerb
     {
         /// <summary>The HTTP GET verb.</summary>
-        Get,
+        Get = 0,
 
         /// <summary>The HTTP POST verb.</summary>
-        Post
+        Post = 1,
     }
 
     /// <summary>Gets or sets the HTTP status code returned by the benchmarked handler.</summary>
@@ -77,13 +78,7 @@ public class EndToEndBenchmark
         _refitClient[SerializationStrategy.SystemTextJson][HttpStatusCode.OK] =
             RestService.For<IGitHubService>(
                 Host,
-                new(systemTextJsonContentSerializer)
-                {
-                    HttpMessageHandlerFactory = static () =>
-                        new StaticFileHttpResponseHandler(
-                            "system-text-json-10-users.json",
-                            HttpStatusCode.OK)
-                });
+                new(systemTextJsonContentSerializer) { HttpMessageHandlerFactory = static () => new StaticFileHttpResponseHandler("system-text-json-10-users.json", HttpStatusCode.OK), });
         _refitClient[SerializationStrategy.SystemTextJson][HttpStatusCode.InternalServerError] =
             RestService.For<IGitHubService>(
                 Host,
@@ -92,20 +87,14 @@ public class EndToEndBenchmark
                     HttpMessageHandlerFactory = static () =>
                         new StaticFileHttpResponseHandler(
                             "system-text-json-10-users.json",
-                            HttpStatusCode.InternalServerError)
+                            HttpStatusCode.InternalServerError),
                 });
 
         var newtonsoftJsonContentSerializer = new NewtonsoftJsonContentSerializer();
         _refitClient[SerializationStrategy.NewtonsoftJson][HttpStatusCode.OK] =
             RestService.For<IGitHubService>(
                 Host,
-                new(newtonsoftJsonContentSerializer)
-                {
-                    HttpMessageHandlerFactory = static () =>
-                        new StaticFileHttpResponseHandler(
-                            "newtonsoft-json-10-users.json",
-                            HttpStatusCode.OK)
-                });
+                new(newtonsoftJsonContentSerializer) { HttpMessageHandlerFactory = static () => new StaticFileHttpResponseHandler("newtonsoft-json-10-users.json", HttpStatusCode.OK), });
         _refitClient[SerializationStrategy.NewtonsoftJson][HttpStatusCode.InternalServerError] =
             RestService.For<IGitHubService>(
                 Host,
@@ -114,7 +103,7 @@ public class EndToEndBenchmark
                     HttpMessageHandlerFactory = static () =>
                         new StaticFileHttpResponseHandler(
                             "newtonsoft-json-10-users.json",
-                            HttpStatusCode.InternalServerError)
+                            HttpStatusCode.InternalServerError),
                 });
 
         _users[TenUsers] = _autoFixture.CreateMany<User>(TenUsers);
@@ -128,6 +117,7 @@ public class EndToEndBenchmark
 
     /// <summary>Benchmarks a method that returns a plain Task.</summary>
     /// <returns>A task that completes when the request has finished.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="Verb"/> is not one of the benchmarked HTTP verbs.</exception>
     [Benchmark]
     public async Task Task_Async()
     {
@@ -149,6 +139,7 @@ public class EndToEndBenchmark
 
     /// <summary>Benchmarks a method that returns a string response.</summary>
     /// <returns>The string response.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="Verb"/> is not one of the benchmarked HTTP verbs.</exception>
     [Benchmark]
     public async Task<string?> TaskString_Async()
     {
@@ -172,6 +163,7 @@ public class EndToEndBenchmark
 
     /// <summary>Benchmarks a method that returns a response stream.</summary>
     /// <returns>The response stream.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="Verb"/> is not one of the benchmarked HTTP verbs.</exception>
     [Benchmark]
     public async Task<Stream?> TaskStream_Async()
     {
@@ -195,6 +187,7 @@ public class EndToEndBenchmark
 
     /// <summary>Benchmarks a method that returns the raw HTTP content.</summary>
     /// <returns>The response HTTP content.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="Verb"/> is not one of the benchmarked HTTP verbs.</exception>
     [Benchmark]
     public async Task<HttpContent?> TaskHttpContent_Async()
     {
@@ -218,6 +211,7 @@ public class EndToEndBenchmark
 
     /// <summary>Benchmarks a method that returns the full HTTP response message.</summary>
     /// <returns>The HTTP response message.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="Verb"/> is not one of the benchmarked HTTP verbs.</exception>
     [Benchmark]
     public Task<HttpResponseMessage> TaskHttpResponseMessage_Async()
     {
@@ -232,6 +226,7 @@ public class EndToEndBenchmark
 
     /// <summary>Benchmarks a method that returns an observable HTTP response message.</summary>
     /// <returns>An observable that produces the HTTP response message.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="Verb"/> is not one of the benchmarked HTTP verbs.</exception>
     [Benchmark]
     public IObservable<HttpResponseMessage> ObservableHttpResponseMessage()
     {
@@ -246,6 +241,7 @@ public class EndToEndBenchmark
 
     /// <summary>Benchmarks a method that returns a deserialized list of users.</summary>
     /// <returns>The deserialized list of users.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="Verb"/> is not one of the benchmarked HTTP verbs.</exception>
     [Benchmark]
     public async Task<List<User>?> TaskT_Async()
     {
@@ -269,6 +265,7 @@ public class EndToEndBenchmark
 
     /// <summary>Benchmarks a method that returns an API response wrapping a list of users.</summary>
     /// <returns>The API response wrapping the list of users.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><see cref="Verb"/> is not one of the benchmarked HTTP verbs.</exception>
     [Benchmark]
     public Task<ApiResponse<List<User>>> TaskApiResponseT_Async()
     {

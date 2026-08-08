@@ -305,16 +305,10 @@ public partial class RestMethodInfoTests
     [Test]
     [Arguments(nameof(IRestMethodInfoTests.FetchSomeStuffWithHeaderCollectionOfUnsupportedType))]
     [Arguments(nameof(IRestMethodInfoTests.PostSomeStuffWithHeaderCollectionOfUnsupportedType))]
-    public async Task DynamicHeaderCollectionShouldOnlyWorkWithSupportedSemantics(
-        string interfaceMethodName)
-    {
-        var input = typeof(IRestMethodInfoTests);
-        await Assert.That(
-            () =>
-                new RestMethodInfoInternal(
-                    input,
-                    input.GetMethods().First(x => x.Name == interfaceMethodName))).ThrowsExactly<ArgumentException>();
-    }
+
+    // An unsupported collection type is rejected the same way a duplicate collection is.
+    public Task DynamicHeaderCollectionShouldOnlyWorkWithSupportedSemantics(string interfaceMethodName) =>
+        DynamicHeaderCollectionShouldOnlyAllowOne(interfaceMethodName);
 
     /// <summary>Verifies dynamic request properties are mapped correctly.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>

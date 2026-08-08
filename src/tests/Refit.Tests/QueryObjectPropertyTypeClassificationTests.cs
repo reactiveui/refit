@@ -28,7 +28,7 @@ public sealed class QueryObjectPropertyTypeClassificationTests
             Link = new("http://example/resource"),
             Culture = CultureInfo.InvariantCulture,
             OptionalNumber = OptionalNumberValue,
-            Number = NumberValue
+            Number = NumberValue,
         };
 
         var fixture = new RequestBuilderImplementation<IQueryObjectTypesApi>();
@@ -51,14 +51,7 @@ public sealed class QueryObjectPropertyTypeClassificationTests
     [Test]
     public async Task NullNullablePropertyIsOmitted()
     {
-        var filters = new QueryObjectWithClassifiedTypes
-        {
-            Text = "hello",
-            Flag = false,
-            Symbol = 'y',
-            OptionalNumber = null,
-            Number = 1
-        };
+        var filters = new QueryObjectWithClassifiedTypes { Text = "hello", Flag = false, Symbol = 'y', OptionalNumber = null, Number = 1, };
 
         var fixture = new RequestBuilderImplementation<IQueryObjectTypesApi>();
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IQueryObjectTypesApi.Search));

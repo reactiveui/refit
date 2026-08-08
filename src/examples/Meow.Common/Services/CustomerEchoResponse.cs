@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 namespace Meow;
 
 /// <summary>Response carrying the echoed customer id header.</summary>
+[System.Diagnostics.DebuggerDisplay("{CustomerIdHeader}")]
 public sealed class CustomerEchoResponse
 {
     /// <summary>Gets or sets the customer id header value echoed by the backend.</summary>

@@ -26,7 +26,7 @@ public class DefaultFormUrlEncodedParameterFormatterTests
         Custom = 1,
 
         /// <summary>A value without an explicit form name.</summary>
-        Plain = 2
+        Plain = 2,
     }
 
     /// <summary>Verifies null values format without allocating a string.</summary>

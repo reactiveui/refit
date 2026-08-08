@@ -5,6 +5,7 @@
 namespace Refit.Reflection.Benchmarks;
 
 /// <summary>A closed return-type adapter surfacing <see cref="ReflectionResult{T}"/> of <see cref="string"/>, matched via the closed-adapter path.</summary>
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionClosedResultAdapter : IReturnTypeAdapter<ReflectionResult<string>, string>
 {
     /// <inheritdoc/>
