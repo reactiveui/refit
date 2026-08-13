@@ -71,12 +71,12 @@ internal static partial class Emitter
             methodModel,
             uniqueNames);
         var returnType = methodModel.ReturnType;
-        var (isAsync, @return, configureAwait) = GetReturnInvocationParts(methodModel.ReturnTypeMetadata);
+        var @return = GetReturnStatementPrefix(methodModel.ReturnTypeMetadata);
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         var lookupName = StripExplicitInterfacePrefix(methodModel.Name);
         var typeParameterExpression = BuildTypeParameterExpression(methodModel.Parameters, cachedTypeParameterFieldName);
         var genericTypesArgument = BuildGenericTypesArgument(methodModel);
-        var returnStatement = BuildRefitReturnStatement(methodModel, @return, returnType, configureAwait, funcLocal, argumentsLocal);
+        var returnStatement = BuildRefitReturnStatement(methodModel, @return, returnType, funcLocal, argumentsLocal);
         var methodIndent = Indent(MethodMemberIndentation);
         var bodyIndent = Indent(MethodBodyIndentation);
         var requestBuilderInit =
@@ -89,7 +89,6 @@ internal static partial class Emitter
                 isExplicit,
                 isExplicit,
                 interfaceModel.SupportsNullable,
-                isAsync,
                 BuildReflectionFallbackSuppressions(
                     methodModel.RequiresUnreferencedCode,
                     methodModel.RequiresDynamicCode)))
