@@ -23,6 +23,34 @@ public partial class GeneratedRequestBuildingTests
         await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.AddHeaderCollection");
     }
 
+    /// <summary>Verifies a reflection-fallback method hands its task straight back to the caller rather than awaiting
+    /// it, so no generated method carries an async state machine that only forwards the request builder's task.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnFallbackReturnsTheRequestBuilderTaskWithoutAwaiting()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Get("/query-map")]
+            Task<string> Search(object filters);
+
+            [Get("/ping-map")]
+            Task Ping(object filters);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("public global::System.Threading.Tasks.Task<string> Search(");
+        await Assert.That(generated).Contains("public global::System.Threading.Tasks.Task Ping(");
+        await Assert.That(generated).Contains("return (global::System.Threading.Tasks.Task<string>)refitFunc(");
+        await Assert.That(generated).Contains("return (global::System.Threading.Tasks.Task)refitFunc(");
+
+        // No state machine and therefore nothing to configure: the awaitable is the caller's to consume.
+        await Assert.That(generated).DoesNotContain("public async ");
+        await Assert.That(generated).DoesNotContain("ConfigureAwait");
+    }
+
     /// <summary>Verifies unsupported inline path forms and metadata fall back to the runtime builder.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

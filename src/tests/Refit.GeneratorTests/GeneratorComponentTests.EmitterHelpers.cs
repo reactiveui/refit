@@ -24,6 +24,9 @@ public static partial class GeneratorComponentTests
         /// <summary>The non-standard HTTP method attribute name used by candidate-combining tests.</summary>
         private const string CustomMethodName = "Custom";
 
+        /// <summary>The generated return statement prefix.</summary>
+        private const string ReturnPrefix = "return ";
+
         /// <summary>The generated false literal.</summary>
         private const string FalseLiteral = "false";
 
@@ -297,20 +300,20 @@ public static partial class GeneratorComponentTests
             await Assert.That(Emitter.ToHttpMethodExpression("TRACE")).IsEqualTo("new global::System.Net.Http.HttpMethod(\"TRACE\")");
         }
 
-        /// <summary>Verifies generated return invocation text for every return type shape.</summary>
+        /// <summary>Verifies the generated return statement prefix for every return type shape, including that an
+        /// awaitable shape returns its task rather than awaiting it.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
-        public async Task ReturnInvocationParts_HandleKnownAndInvalidValues()
+        public async Task ReturnStatementPrefix_HandlesKnownAndInvalidValues()
         {
-            await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.AsyncVoid))
-                .IsEqualTo((true, "await (", ").ConfigureAwait(false)"));
-            await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.AsyncResult))
-                .IsEqualTo((true, "return await (", ").ConfigureAwait(false)"));
-            await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.Return))
-                .IsEqualTo((false, "return ", string.Empty));
-            await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.SyncVoid))
-                .IsEqualTo((false, string.Empty, string.Empty));
-            await Assert.That(static () => Emitter.GetReturnInvocationParts((ReturnTypeInfo)int.MaxValue))
+            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.AsyncVoid)).IsEqualTo(ReturnPrefix);
+            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.AsyncResult)).IsEqualTo(ReturnPrefix);
+            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.AsyncEnumerable)).IsEqualTo(ReturnPrefix);
+            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.Observable)).IsEqualTo(ReturnPrefix);
+            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.RequestMessage)).IsEqualTo(ReturnPrefix);
+            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.Return)).IsEqualTo(ReturnPrefix);
+            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.SyncVoid)).IsEqualTo(string.Empty);
+            await Assert.That(static () => Emitter.GetReturnStatementPrefix((ReturnTypeInfo)int.MaxValue))
                 .ThrowsExactly<ArgumentOutOfRangeException>();
         }
 
@@ -332,10 +335,13 @@ public static partial class GeneratorComponentTests
                 false,
                 false);
 
-            var source = Emitter.BuildMethodOpening(method, true, true, supportsNullable: true, isAsync: true);
+            var source = Emitter.BuildMethodOpening(method, true, true, supportsNullable: true);
 
             await Assert.That(source)
-                .Contains("async global::System.Threading.Tasks.Task global::RefitGeneratorTest.IBase.Ping(");
+                .Contains("global::System.Threading.Tasks.Task global::RefitGeneratorTest.IBase.Ping(");
+
+            // A task-returning method hands its task back, so no generated method is emitted async.
+            await Assert.That(source).DoesNotContain("async ");
         }
 
         /// <summary>Verifies emitted XML documentation text escapes special characters.</summary>

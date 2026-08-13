@@ -89,21 +89,23 @@ internal static partial class Emitter
             _ => $"new global::System.Net.Http.HttpMethod({ToCSharpStringLiteral(httpMethod)})"
         };
 
-    /// <summary>Gets the invocation text used for a generated method return type.</summary>
+    /// <summary>Gets the statement prefix used for a generated method return type.</summary>
     /// <param name="returnTypeInfo">The method return type shape.</param>
-    /// <returns>The async flag, return prefix, and configure-await suffix.</returns>
+    /// <returns>The return statement prefix, empty for a shape that discards the call's result.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="returnTypeInfo"/> is unsupported.</exception>
-    internal static (bool IsAsync, string ReturnPrefix, string ConfigureAwaitSuffix) GetReturnInvocationParts(
-        ReturnTypeInfo returnTypeInfo) =>
+    /// <remarks>An awaitable shape hands its task straight back rather than awaiting it. Awaiting here would build a
+    /// second state machine per call that forwards the task the request builder already produced, changing nothing but
+    /// the allocation count; the awaitable is the caller's to consume.</remarks>
+    internal static string GetReturnStatementPrefix(ReturnTypeInfo returnTypeInfo) =>
         returnTypeInfo switch
         {
-            ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
-            ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
-            ReturnTypeInfo.AsyncEnumerable
+            ReturnTypeInfo.AsyncVoid
+            or ReturnTypeInfo.AsyncResult
+            or ReturnTypeInfo.AsyncEnumerable
             or ReturnTypeInfo.Observable
             or ReturnTypeInfo.RequestMessage
-            or ReturnTypeInfo.Return => (false, ReturnStatementPrefix, string.Empty),
-            ReturnTypeInfo.SyncVoid => (false, string.Empty, string.Empty),
+            or ReturnTypeInfo.Return => ReturnStatementPrefix,
+            ReturnTypeInfo.SyncVoid => string.Empty,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(returnTypeInfo),
                 returnTypeInfo,
@@ -223,26 +225,25 @@ internal static partial class Emitter
     /// <param name="isDerivedExplicitImpl">True if the method is a derived explicit implementation.</param>
     /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
-    /// <param name="isAsync">True if the method should be emitted as async.</param>
     /// <param name="methodAttributes">Attribute lines emitted between the documentation and the signature.</param>
+    /// <remarks>Every generated method is emitted synchronously: an awaitable return type is handed back to the caller
+    /// rather than awaited, so no generated method carries an async state machine.</remarks>
     internal static void AppendMethodOpening(
         PooledStringBuilder builder,
         in MethodModel methodModel,
         bool isDerivedExplicitImpl,
         bool isExplicitInterface,
         bool supportsNullable,
-        bool isAsync = false,
         string methodAttributes = "")
     {
         var visibility = !isExplicitInterface ? "public " : string.Empty;
-        var asyncKeyword = isAsync ? "async " : string.Empty;
         var explicitInterface = BuildExplicitInterfacePrefix(methodModel, isExplicitInterface);
         var methodIndent = Indent(MethodMemberIndentation);
 
         _ = builder
             .AppendLine()
             .Append(methodIndent).AppendLine("/// <inheritdoc />")
-            .Append(methodAttributes).Append(methodIndent).Append(visibility).Append(asyncKeyword)
+            .Append(methodAttributes).Append(methodIndent).Append(visibility)
             .Append(methodModel.ReturnType).Append(' ').Append(explicitInterface).Append(methodModel.DeclaredMethod)
             .Append('(').Append(BuildParameterList(methodModel.Parameters, supportsNullable)).Append(')').AppendLine();
         AppendConstraints(builder, methodModel.Constraints, isDerivedExplicitImpl || isExplicitInterface, MethodBodyIndentation);
@@ -254,7 +255,6 @@ internal static partial class Emitter
     /// <param name="isDerivedExplicitImpl">True if the method is a derived explicit implementation.</param>
     /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
-    /// <param name="isAsync">True if the method should be emitted as async.</param>
     /// <param name="methodAttributes">Attribute lines emitted between the documentation and the signature.</param>
     /// <returns>The generated method opening.</returns>
     internal static string BuildMethodOpening(
@@ -262,11 +262,10 @@ internal static partial class Emitter
         bool isDerivedExplicitImpl,
         bool isExplicitInterface,
         bool supportsNullable,
-        bool isAsync = false,
         string methodAttributes = "")
     {
         var builder = new PooledStringBuilder();
-        AppendMethodOpening(builder, methodModel, isDerivedExplicitImpl, isExplicitInterface, supportsNullable, isAsync, methodAttributes);
+        AppendMethodOpening(builder, methodModel, isDerivedExplicitImpl, isExplicitInterface, supportsNullable, methodAttributes);
         return builder.ToString();
     }
 
