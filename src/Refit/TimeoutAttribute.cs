@@ -5,6 +5,7 @@
 namespace Refit;
 
 /// <summary>Applies a per-call timeout, in milliseconds, to a Refit interface method.</summary>
+/// <param name="milliseconds">The timeout, in milliseconds. Must be positive to take effect.</param>
 /// <remarks>
 /// The timeout is layered on top of the request's effective cancellation token: when it elapses the request is
 /// canceled, surfacing as an <see cref="OperationCanceledException"/> (typically a
@@ -13,7 +14,6 @@ namespace Refit;
 /// of, <see cref="HttpClient.Timeout"/> and any handler-based timeout: whichever fires first cancels
 /// the call. A value that is not positive is ignored, leaving the request without a per-call deadline.
 /// </remarks>
-/// <param name="milliseconds">The timeout, in milliseconds. Must be positive to take effect.</param>
 [System.Diagnostics.DebuggerDisplay("{Milliseconds}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class TimeoutAttribute(int milliseconds) : Attribute

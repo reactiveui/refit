@@ -31,9 +31,9 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// Add format for specified parameter type contained within container class of specified type.
     /// Might be suppressed by a QueryAttribute format.
     /// </summary>
-    /// <param name="format">The format string.</param>
     /// <typeparam name="TContainer">Container class type.</typeparam>
     /// <typeparam name="TParameter">Parameter type.</typeparam>
+    /// <param name="format">The format string.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
@@ -43,8 +43,8 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
         SpecificFormats.Add((typeof(TContainer), typeof(TParameter)), format);
 
     /// <summary>Add format for specified parameter type. Might be suppressed by a QueryAttribute format or a container specific format.</summary>
-    /// <param name="format">The format string.</param>
     /// <typeparam name="TParameter">Parameter type.</typeparam>
+    /// <param name="format">The format string.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",

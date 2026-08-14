@@ -5,11 +5,11 @@
 namespace Refit;
 
 /// <summary>Controls how query parameters are encoded into the request Uri.</summary>
-/// <seealso cref="System.Attribute" />
+/// <param name="uriFormat">The URI format.</param>
 /// <remarks>
 /// Initializes a new instance of the <see cref="QueryUriFormatAttribute"/> class.
 /// </remarks>
-/// <param name="uriFormat">The URI format.</param>
+/// <seealso cref="System.Attribute" />
 [System.Diagnostics.DebuggerDisplay("{UriFormat}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class QueryUriFormatAttribute(UriFormat uriFormat) : Attribute

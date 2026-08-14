@@ -635,9 +635,9 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// A re-readable in-memory replacement for a consumed request body that reports a length only when the
     /// original did, so a streamed body still appears to have no <c>Content-Length</c>.
     /// </summary>
-    /// <remarks>Initializes a new instance of the <see cref="BufferedContent"/> class.</remarks>
     /// <param name="bytes">The buffered body bytes.</param>
     /// <param name="knownLength">Whether the original content reported a length.</param>
+    /// <remarks>Initializes a new instance of the <see cref="BufferedContent"/> class.</remarks>
     private sealed class BufferedContent(byte[] bytes, bool knownLength) : HttpContent
     {
         /// <summary>The buffered body bytes.</summary>

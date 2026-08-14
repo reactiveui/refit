@@ -7,8 +7,8 @@ namespace Refit;
 
 /// <summary>Holds the <see cref="RefitSettings"/> associated with a specific Refit interface type.</summary>
 /// <typeparam name="T">The Refit interface type the settings belong to.</typeparam>
-/// <remarks>Initializes a new instance of the <see cref="SettingsFor{T}"/> class.</remarks>
 /// <param name="settings">The settings.</param>
+/// <remarks>Initializes a new instance of the <see cref="SettingsFor{T}"/> class.</remarks>
 [System.Diagnostics.DebuggerDisplay("{Settings}")]
 [SuppressMessage(
     "StyleSharp",

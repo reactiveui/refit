@@ -49,14 +49,14 @@ internal static class AnalyzerFixture
     }
 
     /// <summary>Runs the Refit interface analyzer over an interface body snippet with a bare analyzer-config option.</summary>
-    /// <remarks>
-    /// The key is supplied without the <c>build_property.</c> prefix, mirroring an <c>.editorconfig</c>/<c>.globalconfig</c>
-    /// entry rather than an MSBuild property, so the analyzer reads it through the bare-name option path.
-    /// </remarks>
     /// <param name="body">The interface body source.</param>
     /// <param name="optionKey">The bare analyzer-config option key.</param>
     /// <param name="optionValue">The analyzer-config option value.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
+    /// <remarks>
+    /// The key is supplied without the <c>build_property.</c> prefix, mirroring an <c>.editorconfig</c>/<c>.globalconfig</c>
+    /// entry rather than an MSBuild property, so the analyzer reads it through the bare-name option path.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Task<ImmutableArray<Diagnostic>> RunForBodyWithAnalyzerConfigOption(string body, string optionKey, string optionValue) =>
         Analyze(

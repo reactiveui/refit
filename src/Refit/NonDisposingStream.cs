@@ -5,6 +5,7 @@
 namespace Refit;
 
 /// <summary>A <see cref="DelegatingStream"/> that never disposes the stream it wraps.</summary>
+/// <param name="innerStream">The caller-owned stream to wrap without taking ownership.</param>
 /// <remarks>
 /// Refit disposes the <see cref="System.Net.Http.HttpRequestMessage"/> after every send, which disposes its
 /// content and therefore any stream that content holds. A caller-supplied request-body stream is owned by the
@@ -12,5 +13,4 @@ namespace Refit;
 /// the caller's stream. Streams that Refit opens itself (for example <see cref="FileInfoPart"/>) are wrapped in a
 /// plain owning <c>StreamContent</c> instead, so Refit still closes them.
 /// </remarks>
-/// <param name="innerStream">The caller-owned stream to wrap without taking ownership.</param>
 internal sealed class NonDisposingStream(Stream innerStream) : DelegatingStream(innerStream, ownsInnerStream: false);

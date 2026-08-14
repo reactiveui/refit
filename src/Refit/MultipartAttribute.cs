@@ -5,13 +5,13 @@
 namespace Refit;
 
 /// <summary>Send the request as multipart.</summary>
+/// <param name="boundaryText">The boundary text.</param>
 /// <remarks>
 /// Currently, multipart methods only support the following parameter types: <see cref="string"/>, <see cref="byte"/> array, <see cref="System.IO.Stream"/>, <see cref="System.IO.FileInfo"/>.
 /// </remarks>
 /// <remarks>
 /// Initializes a new instance of the <see cref="MultipartAttribute"/> class.
 /// </remarks>
-/// <param name="boundaryText">The boundary text.</param>
 [System.Diagnostics.DebuggerDisplay("{BoundaryText}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class MultipartAttribute(string boundaryText = "----MyGreatBoundary") : Attribute

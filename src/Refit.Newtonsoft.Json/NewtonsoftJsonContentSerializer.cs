@@ -10,10 +10,10 @@ using Newtonsoft.Json;
 namespace Refit;
 
 /// <summary>A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the Newtonsoft.Json APIs.</summary>
+/// <param name="jsonSerializerSettings">The serialization settings to use for the current instance</param>
 /// <remarks>
 /// Creates a new <see cref="NewtonsoftJsonContentSerializer"/> instance with the specified parameters.
 /// </remarks>
-/// <param name="jsonSerializerSettings">The serialization settings to use for the current instance</param>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class NewtonsoftJsonContentSerializer(
     JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer, ISynchronousContentDeserializer

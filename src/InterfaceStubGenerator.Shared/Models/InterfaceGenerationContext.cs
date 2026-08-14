@@ -8,10 +8,6 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Refit.Generator;
 
 /// <summary>Transient scaffolding shared by every interface processed in a single generation pass.</summary>
-/// <remarks>This carries the compilation and well-known symbols used only while a pass runs. It is created inside the
-/// parse transform and discarded before any model is produced, so it must never flow through the incremental pipeline.
-/// It is a reference type (passed by reference, not copied) and its collections are plain concrete types - the emitted
-/// models are the equatable, cache-safe values, never this.</remarks>
 /// <param name="Diagnostics">The list that collects diagnostics produced during processing.</param>
 /// <param name="PreserveAttributeDisplayName">The display name of the generated preserve attribute.</param>
 /// <param name="GeneratedClassName">The assembly-scoped name of the generated implementation container type.</param>
@@ -42,6 +38,10 @@ namespace Refit.Generator;
 /// compilation, or <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
 /// <param name="PathPrefix">The shared route prefix declared by the interface being processed via <c>[PathPrefix]</c>,
 /// prepended to every method's relative path, or an empty string when the interface declares none.</param>
+/// <remarks>This carries the compilation and well-known symbols used only while a pass runs. It is created inside the
+/// parse transform and discarded before any model is produced, so it must never flow through the incremental pipeline.
+/// It is a reference type (passed by reference, not copied) and its collections are plain concrete types - the emitted
+/// models are the equatable, cache-safe values, never this.</remarks>
 internal readonly record struct InterfaceGenerationContext(
     List<Diagnostic> Diagnostics,
     string PreserveAttributeDisplayName,

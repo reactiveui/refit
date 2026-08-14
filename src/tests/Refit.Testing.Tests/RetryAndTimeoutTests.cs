@@ -138,8 +138,8 @@ public sealed class RetryAndTimeoutTests
     }
 
     /// <summary>A minimal retry policy that re-sends on a transport fault or a non-success status, standing in for Polly.</summary>
-    /// <remarks>Initializes a new instance of the <see cref="RetryHandler"/> class.</remarks>
     /// <param name="inner">The handler to send through.</param>
+    /// <remarks>Initializes a new instance of the <see cref="RetryHandler"/> class.</remarks>
     private sealed class RetryHandler(HttpMessageHandler inner) : DelegatingHandler(inner)
     {
         /// <inheritdoc/>

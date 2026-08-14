@@ -7,10 +7,10 @@ using System.Net.Http;
 namespace Refit;
 
 /// <summary>Send the request with HTTP method 'GET'.</summary>
+/// <param name="path">The path.</param>
 /// <remarks>
 /// Initializes a new instance of the <see cref="GetAttribute"/> class.
 /// </remarks>
-/// <param name="path">The path.</param>
 [System.Diagnostics.DebuggerDisplay("{Method}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class GetAttribute(string path) : HttpMethodAttribute(path)

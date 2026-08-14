@@ -5,6 +5,7 @@
 namespace Refit;
 
 /// <summary>Prepends a shared route prefix to every method's relative path on the interface it decorates.</summary>
+/// <param name="prefix">The route prefix prepended to every method's relative path.</param>
 /// <remarks>
 /// The prefix is joined to each method's route template with exactly one <c>/</c> between them, so
 /// <c>[PathPrefix("/api/v2")]</c> combined with <c>[Get("/users")]</c> requests <c>/api/v2/users</c>. A leading or
@@ -20,7 +21,6 @@ namespace Refit;
 /// client type.
 /// </para>
 /// </remarks>
-/// <param name="prefix">The route prefix prepended to every method's relative path.</param>
 [System.Diagnostics.DebuggerDisplay("{Prefix}")]
 [AttributeUsage(AttributeTargets.Interface)]
 public sealed class PathPrefixAttribute(string prefix) : Attribute

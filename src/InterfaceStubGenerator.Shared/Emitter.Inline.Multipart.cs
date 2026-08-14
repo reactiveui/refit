@@ -34,8 +34,8 @@ internal static partial class Emitter
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="locals">The method-scope unique local name builder.</param>
-    /// <returns>The generated multipart content statements, ending with the request-content assignment.</returns>
     /// <param name="methodAdditionalIndent">The additional indentation for the method body.</param>
+    /// <returns>The generated multipart content statements, ending with the request-content assignment.</returns>
     internal static string BuildInlineMultipartContent(
         in RequestModel request,
         string requestLocal,

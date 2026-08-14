@@ -17,14 +17,14 @@ namespace Refit;
 public static class RequestBuilder
 {
     /// <summary>Creates an HTTP request builder for the specified interface type.</summary>
-    /// <remarks>Use this method to obtain a request builder for a given API interface, typically for
-    /// advanced scenarios such as custom client generation or integration with dependency injection. The returned
-    /// builder can be used to create HTTP requests corresponding to the methods defined on the interface.</remarks>
     /// <typeparam name="T">The interface type that defines the HTTP API methods to be implemented by the request builder. Must be an
     /// interface.</typeparam>
     /// <param name="settings">The Refit settings to use for configuring the request builder. May be null to use default settings.</param>
     /// <returns>An instance of IRequestBuilder T that can be used to construct HTTP requests for the specified interface
     /// type.</returns>
+    /// <remarks>Use this method to obtain a request builder for a given API interface, typically for
+    /// advanced scenarios such as custom client generation or integration with dependency injection. The returned
+    /// builder can be used to create HTTP requests corresponding to the methods defined on the interface.</remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
@@ -58,14 +58,14 @@ public static class RequestBuilder
         ReflectionRequestBuilderResolver.GetFactory().Create<T>(null);
 
     /// <summary>Creates an implementation of the specified Refit interface for making HTTP requests.</summary>
-    /// <remarks>The returned IRequestBuilder uses reflection to analyze the provided interface type.
-    /// When using trimming or linking, ensure that all referenced interfaces and data transfer objects are
-    /// preserved to avoid runtime errors.</remarks>
     /// <param name="refitInterfaceType">The interface type that defines the HTTP API contract. Must be a non-generic interface decorated with Refit
     /// attributes.</param>
     /// <param name="settings">Optional settings to customize the behavior of the generated request builder. If null, default settings are
     /// used.</param>
     /// <returns>An IRequestBuilder instance that can be used to construct HTTP requests for the specified interface.</returns>
+    /// <remarks>The returned IRequestBuilder uses reflection to analyze the provided interface type.
+    /// When using trimming or linking, ensure that all referenced interfaces and data transfer objects are
+    /// preserved to avoid runtime errors.</remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder ForType(
@@ -78,12 +78,12 @@ public static class RequestBuilder
         ReflectionRequestBuilderResolver.GetFactory().Create(refitInterfaceType, settings);
 
     /// <summary>Creates an instance of an IRequestBuilder for the specified Refit interface type.</summary>
-    /// <remarks>The specified interface type must be decorated with Refit attributes to define the
-    /// API endpoints. If trimming is enabled, ensure that all referenced interfaces and data transfer objects are
-    /// preserved, as reflection is used to analyze the interface methods.</remarks>
     /// <param name="refitInterfaceType">The interface type that defines the Refit API contract. Must be a non-generic interface decorated with Refit
     /// attributes.</param>
     /// <returns>An IRequestBuilder instance that can be used to construct HTTP requests for the specified interface type.</returns>
+    /// <remarks>The specified interface type must be decorated with Refit attributes to define the
+    /// API endpoints. If trimming is enabled, ensure that all referenced interfaces and data transfer objects are
+    /// preserved, as reflection is used to analyze the interface methods.</remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder ForType(

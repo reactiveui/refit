@@ -34,11 +34,11 @@ public sealed class EnumHelpersTests
     [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies sbyte-backed enum handling.")]
     private enum SByteEnum : sbyte
     {
-        /// <summary>Default value.</summary>
-        None = 0,
-
         /// <summary>Negative value.</summary>
         Value = -8,
+
+        /// <summary>Default value.</summary>
+        None = 0,
     }
 
     /// <summary>Byte-backed enum.</summary>
@@ -56,11 +56,11 @@ public sealed class EnumHelpersTests
     [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies short-backed enum handling.")]
     private enum Int16Enum : short
     {
-        /// <summary>Default value.</summary>
-        None = 0,
-
         /// <summary>Negative value.</summary>
         Value = -1234,
+
+        /// <summary>Default value.</summary>
+        None = 0,
     }
 
     /// <summary>Unsigned 16-bit enum.</summary>
@@ -77,11 +77,11 @@ public sealed class EnumHelpersTests
     /// <summary>Signed 32-bit enum.</summary>
     private enum Int32Enum
     {
-        /// <summary>Default value.</summary>
-        None = 0,
-
         /// <summary>Negative value.</summary>
         Value = -123_456,
+
+        /// <summary>Default value.</summary>
+        None = 0,
     }
 
     /// <summary>Unsigned 32-bit enum.</summary>
@@ -99,11 +99,11 @@ public sealed class EnumHelpersTests
     [SuppressMessage("Design", "SST2313:Enums should use an allowed storage type", Justification = "This fixture verifies long-backed enum handling.")]
     private enum Int64Enum : long
     {
-        /// <summary>Default value.</summary>
-        None = 0,
-
         /// <summary>Negative value.</summary>
         Value = -1_234_567_890_123,
+
+        /// <summary>Default value.</summary>
+        None = 0,
     }
 
     /// <summary>Unsigned 64-bit enum.</summary>

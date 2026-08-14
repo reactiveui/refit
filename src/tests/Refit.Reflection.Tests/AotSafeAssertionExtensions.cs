@@ -12,9 +12,9 @@ namespace Refit.Reflection.Tests;
 internal static class AotSafeAssertionExtensions
 {
     /// <summary>Provides collection-equality assertions for assertion sources.</summary>
-    /// <param name="source">The assertion source.</param>
     /// <typeparam name="TCollection">The collection type being asserted.</typeparam>
     /// <typeparam name="TItem">The element type.</typeparam>
+    /// <param name="source">The assertion source.</param>
     extension<TCollection, TItem>(IAssertionSource<TCollection> source)
         where TCollection : IEnumerable<TItem>
     {

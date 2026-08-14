@@ -10,14 +10,14 @@ namespace Refit;
 
 /// <summary>Implementation of <see cref="IApiResponse{T}"/> that provides additional functionalities.</summary>
 /// <typeparam name="T">The deserialized response content type.</typeparam>
-/// <remarks>
-/// Create an instance of <see cref="ApiResponse{T}"/> with type <typeparamref name="T"/>.
-/// </remarks>
 /// <param name="request">Original HTTP Request.</param>
 /// <param name="response">Original HTTP Response message.</param>
 /// <param name="content">Response content.</param>
 /// <param name="settings">Refit settings used to send the request.</param>
 /// <param name="error">The exception, if the request failed.</param>
+/// <remarks>
+/// Create an instance of <see cref="ApiResponse{T}"/> with type <typeparamref name="T"/>.
+/// </remarks>
 [System.Diagnostics.DebuggerDisplay("{Content}")]
 public sealed class ApiResponse<T>(
     HttpRequestMessage request,
