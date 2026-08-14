@@ -1465,6 +1465,7 @@ dotnet_diagnostic.SST1532.severity = error # A file mixes line endings. Configur
 # like on the frameworks that already have the API - HttpContentExtensions is empty on net9.0+
 # by design. The rule cannot distinguish that from a genuinely empty file.
 dotnet_diagnostic.SST1533.severity = none # A source file contains no code
+dotnet_diagnostic.SST1534.severity = none # Remove the braces around a switch section - conflicts with SST1525/RCS1111, which own that direction
 dotnet_diagnostic.SST1535.severity = error # A constructor initializer colon should not be followed by a blank line
 dotnet_diagnostic.SST1536.severity = error # A conditional operator token should not be followed by a blank line
 dotnet_diagnostic.SST1537.severity = error # An expression-body arrow should not be followed by a blank line

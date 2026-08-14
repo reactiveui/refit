@@ -11,6 +11,12 @@ namespace System.Diagnostics.CodeAnalysis;
     "Design",
     "SST2303:An enum marked [Flags] has members that are not distinct bit values",
     Justification = "Mirrors the BCL flags enum; several members intentionally combine bits (e.g. PublicConstructors = 1 | 2).")]
+[SuppressMessage(
+    "Design",
+    "SST2461:A flags enum member sets a bit that no member of the enum defines",
+    Justification = "Mirrors the BCL flags enum, which likewise gives bit 1 no standalone member - it "
+        + "exists only as part of PublicConstructors. Naming it here would diverge from the type this "
+        + "polyfill stands in for.")]
 internal enum DynamicallyAccessedMemberTypes
 {
     /// <summary>No members are dynamically accessed.</summary>
