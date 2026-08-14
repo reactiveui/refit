@@ -5,13 +5,13 @@
 namespace Refit;
 
 /// <summary>Add the Authorize header to the request with the value of the associated parameter.</summary>
+/// <param name="scheme">The scheme.</param>
 /// <remarks>
 /// Default authorization scheme: Bearer.
 /// </remarks>
 /// <remarks>
 /// Initializes a new instance of the <see cref="AuthorizeAttribute"/> class.
 /// </remarks>
-/// <param name="scheme">The scheme.</param>
 [System.Diagnostics.DebuggerDisplay("{Scheme}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class AuthorizeAttribute(string scheme = "Bearer") : Attribute

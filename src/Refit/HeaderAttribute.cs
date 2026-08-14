@@ -5,10 +5,10 @@
 namespace Refit;
 
 /// <summary>Add a header to the request.</summary>
+/// <param name="header">The header.</param>
 /// <remarks>
 /// Initializes a new instance of the <see cref="HeaderAttribute"/> class.
 /// </remarks>
-/// <param name="header">The header.</param>
 [System.Diagnostics.DebuggerDisplay("{Header}")]
 [AttributeUsage(AttributeTargets.Parameter)]
 public sealed class HeaderAttribute(string header) : Attribute

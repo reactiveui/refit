@@ -250,15 +250,14 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             return combined.StandardMethods.IsEmpty ? combined.CustomMethods : combined.StandardMethods;
         }
 
-#if ROSLYN_5
-        return [.. combined.StandardMethods, .. combined.CustomMethods];
-#else
+        // MoveToImmutable hands the array over without copying, so this matches what a collection
+        // expression produces. A collection expression cannot be used: the generator compiles against
+        // System.Collections.Immutable 7.0.0, which predates [CollectionBuilder] on ImmutableArray<T>.
         var builder = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(
             combined.StandardMethods.Length + combined.CustomMethods.Length);
         builder.AddRange(combined.StandardMethods);
         builder.AddRange(combined.CustomMethods);
         return builder.MoveToImmutable();
-#endif
     }
 
     /// <summary>Determines whether syntax might be a method using a custom Refit HTTP method attribute.</summary>

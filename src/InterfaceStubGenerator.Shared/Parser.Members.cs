@@ -289,9 +289,9 @@ internal static partial class Parser
     }
 
     /// <summary>Wraps a fully populated array, or copies the populated prefix before wrapping.</summary>
+    /// <typeparam name="T">The element type.</typeparam>
     /// <param name="values">The array containing populated values at the front.</param>
     /// <param name="count">The number of populated entries.</param>
-    /// <typeparam name="T">The element type.</typeparam>
     /// <returns>The immutable equatable array.</returns>
     internal static ImmutableEquatableArray<T> TrimAndWrap<T>(T[] values, int count)
         where T : IEquatable<T>

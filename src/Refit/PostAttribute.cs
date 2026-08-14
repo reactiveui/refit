@@ -7,10 +7,10 @@ using System.Net.Http;
 namespace Refit;
 
 /// <summary>Send the request with HTTP method 'POST'.</summary>
+/// <param name="path">The path.</param>
 /// <remarks>
 /// Initializes a new instance of the <see cref="PostAttribute"/> class.
 /// </remarks>
-/// <param name="path">The path.</param>
 [System.Diagnostics.DebuggerDisplay("{Method}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class PostAttribute(string path) : HttpMethodAttribute(path)

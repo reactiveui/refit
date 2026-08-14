@@ -7,14 +7,14 @@ using System.Net.Http;
 namespace Refit;
 
 /// <summary>Allows the use of a <see cref="FileInfo"/> object in a multipart form body.</summary>
-/// <remarks>
-/// Initializes a new instance of the <see cref="FileInfoPart"/> class.
-/// </remarks>
 /// <param name="value">The value.</param>
 /// <param name="fileName">Name of the file.</param>
 /// <param name="contentType">Type of the content.</param>
 /// <param name="name">The name.</param>
 /// <exception cref="System.ArgumentNullException">value</exception>
+/// <remarks>
+/// Initializes a new instance of the <see cref="FileInfoPart"/> class.
+/// </remarks>
 [System.Diagnostics.DebuggerDisplay("{Value}")]
 public class FileInfoPart(
     FileInfo value,

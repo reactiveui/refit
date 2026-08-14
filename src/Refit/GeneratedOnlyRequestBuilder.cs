@@ -26,8 +26,6 @@ internal sealed class GeneratedOnlyRequestBuilder : IRequestBuilder
         var methodContext =
             $"This Refit client was created with the generated-only API, but the generated client needs the reflection request builder for '{methodName}'.";
         throw new NotSupportedException(
-            string.Concat(
-                methodContext,
-                " Enable generated request building for this method or use RestService.For when reflection is acceptable."));
+            $"{methodContext} Enable generated request building for this method or use RestService.For when reflection is acceptable.");
     }
 }

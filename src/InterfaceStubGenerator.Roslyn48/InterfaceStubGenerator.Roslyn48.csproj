@@ -7,7 +7,6 @@
     <IsPackable>false</IsPackable>
     <IsRoslynComponent>true</IsRoslynComponent>
     <Nullable>enable</Nullable>
-    <DefineConstants>$(DefineConstants);ROSLYN_4</DefineConstants>
     <MsCACSharpVersion>4.8.0</MsCACSharpVersion>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>

@@ -19,10 +19,10 @@ using System.Text.Json.Serialization.Metadata;
 namespace Refit;
 
 /// <summary>A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the System.Text.Json APIs.</summary>
+/// <param name="jsonSerializerOptions">The serialization options to use for the current instance.</param>
 /// <remarks>
 /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters.
 /// </remarks>
-/// <param name="jsonSerializerOptions">The serialization options to use for the current instance.</param>
 [System.Diagnostics.DebuggerDisplay("{SerializerOptions}")]
 public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
     : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer, ISynchronousContentDeserializer

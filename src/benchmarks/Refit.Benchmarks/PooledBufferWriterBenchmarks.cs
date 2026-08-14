@@ -78,14 +78,13 @@ public class PooledBufferWriterBenchmarks
     /// <param name="byteCount">The number of bytes to write.</param>
     private void Fill(PooledBufferWriter writer, int byteCount)
     {
-        var remaining = byteCount;
-        while (remaining > 0)
+        var take = 0;
+        for (var remaining = byteCount; remaining > 0; remaining -= take)
         {
             var span = writer.GetSpan(ChunkSize);
-            var take = Math.Min(span.Length, remaining);
+            take = Math.Min(span.Length, remaining);
             span[..take].Fill(_fillByte);
             writer.Advance(take);
-            remaining -= take;
         }
     }
 }

@@ -47,11 +47,11 @@ public static partial class GeneratedRequestRunner
     /// <param name="urlResolution">The configured URL resolution mode.</param>
     /// <param name="queryUriFormat">The escaping mode from the method's <c>[QueryUriFormat]</c> attribute.</param>
     /// <returns>A relative <see cref="Uri"/> whose path and query are re-encoded with <paramref name="queryUriFormat"/>.</returns>
+    /// <exception cref="InvalidOperationException">Legacy resolution is in effect and <paramref name="client"/> has no base address to prefix the path with.</exception>
     /// <remarks>Mirrors the reflection request builder: it always assembles the path and query with the escaping query
     /// builder, then re-encodes the whole thing through <see cref="Uri.GetComponents(UriComponents, UriFormat)"/> with the
     /// method's <c>QueryUriFormat</c> (so <see cref="UriFormat.Unescaped"/> decodes it). Rfc3986 resolution ignores the
     /// format, exactly as the reflection builder does.</remarks>
-    /// <exception cref="InvalidOperationException">Legacy resolution is in effect and <paramref name="client"/> has no base address to prefix the path with.</exception>
     public static Uri BuildRelativeUri(HttpClient client, string relativePath, UrlResolutionMode urlResolution, UriFormat queryUriFormat)
     {
         if (urlResolution == UrlResolutionMode.Rfc3986)

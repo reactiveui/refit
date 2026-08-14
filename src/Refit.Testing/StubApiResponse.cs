@@ -15,6 +15,7 @@ namespace Refit.Testing;
 /// Every member is an <c>init</c>-only property, so a test configures exactly the fields it needs and
 /// leaves the rest defaulted.
 /// </summary>
+/// <typeparam name="T">The deserialized response content type.</typeparam>
 /// <remarks>
 /// The nullability-narrowing contracts (for example <see cref="IApiResponse{T}.IsSuccessfulWithContent"/>
 /// implying non-null <see cref="IApiResponse{T}.Content"/>) come from the interface declaration, so a
@@ -22,7 +23,6 @@ namespace Refit.Testing;
 /// response. Prefer <see cref="StubHttp"/> for end-to-end tests; reach for this only when the code under
 /// test is handed an <see cref="IApiResponse{T}"/> directly.
 /// </remarks>
-/// <typeparam name="T">The deserialized response content type.</typeparam>
 [System.Diagnostics.DebuggerDisplay("{Content}")]
 public sealed class StubApiResponse<T> : IApiResponse<T>
 {

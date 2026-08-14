@@ -7,14 +7,14 @@ using System.Net.Http;
 namespace Refit;
 
 /// <summary>Allows the use of a generic <see cref="Stream"/> in a multipart form body.</summary>
-/// <remarks>
-/// Initializes a new instance of the <see cref="StreamPart"/> class.
-/// </remarks>
 /// <param name="value">The value.</param>
 /// <param name="fileName">Name of the file.</param>
 /// <param name="contentType">Type of the content.</param>
 /// <param name="name">The name.</param>
 /// <exception cref="System.ArgumentNullException">value</exception>
+/// <remarks>
+/// Initializes a new instance of the <see cref="StreamPart"/> class.
+/// </remarks>
 [System.Diagnostics.DebuggerDisplay("{Value}")]
 public class StreamPart(
     Stream value,

@@ -8,8 +8,8 @@ using System.Net.Http;
 namespace Refit.Benchmarks;
 
 /// <summary>A custom HTTP verb attribute (the draft-standard QUERY method) used to exercise the cached verb instance.</summary>
-/// <remarks>Initializes a new instance of the <see cref="QueryVerbAttribute"/> class.</remarks>
 /// <param name="path">The relative request path.</param>
+/// <remarks>Initializes a new instance of the <see cref="QueryVerbAttribute"/> class.</remarks>
 [System.Diagnostics.DebuggerDisplay("{Method}")]
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
 public sealed class QueryVerbAttribute(string path) : HttpMethodAttribute(path)

@@ -30,25 +30,25 @@ public sealed class ReflectionTests
     public interface IGenericMethod
     {
         /// <summary>Request with a generic route parameter.</summary>
-        /// <param name="value1">Generic route parameter.</param>
         /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <param name="value1">Generic route parameter.</param>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}")]
         Task GetGenericParameter<T1>(T1 value1);
 
         /// <summary>Request with a generic route parameter and additional parameter.</summary>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
         /// <param name="value1">Generic route parameter.</param>
         /// <param name="value2">Integer route parameter.</param>
-        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}/{value2}")]
         Task GetGenericParameter<T1>(T1 value1, int value2);
 
         /// <summary>Request with two generic route parameters.</summary>
-        /// <param name="value1">First generic route parameter.</param>
-        /// <param name="value2">Second generic route parameter.</param>
         /// <typeparam name="T1">Generic type of first route parameter.</typeparam>
         /// <typeparam name="T2">Generic type of second route parameter.</typeparam>
+        /// <param name="value1">First generic route parameter.</param>
+        /// <param name="value2">Second generic route parameter.</param>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}/{value2}")]
         Task GetGenericParameter<T1, T2>(T1 value1, T2 value2);
@@ -59,25 +59,25 @@ public sealed class ReflectionTests
     public interface IGenericMethodAndInterface<in TInterface>
     {
         /// <summary>Request with a generic route parameter.</summary>
-        /// <param name="value1">Generic route parameter.</param>
         /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <param name="value1">Generic route parameter.</param>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}")]
         Task GetGenericParameter<T1>(T1 value1);
 
         /// <summary>Request with a generic route parameter and additional parameter.</summary>
+        /// <typeparam name="T1">Generic type of route parameter, constrained to value types.</typeparam>
         /// <param name="value1">Generic route parameter.</param>
         /// <param name="value2">Integer route parameter.</param>
-        /// <typeparam name="T1">Generic type of route parameter, constrained to value types.</typeparam>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}/{value2}")]
         Task GetGenericParameter<T1>(T1 value1, int value2)
             where T1 : struct;
 
         /// <summary>Request with two generic route parameters.</summary>
+        /// <typeparam name="T1">Generic type of first route parameter, constrained to reference types.</typeparam>
         /// <param name="value1">First generic route parameter.</param>
         /// <param name="value2">Second generic route parameter.</param>
-        /// <typeparam name="T1">Generic type of first route parameter, constrained to reference types.</typeparam>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}/{value2}")]
         Task GetGenericParameter<T1>(T1 value1, TInterface value2)

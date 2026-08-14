@@ -272,6 +272,7 @@ internal static partial class Emitter
     /// <summary>Builds the trim/AOT annotations emitted onto methods that use the reflection request builder.</summary>
     /// <param name="requiresUnreferencedCode">Whether the interface method declares <c>[RequiresUnreferencedCode]</c>.</param>
     /// <param name="requiresDynamicCode">Whether the interface method declares <c>[RequiresDynamicCode]</c>.</param>
+    /// <returns>The generated attribute lines, terminated by a newline.</returns>
     /// <remarks>
     /// The reflection fallback intentionally trades trim safety for coverage of method shapes the inline emitter does
     /// not support; RF006/RF007 report those shapes at compile time. When the interface member is unannotated the
@@ -280,7 +281,6 @@ internal static partial class Emitter
     /// <c>[RequiresDynamicCode]</c>, the implementation mirrors it instead: that both honours the caller-visible contract
     /// and satisfies the trim/AOT annotation-matching rule (IL2046/IL3051) between the interface and its implementation.
     /// </remarks>
-    /// <returns>The generated attribute lines, terminated by a newline.</returns>
     internal static string BuildReflectionFallbackSuppressions(
         bool requiresUnreferencedCode,
         bool requiresDynamicCode)

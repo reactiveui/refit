@@ -25,19 +25,19 @@ public sealed class Startup
     public IConfiguration Configuration { get; }
 
     /// <summary>Configures the application's services by adding required service registrations to the dependency injection container.</summary>
+    /// <param name="services">The collection of service descriptors to which application services are added. This parameter must not be
+    /// null.</param>
     /// <remarks>Call this method to register services needed by the application, such as MVC
     /// controllers and related infrastructure. This method is typically called by the runtime during application
     /// startup.</remarks>
-    /// <param name="services">The collection of service descriptors to which application services are added. This parameter must not be
-    /// null.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ConfigureServices(IServiceCollection services) => services.AddControllers();
 
     /// <summary>Configures the application's request pipeline and environment-specific middleware.</summary>
-    /// <remarks>In a development environment, this method adds middleware to display detailed
-    /// exception information. It also configures MVC routing for handling HTTP requests.</remarks>
     /// <param name="app">The application builder used to configure the HTTP request pipeline.</param>
     /// <param name="env">The hosting environment information for the current application.</param>
+    /// <remarks>In a development environment, this method adds middleware to display detailed
+    /// exception information. It also configures MVC routing for handling HTTP requests.</remarks>
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
         if (env.IsDevelopment())

@@ -17,4 +17,36 @@
     <CompilerVisibleProperty Include="DisableRefitSourceGenerator"/>
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- The Roslyn version of the single analyzers\dotnet\roslyn<version>\cs slot in this package. -->
+    <_RefitMinimumCompilerVersion>4.8</_RefitMinimumCompilerVersion>
+  </PropertyGroup>
+
+  <!--
+  Fail loudly on a compiler older than the shipped analyzer slot.
+
+  NuGet asset selection drops an analyzer slot newer than the host compiler without reporting
+  anything, so such a consumer would otherwise see no generated clients and a pile of unrelated
+  "type or namespace not found" errors with no hint at the cause.
+
+  This has to be a target rather than a plain Condition: $(CompilerApiVersion) is set by the Roslyn
+  targets, which are imported long after this .props file is evaluated, so it is always empty here at
+  evaluation time. Every guard below is deliberately fail-open - an unset, non-Roslyn or malformed
+  value skips the check rather than breaking a build we do not understand.
+  -->
+  <Target Name="RefitVerifyCompilerVersion"
+          BeforeTargets="CoreCompile"
+          Condition="'$(DisableRefitSourceGenerator)' != 'true'
+                     and '$(Language)' == 'C#'
+                     and '$(CompilerApiVersion)' != ''
+                     and $(CompilerApiVersion.StartsWith('roslyn'))">
+    <PropertyGroup>
+      <_RefitCompilerVersion>$(CompilerApiVersion.Substring(6))</_RefitCompilerVersion>
+    </PropertyGroup>
+    <Error Condition="$(_RefitCompilerVersion.Contains('.'))
+                      and '$([System.Version]::Parse($(_RefitMinimumCompilerVersion)).CompareTo($([System.Version]::Parse($(_RefitCompilerVersion)))))' &gt; '0'"
+           Code="REFIT001"
+           Text="Refit's source generator requires Roslyn $(_RefitMinimumCompilerVersion) or later (Visual Studio 2022 17.8+, or .NET SDK 8.0.100+), but this project is building with Roslyn $(_RefitCompilerVersion). Upgrade the build tools, or set DisableRefitSourceGenerator to true and use the Refit.Reflection package, which builds requests at runtime instead."/>
+  </Target>
+
 </Project>

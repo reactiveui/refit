@@ -7,10 +7,10 @@ using System.Net.Http;
 namespace Refit;
 
 /// <summary>Send the request with HTTP method 'DELETE'.</summary>
+/// <param name="path">The path.</param>
 /// <remarks>
 /// Initializes a new instance of the <see cref="DeleteAttribute"/> class.
 /// </remarks>
-/// <param name="path">The path.</param>
 [System.Diagnostics.DebuggerDisplay("{Method}")]
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class DeleteAttribute(string path) : HttpMethodAttribute(path)

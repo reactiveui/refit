@@ -297,13 +297,13 @@ internal static partial class Parser
             && type.TypeKind is TypeKind.Class or TypeKind.Struct or TypeKind.Array);
 
     /// <summary>Parses a parameter bound to a round-tripping <c>{**name}</c> placeholder.</summary>
-    /// <remarks>Round-tripping normally needs the reflection builder's per-segment escaping, but an
-    /// <c>[Encoded]</c> string value passes through verbatim, so it becomes a plain inline substitution.</remarks>
     /// <param name="parameter">The parameter to parse.</param>
     /// <param name="parameterType">The parameter type display string.</param>
     /// <param name="roundTripLocations">The placeholder locations.</param>
     /// <param name="context">The lookup state used to classify the parameter.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
+    /// <remarks>Round-tripping normally needs the reflection builder's per-segment escaping, but an
+    /// <c>[Encoded]</c> string value passes through verbatim, so it becomes a plain inline substitution.</remarks>
     internal static ParsedRequestParameter ParseRoundTripPathParameter(
         IParameterSymbol parameter,
         string parameterType,

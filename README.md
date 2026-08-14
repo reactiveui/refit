@@ -44,6 +44,7 @@ lets you stub responses and verify requests with a declarative route table — s
 
 * [Sponsors](#sponsors)
 * [Where does this work?](#where-does-this-work)
+* [SDK Requirements](#sdk-requirements)
 * [Breaking changes and release notes](docs/breaking-changes.md)
 * [Source generation](#source-generation)
     * [Generated-only client creation](#generated-only-client-creation)
@@ -111,6 +112,28 @@ Refit currently supports the following platforms and modern .NET targets:
 * Uno Platform
 
 ### SDK Requirements
+
+The source generator ships inside the `Refit` package as a Roslyn analyzer, so it is your **build tools**,
+not your target framework, that decide whether you get generated clients:
+
+| Requirement | Minimum |
+| --- | --- |
+| Roslyn (C# compiler) | 4.8 |
+| Visual Studio | 2022 17.8 |
+| .NET SDK | 8.0.100 |
+| NuGet references | `PackageReference` |
+
+These are build-time requirements only. The compiled output still runs on every platform listed above, down
+to .NET Framework 4.6.2, and both SDK-style and legacy (non-SDK) `.csproj` projects are supported.
+
+Older build tools do not silently produce an empty client — the build fails with `REFIT001` naming the Roslyn
+version it found. `packages.config` cannot load analyzers at all, so a source generator will never run there;
+[migrate to PackageReference](https://devblogs.microsoft.com/nuget/migrate-packages-config-to-package-reference/)
+to use it.
+
+If you cannot move to these build tools, set `DisableRefitSourceGenerator` to `true` and add the
+[`Refit.Reflection`](https://www.nuget.org/packages/Refit.Reflection) package, which builds requests at runtime
+and needs no source generator.
 
 ### Breaking changes and release notes
 
@@ -2594,7 +2617,8 @@ If a generated Refit client cannot be found at runtime, Refit now explicitly poi
 generator/build output and recommends generated clients plus source-generated `System.Text.Json` metadata for Native AoT
 scenarios.
 
-Refit also ships analyzers for newer Roslyn toolchains, including a Roslyn 5.0 build for newer Visual Studio versions.
+Refit also ships analyzers and code fixes alongside the generator, in the same single Roslyn 4.8 slot — see
+[SDK Requirements](#sdk-requirements).
 
 ### Handling exceptions
 

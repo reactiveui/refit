@@ -50,7 +50,7 @@ dotnet clean "Refit.slnx"
 ```bash
 cd src
 
-dotnet build "InterfaceStubGenerator.Roslyn50/InterfaceStubGenerator.Roslyn50.csproj" -v:minimal --no-restore /p:NuGetAudit=false /m:1
+dotnet build "InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" -v:minimal --no-restore /p:NuGetAudit=false /m:1
 dotnet build "tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" -f net8.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
 dotnet build "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
 ```
@@ -141,7 +141,7 @@ dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f
 
 ### Generator performance
 
-Settle generator perf with benchmarks and EventPipe traces, never by inspection or a hunch that "it's already optimal" — build overall (whole-generator) and micro (per-component) benchmarks and let the traces show where the real cost is before optimizing. Context, not a verdict that nothing can improve: the generator already uses `ForAttributeWithMetadataName`, value-equatable `readonly record struct` models + `ImmutableEquatableArray` (incremental caching depends on this), `PooledStringBuilder`, multi-slot Roslyn constants (`#if ROSLYN_5_OR_GREATER` for 5.0-only APIs), and incremental-cache regression tests.
+Settle generator perf with benchmarks and EventPipe traces, never by inspection or a hunch that "it's already optimal" — build overall (whole-generator) and micro (per-component) benchmarks and let the traces show where the real cost is before optimizing. Context, not a verdict that nothing can improve: the generator already uses `ForAttributeWithMetadataName`, value-equatable `readonly record struct` models + `ImmutableEquatableArray` (incremental caching depends on this), `PooledStringBuilder`, and incremental-cache regression tests. The generator builds against a single Roslyn version (4.8) and ships in a single `analyzers/dotnet/roslyn4.8/cs` slot; do not reintroduce a second slot to pick up newer Roslyn APIs without also handling legacy non-SDK consumers, which receive every slot at once (see `AnalyzerPackagingTests`).
 
 Generator / incremental-pipeline benchmarks go in their own BenchmarkDotNet project (`src/benchmarks/Refit.Generator.Benchmarks`), separate from the runtime `Refit.Benchmarks`, built on the existing BenchmarkDotNet setup — never a bespoke driver. Profile with BenchmarkDotNet's native `[EventPipeProfiler(EventPipeProfile.GcVerbose|CpuSampling)]` diagnoser — EventPipe is the right lens for a Roslyn generator, whereas `[MemoryDiagnoser]` is a weak signal for whole-generator runs. Widening a generator member `private` -> `internal` (with `InternalsVisibleTo`) to micro-benchmark it is fine. Name benchmark classes for the component under test (parser, emitter, query/path building), not the measurement type.
 
@@ -150,7 +150,7 @@ Useful validation:
 ```bash
 cd src
 
-dotnet build "InterfaceStubGenerator.Roslyn50/InterfaceStubGenerator.Roslyn50.csproj" -v:minimal --no-restore /p:NuGetAudit=false /m:1
+dotnet build "InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" -v:minimal --no-restore /p:NuGetAudit=false /m:1
 dotnet build "tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" -f net8.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
 dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 --no-restore --no-build
 ```

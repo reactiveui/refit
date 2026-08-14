@@ -7,11 +7,11 @@ using System.Net.Http;
 namespace Refit;
 
 /// <summary>Base attribute describing the HTTP method used to send a request.</summary>
-/// <seealso cref="System.Attribute" />
+/// <param name="path">The path.</param>
 /// <remarks>
 /// Initializes a new instance of the <see cref="HttpMethodAttribute"/> class.
 /// </remarks>
-/// <param name="path">The path.</param>
+/// <seealso cref="System.Attribute" />
 [System.Diagnostics.DebuggerDisplay("{Method}")]
 public abstract class HttpMethodAttribute(string path) : Attribute
 {

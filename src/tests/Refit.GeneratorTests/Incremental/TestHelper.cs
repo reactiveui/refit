@@ -123,15 +123,15 @@ internal static class TestHelper
     }
 
     /// <summary>Asserts the build-Refit run reason for the interface with the given simple name.</summary>
+    /// <param name="driver">The generator driver to inspect.</param>
+    /// <param name="interfaceName">The simple (unqualified) interface name whose output is inspected.</param>
+    /// <param name="expectedReason">The expected build-Refit run reason for that interface.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     /// <remarks>
     /// The build-Refit step emits one output per interface, so a per-interface assertion is required when a
     /// compilation contains more than one interface. The output is located by matching the interface's display
     /// name rather than a positional index, because the emission order follows the parser's collection order.
     /// </remarks>
-    /// <param name="driver">The generator driver to inspect.</param>
-    /// <param name="interfaceName">The simple (unqualified) interface name whose output is inspected.</param>
-    /// <param name="expectedReason">The expected build-Refit run reason for that interface.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
     internal static async Task AssertBuildRefitReasonForInterface(
         GeneratorDriver driver,
         string interfaceName,

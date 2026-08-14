@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Refit\Refit.csproj"/>
-    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn50\InterfaceStubGenerator.Roslyn50.csproj"
+    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer"
                       PrivateAssets="all"/>

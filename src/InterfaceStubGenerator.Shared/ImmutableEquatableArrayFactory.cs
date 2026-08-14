@@ -21,16 +21,16 @@ internal static class ImmutableEquatableArrayFactory
         where T : IEquatable<T> => ImmutableEquatableArray<T>.Empty;
 
     /// <summary>Wraps an array without another copy.</summary>
-    /// <param name="values">The values to wrap.</param>
     /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="values">The values to wrap.</param>
     /// <returns>An immutable equatable array over <paramref name="values"/>.</returns>
     internal static ImmutableEquatableArray<T> FromArray<T>(T[] values)
         where T : IEquatable<T> =>
         values.Length == 0 ? Empty<T>() : new(values);
 
     /// <summary>Copies a list into the immutable equatable array backing storage.</summary>
-    /// <param name="values">The values to copy.</param>
     /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="values">The values to copy.</param>
     /// <returns>An immutable equatable array containing <paramref name="values"/>.</returns>
     internal static ImmutableEquatableArray<T> FromList<T>(List<T> values)
         where T : IEquatable<T>

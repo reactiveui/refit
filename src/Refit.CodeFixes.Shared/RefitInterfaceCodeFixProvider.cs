@@ -25,14 +25,7 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
 
     /// <inheritdoc/>
     public override ImmutableArray<string> FixableDiagnosticIds { get; } =
-#if ROSLYN_5
-    [
-        DiagnosticIds.InvalidRouteBackslash,
-        DiagnosticIds.InvalidHeaderCollectionParameter
-    ];
-#else
         CreateFixableDiagnosticIds();
-#endif
 
     /// <inheritdoc/>
     public override FixAllProvider GetFixAllProvider() =>
@@ -148,8 +141,11 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
         return document.WithSyntaxRoot(root.ReplaceNode(parameter, updatedParameter));
     }
 
-#if !ROSLYN_5
-    /// <summary>Creates the immutable fixable ID set without using Roslyn 5-only collection expressions.</summary>
+    /// <summary>
+    /// Creates the immutable fixable ID set. A collection expression cannot be used: the code fix
+    /// compiles against System.Collections.Immutable 7.0.0, which predates [CollectionBuilder] on
+    /// <see cref="ImmutableArray{T}"/>.
+    /// </summary>
     /// <returns>The fixable diagnostic IDs.</returns>
     private static ImmutableArray<string> CreateFixableDiagnosticIds()
     {
@@ -159,5 +155,4 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
         builder.Add(DiagnosticIds.InvalidHeaderCollectionParameter);
         return builder.MoveToImmutable();
     }
-#endif
 }

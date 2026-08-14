@@ -5,10 +5,10 @@
 namespace Refit;
 
 /// <summary>Override the key that will be sent in the query string.</summary>
+/// <param name="name">The name.</param>
 /// <remarks>
 /// Initializes a new instance of the <see cref="AliasAsAttribute"/> class.
 /// </remarks>
-/// <param name="name">The name.</param>
 [System.Diagnostics.DebuggerDisplay("{Name}")]
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
 public sealed class AliasAsAttribute(string name) : Attribute

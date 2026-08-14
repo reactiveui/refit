@@ -5,25 +5,25 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Shared Version Variables">
-    <PrimitivesVersion>7.0.0</PrimitivesVersion>
-    <TUnitVersion>1.61.38</TUnitVersion>
+    <PrimitivesVersion>7.1.1</PrimitivesVersion>
+    <TUnitVersion>1.65.0</TUnitVersion>
 
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>3.41.14</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>3.43.2</SharpAnalyzersVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
-    <AspNetVersion>8.0.29</AspNetVersion>
-    <AspNetVersion Condition="$(TargetFramework.StartsWith('net9'))">9.0.18</AspNetVersion>
-    <AspNetVersion Condition="$(TargetFramework.StartsWith('net10'))">10.0.10</AspNetVersion>
+    <AspNetVersion>8.0.30</AspNetVersion>
+    <AspNetVersion Condition="$(TargetFramework.StartsWith('net9'))">9.0.19</AspNetVersion>
+    <AspNetVersion Condition="$(TargetFramework.StartsWith('net10'))">10.0.11</AspNetVersion>
 
-    <MicrosoftExtensionsVersion>10.0.10</MicrosoftExtensionsVersion>
-    <SystemTextJsonVersion>10.0.10</SystemTextJsonVersion>
+    <MicrosoftExtensionsVersion>10.0.11</MicrosoftExtensionsVersion>
+    <SystemTextJsonVersion>10.0.11</SystemTextJsonVersion>
 
     <MicrosoftCodeAnalysisAnalyzersVersion>5.6.0</MicrosoftCodeAnalysisAnalyzersVersion>
     <MicrosoftCodeAnalysisWorkspacesVersion>4.14.0</MicrosoftCodeAnalysisWorkspacesVersion>
 
-    <SourceLinkVersion>10.0.301</SourceLinkVersion>
+    <SourceLinkVersion>10.0.400</SourceLinkVersion>
     <ThreadingAnalyzersVersion>18.7.23</ThreadingAnalyzersVersion>
     <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>
@@ -53,10 +53,11 @@
     <PackageVersion Include="PublicApiSharp.Analyzers" Version="1.0.7"/>
   </ItemGroup>
 
-  <!-- Roslyn toolchain. Versions are intentionally held at their current bands:
-       the source generator multi-targets Roslyn 4.8/5.0 (selected per project via
-       the $(MsCACSharpVersion) VersionOverride) and the test/benchmark tooling tracks
-       the 4.x line. Renovate is configured to hold these back (see .github/renovate.json). -->
+  <!-- Roslyn toolchain. Versions are intentionally held at their current bands: the source
+       generator, analyzers and code fixes all build against Roslyn 4.8 (pinned per project via
+       the $(MsCACSharpVersion) VersionOverride) and ship in a single analyzer slot, so this
+       version is the minimum compiler consumers need. The test/benchmark tooling tracks the 4.x
+       line. Renovate is configured to hold these back (see .github/renovate.json). -->
   <ItemGroup Label="Roslyn Toolchain">
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(MicrosoftCodeAnalysisWorkspacesVersion)"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4"/>
@@ -74,7 +75,7 @@
     <PackageVersion Include="Verify.TUnit" Version="31.28.0"/>
     <PackageVersion Include="Verify.DiffPlex" Version="3.3.1"/>
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0"/>
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.9.0"/>
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.10.0"/>
   </ItemGroup>
 
   <ItemGroup Label="Benchmarks">

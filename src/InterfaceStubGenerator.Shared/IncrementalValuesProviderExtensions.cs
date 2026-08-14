@@ -1,7 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-#if ROSLYN_4
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -15,6 +15,7 @@ internal static class IncrementalValuesProviderExtensions
     {
         /// <summary>Registers an output node into an <see cref="IncrementalGeneratorInitializationContext"/> to output diagnostics.</summary>
         /// <param name="diagnostics">The input <see cref="IncrementalValuesProvider{TValues}"/> sequence of diagnostics.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ReportDiagnostics(
             in IncrementalValueProvider<ImmutableEquatableArray<Diagnostic>> diagnostics) =>
             context.RegisterSourceOutput(
@@ -29,6 +30,7 @@ internal static class IncrementalValuesProviderExtensions
 
         /// <summary>Registers an implementation source output for the provided mappers.</summary>
         /// <param name="model">The interfaces stubs.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void EmitSource(
             in IncrementalValuesProvider<InterfaceModel> model) =>
             context.RegisterImplementationSourceOutput(
@@ -40,4 +42,3 @@ internal static class IncrementalValuesProviderExtensions
                 });
     }
 }
-#endif
