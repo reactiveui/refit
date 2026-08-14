@@ -48,7 +48,7 @@
     <PackageVersion Include="PerformanceSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="SecuritySharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="Roslynator.Analyzers" Version="4.16.0"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.31.0.145097"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.32.0.713"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
     <PackageVersion Include="PublicApiSharp.Analyzers" Version="1.0.7"/>
   </ItemGroup>
