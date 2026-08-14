@@ -15,21 +15,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
 {
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-#if ROSLYN_5
-    [
-        DiagnosticDescriptors.InvalidRefitMember,
-        DiagnosticDescriptors.InvalidRouteBackslash,
-        DiagnosticDescriptors.MultipleCancellationTokens,
-        DiagnosticDescriptors.InvalidHeaderCollectionParameter,
-        DiagnosticDescriptors.GeneratedRequestBuildingFallback,
-        DiagnosticDescriptors.MultipleHeaderCollections,
-        DiagnosticDescriptors.MultipleAuthorizeParameters,
-        DiagnosticDescriptors.MultipleBodyParameters,
-        DiagnosticDescriptors.MultipartBodyParameter
-    ];
-#else
         CreateSupportedDiagnostics();
-#endif
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -55,8 +41,11 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
             : string.Empty;
     }
 
-#if !ROSLYN_5
-    /// <summary>Creates the immutable descriptor set without using Roslyn 5-only collection expressions.</summary>
+    /// <summary>
+    /// Creates the immutable descriptor set. A collection expression cannot be used: the analyzer
+    /// compiles against System.Collections.Immutable 7.0.0, which predates [CollectionBuilder] on
+    /// <see cref="ImmutableArray{T}"/>.
+    /// </summary>
     /// <returns>The supported diagnostics.</returns>
     private static ImmutableArray<DiagnosticDescriptor> CreateSupportedDiagnostics()
     {
@@ -73,7 +62,6 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         builder.Add(DiagnosticDescriptors.MultipartBodyParameter);
         return builder.MoveToImmutable();
     }
-#endif
 
     /// <summary>Registers symbol actions after resolving the Refit HTTP method base attribute.</summary>
     /// <param name="context">The compilation-start context.</param>

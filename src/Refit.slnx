@@ -49,11 +49,8 @@
         <Project Path="tests/Refit.Tests/Refit.Tests.csproj" />
     </Folder>
     <Project Path="InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" />
-    <Project Path="InterfaceStubGenerator.Roslyn50/InterfaceStubGenerator.Roslyn50.csproj" />
     <Project Path="Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" />
-    <Project Path="Refit.Analyzers.Roslyn50/Refit.Analyzers.Roslyn50.csproj" />
     <Project Path="Refit.CodeFixes.Roslyn48/Refit.CodeFixes.Roslyn48.csproj" />
-    <Project Path="Refit.CodeFixes.Roslyn50/Refit.CodeFixes.Roslyn50.csproj" />
     <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
     <Project Path="Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj" />
     <Project Path="Refit.NetFrameworkSmoke/Refit.NetFrameworkSmoke.csproj" />
