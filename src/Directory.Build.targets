@@ -7,6 +7,13 @@
     <EnableVSTestReferences>false</EnableVSTestReferences>
   </PropertyGroup>
 
+  <!-- SourceLink drags in System.IO.Hashing, which floors System.Memory at assembly version 4.0.2.0.
+       Visual Studio's .NET Framework compiler host only binds 4.0.1.2, so the components fail to load
+       there (CS8784). See PackagedAnalyzerReferenceTests. -->
+  <ItemGroup Condition="'$(IsRoslynComponent)' == 'true'">
+    <PackageReference Remove="Microsoft.SourceLink.GitHub"/>
+  </ItemGroup>
+
   <Target Name="ValidateNugetProperties" Condition="!$(IsTestProject) or $(IsTestProject) == ''" BeforeTargets="Compile">
     <Error Condition="$(PackageDescription) == '' or $(PackageDescription) == $(DefaultPackageDescription)" Text="The Nuget PackageDescription property needs to be set for the project. Currently : '$(PackageDescription)'"/>
   </Target>
