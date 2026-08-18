@@ -18,9 +18,6 @@ namespace Refit.GeneratorTests;
 /// </summary>
 public class AnalyzerPackagingTests
 {
-    /// <summary>The package path prefix that marks an item as a shipped analyzer.</summary>
-    private const string AnalyzerPackagePathPrefix = "analyzers/";
-
     /// <summary>The property in refit.props holding the Roslyn version of the shipped analyzer slot.</summary>
     private const string MinimumCompilerVersionProperty = "_RefitMinimumCompilerVersion";
 
@@ -29,7 +26,7 @@ public class AnalyzerPackagingTests
     [Test]
     public async Task PackageDeclaresExactlyOneRoslynAnalyzerSlot()
     {
-        var slots = GetPackagedAnalyzers()
+        var slots = RefitPackageLayout.GetPackagedAnalyzers()
             .Select(static analyzer => analyzer.PackagePath)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Order(StringComparer.OrdinalIgnoreCase)
@@ -44,7 +41,7 @@ public class AnalyzerPackagingTests
     [Test]
     public async Task PackagedAnalyzerAssembliesAreShippedOnce()
     {
-        var duplicated = GetPackagedAnalyzers()
+        var duplicated = RefitPackageLayout.GetPackagedAnalyzers()
             .GroupBy(static analyzer => analyzer.FileName, StringComparer.OrdinalIgnoreCase)
             .Where(static group => group.Count() > 1)
             .Select(static group => group.Key)
@@ -63,67 +60,22 @@ public class AnalyzerPackagingTests
     [Test]
     public async Task MinimumCompilerVersionMatchesThePackagedAnalyzerSlot()
     {
-        var slots = GetPackagedAnalyzers()
+        var slots = RefitPackageLayout.GetPackagedAnalyzers()
             .Select(static analyzer => analyzer.PackagePath)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Order(StringComparer.OrdinalIgnoreCase);
 
-        var declaredMinimum = XDocument
-            .Load(FindRepositoryFile("Refit/targets/refit.props"))
+        // Joined rather than compared element-wise so a stray extra slot shows up in the diff.
+        await Assert.That(string.Join(", ", slots))
+            .IsEqualTo($"analyzers/dotnet/roslyn{ReadMinimumCompilerVersion()}/cs");
+    }
+
+    /// <summary>Reads the Roslyn version of the shipped analyzer slot from refit.props.</summary>
+    /// <returns>The declared version, such as <c>4.8</c>.</returns>
+    internal static string ReadMinimumCompilerVersion() =>
+        XDocument
+            .Load(RefitPackageLayout.FindRepositoryFile("Refit/targets/refit.props"))
             .Descendants(MinimumCompilerVersionProperty)
             .Select(static element => element.Value.Trim())
             .Single();
-
-        // Joined rather than compared element-wise so a stray extra slot shows up in the diff.
-        await Assert.That(string.Join(", ", slots))
-            .IsEqualTo($"analyzers/dotnet/roslyn{declaredMinimum}/cs");
-    }
-
-    /// <summary>Reads the analyzer items the Refit package ships.</summary>
-    /// <returns>The packaged analyzer package path and assembly file name pairs.</returns>
-    private static List<(string PackagePath, string FileName)> GetPackagedAnalyzers()
-    {
-        var analyzers = new List<(string PackagePath, string FileName)>();
-
-        foreach (var element in XDocument.Load(FindRepositoryFile("Refit/Refit.csproj")).Descendants("None"))
-        {
-            var packagePath = Normalize(element.Attribute("PackagePath")?.Value);
-            if (!packagePath.StartsWith(AnalyzerPackagePathPrefix, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var include = Normalize(element.Attribute("Include")?.Value);
-            analyzers.Add((packagePath, include[(include.LastIndexOf('/') + 1)..]));
-        }
-
-        return analyzers;
-    }
-
-    /// <summary>Normalizes an MSBuild path attribute to forward slashes.</summary>
-    /// <param name="value">The raw attribute value.</param>
-    /// <returns>The normalized value, or an empty string when the attribute is absent.</returns>
-    private static string Normalize(string? value) =>
-        value?.Replace('\\', '/') ?? string.Empty;
-
-    /// <summary>Resolves a path under the repository source directory.</summary>
-    /// <param name="relativePath">The path relative to the directory holding Refit.slnx.</param>
-    /// <returns>The absolute path.</returns>
-    /// <exception cref="InvalidOperationException">No Refit.slnx was found above the test binary.</exception>
-    private static string FindRepositoryFile(string relativePath)
-    {
-        // Walked from the test binary rather than taken from [CallerFilePath], which deterministic
-        // CI builds rewrite to a placeholder root.
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var candidate = Path.Combine(directory.FullName, "Refit.slnx");
-            if (File.Exists(candidate))
-            {
-                return Path.Combine(directory.FullName, relativePath);
-            }
-        }
-
-        throw new InvalidOperationException(
-            $"Refit.slnx was not found above '{AppContext.BaseDirectory}', so '{relativePath}' could not be resolved.");
-    }
 }

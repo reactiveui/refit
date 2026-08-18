@@ -22,6 +22,8 @@
     <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" />
     <!-- Referenced for the RefitInterfaceAnalyzer type only (RF006 drift cross-check test); not applied as an analyzer to this project. -->
     <ProjectReference Include="..\..\Refit.Analyzers.Roslyn48\Refit.Analyzers.Roslyn48.csproj" ReferenceOutputAssembly="true" Aliases="RefitAnalyzers" />
+    <!-- Built, not referenced: PackagedAnalyzerReferenceTests inspects every assembly the package ships. -->
+    <ProjectReference Include="..\..\Refit.CodeFixes.Roslyn48\Refit.CodeFixes.Roslyn48.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
     <ProjectReference Include="..\..\Refit.Reflection\Refit.Reflection.csproj" />
   </ItemGroup>
