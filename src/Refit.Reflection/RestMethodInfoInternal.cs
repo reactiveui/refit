@@ -93,6 +93,7 @@ internal partial class RestMethodInfoInternal
         UrlParameterInfo = ResolveUrlParameter(ParameterInfoArray, parameterAttributeSets, RelativePath);
         (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray, RefitSettings.AllowUnmatchedRouteParameters || methodInfo.IsGenericMethodDefinition);
         BodyParameterInfo = FindBodyParameter(ParameterInfoArray, parameterAttributeSets, IsMultipart, hma.Method);
+        (BodyCompression, BodyCompressionLevel) = FindBodyCompression(parameterAttributeSets);
         AuthorizeParameterInfo = FindAuthorizationParameter(parameterAttributeSets);
 
         Headers = ParseHeaders(targetInterface, methodInfo);
@@ -159,6 +160,12 @@ internal partial class RestMethodInfoInternal
 
     /// <summary>Gets the body parameter information, or null when there is no body parameter.</summary>
     internal Tuple<BodySerializationMethod, bool, int>? BodyParameterInfo { get; }
+
+    /// <summary>Gets the content coding the <c>[Body]</c> parameter declared, <c>Default</c> to follow the settings.</summary>
+    internal RequestCompression BodyCompression { get; }
+
+    /// <summary>Gets how hard <see cref="BodyCompression"/> compresses.</summary>
+    internal System.IO.Compression.CompressionLevel BodyCompressionLevel { get; }
 
     /// <summary>Gets the authorization parameter information, or null when there is no authorize parameter.</summary>
     internal Tuple<string, int>? AuthorizeParameterInfo { get; }

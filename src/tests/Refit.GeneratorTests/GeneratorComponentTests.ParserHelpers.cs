@@ -44,6 +44,27 @@ public static partial class GeneratorComponentTests
         /// <summary>An unsupported body serialization enum value.</summary>
         private const int UnsupportedSerializationValue = 99;
 
+        /// <summary>The name of the member each mapping helper falls back to.</summary>
+        private const string DefaultMemberName = "Default";
+
+        /// <summary>The enum value for gzip request compression.</summary>
+        private const int GZipCompressionValue = 2;
+
+        /// <summary>The enum value for Brotli request compression.</summary>
+        private const int BrotliCompressionValue = 3;
+
+        /// <summary>The enum value for Zstandard request compression.</summary>
+        private const int ZstandardCompressionValue = 4;
+
+        /// <summary>The enum value for the level that stores without compressing.</summary>
+        private const int NoCompressionLevelValue = 2;
+
+        /// <summary>The enum value for the smallest-size compression level.</summary>
+        private const int SmallestSizeLevelValue = 3;
+
+        /// <summary>An enum value outside every member the generator knows.</summary>
+        private const int UnrecognizedEnumValue = 99;
+
         /// <summary>Verifies inline path normalization and constant path classification.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
@@ -114,7 +135,7 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task BodyAndDisposalHelpers_ClassifySupportedValues()
         {
-            await Assert.That(Parser.GetBodySerializationMethodName(0)).IsEqualTo("Default");
+            await Assert.That(Parser.GetBodySerializationMethodName(0)).IsEqualTo(DefaultMemberName);
             await Assert.That(Parser.GetBodySerializationMethodName(1)).IsEqualTo("Json");
             await Assert.That(Parser.GetBodySerializationMethodName(UrlEncodedSerializationValue)).IsEqualTo(UrlEncodedSerializationMethod);
             await Assert.That(Parser.GetBodySerializationMethodName(SerializedSerializationValue)).IsEqualTo("Serialized");
@@ -130,6 +151,26 @@ public static partial class GeneratorComponentTests
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpContent")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.IO.Stream")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.String")).IsTrue();
+        }
+
+        /// <summary>Verifies the request-compression and compression-level enum members map to their names, and that an
+        /// unknown value maps to the member the runtime treats as unset rather than emitting an unresolvable name.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task CompressionHelpers_MapEnumValuesToMemberNames()
+        {
+            await Assert.That(Parser.GetRequestCompressionName(0)).IsEqualTo(DefaultMemberName);
+            await Assert.That(Parser.GetRequestCompressionName(1)).IsEqualTo("None");
+            await Assert.That(Parser.GetRequestCompressionName(GZipCompressionValue)).IsEqualTo("GZip");
+            await Assert.That(Parser.GetRequestCompressionName(BrotliCompressionValue)).IsEqualTo("Brotli");
+            await Assert.That(Parser.GetRequestCompressionName(ZstandardCompressionValue)).IsEqualTo("Zstandard");
+            await Assert.That(Parser.GetRequestCompressionName(UnrecognizedEnumValue)).IsEqualTo(DefaultMemberName);
+
+            await Assert.That(Parser.GetCompressionLevelName(0)).IsEqualTo("Optimal");
+            await Assert.That(Parser.GetCompressionLevelName(1)).IsEqualTo("Fastest");
+            await Assert.That(Parser.GetCompressionLevelName(NoCompressionLevelValue)).IsEqualTo("NoCompression");
+            await Assert.That(Parser.GetCompressionLevelName(SmallestSizeLevelValue)).IsEqualTo("SmallestSize");
+            await Assert.That(Parser.GetCompressionLevelName(UnrecognizedEnumValue)).IsEqualTo("Optimal");
         }
 
         /// <summary>Verifies containing-namespace matching handles a null symbol, exact matches, tail matches, and mismatches.</summary>

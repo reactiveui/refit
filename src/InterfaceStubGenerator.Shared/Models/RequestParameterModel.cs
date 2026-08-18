@@ -60,6 +60,14 @@ internal readonly record struct RequestParameterModel(
     /// placeholder with a formatted property value.</summary>
     internal ImmutableEquatableArray<PathObjectBindingModel>? PathObjectBindings { get; init; }
 
+    /// <summary>Gets the <c>Refit.RequestCompression</c> member name the body declared, or <see langword="null"/> for a
+    /// parameter that is not a body. <c>Default</c> means the request takes its coding from the settings.</summary>
+    internal string? Compression { get; init; }
+
+    /// <summary>Gets the <c>System.IO.Compression.CompressionLevel</c> member name the body declared, or
+    /// <see langword="null"/> for a parameter that is not a body.</summary>
+    internal string? CompressionLevel { get; init; }
+
     /// <summary>Gets the multipart part descriptor when this parameter contributes a <c>[Multipart]</c> form part —
     /// set for <see cref="RequestParameterKind.MultipartPart"/> parameters and <see langword="null"/> otherwise.</summary>
     internal MultipartPartModel? MultipartPart { get; init; }

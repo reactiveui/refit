@@ -195,7 +195,7 @@ internal static partial class Parser
                     string.Empty,
                     string.Empty,
                     bodyInfo.SerializationMethod,
-                bodyInfo.BufferMode) { FormFields = formFields, };
+                bodyInfo.BufferMode) { FormFields = formFields, Compression = bodyInfo.Compression, CompressionLevel = bodyInfo.CompressionLevel, };
             return true;
         }
 

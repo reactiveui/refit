@@ -17,6 +17,27 @@ internal static partial class Parser
     /// <summary>The underlying value for <c>BodySerializationMethod.JsonLines</c>.</summary>
     private const int BodySerializationJsonLines = 4;
 
+    /// <summary>The underlying value for <c>RequestCompression.None</c>.</summary>
+    private const int RequestCompressionNone = 1;
+
+    /// <summary>The underlying value for <c>RequestCompression.GZip</c>.</summary>
+    private const int RequestCompressionGZip = 2;
+
+    /// <summary>The underlying value for <c>RequestCompression.Brotli</c>.</summary>
+    private const int RequestCompressionBrotli = 3;
+
+    /// <summary>The underlying value for <c>RequestCompression.Zstandard</c>.</summary>
+    private const int RequestCompressionZstandard = 4;
+
+    /// <summary>The underlying value for <c>CompressionLevel.Fastest</c>.</summary>
+    private const int CompressionLevelFastest = 1;
+
+    /// <summary>The underlying value for <c>CompressionLevel.NoCompression</c>.</summary>
+    private const int CompressionLevelNoCompression = 2;
+
+    /// <summary>The underlying value for <c>CompressionLevel.SmallestSize</c>.</summary>
+    private const int CompressionLevelSmallestSize = 3;
+
     /// <summary>Determines whether a symbol's containing namespace equals a dotted namespace name, without allocating.</summary>
     /// <param name="symbol">The symbol whose containing namespace is compared, or null.</param>
     /// <param name="dottedNamespace">The expected namespace as a dotted name, for example <c>System.Threading.Tasks</c>.</param>
@@ -234,6 +255,31 @@ internal static partial class Parser
             BodySerializationSerialized => "Serialized",
             BodySerializationJsonLines => "JsonLines",
             _ => string.Empty
+        };
+
+    /// <summary>Gets the Refit request compression enum member name for an underlying value.</summary>
+    /// <param name="value">The enum value.</param>
+    /// <returns>The enum member name, or <c>Default</c> for a value this generator does not know.</returns>
+    internal static string GetRequestCompressionName(int value) =>
+        value switch
+        {
+            RequestCompressionNone => "None",
+            RequestCompressionGZip => "GZip",
+            RequestCompressionBrotli => "Brotli",
+            RequestCompressionZstandard => "Zstandard",
+            _ => "Default"
+        };
+
+    /// <summary>Gets the <c>System.IO.Compression.CompressionLevel</c> member name for an underlying value.</summary>
+    /// <param name="value">The enum value.</param>
+    /// <returns>The enum member name, or <c>Optimal</c> for a value this generator does not know.</returns>
+    internal static string GetCompressionLevelName(int value) =>
+        value switch
+        {
+            CompressionLevelFastest => "Fastest",
+            CompressionLevelNoCompression => "NoCompression",
+            CompressionLevelSmallestSize => "SmallestSize",
+            _ => "Optimal"
         };
 
     /// <summary>Determines whether all body bindings are supported by the initial inline emitter.</summary>

@@ -54,4 +54,16 @@ public sealed class BodyAttribute : Attribute
     /// </value>
     public BodySerializationMethod SerializationMethod { get; } =
         BodySerializationMethod.Default;
+
+    /// <summary>Gets or sets the content coding applied to this body, overriding <see cref="RefitSettings.RequestCompression"/>.</summary>
+    /// <remarks>
+    /// Leave unset to follow the settings. <see cref="RequestCompression.None"/> opts this method out of a coding the
+    /// settings turned on. Not every coding exists on every target framework - see <see cref="RequestCompression"/>.
+    /// </remarks>
+    public RequestCompression Compression { get; set; } = RequestCompression.Default;
+
+    /// <summary>Gets or sets how hard <see cref="Compression"/> compresses (defaults to <see cref="System.IO.Compression.CompressionLevel.Optimal"/>).</summary>
+    /// <remarks>Read only when <see cref="Compression"/> names a coding; otherwise the settings supply the level too.</remarks>
+    public System.IO.Compression.CompressionLevel CompressionLevel { get; set; } =
+        System.IO.Compression.CompressionLevel.Optimal;
 }

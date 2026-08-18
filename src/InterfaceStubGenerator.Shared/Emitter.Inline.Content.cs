@@ -25,14 +25,16 @@ internal static partial class Emitter
         var requestLocal = plan.RequestLocal;
         var settingsLocal = plan.SettingsLocal;
         var bodyParameter = plan.BodyParameter!.Value;
+        var compression = BuildContentCompression(bodyParameter, requestLocal, settingsLocal, bodyIndent);
         if (bodyParameter.BodySerializationMethod == "UrlEncoded")
         {
             if (IsUnrollableFormBody(bodyParameter))
             {
-                return BuildInlineFormUnroll(bodyParameter, requestLocal, supportsNullable, emission, plan.Locals);
+                return BuildInlineFormUnroll(bodyParameter, requestLocal, supportsNullable, emission, plan.Locals)
+                    + compression;
             }
 
-            return formFieldsFieldName is not null
+            return (formFieldsFieldName is not null
                 ? $$"""
                     {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
                     {{bodyIndent}}    {{settingsLocal}},
@@ -45,7 +47,7 @@ internal static partial class Emitter
                     {{bodyIndent}}    {{settingsLocal}},
                     {{bodyIndent}}    @{{bodyParameter.Name}});
 
-                    """;
+                    """) + compression;
         }
 
         if (bodyParameter.BodySerializationMethod == "JsonLines")
@@ -55,7 +57,7 @@ internal static partial class Emitter
                 {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    @{{bodyParameter.Name}});
 
-                """;
+                """ + compression;
         }
 
         var streamBodyExpression = BuildStreamBodyExpression(bodyParameter, settingsLocal);
@@ -68,7 +70,37 @@ internal static partial class Emitter
             {{bodyIndent}}    {{serializationMethodExpression}},
             {{bodyIndent}}    {{streamBodyExpression}});
 
-            """;
+            """ + compression;
+    }
+
+    /// <summary>Emits the content-coding wrap for a body, or nothing when no coding can apply.</summary>
+    /// <param name="bodyParameter">The body parameter model.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="bodyIndent">The method body indentation.</param>
+    /// <returns>The wrap statement, or an empty string.</returns>
+    /// <remarks>
+    /// A body that declares <c>None</c> can never be compressed, so nothing is emitted for it. Every other body emits
+    /// the wrap, because <c>Default</c> resolves against <c>RefitSettings</c> at request time.
+    /// </remarks>
+    internal static string BuildContentCompression(
+        in RequestParameterModel bodyParameter,
+        string requestLocal,
+        string settingsLocal,
+        string bodyIndent)
+    {
+        var compression = bodyParameter.Compression ?? "Default";
+
+        return compression == "None"
+            ? string.Empty
+            : $$"""
+                {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CompressBodyContent(
+                {{bodyIndent}}    {{requestLocal}}.Content,
+                {{bodyIndent}}    {{settingsLocal}},
+                {{bodyIndent}}    global::Refit.RequestCompression.{{compression}},
+                {{bodyIndent}}    global::System.IO.Compression.CompressionLevel.{{bodyParameter.CompressionLevel ?? "Optimal"}});
+
+                """;
     }
 
     /// <summary>Emits straight-line form-url-encoded body serialization for an all-scalar body, mirroring the descriptor

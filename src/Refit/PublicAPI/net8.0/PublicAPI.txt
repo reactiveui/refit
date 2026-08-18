@@ -131,6 +131,8 @@ public sealed class BodyAttribute : System.Attribute
     public BodyAttribute(bool buffered) { }
     public BodyAttribute(Refit.BodySerializationMethod serializationMethod, bool buffered) { }
     public bool? Buffered { get; }
+    public Refit.RequestCompression Compression { get; set; }
+    public System.IO.Compression.CompressionLevel CompressionLevel { get; set; }
     public Refit.BodySerializationMethod SerializationMethod { get; }
 }
 public enum BodySerializationMethod
@@ -278,6 +280,7 @@ public static class GeneratedRequestRunner
     public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int StartIdx, int EndIdx) range, T value) where T : System.ISpanFormattable { }
     public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int StartIdx, int EndIdx) range, T value, string? format) where T : System.ISpanFormattable { }
     public static bool CanUnrollForm(object? body) { }
+    public static System.Net.Http.HttpContent CompressBodyContent(System.Net.Http.HttpContent content, Refit.RefitSettings settings, Refit.RequestCompression compression, System.IO.Compression.CompressionLevel level) { }
     public static System.Net.Http.HttpContent CreateBodyContent<TBody>(Refit.RefitSettings settings, TBody body, Refit.BodySerializationMethod serializationMethod, bool streamBody) { }
     public static System.Net.Http.HttpContent CreateJsonLinesBodyContent<TBody>(Refit.RefitSettings settings, TBody body) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -616,6 +619,8 @@ public class RefitSettings
     public System.Collections.Generic.Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
     public int? MaxExceptionContentLength { get; set; }
     public Refit.RequestBodySerializationMode RequestBodySerialization { get; set; }
+    public Refit.RequestCompression RequestCompression { get; set; }
+    public System.IO.Compression.CompressionLevel RequestCompressionLevel { get; set; }
     public System.Collections.Generic.IList<System.Type> ReturnTypeAdapters { get; }
     public System.Func<System.Net.Http.HttpRequestMessage, System.Exception, System.Threading.CancellationToken, System.Exception> TransportExceptionFactory { get; set; }
     public Refit.IUrlParameterFormatter UrlParameterFormatter { get; set; }
@@ -652,6 +657,14 @@ public static class RequestBuilder
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.IRequestBuilder<T> ForType<T>(Refit.RefitSettings? settings) { }
+}
+public enum RequestCompression
+{
+    Default = 0,
+    None = 1,
+    GZip = 2,
+    Brotli = 3,
+    Zstandard = 4,
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public record RestMethodInfo : System.IEquatable<Refit.RestMethodInfo>

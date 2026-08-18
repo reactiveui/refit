@@ -427,6 +427,11 @@ namespace Refit.Implementation
                     @user,
                     global::Refit.BodySerializationMethod.Serialized,
                     !refitSettings.Buffered);
+                refitRequest.Content = global::Refit.GeneratedRequestRunner.CompressBodyContent(
+                    refitRequest.Content,
+                    refitSettings,
+                    global::Refit.RequestCompression.Default,
+                    global::System.IO.Compression.CompressionLevel.Optimal);
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "CreateUser");
@@ -458,6 +463,11 @@ namespace Refit.Implementation
                     @user,
                     global::Refit.BodySerializationMethod.Serialized,
                     !refitSettings.Buffered);
+                refitRequest.Content = global::Refit.GeneratedRequestRunner.CompressBodyContent(
+                    refitRequest.Content,
+                    refitSettings,
+                    global::Refit.RequestCompression.Default,
+                    global::System.IO.Compression.CompressionLevel.Optimal);
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests", refitSettings.ValidateHeaders);
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
                 global::Refit.GeneratedRequestRunner.AddRequestProperty<string>(refitRequest, global::Refit.HttpRequestMessageOptions.MethodName, "CreateUserWithMetadata");

@@ -19,6 +19,27 @@ internal partial class RequestBuilderImplementation
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
     internal void AddBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
     {
+        SelectBodyContent(restMethod, param, ret);
+
+        if (ret.Content is null)
+        {
+            return;
+        }
+
+        ret.Content = GeneratedRequestRunner.CompressBodyContent(
+            ret.Content,
+            _settings,
+            restMethod.BodyCompression,
+            restMethod.BodyCompressionLevel);
+    }
+
+    /// <summary>Sets the request content from the body parameter, before any content coding is applied.</summary>
+    /// <param name="restMethod">The rest method being invoked.</param>
+    /// <param name="param">The body argument value.</param>
+    /// <param name="ret">The request message to populate.</param>
+    [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+    internal void SelectBodyContent(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
+    {
         if (param is HttpContent httpContentParam)
         {
             ret.Content = httpContentParam;
