@@ -6,7 +6,7 @@ using System.Net.Http;
 namespace Refit;
 
 /// <summary>Base type for multipart form items that carry a file name and optional content metadata.</summary>
-[System.Diagnostics.DebuggerDisplay("{Name}")]
+[System.Diagnostics.DebuggerDisplay("MultipartItem: {Name}")]
 public abstract class MultipartItem
 {
     /// <summary>Initializes a new instance of the <see cref="MultipartItem"/> class.</summary>

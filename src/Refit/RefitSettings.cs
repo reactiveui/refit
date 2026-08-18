@@ -9,7 +9,7 @@ using System.Text.Json;
 namespace Refit;
 
 /// <summary>Defines various parameters on how Refit should work.</summary>
-[System.Diagnostics.DebuggerDisplay("{AuthorizationHeaderValueGetter}")]
+[System.Diagnostics.DebuggerDisplay("RefitSettings: AuthorizationHeaderValueGetter = {AuthorizationHeaderValueGetter}")]
 [SuppressMessage(
     "Reliability",
     "SST2403:'this' escapes from a constructor before the object is fully built",

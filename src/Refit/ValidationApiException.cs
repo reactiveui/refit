@@ -10,7 +10,7 @@ using System.Text.Json;
 namespace Refit;
 
 /// <summary>An ApiException that is raised according to RFC 7807, which contains problem details for validation exceptions.</summary>
-[System.Diagnostics.DebuggerDisplay("{Content}")]
+[System.Diagnostics.DebuggerDisplay("ValidationApiException: {StatusCode}, Content = {Content}")]
 [SuppressMessage(
     "Design",
     "SST1488:Exception types should declare the standard constructors",

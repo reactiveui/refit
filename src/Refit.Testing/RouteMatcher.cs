@@ -19,7 +19,7 @@ namespace Refit.Testing;
 /// whole scheme/host/path. Use <c>"*"</c> to match any path. The query string is matched by
 /// <see cref="Query"/>, not the template.
 /// </remarks>
-[System.Diagnostics.DebuggerDisplay("{Method}")]
+[System.Diagnostics.DebuggerDisplay("RouteMatcher: {Method}")]
 public sealed class RouteMatcher
 {
     /// <summary>Gets the HTTP method to match; <see langword="null"/> matches any method.</summary>

@@ -45,7 +45,7 @@ public static class Route
     public static Refit.Testing.RouteMatcher Post(string template) { }
     public static Refit.Testing.RouteMatcher Put(string template) { }
 }
-[System.Diagnostics.DebuggerDisplay("{Method}")]
+[System.Diagnostics.DebuggerDisplay("RouteMatcher: {Method}")]
 public sealed class RouteMatcher
 {
     public RouteMatcher() { }
@@ -62,7 +62,7 @@ public sealed class RouteMatcher
     public System.Func<System.Net.Http.HttpRequestMessage, bool>? Where { get; init; }
     public System.Func<System.Net.Http.HttpRequestMessage, System.Threading.Tasks.Task<bool>>? WhereAsync { get; init; }
 }
-[System.Diagnostics.DebuggerDisplay("{Content}")]
+[System.Diagnostics.DebuggerDisplay("StubApiResponse: {StatusCode}, Content = {Content}")]
 public sealed class StubApiResponse<T> : Refit.IApiResponse<T>
 {
     public StubApiResponse() { }
