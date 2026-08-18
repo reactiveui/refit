@@ -44,26 +44,49 @@ internal static class RequestContentCoding
 
     /// <summary>Wraps content in the compressor for a coding.</summary>
     /// <param name="content">The content to compress.</param>
+    /// <param name="settings">The Refit settings supplying the per-coding compressor options.</param>
     /// <param name="compression">The resolved coding, never <see cref="RequestCompression.Default"/> or <see cref="RequestCompression.None"/>.</param>
-    /// <param name="level">How hard to compress.</param>
+    /// <param name="level">How hard to compress, used for any coding the settings left without options.</param>
     /// <returns>The compressing content.</returns>
     /// <exception cref="PlatformNotSupportedException">This framework cannot produce the coding.</exception>
-    internal static HttpContent Wrap(HttpContent content, RequestCompression compression, CompressionLevel level) =>
+    internal static HttpContent Wrap(
+        HttpContent content,
+        RefitSettings settings,
+        RequestCompression compression,
+        CompressionLevel level)
+    {
 #if NET11_0_OR_GREATER
-        compression switch
+        var options = settings.RequestCompressionOptions;
+
+        return compression switch
         {
-            RequestCompression.GZip => new GZipCompressedContent(content, level),
-            RequestCompression.Brotli => new BrotliCompressedContent(content, level),
-            RequestCompression.Zstandard => new ZstandardCompressedContent(content, level),
+            RequestCompression.GZip => options?.GZip is { } gzip
+                ? new GZipCompressedContent(content, gzip)
+                : new GZipCompressedContent(content, level),
+            RequestCompression.Brotli => options?.Brotli is { } brotli
+                ? new BrotliCompressedContent(content, brotli)
+                : new BrotliCompressedContent(content, level),
+            RequestCompression.Zstandard => options?.Zstandard is { } zstandard
+                ? new ZstandardCompressedContent(content, zstandard)
+                : new ZstandardCompressedContent(content, level),
             _ => throw Unsupported(compression),
         };
+#elif NET9_0_OR_GREATER
+        return compression is RequestCompression.GZip or RequestCompression.Brotli
+            ? new CompressedContent(content, compression, level) { Options = settings.RequestCompressionOptions }
+            : throw Unsupported(compression);
 #elif NET8_0_OR_GREATER
-        compression is RequestCompression.GZip or RequestCompression.Brotli
+        _ = settings;
+
+        return compression is RequestCompression.GZip or RequestCompression.Brotli
             ? new CompressedContent(content, compression, level)
             : throw Unsupported(compression);
 #else
-        compression is RequestCompression.GZip
+        _ = settings;
+
+        return compression is RequestCompression.GZip
             ? new CompressedContent(content, compression, level)
             : throw Unsupported(compression);
 #endif
+    }
 }

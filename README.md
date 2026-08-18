@@ -1042,6 +1042,24 @@ var settings = new RefitSettings
 };
 ```
 
+For knobs a level cannot express — window size, strategy, a Zstandard dictionary — set the compressor's own options.
+Options set for a coding replace the level for that coding; the codings left unset still compress by level:
+
+```csharp
+var settings = new RefitSettings
+{
+    RequestCompression = RequestCompression.Brotli,
+    RequestCompressionOptions = new()
+    {
+        Brotli = new() { Quality = 9, WindowLog2 = 22 },
+        GZip = new() { CompressionLevel = 6 },
+    },
+};
+```
+
+`RequestCompressionOptions` needs .NET 9.0 or later, where `ZLibCompressionOptions` and `BrotliCompressionOptions`
+were introduced; its `Zstandard` property needs .NET 11.0.
+
 There is no negotiation for a compressed request body, so only turn this on against a server you know accepts one.
 The compressed length is unknown until the body has been written, so these requests are sent chunked.
 

@@ -276,6 +276,13 @@ public class RefitSettings
     public System.IO.Compression.CompressionLevel RequestCompressionLevel { get; set; } =
         System.IO.Compression.CompressionLevel.Optimal;
 
+#if NET9_0_OR_GREATER
+    /// <summary>Gets or sets the per-coding compressor settings, or null to compress by level alone.</summary>
+    /// <remarks>Options set for a coding override the level for that coding, including where a <c>[Body]</c> parameter
+    /// named the coding and its own level.</remarks>
+    public RequestCompressionOptions? RequestCompressionOptions { get; set; }
+#endif
+
     /// <summary>Gets optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.</summary>
     public Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
 

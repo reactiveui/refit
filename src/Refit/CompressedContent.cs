@@ -47,6 +47,11 @@ internal sealed class CompressedContent : HttpContent
         Headers.ContentEncoding.Add(RequestContentCoding.Token(compression));
     }
 
+#if NET9_0_OR_GREATER
+    /// <summary>Gets the per-coding compressor settings that override the level, or <see langword="null"/>.</summary>
+    internal RequestCompressionOptions? Options { get; init; }
+#endif
+
     /// <inheritdoc/>
     protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
     {
@@ -54,6 +59,10 @@ internal sealed class CompressedContent : HttpContent
         // finishing it is what writes the trailer that makes the body readable.
         Stream compressor = _compression switch
         {
+#if NET9_0_OR_GREATER
+            RequestCompression.GZip when Options?.GZip is { } gzip => new GZipStream(stream, gzip, leaveOpen: true),
+            RequestCompression.Brotli when Options?.Brotli is { } brotli => new BrotliStream(stream, brotli, leaveOpen: true),
+#endif
             RequestCompression.GZip => new GZipStream(stream, _level, leaveOpen: true),
 #if NET8_0_OR_GREATER
             RequestCompression.Brotli => new BrotliStream(stream, _level, leaveOpen: true),

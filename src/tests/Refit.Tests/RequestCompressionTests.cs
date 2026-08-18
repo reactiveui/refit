@@ -139,6 +139,34 @@ public class RequestCompressionTests
         await Assert.That(await reader.ReadToEndAsync()).IsEqualTo(BodyText);
     }
 
+#if NET9_0_OR_GREATER
+    /// <summary>Verifies per-coding options replace the level for the coding they name.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task PerCodingOptionsReplaceTheLevel()
+    {
+        // Zero is the zlib "store, do not compress" level, and the declared level asks for the smallest output.
+        var settings = new RefitSettings { RequestCompressionOptions = new() { GZip = new() { CompressionLevel = 0 } } };
+
+        var byOptions = await CompressAsync(settings, RequestCompression.GZip, CompressionLevel.SmallestSize);
+        var byLevel = await CompressAsync(new(), RequestCompression.GZip, CompressionLevel.SmallestSize);
+
+        await Assert.That(byOptions.Length).IsGreaterThan(byLevel.Length);
+    }
+
+    /// <summary>Verifies a coding the options left unset still compresses by level.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task CodingWithoutOptionsStillCompressesByLevel()
+    {
+        var settings = new RefitSettings { RequestCompressionOptions = new() { Brotli = new() { Quality = 0 } } };
+
+        var bytes = await CompressAsync(settings, RequestCompression.GZip, CompressionLevel.SmallestSize);
+
+        await Assert.That(bytes.Length).IsLessThan(BodyText.Length);
+    }
+#endif
+
     /// <summary>Verifies the compressed content reports no length, so the request is sent chunked.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -153,4 +181,22 @@ public class RequestCompressionTests
 
         await Assert.That(compressed.Headers.ContentLength).IsNull();
     }
+
+#if NET9_0_OR_GREATER
+    /// <summary>Compresses the shared body and returns the bytes that would reach the wire.</summary>
+    /// <param name="settings">The settings supplying any per-coding options.</param>
+    /// <param name="compression">The coding to apply.</param>
+    /// <param name="level">The level to apply where the options do not override it.</param>
+    /// <returns>The compressed bytes.</returns>
+    private static async Task<byte[]> CompressAsync(
+        RefitSettings settings,
+        RequestCompression compression,
+        CompressionLevel level)
+    {
+        using var content = new StringContent(BodyText);
+        using var compressed = GeneratedRequestRunner.CompressBodyContent(content, settings, compression, level);
+
+        return await compressed.ReadAsByteArrayAsync();
+    }
+#endif
 }

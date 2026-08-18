@@ -622,6 +622,7 @@ public class RefitSettings
     public Refit.RequestBodySerializationMode RequestBodySerialization { get; set; }
     public Refit.RequestCompression RequestCompression { get; set; }
     public System.IO.Compression.CompressionLevel RequestCompressionLevel { get; set; }
+    public Refit.RequestCompressionOptions? RequestCompressionOptions { get; set; }
     public System.Collections.Generic.IList<System.Type> ReturnTypeAdapters { get; }
     public System.Func<System.Net.Http.HttpRequestMessage, System.Exception, System.Threading.CancellationToken, System.Exception> TransportExceptionFactory { get; set; }
     public Refit.IUrlParameterFormatter UrlParameterFormatter { get; set; }
@@ -666,6 +667,14 @@ public enum RequestCompression
     GZip = 2,
     Brotli = 3,
     Zstandard = 4,
+}
+[System.Diagnostics.DebuggerDisplay("{GZip} {Brotli}")]
+public sealed class RequestCompressionOptions
+{
+    public RequestCompressionOptions() { }
+    public System.IO.Compression.BrotliCompressionOptions? Brotli { get; set; }
+    public System.IO.Compression.ZLibCompressionOptions? GZip { get; set; }
+    public System.IO.Compression.ZstandardCompressionOptions? Zstandard { get; set; }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public record RestMethodInfo : System.IEquatable<Refit.RestMethodInfo>

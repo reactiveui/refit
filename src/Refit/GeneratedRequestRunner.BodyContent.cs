@@ -42,7 +42,7 @@ public static partial class GeneratedRequestRunner
 
         return resolved is RequestCompression.Default or RequestCompression.None
             ? content
-            : RequestContentCoding.Wrap(content, resolved, resolvedLevel);
+            : RequestContentCoding.Wrap(content, settings, resolved, resolvedLevel);
     }
 
     /// <summary>Serializes a generated request body using Refit body rules.</summary>
