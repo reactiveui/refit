@@ -291,23 +291,6 @@ internal partial class RequestBuilderImplementation
     /// <returns><see langword="true"/> for GET and HEAD; otherwise <see langword="false"/>.</returns>
     internal static bool IsBodyless(HttpMethod method) => method == HttpMethod.Get || method == HttpMethod.Head;
 
-    /// <summary>Checks whether a header collection contains a key without throwing for unsupported header types.</summary>
-    /// <param name="headers">The header collection to inspect.</param>
-    /// <param name="name">The header name.</param>
-    /// <returns><see langword="true"/> when the header key exists; otherwise <see langword="false"/>.</returns>
-    internal static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
-    {
-        foreach (var header in headers)
-        {
-            if (string.Equals(header.Key, name, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /// <summary>Gets the cached query-property metadata for the given type.</summary>
     /// <param name="type">The object type to inspect.</param>
     /// <returns>The readable public instance properties with their attribute-derived facts.</returns>

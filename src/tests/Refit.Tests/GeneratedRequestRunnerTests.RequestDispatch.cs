@@ -90,6 +90,18 @@ public partial class GeneratedRequestRunnerTests
     public Task SetHeaderWithoutValidationDropsContentHeaderWithoutContent() =>
         HeaderValidationScenarios.DropsContentHeaderWithoutContentWithoutValidation(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
 
+    /// <summary>Verifies that applying a later header leaves an earlier verbatim value byte for byte as it was supplied.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public Task SetHeaderKeepsEarlierRawValueWhenALaterHeaderIsApplied() =>
+        RawHeaderValueScenarios.KeepsEarlierRawValueWhenALaterHeaderIsApplied(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
+
+    /// <summary>Verifies that replacing a header leaves the other headers already applied untouched.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public Task SetHeaderKeepsEarlierRawValueWhenALaterHeaderIsReplaced() =>
+        RawHeaderValueScenarios.KeepsEarlierRawValueWhenALaterHeaderIsReplaced(GeneratedRequestRunner.SetHeader, RelativeResourcePath);
+
     /// <summary>Verifies that header collections are optional and replace earlier values by key.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

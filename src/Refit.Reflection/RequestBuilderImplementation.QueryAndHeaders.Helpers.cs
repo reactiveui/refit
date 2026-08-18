@@ -97,17 +97,14 @@ internal partial class RequestBuilderImplementation
         // we want to allow removal/redefinition of headers.
         // We also don't want to double up content headers which may have been
         // set for us automatically.
-        // NB: We have to enumerate the header names to check existence because
-        // Contains throws if it's the wrong header type for the collection.
-        // HTTP header names are case-insensitive, so compare them that way; otherwise a
-        // differently cased header (e.g. "Content-type" vs "Content-Type") is not removed
-        // and ends up duplicated.
-        if (ContainsHeader(request.Headers, name))
+        // The existence check is case-insensitive, because HTTP header names are; otherwise a differently cased header
+        // (e.g. "Content-type" vs "Content-Type") is not removed and ends up duplicated.
+        if (HttpHeaderApplier.ContainsHeader(request.Headers, name))
         {
             _ = request.Headers.Remove(name);
         }
 
-        if (request.Content is not null && ContainsHeader(request.Content.Headers, name))
+        if (request.Content is not null && HttpHeaderApplier.ContainsHeader(request.Content.Headers, name))
         {
             _ = request.Content.Headers.Remove(name);
         }

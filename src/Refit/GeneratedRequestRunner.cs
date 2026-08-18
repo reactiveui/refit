@@ -473,12 +473,12 @@ public static partial class GeneratedRequestRunner
     /// </param>
     public static void SetHeader(HttpRequestMessage request, string name, string? value, bool validateHeaders)
     {
-        if (ContainsHeader(request.Headers, name))
+        if (HttpHeaderApplier.ContainsHeader(request.Headers, name))
         {
             _ = request.Headers.Remove(name);
         }
 
-        if (request.Content is not null && ContainsHeader(request.Content.Headers, name))
+        if (request.Content is not null && HttpHeaderApplier.ContainsHeader(request.Content.Headers, name))
         {
             _ = request.Content.Headers.Remove(name);
         }
@@ -777,30 +777,6 @@ public static partial class GeneratedRequestRunner
     /// <returns><see langword="true"/> for bodyless methods.</returns>
     internal static bool IsBodyless(HttpMethod method) =>
         method == HttpMethod.Get || method == HttpMethod.Head;
-
-    /// <summary>Checks whether a header collection contains a key without throwing for unsupported header types.</summary>
-    /// <param name="headers">The header collection to inspect.</param>
-    /// <param name="name">The header name.</param>
-    /// <returns><see langword="true"/> when the header key exists; otherwise <see langword="false"/>.</returns>
-    internal static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
-    {
-#if NET6_0_OR_GREATER
-        // NonValidated checks key presence (case-insensitively, like the store) without parsing or materializing the
-        // stored header values, and never throws for unsupported header shapes, so it preserves the tolerant behavior
-        // of the manual scan while avoiding the per-check value enumeration.
-        return headers.NonValidated.Contains(name);
-#else
-        foreach (var header in headers)
-        {
-            if (string.Equals(header.Key, name, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-#endif
-    }
 
     /// <summary>Removes CR and LF characters from a generated header name or value.</summary>
     /// <param name="value">The header name or value.</param>
