@@ -41,6 +41,41 @@ internal static class HttpHeaderApplier
         _ = request.Content.Headers.TryAddWithoutValidation(name, value);
     }
 
+    /// <summary>Checks whether a header collection already carries a key, without disturbing the values it holds.</summary>
+    /// <param name="headers">The header collection to inspect.</param>
+    /// <param name="name">The header name.</param>
+    /// <returns><see langword="true"/> when the header key exists; otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// Enumerating <see cref="System.Net.Http.Headers.HttpHeaders"/> forces lazy parsing of every value already stored,
+    /// which rewrites anything added through <c>TryAddWithoutValidation</c> into its parsed form before the request is
+    /// sent - so a raw value such as <c>application/vnd.api.json;version=3.4.1</c> silently gains a space after the
+    /// semicolon once a second header is applied. This check therefore never enumerates.
+    /// </remarks>
+    internal static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
+    {
+#if NET6_0_OR_GREATER
+        // NonValidated checks key presence (case-insensitively, like the store) without parsing or materializing any
+        // stored value, and never throws for a name this collection does not accept.
+        return headers.NonValidated.Contains(name);
+#else
+        // .NET Framework has no NonValidated view. Contains touches only the named header, leaving every other stored
+        // value raw, but it throws when the name belongs to the other collection or is not a legal token. Neither name
+        // can be present here - TryAddWithoutValidation rejects the latter outright - so both mean "absent".
+        try
+        {
+            return headers.Contains(name);
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+#endif
+    }
+
     /// <summary>Adds a header with framework validation, reporting whether it belongs to this collection.</summary>
     /// <param name="headers">The header collection to add to.</param>
     /// <param name="name">The header name.</param>

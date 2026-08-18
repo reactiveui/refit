@@ -319,6 +319,18 @@ public partial class RequestBuilderTests
     public Task SetHeaderWithoutValidationDropsContentHeaderWithoutContent() =>
         HeaderValidationScenarios.DropsContentHeaderWithoutContentWithoutValidation(RequestBuilderImplementation.SetHeader, ApiBaseUrlWithSlash);
 
+    /// <summary>Applying a later header leaves an earlier verbatim value byte for byte as it was supplied.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public Task SetHeaderKeepsEarlierRawValueWhenALaterHeaderIsApplied() =>
+        RawHeaderValueScenarios.KeepsEarlierRawValueWhenALaterHeaderIsApplied(RequestBuilderImplementation.SetHeader, ApiBaseUrlWithSlash);
+
+    /// <summary>Replacing a header leaves the other headers already applied untouched.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public Task SetHeaderKeepsEarlierRawValueWhenALaterHeaderIsReplaced() =>
+        RawHeaderValueScenarios.KeepsEarlierRawValueWhenALaterHeaderIsReplaced(RequestBuilderImplementation.SetHeader, ApiBaseUrlWithSlash);
+
     /// <summary>Verifies indexed query maps format null and populated property values through their runtime types.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
