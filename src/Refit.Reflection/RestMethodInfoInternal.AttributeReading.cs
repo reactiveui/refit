@@ -218,6 +218,19 @@ internal partial class RestMethodInfoInternal
         return (bodyAttribute, bodyParameterIndex, false);
     }
 
+    /// <summary>Reads the content coding an explicit <see cref="BodyAttribute"/> declared.</summary>
+    /// <param name="sets">The classified attribute set for each parameter.</param>
+    /// <returns>The declared coding and level. An implicit body declares neither, so it follows the settings.</returns>
+    internal static (RequestCompression Compression, System.IO.Compression.CompressionLevel Level) FindBodyCompression(
+        ParameterAttributeSet[] sets)
+    {
+        var (bodyAttribute, _, _) = FindBodyAttribute(sets);
+
+        return bodyAttribute is null
+            ? (RequestCompression.Default, System.IO.Compression.CompressionLevel.Optimal)
+            : (bodyAttribute.Compression, bodyAttribute.CompressionLevel);
+    }
+
     /// <summary>Finds the parameter that carries the authorization value.</summary>
     /// <param name="sets">The classified attribute set for each parameter.</param>
     /// <returns>The authorization parameter information, or null when there is no authorize parameter.</returns>

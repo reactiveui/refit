@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.IO.Compression;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -23,6 +24,26 @@ public static partial class GeneratedRequestRunner
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static HttpContent CreateStreamContent(Stream stream) =>
         new StreamContent(new NonDisposingStream(stream));
+
+    /// <summary>Applies the request body coding a body parameter or the settings asked for.</summary>
+    /// <param name="content">The content to compress.</param>
+    /// <param name="settings">The Refit settings supplying the instance-wide default.</param>
+    /// <param name="compression">The coding the body parameter declared, or <see cref="RequestCompression.Default"/> to take the settings'.</param>
+    /// <param name="level">How hard to compress, used only when <paramref name="compression"/> names a coding.</param>
+    /// <returns>The compressing content, or <paramref name="content"/> unchanged when no coding applies.</returns>
+    /// <exception cref="PlatformNotSupportedException">This target framework cannot produce the resolved coding.</exception>
+    public static HttpContent CompressBodyContent(
+        HttpContent content,
+        RefitSettings settings,
+        RequestCompression compression,
+        CompressionLevel level)
+    {
+        var (resolved, resolvedLevel) = RequestContentCoding.Resolve(settings, compression, level);
+
+        return resolved is RequestCompression.Default or RequestCompression.None
+            ? content
+            : RequestContentCoding.Wrap(content, resolved, resolvedLevel);
+    }
 
     /// <summary>Serializes a generated request body using Refit body rules.</summary>
     /// <typeparam name="TBody">The declared body type.</typeparam>

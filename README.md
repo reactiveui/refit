@@ -1013,6 +1013,47 @@ var settings = new RefitSettings(new SystemTextJsonContentSerializer(options))
 Both modes require the content serializer to implement `ISynchronousContentSerializer` (the default
 `SystemTextJsonContentSerializer` does); otherwise the body falls back to the default asynchronous serialization.
 
+### Compressing the request body
+
+Set `Compression` on `[Body]` to send the body under a content coding. Refit compresses whatever the serializer
+produced and sets `Content-Encoding` to match, so the coding composes with every serialization method:
+
+```csharp
+public interface IUploadApi
+{
+    [Post("/measurements")]
+    Task Upload([Body(Compression = RequestCompression.GZip)] Measurement[] batch);
+
+    [Post("/measurements")]
+    Task UploadSmallest([Body(
+        Compression = RequestCompression.Brotli,
+        CompressionLevel = CompressionLevel.SmallestSize)] Measurement[] batch);
+}
+```
+
+To compress every body from one client, set it on the settings instead. A `[Body]` parameter naming its own coding
+overrides that, and `RequestCompression.None` on the parameter opts a single method out:
+
+```csharp
+var settings = new RefitSettings
+{
+    RequestCompression = RequestCompression.GZip,
+    RequestCompressionLevel = CompressionLevel.Optimal,
+};
+```
+
+There is no negotiation for a compressed request body, so only turn this on against a server you know accepts one.
+The compressed length is unknown until the body has been written, so these requests are sent chunked.
+
+Codings are not available on every target framework, and asking for one the running framework cannot produce throws
+`PlatformNotSupportedException` when the request is built rather than quietly sending the body uncompressed:
+
+| Coding | `Content-Encoding` | Available on |
+| --- | --- | --- |
+| `RequestCompression.GZip` | `gzip` | every target |
+| `RequestCompression.Brotli` | `br` | .NET 8.0 and later |
+| `RequestCompression.Zstandard` | `zstd` | .NET 11.0 and later |
+
 For instance, here is how to create a new `RefitSettings` instance using the `Newtonsoft.Json`-based serializer (you'll
 also need to add a `PackageReference` to `Refit.Newtonsoft.Json`):
 

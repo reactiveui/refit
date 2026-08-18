@@ -264,6 +264,18 @@ public class RefitSettings
     /// </summary>
     public RequestBodySerializationMode RequestBodySerialization { get; set; } = RequestBodySerializationMode.Default;
 
+    /// <summary>
+    /// Gets or sets the content coding applied to every request body (defaults to <see cref="RequestCompression.None"/>).
+    /// A <c>[Body]</c> parameter naming its own coding overrides this, and <see cref="RequestCompression.None"/> on the
+    /// parameter opts that one method out.
+    /// </summary>
+    /// <remarks>Only turn this on against a server that accepts a compressed request body; there is no negotiation for it.</remarks>
+    public RequestCompression RequestCompression { get; set; } = RequestCompression.None;
+
+    /// <summary>Gets or sets how hard <see cref="RequestCompression"/> compresses (defaults to <see cref="System.IO.Compression.CompressionLevel.Optimal"/>).</summary>
+    public System.IO.Compression.CompressionLevel RequestCompressionLevel { get; set; } =
+        System.IO.Compression.CompressionLevel.Optimal;
+
     /// <summary>Gets optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.</summary>
     public Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
 

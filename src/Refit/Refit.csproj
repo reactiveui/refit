@@ -58,6 +58,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462' Or '$(TargetFramework)' == 'net470' Or '$(TargetFramework)' == 'net471' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net481'">
     <Reference Include="System.Web"/>
+    <Reference Include="System.IO.Compression"/>
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" ReferenceOutputAssembly="false"/>
     <ProjectReference Include="..\Refit.Analyzers.Roslyn48\Refit.Analyzers.Roslyn48.csproj" ReferenceOutputAssembly="false"/>
     <ProjectReference Include="..\Refit.CodeFixes.Roslyn48\Refit.CodeFixes.Roslyn48.csproj" ReferenceOutputAssembly="false"/>

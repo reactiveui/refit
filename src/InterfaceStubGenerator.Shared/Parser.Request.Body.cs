@@ -270,6 +270,21 @@ internal static partial class Parser
             }
         }
 
+        var compression = "Default";
+        var compressionLevel = "Optimal";
+
+        foreach (var named in attribute.NamedArguments)
+        {
+            if (named.Key == "Compression" && named.Value.Value is int compressionValue)
+            {
+                compression = GetRequestCompressionName(compressionValue);
+            }
+            else if (named.Key == "CompressionLevel" && named.Value.Value is int levelValue)
+            {
+                compressionLevel = GetCompressionLevelName(levelValue);
+            }
+        }
+
         var bufferMode = buffered switch
         {
             true => BodyBufferMode.Buffered,
@@ -277,7 +292,7 @@ internal static partial class Parser
             _ => BodyBufferMode.Settings
         };
 
-        return new(serializationMethod, bufferMode);
+        return new(serializationMethod, bufferMode, compression, compressionLevel);
     }
 
     /// <summary>Tries to parse a body serialization method constructor argument.</summary>
@@ -300,9 +315,13 @@ internal static partial class Parser
     /// <summary>Parsed body attribute data.</summary>
     /// <param name="SerializationMethod">The body serialization method name.</param>
     /// <param name="BufferMode">The body buffering mode.</param>
+    /// <param name="Compression">The <c>RequestCompression</c> member name the body declared.</param>
+    /// <param name="CompressionLevel">The <c>CompressionLevel</c> member name the body declared.</param>
     internal readonly record struct BodyAttributeInfo(
         string SerializationMethod,
-        BodyBufferMode BufferMode);
+        BodyBufferMode BufferMode,
+        string Compression,
+        string CompressionLevel);
 
     /// <summary>Form-relevant data parsed from a <c>[Query]</c> attribute on a parameter or body property.</summary>
     /// <param name="Delimiter">The delimiter combined with the prefix, or <see langword="null"/> when no
