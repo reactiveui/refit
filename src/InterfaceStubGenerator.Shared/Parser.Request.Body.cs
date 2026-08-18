@@ -275,13 +275,20 @@ internal static partial class Parser
 
         foreach (var named in attribute.NamedArguments)
         {
-            if (named.Key == "Compression" && named.Value.Value is int compressionValue)
+            // Both arguments are enum-typed, so anything else is a value the compiler already rejected; leave the
+            // defaults in place rather than reading a constant that is not there.
+            if (named.Value.Kind != TypedConstantKind.Enum)
             {
-                compression = GetRequestCompressionName(compressionValue);
+                continue;
             }
-            else if (named.Key == "CompressionLevel" && named.Value.Value is int levelValue)
+
+            if (named.Key == "Compression")
             {
-                compressionLevel = GetCompressionLevelName(levelValue);
+                compression = GetRequestCompressionName((int)named.Value.Value!);
+            }
+            else if (named.Key == "CompressionLevel")
+            {
+                compressionLevel = GetCompressionLevelName((int)named.Value.Value!);
             }
         }
 

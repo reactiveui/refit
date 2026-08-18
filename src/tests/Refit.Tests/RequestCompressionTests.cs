@@ -12,6 +12,9 @@ public class RequestCompressionTests
     /// <summary>The media type the coded content must carry through from the inner content.</summary>
     private const string JsonMediaType = "application/json";
 
+    /// <summary>A mid-range quality for the codings whose options express effort as a number.</summary>
+    private const int MidQuality = 5;
+
     /// <summary>A body long enough that every coding makes it shorter.</summary>
     private const string BodyText =
         """{"name":"refit","description":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}""";
@@ -165,7 +168,96 @@ public class RequestCompressionTests
 
         await Assert.That(bytes.Length).IsLessThan(BodyText.Length);
     }
+
+    /// <summary>Verifies each coding that accepts options still announces itself and shrinks the body when given them.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BrotliCompressesThroughItsOwnOptions()
+    {
+        var settings = new RefitSettings { RequestCompressionOptions = new() { Brotli = new() { Quality = MidQuality } } };
+
+        using var content = new StringContent(BodyText);
+        using var compressed = GeneratedRequestRunner.CompressBodyContent(
+            content,
+            settings,
+            RequestCompression.Brotli,
+            CompressionLevel.NoCompression);
+
+        var bytes = await compressed.ReadAsByteArrayAsync();
+
+        await Assert.That(compressed.Headers.ContentEncoding).IsEquivalentTo(["br"]);
+        await Assert.That(bytes.Length).IsLessThan(BodyText.Length);
+    }
 #endif
+
+#if NET11_0_OR_GREATER
+    /// <summary>Verifies Zstandard compresses through its own options, which only exist from .NET 11.0.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ZstandardCompressesThroughItsOwnOptions()
+    {
+        var settings = new RefitSettings { RequestCompressionOptions = new() { Zstandard = new() { Quality = MidQuality } } };
+
+        using var content = new StringContent(BodyText);
+        using var compressed = GeneratedRequestRunner.CompressBodyContent(
+            content,
+            settings,
+            RequestCompression.Zstandard,
+            CompressionLevel.NoCompression);
+
+        var bytes = await compressed.ReadAsByteArrayAsync();
+
+        await Assert.That(compressed.Headers.ContentEncoding).IsEquivalentTo(["zstd"]);
+        await Assert.That(bytes.Length).IsLessThan(BodyText.Length);
+    }
+#endif
+
+    /// <summary>Verifies the wrapper refuses a coding it has no compressor for.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task TheWrapperRefusesACodingItCannotCompress()
+    {
+        using var inner = new StringContent(BodyText);
+        using var compressed = new CompressedContent(inner, RequestCompression.Zstandard, CompressionLevel.Optimal);
+
+        // The coding still names a token, so the refusal has to come from the compressor, not the header.
+        await Assert.That(compressed.Headers.ContentEncoding).IsEquivalentTo(["zstd"]);
+        await Assert.That(async () => await compressed.ReadAsByteArrayAsync()).Throws<PlatformNotSupportedException>();
+    }
+
+    /// <summary>Verifies each coding maps to the token it sends on the wire.</summary>
+    /// <param name="compression">The coding under test.</param>
+    /// <param name="expectedToken">The token it maps to.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    [Arguments(RequestCompression.GZip, "gzip")]
+    [Arguments(RequestCompression.Brotli, "br")]
+    [Arguments(RequestCompression.Zstandard, "zstd")]
+    public async Task EveryCodingMapsToItsToken(RequestCompression compression, string expectedToken) =>
+        await Assert.That(RequestContentCoding.Token(compression)).IsEqualTo(expectedToken);
+
+    /// <summary>Verifies a value that names no coding has no token, since there is nothing to announce.</summary>
+    /// <param name="compression">The value under test.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    [Arguments(RequestCompression.Default)]
+    [Arguments(RequestCompression.None)]
+    public async Task AValueThatNamesNoCodingHasNoToken(RequestCompression compression) =>
+        await Assert.That(() => RequestContentCoding.Token(compression)).Throws<PlatformNotSupportedException>();
+
+    /// <summary>Verifies the wrap rejects a value that names no coding.</summary>
+    /// <param name="compression">The value under test.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    [Arguments(RequestCompression.Default)]
+    [Arguments(RequestCompression.None)]
+    public async Task TheWrapRejectsAValueThatNamesNoCoding(RequestCompression compression)
+    {
+        using var content = new StringContent(BodyText);
+
+        await Assert.That(() => RequestContentCoding.Wrap(content, new(), compression, CompressionLevel.Optimal))
+            .Throws<PlatformNotSupportedException>();
+    }
 
     /// <summary>Verifies the compressed content reports no length, so the request is sent chunked.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
