@@ -18,7 +18,7 @@ namespace Refit;
 /// <remarks>
 /// Create an instance of <see cref="ApiResponse{T}"/> with type <typeparamref name="T"/>.
 /// </remarks>
-[System.Diagnostics.DebuggerDisplay("{Content}")]
+[System.Diagnostics.DebuggerDisplay("ApiResponse: {StatusCode}, Content = {Content}")]
 public sealed class ApiResponse<T>(
     HttpRequestMessage request,
     HttpResponseMessage? response,

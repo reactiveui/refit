@@ -10,7 +10,7 @@ public class XmlContentSerializer : Refit.IHttpContentSerializer, Refit.ISynchro
     public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
-[System.Diagnostics.DebuggerDisplay("{XmlDefaultNamespace}")]
+[System.Diagnostics.DebuggerDisplay("XmlContentSerializerSettings: XmlDefaultNamespace = {XmlDefaultNamespace}")]
 public class XmlContentSerializerSettings
 {
     public XmlContentSerializerSettings() { }

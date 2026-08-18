@@ -23,7 +23,7 @@ namespace Refit.Testing;
 /// response. Prefer <see cref="StubHttp"/> for end-to-end tests; reach for this only when the code under
 /// test is handed an <see cref="IApiResponse{T}"/> directly.
 /// </remarks>
-[System.Diagnostics.DebuggerDisplay("{Content}")]
+[System.Diagnostics.DebuggerDisplay("StubApiResponse: {StatusCode}, Content = {Content}")]
 public sealed class StubApiResponse<T> : IApiResponse<T>
 {
     /// <summary>Gets the deserialized response content.</summary>

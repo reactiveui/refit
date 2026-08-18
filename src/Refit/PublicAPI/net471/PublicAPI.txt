@@ -53,7 +53,7 @@ public class ApiRequestException : Refit.ApiExceptionBase
     public ApiRequestException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings) { }
     public ApiRequestException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, Refit.RefitSettings refitSettings, System.Exception? innerException) { }
 }
-[System.Diagnostics.DebuggerDisplay("{Content}")]
+[System.Diagnostics.DebuggerDisplay("ApiResponse: {StatusCode}, Content = {Content}")]
 public sealed class ApiResponse<T> : Refit.IApiResponse<T>
 {
     public ApiResponse(System.Net.Http.HttpResponseMessage response, T? content, Refit.RefitSettings settings) { }
@@ -110,7 +110,7 @@ public sealed class AuthorizeAttribute : System.Attribute
     public string Scheme { get; }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
-[System.Diagnostics.DebuggerDisplay("{Buffered}")]
+[System.Diagnostics.DebuggerDisplay("Body: Buffered = {Buffered}")]
 public sealed class BodyAttribute : System.Attribute
 {
     public BodyAttribute() { }
@@ -448,7 +448,7 @@ public sealed class MultipartAttribute : System.Attribute
     public MultipartAttribute(string boundaryText = "----MyGreatBoundary") { }
     public string BoundaryText { get; }
 }
-[System.Diagnostics.DebuggerDisplay("{Name}")]
+[System.Diagnostics.DebuggerDisplay("MultipartItem: {Name}")]
 public abstract class MultipartItem
 {
     protected MultipartItem(string fileName, string? contentType) { }
@@ -513,7 +513,7 @@ public class ProblemDetails
     public string? Type { get; set; }
 }
 [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
-[System.Diagnostics.DebuggerDisplay("{Key}")]
+[System.Diagnostics.DebuggerDisplay("Property: {Key}")]
 public sealed class PropertyAttribute : System.Attribute
 {
     public PropertyAttribute() { }
@@ -564,7 +564,7 @@ public sealed class QueryUriFormatAttribute : System.Attribute
     public QueryUriFormatAttribute(System.UriFormat uriFormat) { }
     public System.UriFormat UriFormat { get; }
 }
-[System.Diagnostics.DebuggerDisplay("{AuthorizationHeaderValueGetter}")]
+[System.Diagnostics.DebuggerDisplay("RefitSettings: AuthorizationHeaderValueGetter = {AuthorizationHeaderValueGetter}")]
 public class RefitSettings
 {
     public RefitSettings() { }
@@ -639,7 +639,7 @@ public record RestMethodInfo : System.IEquatable<Refit.RestMethodInfo>
     public string RelativePath { get; init; }
     public System.Type ReturnType { get; init; }
 }
-[System.Diagnostics.DebuggerDisplay("{Name}")]
+[System.Diagnostics.DebuggerDisplay("RestMethodParameterInfo: {Name}")]
 public class RestMethodParameterInfo
 {
     public RestMethodParameterInfo(bool isObjectPropertyParameter, System.Reflection.ParameterInfo parameterInfo) { }
@@ -762,7 +762,7 @@ public enum UrlResolutionMode
     RefitLegacy = 0,
     Rfc3986 = 1,
 }
-[System.Diagnostics.DebuggerDisplay("{Content}")]
+[System.Diagnostics.DebuggerDisplay("ValidationApiException: {StatusCode}, Content = {Content}")]
 public class ValidationApiException : Refit.ApiException
 {
     public ValidationApiException(string message) { }

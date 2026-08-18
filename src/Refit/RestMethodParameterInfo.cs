@@ -6,7 +6,7 @@ using System.Reflection;
 namespace Refit;
 
 /// <summary>Describes a parameter of a REST method.</summary>
-[System.Diagnostics.DebuggerDisplay("{Name}")]
+[System.Diagnostics.DebuggerDisplay("RestMethodParameterInfo: {Name}")]
 public class RestMethodParameterInfo
 {
     /// <summary>Initializes a new instance of the <see cref="RestMethodParameterInfo"/> class with a name.</summary>
