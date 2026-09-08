@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Build And Versioning">
-    <PackageVersion Include="MinVer" Version="7.0.0"/>
+    <PackageVersion Include="MinVer" Version="8.0.0"/>
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(SourceLinkVersion)"/>
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(ThreadingAnalyzersVersion)"/>
   </ItemGroup>
