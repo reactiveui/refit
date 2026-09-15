@@ -42,7 +42,7 @@ jobs:
             minverMinimumMajorMinor: '10.2'
             bump: ${{ inputs.bump }}
             preRelease: ${{ inputs.channel != 'none' && inputs.channel || '' }}
-            ref: ${{ inputs.sourceRef }}
+            sourceRef: ${{ inputs.sourceRef }}
         secrets:
             CERTUM_USER_ID: ${{ secrets.CERTUM_USER_ID }}
             CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
