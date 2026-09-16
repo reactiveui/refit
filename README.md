@@ -99,7 +99,7 @@ lets you stub responses and verify requests with a declarative route table — s
 
 Refit is sponsored by the following:
 
-[![lombiq logo](images/lombiq.svg)](https://lombiq.com)[![jetbrains logo](images/jetbrains.svg)](https://www.jetbrains.com)[![claude logo](images/claude.svg)](https://claude.com)
+[![jetbrains logo](images/jetbrains.svg)](https://www.jetbrains.com)[![claude logo](images/claude.svg)](https://claude.com)
 
 ### Where does this work?
 
