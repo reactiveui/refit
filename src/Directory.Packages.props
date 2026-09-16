@@ -50,7 +50,7 @@
     <PackageVersion Include="Roslynator.Analyzers" Version="5.0.0"/>
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.34.0.3385"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
-    <PackageVersion Include="PublicApiSharp.Analyzers" Version="1.0.7"/>
+    <PackageVersion Include="PublicApiSharp.Analyzers" Version="2.0.1"/>
   </ItemGroup>
 
   <!-- Roslyn toolchain. Versions are intentionally held at their current bands: the source
