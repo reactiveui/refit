@@ -5,23 +5,8 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Shared Version Variables">
-    <PrimitivesVersion>8.0.0</PrimitivesVersion>
-    <TUnitVersion>1.68.17</TUnitVersion>
-
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
     <SharpAnalyzersVersion>5.1.2</SharpAnalyzersVersion>
-  </PropertyGroup>
-
-  <PropertyGroup Label="Framework-Aligned Versions">
-
-    <MicrosoftExtensionsVersion>10.0.12</MicrosoftExtensionsVersion>
-    <SystemTextJsonVersion>10.0.12</SystemTextJsonVersion>
-
-    <MicrosoftCodeAnalysisAnalyzersVersion>5.9.0</MicrosoftCodeAnalysisAnalyzersVersion>
-    <MicrosoftCodeAnalysisWorkspacesVersion>4.14.0</MicrosoftCodeAnalysisWorkspacesVersion>
-
-    <SourceLinkVersion>10.0.401</SourceLinkVersion>
-    <ThreadingAnalyzersVersion>18.7.23</ThreadingAnalyzersVersion>
     <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>
 
@@ -31,21 +16,20 @@
 
 
   <ItemGroup Label="ReactiveUI Primitives">
-    <PackageVersion Include="ReactiveUI.Primitives" Version="$(PrimitivesVersion)"/>
+    <PackageVersion Include="ReactiveUI.Primitives" Version="8.0.0"/>
   </ItemGroup>
 
   <ItemGroup Label="Build And Versioning">
     <PackageVersion Include="MinVer" Version="8.0.0"/>
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(SourceLinkVersion)"/>
-    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(ThreadingAnalyzersVersion)"/>
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401"/>
   </ItemGroup>
 
   <ItemGroup Label="Analyzers">
     <PackageVersion Include="StyleSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="PerformanceSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23"/>
     <PackageVersion Include="SecuritySharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.34.0.3385"/>
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
     <PackageVersion Include="PublicApiSharp.Analyzers" Version="2.0.1"/>
   </ItemGroup>
 
@@ -55,19 +39,16 @@
        version is the minimum compiler consumers need. The test/benchmark tooling tracks the 4.x
        line. Renovate is configured to hold these back (see .github/renovate.json). -->
   <ItemGroup Label="Roslyn Toolchain">
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(MicrosoftCodeAnalysisWorkspacesVersion)"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4"/>
   </ItemGroup>
 
   <ItemGroup Label="Microsoft Runtime And Extensions">
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)"/>
-    <PackageVersion Include="System.Net.Http.Json" Version="$(SystemTextJsonVersion)"/>
-    <PackageVersion Include="System.Net.ServerSentEvents" Version="$(SystemTextJsonVersion)"/>
-    <PackageVersion Include="System.Text.Json" Version="$(SystemTextJsonVersion)"/>
   </ItemGroup>
 
   <ItemGroup Label="Test Stack">
-    <PackageVersion Include="TUnit" Version="$(TUnitVersion)"/>
+    <PackageVersion Include="TUnit" Version="1.68.17"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2"/>
   </ItemGroup>
 
@@ -92,6 +73,25 @@
   <Choose>
     <When Condition="'$(TargetFramework)' == 'net11.0'">
       <ItemGroup Label="Microsoft ASP.NET">
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.1.26425.128"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="11.0.0-rc.1.26425.128"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0-rc.1.26425.128"/>
+        <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.1.26425.128"/>
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup Label="Microsoft ASP.NET">
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="10.0.12"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.12"/>
+        <PackageVersion Include="System.Text.Json" Version="10.0.12"/>
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <Choose>
+    <When Condition="'$(TargetFramework)' == 'net11.0'">
+      <ItemGroup Label="Microsoft ASP.NET">
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.1.26425.128"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="11.0.0-rc.1.26425.128"/>
         <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="11.0.0-rc.1.26425.128"/>
@@ -99,16 +99,16 @@
     </When>
     <When Condition="'$(TargetFramework)' == 'net10.0'">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.11"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.11"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.11"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.12"/>
       </ItemGroup>
     </When>
     <When Condition="'$(TargetFramework)' == 'net9.0'">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.19"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.19"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.19"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.20"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.20"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.20"/>
       </ItemGroup>
     </When>
     <When Condition="'$(TargetFramework)' == 'net8.0'">
