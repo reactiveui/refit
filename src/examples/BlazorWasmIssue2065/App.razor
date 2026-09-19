@@ -1,5 +1,4 @@
 @using BlazorWasmIssue2065.Pages
-@using BlazorWasmIssue2065.Shared
 @inject NavigationManager Navigation
 
 @*
@@ -8,17 +7,19 @@
     DynamicallyAccessedMembers, which produces IL2110/IL2111 independently of Refit.
     The sample only has two fixed routes, so dispatch them statically to keep linker analysis exact.
 *@
-<MainLayout>
-    @switch (Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0])
-    {
-        case "":
-            <Index />
-            break;
-        case "issue2067":
-            <Issue2067 />
-            break;
-        default:
-            <p role="alert">Not found</p>
-            break;
-    }
-</MainLayout>
+<div class="page">
+    <main>
+        @switch (Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0])
+        {
+            case "":
+                <Index />
+                break;
+            case "issue2067":
+                <Issue2067 />
+                break;
+            default:
+                <p role="alert">Not found</p>
+                break;
+        }
+    </main>
+</div>
