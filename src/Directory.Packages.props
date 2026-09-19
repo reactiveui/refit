@@ -5,25 +5,22 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Shared Version Variables">
-    <PrimitivesVersion>7.1.1</PrimitivesVersion>
-    <TUnitVersion>1.65.0</TUnitVersion>
+    <PrimitivesVersion>8.0.0</PrimitivesVersion>
+    <TUnitVersion>1.68.17</TUnitVersion>
 
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>5.0.5</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>5.1.2</SharpAnalyzersVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
-    <AspNetVersion>8.0.30</AspNetVersion>
-    <AspNetVersion Condition="$(TargetFramework.StartsWith('net9'))">9.0.19</AspNetVersion>
-    <AspNetVersion Condition="$(TargetFramework.StartsWith('net10'))">10.0.11</AspNetVersion>
 
-    <MicrosoftExtensionsVersion>10.0.11</MicrosoftExtensionsVersion>
-    <SystemTextJsonVersion>10.0.11</SystemTextJsonVersion>
+    <MicrosoftExtensionsVersion>10.0.12</MicrosoftExtensionsVersion>
+    <SystemTextJsonVersion>10.0.12</SystemTextJsonVersion>
 
-    <MicrosoftCodeAnalysisAnalyzersVersion>5.6.0</MicrosoftCodeAnalysisAnalyzersVersion>
+    <MicrosoftCodeAnalysisAnalyzersVersion>5.9.0</MicrosoftCodeAnalysisAnalyzersVersion>
     <MicrosoftCodeAnalysisWorkspacesVersion>4.14.0</MicrosoftCodeAnalysisWorkspacesVersion>
 
-    <SourceLinkVersion>10.0.400</SourceLinkVersion>
+    <SourceLinkVersion>10.0.401</SourceLinkVersion>
     <ThreadingAnalyzersVersion>18.7.23</ThreadingAnalyzersVersion>
     <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>
@@ -71,20 +68,14 @@
 
   <ItemGroup Label="Test Stack">
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)"/>
-    <PackageVersion Include="Verify.TUnit" Version="32.0.0"/>
-    <PackageVersion Include="Verify.DiffPlex" Version="3.3.1"/>
-    <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2"/>
   </ItemGroup>
 
   <ItemGroup Label="Benchmarks">
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
-    <PackageVersion Include="AutoFixture" Version="4.18.1"/>
   </ItemGroup>
 
   <ItemGroup Label="Examples">
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(AspNetVersion)"/>
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(AspNetVersion)"/>
     <PackageVersion Include="Serilog" Version="4.4.0"/>
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1"/>
   </ItemGroup>
@@ -96,8 +87,37 @@
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1"/>
   </ItemGroup>
 
-  <ItemGroup Label="Microsoft ASP.NET">
-    <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="$(AspNetVersion)"/>
-  </ItemGroup>
+  <!-- Keep the literal framework-aligned versions visible to Renovate. Choose evaluates one
+       mutually exclusive item group for each inner target-framework build. -->
+  <Choose>
+    <When Condition="'$(TargetFramework)' == 'net11.0'">
+      <ItemGroup Label="Microsoft ASP.NET">
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.1.26425.128"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="11.0.0-rc.1.26425.128"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="11.0.0-rc.1.26425.128"/>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(TargetFramework)' == 'net10.0'">
+      <ItemGroup Label="Microsoft ASP.NET">
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.11"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.11"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.11"/>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(TargetFramework)' == 'net9.0'">
+      <ItemGroup Label="Microsoft ASP.NET">
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.19"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.19"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.19"/>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(TargetFramework)' == 'net8.0'">
+      <ItemGroup Label="Microsoft ASP.NET">
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.30"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.30"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.30"/>
+      </ItemGroup>
+    </When>
+  </Choose>
 
 </Project>
