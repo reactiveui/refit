@@ -49,6 +49,9 @@ the affected APIs.
 
 ## Public API map
 
+Use the [full API reference](https://www.reactiveui.net/documentation/refit/api-reference/)
+to find types, overloads, parameters and return values across all topics on one page.
+
 | Public method group | Brief description | Documentation |
 | --- | --- | --- |
 | HTTP verb and route attributes | Declare the HTTP method, route template, base-path prefix and URL resolution behavior. | [Routes](https://www.reactiveui.net/documentation/refit/requests/routes/) |
