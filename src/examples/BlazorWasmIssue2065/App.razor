@@ -9,7 +9,7 @@
 *@
 <div class="page">
     <main>
-        @switch (Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0])
+        @switch (CurrentPath)
         {
             case "":
                 <Index />
@@ -23,3 +23,15 @@
         }
     </main>
 </div>
+
+@code {
+    private string CurrentPath
+    {
+        get
+        {
+            var path = Navigation.ToBaseRelativePath(Navigation.Uri);
+            var separatorIndex = path.AsSpan().IndexOfAny('?', '#');
+            return separatorIndex < 0 ? path : path[..separatorIndex];
+        }
+    }
+}
