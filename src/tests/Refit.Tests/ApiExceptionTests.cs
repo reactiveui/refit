@@ -165,7 +165,7 @@ public sealed partial class ApiExceptionTests
             response,
             new());
 
-        var validationException = ValidationApiException.Create(apiException);
+        var validationException = SynchronousCompatibility.CreateValidation(apiException);
 
         await Assert.That(validationException.Content).IsNotNull();
         await Assert.That(validationException.Content!.Title).IsEqualTo("invalid");
@@ -206,7 +206,7 @@ public sealed partial class ApiExceptionTests
             response,
             new());
 
-        var validationException = ValidationApiException.Create(apiException);
+        var validationException = SynchronousCompatibility.CreateValidation(apiException);
 
         await Assert.That(validationException.Content).IsNotNull();
         await Assert.That(validationException.Content!.Type).IsNull();
@@ -237,7 +237,7 @@ public sealed partial class ApiExceptionTests
             response,
             new());
 
-        var validationException = ValidationApiException.Create(apiException);
+        var validationException = SynchronousCompatibility.CreateValidation(apiException);
 
         await Assert.That(validationException.Content).IsNotNull();
         await Assert.That(validationException.Content!.Errors).IsEmpty();
@@ -422,6 +422,10 @@ public sealed partial class ApiExceptionTests
         "Design",
         "SST1488:An exception type does not declare the standard constructors",
         Justification = "This test fixture exposes only the protected ApiException constructors under test.")]
+    [SuppressMessage(
+        "Design",
+        "CA1032",
+        Justification = "ApiException has no context-free base constructor; this fixture exercises protected constructors with real request/response/settings rather than fabricating context.")]
     private sealed class DerivedApiException : ApiException
     {
         /// <inheritdoc />

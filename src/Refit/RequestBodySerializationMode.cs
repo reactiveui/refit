@@ -5,11 +5,12 @@
 namespace Refit;
 
 /// <summary>Controls how Refit serializes JSON request bodies.</summary>
+/// <remarks>Without ISynchronousContentSerializer, request builders fall back to the serializer's normal content method.</remarks>
 public enum RequestBodySerializationMode
 {
     /// <summary>
     /// The default: the body is serialized asynchronously (via <c>JsonContent</c>). This uses the metadata-based
-    /// System.Text.Json logic, never the source-generated fast-path.
+    /// System.Text.Json logic; the runtime can use a generated fast-path writer for repeated small payloads.
     /// </summary>
     Default = 0,
 

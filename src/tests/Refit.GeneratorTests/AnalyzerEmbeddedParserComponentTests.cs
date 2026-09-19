@@ -499,8 +499,8 @@ public sealed class AnalyzerEmbeddedParserComponentTests
             null,
             [],
             [],
-            new(SymbolEqualityComparer.Default),
-            new(SymbolEqualityComparer.Default),
-            new(SymbolEqualityComparer.Default));
+            new(comparer: SymbolEqualityComparer.Default),
+            new(comparer: SymbolEqualityComparer.Default),
+            new(comparer: SymbolEqualityComparer.Default));
     }
 }

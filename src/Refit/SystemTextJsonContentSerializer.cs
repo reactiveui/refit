@@ -68,12 +68,12 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <summary>
     /// Creates <see cref="JsonSerializerOptions"/> that are eligible for the System.Text.Json source-generated
     /// fast-path on serialization. Unlike <see cref="GetDefaultJsonSerializerOptions"/>, these options add no
-    /// converters and do not set <see cref="JsonSerializerOptions.NumberHandling"/>, both of which disable the
-    /// fast-path. Assign a source-generated <see cref="JsonSerializerOptions.TypeInfoResolver"/> (a
+    /// converters and leave number handling at its default. Custom converters and number handling that changes
+    /// writing can disable the fast-path; AllowReadingFromString alone does not. Assign a generated TypeInfoResolver (a
     /// <see cref="JsonSerializerContext"/> generated in <see cref="JsonSourceGenerationMode.Serialization"/> or
     /// <see cref="JsonSourceGenerationMode.Default"/> mode) to enable it. The fast-path runs through the synchronous
-    /// serialization primitives (<c>SerializeToUtf8Bytes</c> / <c>Serialize(Utf8JsonWriter, ...)</c>); only the
-    /// built-in <c>SerializeAsync(Stream)</c> (used by <c>JsonContent</c>) bypasses it for the metadata logic.
+    /// serialization primitives (<c>SerializeToUtf8Bytes</c> / <c>Serialize(Utf8JsonWriter, ...)</c>); the
+    /// async content path can also use it for repeated small payloads when the runtime's size checks permit it.
     /// </summary>
     /// <returns>Fast-path-eligible <see cref="JsonSerializerOptions"/>.</returns>
     [SuppressMessage(
@@ -99,7 +99,11 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     {
         var serializeByRuntimeType = item is not null
             && (typeof(T).IsInterface || typeof(T).IsAbstract)
+#if NET8_0_OR_GREATER
             && !DeclaredTypeIsPolymorphic(typeof(T), jsonSerializerOptions);
+#else
+            && !DeclaredTypeIsPolymorphic(typeof(T));
+#endif
 
 #if NET8_0_OR_GREATER
         return serializeByRuntimeType switch
@@ -219,18 +223,21 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         return propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>(true)?.Name;
     }
 
+#if NET8_0_OR_GREATER
     /// <summary>Determines whether the declared type is configured for polymorphic serialization.</summary>
     /// <param name="type">The declared type to inspect.</param>
     /// <param name="jsonSerializerOptions">The serializer options to consult for type metadata.</param>
     /// <returns><see langword="true"/> if the type is polymorphic; otherwise <see langword="false"/>.</returns>
-#if NET8_0_OR_GREATER
     internal static bool DeclaredTypeIsPolymorphic(Type type, JsonSerializerOptions jsonSerializerOptions) =>
         type.IsDefined(typeof(JsonPolymorphicAttribute), false)
             || type.IsDefined(typeof(JsonDerivedTypeAttribute), false)
             || (jsonSerializerOptions.TypeInfoResolver is not null
                 && GetJsonTypeInfo(type, jsonSerializerOptions).PolymorphismOptions is not null);
 #else
-    internal static bool DeclaredTypeIsPolymorphic(Type type, JsonSerializerOptions jsonSerializerOptions) =>
+    /// <summary>Determines whether attributes configure the declared type for polymorphic serialization.</summary>
+    /// <param name="type">The declared type to inspect.</param>
+    /// <returns><see langword="true"/> if the type is polymorphic; otherwise <see langword="false"/>.</returns>
+    internal static bool DeclaredTypeIsPolymorphic(Type type) =>
         type.IsDefined(typeof(JsonPolymorphicAttribute), false)
             || type.IsDefined(typeof(JsonDerivedTypeAttribute), false);
 #endif

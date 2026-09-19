@@ -6,7 +6,7 @@ using System.Net.Http;
 
 namespace Refit;
 
-/// <summary>Send the request with HTTP method 'OPTION'.</summary>
+/// <summary>Send the request with HTTP method 'OPTIONS'.</summary>
 /// <param name="path">The path.</param>
 /// <remarks>
 /// Initializes a new instance of the <see cref="OptionsAttribute"/> class.

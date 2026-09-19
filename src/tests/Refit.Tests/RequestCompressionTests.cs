@@ -12,8 +12,10 @@ public class RequestCompressionTests
     /// <summary>The media type the coded content must carry through from the inner content.</summary>
     private const string JsonMediaType = "application/json";
 
+#if NET9_0_OR_GREATER
     /// <summary>A mid-range quality for the codings whose options express effort as a number.</summary>
     private const int MidQuality = 5;
+#endif
 
     /// <summary>A body long enough that every coding makes it shorter.</summary>
     private const string BodyText =

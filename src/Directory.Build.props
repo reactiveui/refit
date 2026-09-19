@@ -168,7 +168,6 @@
     <PackageReference Include="StyleSharp.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="PerformanceSharp.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="SecuritySharp.Analyzers" PrivateAssets="all"/>
-    <PackageReference Include="Roslynator.Analyzers" PrivateAssets="All"/>
     <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all"/>
   </ItemGroup>
 

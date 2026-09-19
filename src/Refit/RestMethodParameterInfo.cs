@@ -1,12 +1,17 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Refit;
 
 /// <summary>Describes a parameter of a REST method.</summary>
 [System.Diagnostics.DebuggerDisplay("RestMethodParameterInfo: {Name}")]
+[SuppressMessage(
+    "Design",
+    "SST2338",
+    Justification = "Type controls URL escaping. Name, ParameterInfo and ParameterProperties coexist as metadata; converting the shipped mutable API to a union would break its contract.")]
 public class RestMethodParameterInfo
 {
     /// <summary>Initializes a new instance of the <see cref="RestMethodParameterInfo"/> class with a name.</summary>

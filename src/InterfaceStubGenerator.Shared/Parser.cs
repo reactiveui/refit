@@ -12,6 +12,9 @@ namespace Refit.Generator;
 /// <summary>Parses candidate interfaces and methods into the models used to generate Refit stubs.</summary>
 internal static partial class Parser
 {
+    /// <summary>The metadata name of <c>Refit.PathPrefixAttribute</c>.</summary>
+    private const string PathPrefixAttributeDisplayName = "PathPrefixAttribute";
+
     /// <summary>The suffix used for generator-private Refit helper types.</summary>
     private const string RefitInternalGeneratedSuffix = "RefitInternalGenerated";
 
@@ -589,7 +592,7 @@ internal static partial class Parser
 
                     case IPropertySymbol property
                         when IsEmittableProperty(property)
-                            && (seenInheritedProperties ??= new(SymbolEqualityComparer.Default)).Add(property):
+                            && (seenInheritedProperties ??= new(comparer: SymbolEqualityComparer.Default)).Add(property):
                     {
                         inheritedProperties.Add(property);
                         break;

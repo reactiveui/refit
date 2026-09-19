@@ -7,7 +7,8 @@ namespace Refit;
 /// <summary>Send the request as multipart.</summary>
 /// <param name="boundaryText">The boundary text.</param>
 /// <remarks>
-/// Currently, multipart methods only support the following parameter types: <see cref="string"/>, <see cref="byte"/> array, <see cref="System.IO.Stream"/>, <see cref="System.IO.FileInfo"/>.
+/// Parts can be text, bytes, streams, files, HTTP content, MultipartItem wrappers, formatted values or serialized models.
+/// FormObject property flattening requires the reflection request builder; file properties must be separate parameters.
 /// </remarks>
 /// <remarks>
 /// Initializes a new instance of the <see cref="MultipartAttribute"/> class.

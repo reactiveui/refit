@@ -15,7 +15,11 @@ namespace Refit;
     "Design",
     "SST1496:An abstract type declares nothing abstract",
     Justification = "Verbatim base class ported from System.Net.Http; kept abstract so only concrete stream wrappers are instantiated.")]
+#if NET11_0_OR_GREATER
+internal closed class DelegatingStream : Stream
+#else
 internal abstract class DelegatingStream : Stream
+#endif
 {
     /// <summary>Indicates whether the inner stream is disposed when this stream is disposed.</summary>
     private readonly bool _ownsInnerStream;

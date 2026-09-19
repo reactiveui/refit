@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
@@ -147,12 +146,13 @@ public partial class SerializedContentTests
         ALPHA = 2,
     }
 
-    /// <summary>Marker request type used to verify serialization when the declared type is an interface.</summary>
-    [SuppressMessage(
-        "Design",
-        "SST1437:Add members to type or remove it",
-        Justification = "Intentional empty fixture interface used to verify Refit serialization when the declared type is an interface.")]
-    public interface InterfaceCreateWeaponRequest;
+    /// <summary>Request type used to verify serialization when the declared type is an interface.</summary>
+    public interface InterfaceCreateWeaponRequest
+    {
+        /// <summary>Describes the request through a method that JSON serializers do not emit.</summary>
+        /// <returns>The weapon description.</returns>
+        string DescribeWeapon();
+    }
 
     /// <summary>Refit API used to verify polymorphic base-type body serialization.</summary>
     public interface IPolymorphicRequestApi
@@ -573,6 +573,11 @@ public partial class SerializedContentTests
     {
         /// <summary>Gets or sets the weapon name.</summary>
         public string? Name { get; set; }
+
+        /// <summary>Describes the request without changing its serialized properties.</summary>
+        /// <returns>The configured weapon name, or an empty description.</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public string DescribeWeapon() => Name ?? string.Empty;
     }
 
     /// <summary>Base request whose polymorphism metadata is supplied by a resolver in tests.</summary>

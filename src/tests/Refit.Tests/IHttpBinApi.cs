@@ -11,6 +11,10 @@ namespace Refit.Tests;
 /// <typeparam name="TResponse">The response type.</typeparam>
 /// <typeparam name="TParam">The query/parameter type.</typeparam>
 /// <typeparam name="THeader">The header value type.</typeparam>
+[SuppressMessage(
+    "Design",
+    "CA1005",
+    Justification = "The runtime fixture closes response, parameter and header types independently; reducing its arity removes three-argument generated-client coverage.")]
 public interface IHttpBinApi<TResponse, in TParam, in THeader>
     where TResponse : class
     where THeader : struct

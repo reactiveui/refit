@@ -65,7 +65,7 @@ public sealed class ApiResponse<T>(
     {
     }
 
-    /// <summary>Gets the deserialized request content as <typeparamref name="T"/>.</summary>
+    /// <summary>Gets the deserialized response content as <typeparamref name="T"/>.</summary>
     public T? Content { get; } = content;
 
     /// <summary>Gets a value indicating whether deserialized <see cref="Content"/> is available.</summary>

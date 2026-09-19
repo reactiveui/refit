@@ -11,16 +11,16 @@ namespace Refit.Testing;
 
 /// <summary>
 /// A hand-written <see cref="IApiResponse{T}"/> for unit-testing code that consumes a Refit interface
-/// returning <see cref="IApiResponse{T}"/> or <see cref="ApiResponse{T}"/>, without going through HTTP.
-/// Every member is an <c>init</c>-only property, so a test configures exactly the fields it needs and
-/// leaves the rest defaulted.
+/// returning <see cref="IApiResponse{T}"/>, without going through HTTP.
+/// The properties are <c>init</c>-only and independently configured; status and content do not calculate success flags.
 /// </summary>
 /// <typeparam name="T">The deserialized response content type.</typeparam>
 /// <remarks>
 /// The nullability-narrowing contracts (for example <see cref="IApiResponse{T}.IsSuccessfulWithContent"/>
 /// implying non-null <see cref="IApiResponse{T}.Content"/>) come from the interface declaration, so a
-/// consumer's <c>if (response.IsSuccessfulWithContent)</c> flow-narrows exactly as it does against a real
-/// response. Prefer <see cref="StubHttp"/> for end-to-end tests; reach for this only when the code under
+/// consumer typed as <c>IApiResponse&lt;T&gt;</c> flow-narrows exactly as it does against a real
+/// response. The concrete stub properties do not carry those narrowing attributes.
+/// Prefer <see cref="StubHttp"/> for end-to-end tests; reach for this only when the code under
 /// test is handed an <see cref="IApiResponse{T}"/> directly.
 /// </remarks>
 [System.Diagnostics.DebuggerDisplay("StubApiResponse: {StatusCode}, Content = {Content}")]

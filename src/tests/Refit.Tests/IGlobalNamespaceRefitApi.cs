@@ -14,6 +14,10 @@ using System.Threading.Tasks;
     "RoslynCommonAnalyzers",
     "SST2312:Move type into a named namespace",
     Justification = "Intentionally namespace-less so UniqueName.ForType's null-Namespace branch is reachable.")]
+[SuppressMessage(
+    "Design",
+    "CA1050",
+    Justification = "The fixture must have a null Type.Namespace to exercise UniqueName.ForType's global-namespace naming branch.")]
 public interface IGlobalNamespaceRefitApi
 {
     /// <summary>A placeholder member so the fixture is a non-empty interface.</summary>

@@ -22,14 +22,14 @@ public interface IRequestBuilder
     /// <summary>Builds a delegate that executes the specified REST method using the provided HTTP client and arguments.</summary>
     /// <param name="methodName">The name of the interface method to generate the REST call delegate for. Must correspond to a method defined
     /// on the target interface.</param>
-    /// <param name="parameterTypes">An array of parameter types for the target method, or null to infer from the method signature. The order
-    /// must match the method's parameter list if specified.</param>
+    /// <param name="parameterTypes">Parameter types in declaration order, or null when the method name identifies a single HTTP method.
+    /// Overloaded method names require an explicit parameter-type array.</param>
     /// <param name="genericArgumentTypes">An array of generic argument types to use when constructing a generic method, or null if the method is not
     /// generic.</param>
     /// <returns>A delegate that takes an HttpClient and an array of argument values, and returns the result of invoking the
     /// specified REST method. The return type matches the method's declared return type.</returns>
-    /// <remarks>The returned delegate uses reflection to invoke the specified method and may require
-    /// referenced interfaces and data transfer objects (DTOs) to be preserved when trimming assemblies. This method
+    /// <remarks>The builder analyzes reflected method metadata to create a delegate that executes the HTTP call.
+    /// Referenced interfaces and data transfer objects may need preservation when trimming assemblies. This method
     /// is typically used to dynamically generate REST API client calls at runtime.</remarks>
     [SuppressMessage(
         "Design",

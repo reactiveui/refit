@@ -13,11 +13,13 @@ namespace Refit;
 /// <typeparam name="T">The declared parameter type.</typeparam>
 /// <remarks>
 /// Property names come from System.Text.Json (honoring <c>[JsonPropertyName]</c> and the naming policy); values are
-/// rendered by <see cref="RefitSettings.UrlParameterFormatter"/>, so enums, dates and numbers match the rest of Refit.
+/// rendered directly by <see cref="RefitSettings.UrlParameterFormatter"/> using the value's runtime type as both
+/// attribute provider and container. The formatter map and property-level query formats are not consulted.
 /// The value's runtime type is walked, so a polymorphic value contributes its actual properties. When the configured
-/// serializer uses a source-generated <c>TypeInfoResolver</c> the walk is reflection- and AOT-free; otherwise it falls
+/// serializer uses a source-generated <c>TypeInfoResolver</c> the walk is reflection-free and AOT-safe; otherwise it falls
 /// back to System.Text.Json's reflection resolver. Nested objects are flattened under a dotted key; collections use the
-/// configured <see cref="RefitSettings.CollectionFormat"/>.
+/// configured <see cref="RefitSettings.CollectionFormat"/> without expanding each element's properties.
+/// Null properties are omitted and nested-object traversal stops at depth 32.
 /// </remarks>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class SystemTextJsonQueryConverter<T> : IQueryConverter<T>

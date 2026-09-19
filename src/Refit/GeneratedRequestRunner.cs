@@ -73,6 +73,8 @@ public static partial class GeneratedRequestRunner
     /// <param name="url">The <c>[Url]</c> parameter value: a <see cref="string"/> or a <see cref="Uri"/>.</param>
     /// <returns>The absolute URI's string form.</returns>
     /// <exception cref="ArgumentException"><paramref name="url"/> is <see langword="null"/>, empty, or not an absolute URI.</exception>
+    /// <remarks>Validation uses <c>Uri.TryCreate</c> with <c>UriKind.Absolute</c>, without restricting the scheme.
+    /// Rooted file paths can therefore pass this check and are returned verbatim; this method does not ensure an HTTP URL.</remarks>
     public static string RequireAbsoluteUrl(object? url)
     {
         var text = url is Uri uri ? uri.OriginalString : url as string;
@@ -432,6 +434,10 @@ public static partial class GeneratedRequestRunner
     /// A pristine default formatter makes the second pass a no-op, so generated code takes this slow path only when the
     /// formatter is customized; the fast path uses <see cref="GeneratedQueryStringBuilder"/> directly.
     /// </remarks>
+    [SuppressMessage(
+        "Design",
+        "CA1045",
+        Justification = "Update the pooled mutable ref struct in place: copying loses the caller's length updates and can duplicate ownership of its rented buffer.")]
     public static void AddFormattedCollectionProperty(
         ref GeneratedQueryStringBuilder builder,
         RefitSettings settings,

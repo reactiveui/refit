@@ -58,7 +58,7 @@ public static class RequestBuilder
         ReflectionRequestBuilderResolver.GetFactory().Create<T>(null);
 
     /// <summary>Creates an implementation of the specified Refit interface for making HTTP requests.</summary>
-    /// <param name="refitInterfaceType">The interface type that defines the HTTP API contract. Must be a non-generic interface decorated with Refit
+    /// <param name="refitInterfaceType">The interface type that defines the HTTP API contract. Must be an interface, including a closed generic interface, decorated with Refit
     /// attributes.</param>
     /// <param name="settings">Optional settings to customize the behavior of the generated request builder. If null, default settings are
     /// used.</param>
@@ -78,7 +78,7 @@ public static class RequestBuilder
         ReflectionRequestBuilderResolver.GetFactory().Create(refitInterfaceType, settings);
 
     /// <summary>Creates an instance of an IRequestBuilder for the specified Refit interface type.</summary>
-    /// <param name="refitInterfaceType">The interface type that defines the Refit API contract. Must be a non-generic interface decorated with Refit
+    /// <param name="refitInterfaceType">The interface type that defines the Refit API contract. Must be an interface, including a closed generic interface, decorated with Refit
     /// attributes.</param>
     /// <returns>An IRequestBuilder instance that can be used to construct HTTP requests for the specified interface type.</returns>
     /// <remarks>The specified interface type must be decorated with Refit attributes to define the

@@ -19,10 +19,6 @@ internal sealed partial class PooledBufferWriter
     internal sealed partial class PooledMemoryStream : Stream
     {
         /// <inheritdoc/>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Roslynator",
-            "RCS1229:Use async/await when necessary",
-            Justification = "Read is synchronous; results/exceptions surface via a completed ValueTask, avoiding an async state-machine allocation on this hot path.")]
         public override ValueTask<int> ReadAsync(
             Memory<byte> buffer,
             CancellationToken cancellationToken = default)

@@ -11,5 +11,9 @@ public sealed class RouteObjectWithUnreadableProperty
     public string Visible { get; set; } = string.Empty;
 
     /// <summary>Gets or sets a route value that cannot be read publicly.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA1044",
+        Justification = "Route binding must reject the fixture's public property with a private getter; a publicly readable getter would remove that failure case.")]
     public string Hidden { private get; set; } = string.Empty;
 }

@@ -15,6 +15,10 @@ namespace Refit;
     "Design",
     "SST1488:Exception types should declare the standard constructors",
     Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
+[SuppressMessage(
+    "Design",
+    "CA1032",
+    Justification = "The shipped context-free constructors require a validation message; a parameterless constructor would supply neither a message nor HTTP context.")]
 public class ValidationApiException : ApiException
 {
     /// <summary>Initializes a new instance of the <see cref="ValidationApiException"/> class.</summary>

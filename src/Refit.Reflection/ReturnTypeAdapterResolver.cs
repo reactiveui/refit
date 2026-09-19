@@ -114,9 +114,9 @@ internal static class ReturnTypeAdapterResolver
     /// <param name="resultType">The adapter's <c>TResult</c> resolved against the return type when matched.</param>
     /// <returns><see langword="true"/> when the adapter surfaces the return type; otherwise <see langword="false"/>.</returns>
     /// <remarks>
-    /// The adapter's <c>TReturn</c> must be a constructed type whose type arguments are the adapter's type parameters
-    /// in order (for example <c>Adapter&lt;T&gt; : IReturnTypeAdapter&lt;Wrapper&lt;T&gt;, T&gt;</c>), and whose
-    /// generic definition matches the return type's, so <c>Wrapper&lt;X&gt;</c> closes the adapter over <c>X</c>.
+    /// The wrapper and adapter must have matching generic arity. Wrapper arguments bind adapter parameters by
+    /// position in the template, supporting reordered parameters; every parameter must receive a consistent binding.
+    /// Concrete template arguments must match exactly, and the wrapper's generic definition must match the return type.
     /// </remarks>
     [RequiresUnreferencedCode("Resolving return-type adapters inspects adapter interface metadata that trimming may remove.")]
     internal static bool TryMatchGenericDefinition(

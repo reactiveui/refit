@@ -15,6 +15,7 @@ namespace Refit;
     "Design",
     "SST1496:An abstract type declares nothing abstract",
     Justification = "Intentional abstract base for the API exception hierarchy; instantiation is prevented by its protected constructors and it shares state rather than an abstract contract.")]
+[SuppressMessage("Design", "CA1032", Justification = "All derived API exceptions require non-null request, HTTP method and settings; standard constructors cannot establish that contract.")]
 public abstract class ApiExceptionBase : Exception
 {
     /// <summary>Initializes a new instance of the <see cref="ApiExceptionBase"/> class.</summary>

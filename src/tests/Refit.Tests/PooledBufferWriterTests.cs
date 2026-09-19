@@ -47,7 +47,7 @@ public class PooledBufferWriterTests
         await using var stream = writer.DetachStream();
         var buffer = new byte[PooledBufferWriter.DefaultSize + 1];
 
-        var read = stream.Read(buffer, 0, buffer.Length);
+        var read = SynchronousCompatibility.ReadArray(stream, buffer);
 
         await Assert.That(read).IsEqualTo(buffer.Length);
         await Assert.That(buffer[0]).IsEqualTo((byte)1);
@@ -121,10 +121,13 @@ public class PooledBufferWriterTests
         await using var stream = writer.DetachStream();
         var buffer = new byte[2];
 
-        stream.Flush();
-        var firstRead = stream.Read(buffer, 0, buffer.Length);
-        var secondRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-        var thirdRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+        SynchronousCompatibility.Flush(stream);
+        var firstRead = SynchronousCompatibility.ReadArray(stream, buffer);
+
+        // Bind the legacy byte-array overload explicitly so compatibility coverage cannot switch to Memory<byte>.
+        Func<byte[], int, int, CancellationToken, Task<int>> readArrayAsync = stream.ReadAsync;
+        var secondRead = await readArrayAsync(buffer, 0, buffer.Length, CancellationToken.None);
+        var thirdRead = await readArrayAsync(buffer, 0, buffer.Length, CancellationToken.None);
         await stream.FlushAsync();
 
         await Assert.That(stream.Length).IsEqualTo(ThreeByteCount);

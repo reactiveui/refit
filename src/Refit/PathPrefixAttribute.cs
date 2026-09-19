@@ -8,9 +8,10 @@ namespace Refit;
 /// <param name="prefix">The route prefix prepended to every method's relative path.</param>
 /// <remarks>
 /// The prefix is joined to each method's route template with exactly one <c>/</c> between them, so
-/// <c>[PathPrefix("/api/v2")]</c> combined with <c>[Get("/users")]</c> requests <c>/api/v2/users</c>. A leading or
-/// trailing slash on the prefix, and a leading slash on the route, are all tolerated without producing a double
-/// slash; an empty or whitespace prefix is a no-op. Joining happens before the path is merged with
+/// <c>[PathPrefix("/api/v2")]</c> combined with <c>[Get("/users")]</c> requests <c>/api/v2/users</c>. Trailing
+/// slashes on the prefix and leading slashes on the route are removed before joining. Supply the prefix's
+/// leading slash; it is not inserted or normalized. An empty, whitespace or slash-only prefix is a no-op.
+/// Joining happens before the path is merged with
 /// <see cref="HttpClient.BaseAddress"/>, so the prefix is part of the relative path rather than the
 /// base address, and existing <c>{placeholder}</c> substitution and query strings are preserved.
 /// <para>

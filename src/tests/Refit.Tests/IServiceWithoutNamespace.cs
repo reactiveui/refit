@@ -10,6 +10,10 @@ using Refit;
     "Design",
     "SST2312:Types should be declared in a named namespace",
     Justification = "Fixture must stay in the global namespace; consumed as a source file by the generator no-namespace smoke test.")]
+[SuppressMessage(
+    "Design",
+    "CA1050",
+    Justification = "This source fixture verifies generated implementations for interfaces in the global namespace; adding a namespace removes the regression case.")]
 public interface IServiceWithoutNamespace
 {
     /// <summary>Gets the root resource.</summary>
