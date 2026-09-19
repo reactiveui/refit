@@ -131,7 +131,7 @@ public class XmlReaderWriterSettings
 
         // A type cannot read its own intentionally-obsolete member without CS0618, and the compiler
         // ignores [SuppressMessage] for compiler diagnostics. Introducing a backing field to dodge
-        // this instead trips RCS1085/S2292, so the pragma is the least-bad option here.
+        // this instead trips S2292, so the pragma is the least-bad option here.
 #pragma warning disable CS0618 // Reading our own intentionally-obsolete XXE opt-out.
         if (AllowDtdProcessing)
 #pragma warning restore CS0618

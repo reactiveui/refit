@@ -2,18 +2,14 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Net.Http;
-
 namespace Refit;
 
 /// <summary>Set a parameter to be sent as the HTTP request's body.</summary>
 /// <remarks>
-/// There are four behaviors when sending a parameter as the request body:<br/>
-/// - If the type is/implements <see cref="System.IO.Stream"/>, the content will be streamed via <see cref="StreamContent"/>.<br/>
-/// - If the type is <see cref="string"/>, it will be used directly as the content unless <c>[Body(BodySerializationMethod.Json)]</c> is set
-/// which will send it as a <see cref="StringContent"/>.<br/>
-/// - If the parameter has the attribute <c>[Body(BodySerializationMethod.UrlEncoded)]</c>, the content will be URL-encoded.<br/>
-/// - For all other types, the object will be serialized using the content serializer specified in the request's <see cref="RefitSettings"/>.
+/// Supplied HttpContent is used directly. Supplied streams become stream content and remain owned by the caller.
+/// Under the default serialization method, strings become unquoted text content.
+/// BodySerializationMethod.Serialized uses the configured content serializer, including for strings.
+/// BodySerializationMethod.UrlEncoded writes a form body. BodySerializationMethod.JsonLines writes an enumerable as one serialized item per line.
 /// </remarks>
 [System.Diagnostics.DebuggerDisplay("Body: Buffered = {Buffered}")]
 [AttributeUsage(AttributeTargets.Parameter)]
@@ -25,12 +21,12 @@ public sealed class BodyAttribute : Attribute
     }
 
     /// <summary>Initializes a new instance of the <see cref="BodyAttribute"/> class.</summary>
-    /// <param name="buffered">if set to <c>true</c> [buffered].</param>
+    /// <param name="buffered">True to buffer the body before sending; false to skip that buffering step.</param>
     public BodyAttribute(bool buffered) => Buffered = buffered;
 
     /// <summary>Initializes a new instance of the <see cref="BodyAttribute"/> class.</summary>
     /// <param name="serializationMethod">The serialization method.</param>
-    /// <param name="buffered">if set to <c>true</c> [buffered].</param>
+    /// <param name="buffered">True to buffer the body before sending; false to skip that buffering step.</param>
     public BodyAttribute(BodySerializationMethod serializationMethod, bool buffered)
     {
         SerializationMethod = serializationMethod;
@@ -42,10 +38,7 @@ public sealed class BodyAttribute : Attribute
     public BodyAttribute(BodySerializationMethod serializationMethod) =>
         SerializationMethod = serializationMethod;
 
-    /// <summary>Gets the buffered.</summary>
-    /// <value>
-    /// The buffered.
-    /// </value>
+    /// <summary>Gets whether to buffer the body before sending, or null to use RefitSettings.Buffered.</summary>
     public bool? Buffered { get; }
 
     /// <summary>Gets the serialization method.</summary>

@@ -8,9 +8,17 @@ namespace Refit.Tests;
 public class Person
 {
     /// <summary>Gets or sets the first name.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA1044",
+        Justification = "QueryStringExcludesPropertiesWithPrivateGetters must verify this public property is skipped because its getter is private.")]
     public string? FirstName { private get; set; }
 
     /// <summary>Gets or sets the last name.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA1044",
+        Justification = "QueryStringExcludesPropertiesWithPrivateGetters must verify this public property is skipped because its getter is private.")]
     public string? LastName { private get; set; }
 
     /// <summary>Gets the full name.</summary>

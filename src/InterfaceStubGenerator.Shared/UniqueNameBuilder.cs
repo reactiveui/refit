@@ -5,15 +5,12 @@ using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
 
-/// <summary>
-/// Builds unique identifier names within a nested scope hierarchy, ensuring generated members
-/// do not collide with names already used in the current or any parent scope.
-/// </summary>
+/// <summary>Reserves ordinal, case-sensitive names and appends numeric suffixes to avoid collisions.</summary>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class UniqueNameBuilder
 {
     /// <summary>The set of names already used in this scope.</summary>
-    private readonly HashSet<string> _usedNames = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _usedNames = new(comparer: StringComparer.Ordinal);
 
     /// <summary>Reserve names.</summary>
     /// <param name="names">The name.</param>
@@ -37,7 +34,7 @@ public class UniqueNameBuilder
 
     /// <summary>Generate a unique name.</summary>
     /// <param name="name">The desired base name.</param>
-    /// <returns>A unique name not used in this or any parent scope.</returns>
+    /// <returns>The reserved base name, or the first unused name with a numeric suffix starting at zero.</returns>
     public string New(string name)
     {
         var i = 0;
@@ -66,7 +63,7 @@ public class UniqueNameBuilder
         }
     }
 
-    /// <summary>Determines whether the name is used in this or any parent scope.</summary>
+    /// <summary>Determines whether this builder has reserved the name.</summary>
     /// <param name="name">The name to check.</param>
     /// <returns>True if the name is already used; otherwise, false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

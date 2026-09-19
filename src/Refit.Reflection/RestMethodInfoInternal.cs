@@ -186,8 +186,8 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets the map of parameter indexes to route parameter information.</summary>
     internal Dictionary<int, RestMethodParameterInfo> ParameterMap { get; }
 
-    /// <summary>Gets or sets the ordered fragments that make up the URL path.</summary>
-    internal List<ParameterFragment> FragmentPath { get; set; }
+    /// <summary>Gets the ordered fragments that make up the URL path.</summary>
+    internal List<ParameterFragment> FragmentPath { get; }
 
     /// <summary>Gets or sets the declared return type of the method.</summary>
     internal Type ReturnType { get; set; }

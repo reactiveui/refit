@@ -84,7 +84,11 @@ public class RefitSettings
         TransportExceptionFactory = DefaultTransportExceptionFactory();
     }
 
-    /// <summary>Gets or sets a function to provide the Authorization header. Does not work if you supply an HttpClient instance.</summary>
+    /// <summary>Gets or sets the token getter for a declared Authorization header without a token.</summary>
+    /// <remarks>
+    /// Generated preparation fills only a missing token, including with a supplied HttpClient.
+    /// A handler installed from settings also invokes the getter for explicit tokens. An empty token removes the header.
+    /// </remarks>
     public Func<
         HttpRequestMessage,
         CancellationToken,
@@ -161,7 +165,7 @@ public class RefitSettings
 
     /// <summary>
     /// Gets or sets a value indicating whether the request's body content is buffered before sending.
-    /// (defaults to false, request body is not streamed to the server).
+    /// Defaults to false. When true, Refit loads the content into a buffer before sending it.
     /// </summary>
     public bool Buffered { get; set; }
 
@@ -283,7 +287,7 @@ public class RefitSettings
     public RequestCompressionOptions? RequestCompressionOptions { get; set; }
 #endif
 
-    /// <summary>Gets optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.</summary>
+    /// <summary>Gets or initializes local values copied into every request's options on modern .NET, or properties on .NET Framework.</summary>
     public Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
 
     /// <summary>
@@ -304,16 +308,10 @@ public class RefitSettings
 
 #if NET6_0_OR_GREATER
 
-    /// <summary>Gets or sets the version.</summary>
-    /// <value>
-    /// The version.
-    /// </value>
+    /// <summary>Gets or sets the HTTP version requested by outgoing calls; defaults to HTTP/1.1.</summary>
     public Version Version { get; set; } = System.Net.HttpVersion.Version11;
 
-    /// <summary>Gets or sets the version policy.</summary>
-    /// <value>
-    /// The version policy.
-    /// </value>
+    /// <summary>Gets or sets HTTP version negotiation; defaults to accepting the requested version or a lower version.</summary>
     public HttpVersionPolicy VersionPolicy { get; set; } =
         HttpVersionPolicy.RequestVersionOrLower;
 #endif

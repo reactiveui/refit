@@ -34,9 +34,8 @@ internal static class Program
     private const int DeleteId = 5;
 
     /// <summary>Runs the interactive console loop that invokes the sample REST service.</summary>
-    /// <param name="args">The command-line arguments.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    internal static async Task Main(string[] args)
+    internal static async Task Main()
     {
         Console.WriteLine("Hello World!");
         using var client = new HttpClient { BaseAddress = new("http://localhost:61868") };

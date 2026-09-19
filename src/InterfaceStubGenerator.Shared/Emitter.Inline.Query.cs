@@ -636,7 +636,7 @@ internal static partial class Emitter
         internal Dictionary<(string TypeName, string? Format), string> Formatters { get; } = new();
 
         /// <summary>Gets the emitted cached converter field names keyed by converter type.</summary>
-        internal Dictionary<string, string> Converters { get; } = new(StringComparer.Ordinal);
+        internal Dictionary<string, string> Converters { get; } = new(comparer: StringComparer.Ordinal);
 
         /// <summary>Gets the unique member name builder for the interface scope.</summary>
         internal UniqueNameBuilder UniqueNames { get; } = uniqueNames;

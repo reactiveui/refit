@@ -41,7 +41,7 @@ public class RequestBodyContentBenchmarks
     public void Setup()
     {
         _user = new() { Id = 1, Name = "Ada", Bio = "mathematician", Url = "https://x/y" };
-        _items = new(ItemCount);
+        _items = new(capacity: ItemCount);
         for (var i = 0; i < ItemCount; i++)
         {
             _items.Add(new() { Id = i, Name = "name" });

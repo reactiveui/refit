@@ -31,7 +31,7 @@ public sealed class RouteMatcher
     /// <summary>Gets query key/value pairs the request must contain (a partial match; other params allowed).</summary>
     public (string Key, string Value)[]? Query { get; init; }
 
-    /// <summary>Gets the exact raw query string (without the leading <c>?</c>) the request must have.</summary>
+    /// <summary>Gets the encoded query whose decoded pairs and count must match the request, ignoring order; omit the leading <c>?</c>.</summary>
     public string? ExactQuery { get; init; }
 
     /// <summary>Gets the complete, decoded set of query pairs the request must have (no extras, order-insensitive).</summary>

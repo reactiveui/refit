@@ -7,12 +7,6 @@ namespace Refit.Generator;
 /// <summary>Emits generic type-parameter constraint clauses for generated Refit method implementations.</summary>
 internal static partial class Emitter
 {
-    /// <summary>
-    /// The number of keyword constraints (<c>class</c>, <c>unmanaged</c>, <c>struct</c>, <c>notnull</c>, <c>new()</c>)
-    /// that can be emitted alongside a type parameter's declared type constraints.
-    /// </summary>
-    private const int KeywordConstraintCount = 5;
-
     /// <summary>Appends the generic type constraint clauses for the given type parameters.</summary>
     /// <param name="builder">The buffer accumulating the interface source.</param>
     /// <param name="typeParameters">The type parameter constraints to emit.</param>

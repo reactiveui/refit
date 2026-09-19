@@ -16,7 +16,7 @@ public interface IStreamingContentSerializer
     /// <summary>Deserializes a response <paramref name="stream"/> into a sequence of <typeparamref name="T"/> values.</summary>
     /// <typeparam name="T">The element type to deserialize.</typeparam>
     /// <param name="stream">The response body stream to read.</param>
-    /// <param name="format">How the body is framed (a single JSON array or newline-delimited JSON).</param>
+    /// <param name="format">The body framing: a JSON array, JSON Lines, or JSON data payloads in server-sent events.</param>
     /// <param name="cancellationToken">A token to cancel enumeration.</param>
     /// <returns>An asynchronous sequence of deserialized values.</returns>
     [SuppressMessage(

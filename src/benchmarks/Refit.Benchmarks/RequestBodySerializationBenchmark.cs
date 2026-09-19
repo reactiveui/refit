@@ -35,7 +35,7 @@ public class RequestBodySerializationBenchmark
     [GlobalSetup]
     public void Setup()
     {
-        _items = new(Count);
+        _items = new(capacity: Count);
         for (var i = 0; i < Count; i++)
         {
             _items.Add(new() { Id = i, Name = "name" });

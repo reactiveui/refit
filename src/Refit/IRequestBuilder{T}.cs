@@ -6,8 +6,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Refit;
 
-/// <summary>Defines a generic contract for building requests with a specified result type.</summary>
-/// <typeparam name="T">The type of the result produced by the request builder.</typeparam>
+/// <summary>Identifies the API interface targeted by a request builder.</summary>
+/// <typeparam name="T">The Refit API interface.</typeparam>
 [SuppressMessage(
     "StyleSharp",
     "SST1452:Unused type parameters should be removed",

@@ -17,6 +17,10 @@ public sealed class PartiallyReadableModel
     public string Name { get; set; } = string.Empty;
 
     /// <summary>Gets or sets a value whose getter is non-public, so the readable-property filter skips it.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA1044",
+        Justification = "The filtered-path benchmark requires a public property with a non-public getter; making it readable removes the scenario being measured.")]
     public string Hidden { private get; set; } = string.Empty;
 
     /// <summary>Reads the hidden value, keeping the non-public getter observable.</summary>

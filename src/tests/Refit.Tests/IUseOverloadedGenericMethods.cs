@@ -11,6 +11,10 @@ namespace Refit.Tests;
 /// <typeparam name="TResponse">The response payload type.</typeparam>
 /// <typeparam name="TParam">The request parameter type.</typeparam>
 /// <typeparam name="THeader">The header value type.</typeparam>
+[SuppressMessage(
+    "Design",
+    "CA1005",
+    Justification = "The overload fixture requires independently closed response, parameter and header types, including swapped parameter/header signatures.")]
 public interface IUseOverloadedGenericMethods<TResponse, in TParam, in THeader>
     where TResponse : class
     where THeader : struct

@@ -47,6 +47,10 @@ public sealed class ReflectionPropertyHelpersTests
         public string? Readable { get; set; }
 
         /// <summary>Gets or sets a property whose getter is non-public, so it is skipped.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Design",
+            "CA1044",
+            Justification = "The property-filter test requires a public property with an internal getter to verify that visibility alone does not make a property readable.")]
         public string? NonPublicGetter { internal get; set; }
     }
 }

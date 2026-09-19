@@ -21,7 +21,7 @@ public sealed partial class ApiExceptionTests
             response,
             new());
 
-        var model = exception.GetContentAs<ResponseModel>();
+        var model = ReadContentSynchronously(exception);
 
         await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
     }
@@ -38,7 +38,7 @@ public sealed partial class ApiExceptionTests
             response,
             new());
 
-        await Assert.That(exception.GetContentAs<ResponseModel>()).IsNull();
+        await Assert.That(ReadContentSynchronously(exception)).IsNull();
     }
 
     /// <summary>Verifies TryGetContentAs returns the value inside an exception filter (#1591).</summary>
@@ -195,6 +195,12 @@ public sealed partial class ApiExceptionTests
 
         await Assert.That(exception.Content).IsEqualTo("{\"Value\":7}");
     }
+
+    /// <summary>Exercises the synchronous content API independently of async factory setup.</summary>
+    /// <param name="exception">The buffered HTTP exception.</param>
+    /// <returns>The response model read by the synchronous API, or null when content is absent.</returns>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static ResponseModel? ReadContentSynchronously(ApiException exception) => exception.GetContentAs<ResponseModel>();
 
     /// <summary>Content whose read genuinely suspends, forcing the asynchronous completion path when the exception reads the body.</summary>
     private sealed class AsyncReadContent : HttpContent

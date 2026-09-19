@@ -12,7 +12,7 @@ namespace Refit;
 /// is <see cref="RequestBodySerializationMode.Buffered"/> or <see cref="RequestBodySerializationMode.Streamed"/>,
 /// allowing the System.Text.Json source-generated fast-path to engage. The fast-path runs through the synchronous serialization primitives
 /// (<c>SerializeToUtf8Bytes</c> / <c>Serialize(Utf8JsonWriter, ...)</c>); the built-in <c>SerializeAsync(Stream)</c>
-/// used by <c>JsonContent</c> bypasses it and uses the metadata logic instead.
+/// used by <c>JsonContent</c> normally uses metadata and can use the fast-path for repeated small payloads.
 /// </summary>
 public interface ISynchronousContentSerializer
 {

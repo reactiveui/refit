@@ -229,9 +229,9 @@ public static partial class GeneratorComponentTests
                 null,
                 [],
                 [],
-                new(SymbolEqualityComparer.Default),
-                new(SymbolEqualityComparer.Default),
-                new(SymbolEqualityComparer.Default));
+                new(comparer: SymbolEqualityComparer.Default),
+                new(comparer: SymbolEqualityComparer.Default),
+                new(comparer: SymbolEqualityComparer.Default));
             var noSpanSymbol = Parser.ComputeSpanFormattableTiers(
                 compilation.GetSpecialType(SpecialType.System_Int32),
                 null,

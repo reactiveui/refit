@@ -627,9 +627,17 @@ public partial class FormValueMultimapTests
     public class ClassWithInaccessibleGetters
     {
         /// <summary>Gets or sets the first value, whose getter is internal and therefore inaccessible to serialization.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Design",
+            "CA1044",
+            Justification = "Form flattening must exclude this public property's internal getter; changing accessibility removes the required unreadable-property case.")]
         public string? A { internal get; set; }
 
         /// <summary>Gets or sets the second value, whose getter is private and therefore inaccessible to serialization.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Design",
+            "CA1044",
+            Justification = "Form flattening must exclude this public property's private getter; changing accessibility removes the required unreadable-property case.")]
         public string? B { private get; set; }
 
         /// <summary>Gets the concatenation of the two inaccessible values.</summary>

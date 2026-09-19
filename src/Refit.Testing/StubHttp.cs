@@ -206,7 +206,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
     /// <summary>Deserializes the body of the most recent request using the client's content serializer.</summary>
     /// <typeparam name="T">The type to deserialize the request body into.</typeparam>
-    /// <returns>The deserialized request body, or <see langword="default"/> when the body is empty.</returns>
+    /// <returns>The deserialized request body, or <see langword="default"/> when content is absent or could not be buffered. Captured empty content is passed to the serializer.</returns>
     /// <exception cref="InvalidOperationException">No request has been received yet.</exception>
     [SuppressMessage(
         "Design",
@@ -231,7 +231,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <summary>Deserializes the body of the request at <paramref name="index"/> using the client's content serializer.</summary>
     /// <typeparam name="T">The type to deserialize the request body into.</typeparam>
     /// <param name="index">The zero-based index into <see cref="Requests"/>.</param>
-    /// <returns>The deserialized request body, or <see langword="default"/> when the body is empty.</returns>
+    /// <returns>The deserialized request body, or <see langword="default"/> when content is absent or could not be buffered. Captured empty content is passed to the serializer.</returns>
     /// <exception cref="ArgumentOutOfRangeException">No request exists at <paramref name="index"/>.</exception>
     [SuppressMessage(
         "Design",
@@ -253,13 +253,13 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         return DeserializeBodyAsync<T>(body);
     }
 
-    /// <summary>Asserts every non-reusable route was matched by a request.</summary>
+    /// <summary>Asserts every one-shot expectation was matched; reusable and fallback routes are excluded.</summary>
     /// <exception cref="InvalidOperationException">One or more expected routes were never hit.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void VerifyAllCalled() => ThrowIfOutstanding();
 
     /// <summary>
-    /// Asynchronously waits (up to a default 1 second) for every non-reusable route to be hit, then asserts.
+    /// Asynchronously waits (up to a default 1 second) for every one-shot expectation to be hit, then asserts.
     /// Use this when the requests under test are fired-and-forget (e.g. an observable subscription or a background
     /// send) and may not have completed at the point of verification.
     /// </summary>
@@ -267,7 +267,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Task VerifyAllCalledAsync() => VerifyAllCalledAsync(DefaultVerifyTimeout);
 
-    /// <summary>Asynchronously waits up to <paramref name="timeout"/> for every non-reusable route to be hit, then asserts.</summary>
+    /// <summary>Asynchronously waits up to <paramref name="timeout"/> for every one-shot expectation to be hit, then asserts; reusable and fallback routes are excluded.</summary>
     /// <param name="timeout">How long to wait for the outstanding requests to arrive before asserting.</param>
     /// <returns>A task that completes when all routes are hit, or faults with the outstanding list on timeout.</returns>
     /// <exception cref="InvalidOperationException">One or more expected routes were not hit within the timeout.</exception>
@@ -540,8 +540,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <summary>Marks a non-reusable route consumed and signals completion once the last one is hit.</summary>
     /// <param name="index">The index of the route that satisfied a request.</param>
     /// <remarks>
-    /// Excluded from coverage: the double-consume guard only triggers when two requests race the same
-    /// one-shot route between matching and consumption, which cannot be exercised deterministically.
+    /// The double-consume guard keeps the outstanding count correct when two requests match the same
+    /// one-shot route before either consumes it. It does not prevent both requests from receiving a reply.
     /// </remarks>
     [ExcludeFromCodeCoverage]
     private void Consume(int index)

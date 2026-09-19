@@ -5,5 +5,6 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <LangVersion>14.0</LangVersion>
   </PropertyGroup>
 </Project>

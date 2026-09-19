@@ -17,7 +17,8 @@ public class WellKnownTypes(Compilation compilation)
     /// <summary>Gets the named type symbol for the specified type.</summary>
     /// <param name="type">The type.</param>
     /// <returns>The resolved named type symbol.</returns>
-    /// <exception cref="InvalidOperationException">Could not get name of type " + type</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="type"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">The type has no full name, or the compilation contains no type with that metadata name.</exception>
     public INamedTypeSymbol Get(Type type)
     {
         ArgumentExceptionHelper.ThrowIfNull(type);

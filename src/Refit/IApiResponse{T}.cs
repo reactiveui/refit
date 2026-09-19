@@ -9,7 +9,7 @@ namespace Refit;
 /// <typeparam name="T">The deserialized response content type.</typeparam>
 public interface IApiResponse<out T> : IApiResponse
 {
-    /// <summary>Gets the deserialized request content as <typeparamref name="T"/>.</summary>
+    /// <summary>Gets the deserialized response content as <typeparamref name="T"/>.</summary>
     T? Content { get; }
 
     /// <summary>Gets a value indicating whether deserialized <see cref="Content"/> is available.</summary>

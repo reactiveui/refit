@@ -5,7 +5,7 @@
 namespace Refit;
 
 /// <summary>
-/// Associated value will be added to the request Uri as query-string, using a delimiter to split the values. (default: '.').
+/// Controls query or form names, value formats and collection formats. The delimiter joins nested property names (default: '.').
 /// </summary>
 [System.Diagnostics.DebuggerDisplay("{TreatAsString}")]
 [AttributeUsage(AttributeTargets.Parameter
@@ -68,7 +68,8 @@ public sealed class QueryAttribute : Attribute
     /// <summary>Gets the value used to customize the name of the encoded value.</summary>
     /// <remarks>
     /// Gets combined with <see cref="Delimiter"/> in the format <c>var name = $"{Prefix}{Delimiter}{originalFieldName}"</c>
-    /// where <c>originalFieldName</c> is the name of the object property or method parameter.
+    /// where <c>originalFieldName</c> is the name of a flattened object property.
+    /// Scalar query arguments keep their parameter or alias name without this prefix or delimiter.
     /// </remarks>
     /// <example>
     /// <code>
@@ -93,9 +94,17 @@ public sealed class QueryAttribute : Attribute
     /// </code>
     /// Calling <c>serverApi.addExpense(5)</c> will result in a URI of <c>{baseUri}/expenses?expense=5.00</c>.
     /// </example>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA1019",
+        Justification = "The shipped attribute supports positional and named Format arguments; removing the setter would break existing declarations.")]
     public string? Format { get; set; }
 
     /// <summary>Gets or sets how the collection should be encoded.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA1019",
+        Justification = "The shipped attribute supports positional and named CollectionFormat arguments; removing the setter would break existing declarations.")]
     public CollectionFormat CollectionFormat
     {
         // Cannot make property nullable due to Attribute restrictions

@@ -191,6 +191,10 @@ public partial class SerializedContentTests
     /// <summary>Verifies that the configured type info resolver is used when serializing object values.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Performance",
+        "CA1869",
+        Justification = "Each test needs a fresh tracking resolver and uncached contracts to observe metadata lookups; shared cached options can bypass that resolver and invalidate the assertion.")]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_UseResolverWhenSerializingObjectValues()
     {
         var resolver = new TrackingTypeInfoResolver(ObjectValueContainerJsonSerializerContext.Default);

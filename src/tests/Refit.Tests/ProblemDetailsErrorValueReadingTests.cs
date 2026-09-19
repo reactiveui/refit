@@ -35,7 +35,7 @@ public sealed class ProblemDetailsErrorValueReadingTests
             response,
             new());
 
-        var validationException = ValidationApiException.Create(apiException);
+        var validationException = SynchronousCompatibility.CreateValidation(apiException);
 
         await Assert.That(validationException.Content).IsNotNull();
         await Assert.That(validationException.Content!.Errors["Payload"][0]).IsEqualTo("{\"nested\":\"value\"}");
@@ -55,7 +55,7 @@ public sealed class ProblemDetailsErrorValueReadingTests
             response,
             new());
 
-        var validationException = ValidationApiException.Create(apiException);
+        var validationException = SynchronousCompatibility.CreateValidation(apiException);
 
         await Assert.That(validationException.Content).IsNotNull();
         await Assert.That(validationException.Content!.Extensions["note"]).IsEqualTo("plain-text");

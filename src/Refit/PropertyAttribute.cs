@@ -5,9 +5,8 @@
 namespace Refit;
 
 /// <summary>
-/// Used to store the value in HttpRequestMessage.Properties for further processing in a custom DelegatingHandler.
-/// If a string is supplied to the constructor then it will be used as the key in the HttpRequestMessage.Properties dictionary.
-/// If no key is specified then the key will be defaulted to the name of the parameter.
+/// Stores local context on HttpRequestMessage.Options on modern .NET, or Properties on older targets,
+/// for further processing in a message handler. An explicit key overrides the parameter or interface property name.
 /// </summary>
 [System.Diagnostics.DebuggerDisplay("Property: {Key}")]
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
@@ -22,6 +21,6 @@ public sealed class PropertyAttribute : Attribute
     /// <param name="key">The key.</param>
     public PropertyAttribute(string key) => Key = key;
 
-    /// <summary>Gets the key under which to store the value on the HttpRequestMessage.Properties dictionary.</summary>
+    /// <summary>Gets the request Options/Properties key, or null to use the parameter or interface property name.</summary>
     public string? Key { get; }
 }

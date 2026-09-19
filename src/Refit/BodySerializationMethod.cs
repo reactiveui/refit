@@ -10,7 +10,7 @@ public enum BodySerializationMethod
     /// <summary>Encodes everything using the ContentSerializer in RefitSettings except for strings. Strings are set as-is.</summary>
     Default = 0,
 
-    /// <summary>Json encodes everything, including strings.</summary>
+    /// <summary>Uses the configured content serializer, including for strings; retained as an obsolete compatibility value.</summary>
     [Obsolete("Use BodySerializationMethod.Serialized instead", false)]
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Design",
