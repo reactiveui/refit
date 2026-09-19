@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <PublishAot>true</PublishAot>
+    <DefineConstants>$(DefineConstants);NATIVE_AOT</DefineConstants>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <WarningsAsErrors>$(WarningsAsErrors);IL2026;IL3050</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../Refit/Refit.csproj" />
+    <ProjectReference Include="../../../../Refit.Testing/Refit.Testing.csproj" />
+    <ProjectReference Include="../../../../Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
+    <ProjectReference Include="../../../../InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../../../Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <Compile Include="../../Common/SampleJsonContext.cs" Link="SampleJsonContext.cs" />
+    <Compile Include="../../Common/SampleCheck.cs" Link="SampleCheck.cs" />
+    <Compile Include="../../GettingStarted/Person.cs" Link="Person.cs" />
+    <Compile Include="../../GettingStarted/IPeopleApi.cs" Link="IPeopleApi.cs" />
+    <Compile Include="../../Serialization/*.cs" Link="Serialization/%(Filename)%(Extension)" />
+    <Compile Include="../../Common/SampleHost.cs" Link="SampleHost.cs" />
+    <Compile Include="../../Responses/*.cs" Link="Responses/%(Filename)%(Extension)" />
+    <Compile Include="../../Errors/*.cs" Link="Errors/%(Filename)%(Extension)" />
+    <Compile Include="../../Testing/*.cs" Link="Testing/%(Filename)%(Extension)" />
+    <Compile Include="../../Clients/*.cs" Link="Clients/%(Filename)%(Extension)" />
+    <Compile Include="../../GettingStarted/GettingStarted.cs" Link="GettingStarted.cs" />
+    <Compile Include="../../ReturnTypes/*.cs" Link="ReturnTypes/%(Filename)%(Extension)" />
+    <Compile Include="../../Streaming/*.cs" Link="Streaming/%(Filename)%(Extension)" />
+    <Compile Include="../../Routes/*.cs" Link="Routes/%(Filename)%(Extension)" />
+    <Compile Include="../../Queries/*.cs" Link="Queries/%(Filename)%(Extension)" />
+    <Compile Include="../../Headers/*.cs" Link="Headers/%(Filename)%(Extension)" />
+    <Compile Include="../../Bodies/*.cs" Link="Bodies/%(Filename)%(Extension)" />
+    <Compile Include="../../Rationale/*.cs" Link="Rationale/%(Filename)%(Extension)" />
+    <Compile Include="../../Aot/*.cs" Link="Aot/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

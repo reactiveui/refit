@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />
+    <ProjectReference Include="../../../../Refit.Xml/Refit.Xml.csproj" />
+    <Compile Include="../../Common/SampleCheck.cs" Link="SampleCheck.cs" />
+  </ItemGroup>
+</Project>

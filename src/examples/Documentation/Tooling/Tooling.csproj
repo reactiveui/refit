@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="5.0.0" />
+    <ProjectReference Include="../../../Refit/Refit.csproj" />
+    <ProjectReference Include="../../../Refit.Xml/Refit.Xml.csproj" />
+    <ProjectReference Include="../../../InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" Aliases="GeneratorTooling" />
+    <ProjectReference Include="../../../Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" Aliases="AnalyzerTooling" />
+    <ProjectReference Include="../../../Refit.CodeFixes.Roslyn48/Refit.CodeFixes.Roslyn48.csproj" />
+  </ItemGroup>
+</Project>

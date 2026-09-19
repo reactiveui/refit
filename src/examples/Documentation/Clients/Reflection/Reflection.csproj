@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../Refit/Refit.csproj" />
+    <ProjectReference Include="../../../../Refit.Reflection/Refit.Reflection.csproj" />
+    <ProjectReference Include="../../../../Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
+    <ProjectReference Include="../../../../Refit.Testing/Refit.Testing.csproj" />
+    <ProjectReference Include="../../../../InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <Compile Include="../IClientApi.cs" Link="IClientApi.cs" />
+    <Compile Include="../IOwnedClientApi.cs" Link="IOwnedClientApi.cs" />
+    <Compile Include="../IRequestLookupApi.cs" Link="IRequestLookupApi.cs" />
+    <Compile Include="../../Common/*.cs" Link="Common/%(Filename)%(Extension)" />
+    <Compile Include="../../GettingStarted/Person.cs" Link="Person.cs" />
+    <Compile Include="../../Content/PersonCall.cs" Link="PersonCall.cs" />
+    <Compile Include="../../Content/PersonCallAdapter.cs" Link="PersonCallAdapter.cs" />
+    <Compile Include="../../Content/IAdapterApi.cs" Link="IAdapterApi.cs" />
+  </ItemGroup>
+</Project>

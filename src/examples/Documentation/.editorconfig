@@ -1,0 +1,14 @@
+# This policy applies to the complete runnable documentation examples.
+# All compiler, correctness, security, performance and remaining style rules are inherited.
+
+[*.cs]
+# Explicit local types let readers understand a website block without following another method.
+# Keep the style analyzer enabled and configure it to enforce explicit types in these samples only.
+stylesharp.use_var = never
+stylesharp.SST2271.use_var = never
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# Documentation-specific exemptions belong only in the website documentation folder.
+# Complete source examples keep the inherited XML documentation diagnostics enabled.

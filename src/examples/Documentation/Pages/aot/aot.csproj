@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../Refit/Refit.csproj" />
+    <ProjectReference Include="../../../../Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
+    <ProjectReference Include="../../../../Refit.Reflection/Refit.Reflection.csproj" />
+    <ProjectReference Include="../../../../Refit.Testing/Refit.Testing.csproj" />
+    <ProjectReference Include="../../../../Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />
+    <ProjectReference Include="../../../../Refit.Xml/Refit.Xml.csproj" />
+    <ProjectReference Include="../../../../InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../../../Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <Compile Include="Program.cs" />
+    <Compile Include="../../**/*.cs" Exclude="../../Pages/**;../../Tooling/**;../../Aot/NativeClient/**;../../Bodies/Compression/**;../../Multipart/Legacy/**;../../**/Program.cs;../../**/obj/**;../../**/bin/**" Link="Source/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
