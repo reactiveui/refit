@@ -115,7 +115,7 @@
       <ItemGroup Label="Microsoft ASP.NET">
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.30"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.30"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.30"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.31"/>
       </ItemGroup>
     </When>
   </Choose>
