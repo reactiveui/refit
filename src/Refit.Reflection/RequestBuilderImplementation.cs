@@ -236,10 +236,6 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="taskFactory">The task factory to run.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
-        "Usage",
-        "VSTHRD002:Avoid problematic synchronous waits",
-        Justification = "Deliberate sync-over-async bridge for synchronous (void/non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
-    [SuppressMessage(
         "Performance",
         "PSH1315:A blocking wait on an awaitable that may not be done",
         Justification = "Deliberate sync-over-async bridge for synchronous (void/non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
@@ -252,10 +248,6 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <returns>The result produced by the task.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
-        "Usage",
-        "VSTHRD002:Avoid problematic synchronous waits",
-        Justification = "Deliberate sync-over-async bridge for synchronous (non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
-    [SuppressMessage(
         "Performance",
         "PSH1315:A blocking wait on an awaitable that may not be done",
         Justification = "Deliberate sync-over-async bridge for synchronous (non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
@@ -267,10 +259,6 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <param name="task">The in-flight request task.</param>
     /// <param name="cts">The linked cancellation source to dispose when the task finishes.</param>
     /// <returns>The result produced by <paramref name="task"/>.</returns>
-    [SuppressMessage(
-        "Usage",
-        "VSTHRD003:Avoid awaiting foreign Tasks",
-        Justification = "The task is the request just launched by the caller; awaiting it here only scopes disposal of the linked cancellation source.")]
     internal static async Task<T?> DisposeWhenDoneAsync<T>(Task<T?> task, CancellationTokenSource cts)
     {
         try
