@@ -43,6 +43,20 @@ public static class ApiResponseExtensions
                 : new(Task.FromException<IApiResponse>(GetError(checkedResponse)));
         }
 
+        /// <summary>Gets the target of the first <c>Link</c> response header entry that carries a relation, as defined by RFC 8288.</summary>
+        /// <param name="relation">The relation type, such as <c>next</c>; compared without regard to case.</param>
+        /// <returns>The link target, which may be relative, or <see langword="null"/> when the response has no link with the relation.</returns>
+        /// <exception cref="ArgumentNullException">The response or <paramref name="relation"/> is <see langword="null"/>.</exception>
+        public Uri? GetLink(string relation)
+        {
+            var checkedResponse = response ?? throw new ArgumentNullException(nameof(response));
+            ArgumentExceptionHelper.ThrowIfNull(relation);
+
+            return checkedResponse.Headers is { } headers && headers.TryGetValues("Link", out var values)
+                ? LinkHeaderParser.Find(values, relation)
+                : null;
+        }
+
         /// <summary>Gets the captured error, or a fallback when an unsuccessful response did not record one.</summary>
         /// <returns>The exception to surface to the caller.</returns>
         internal Exception GetError() => (Exception?)response.Error ?? new InvalidOperationException("The response was unsuccessful but did not capture an error.");

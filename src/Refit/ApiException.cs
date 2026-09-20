@@ -174,10 +174,6 @@ public class ApiException : ApiExceptionBase
     /// <param name="refitSettings">Refit settings used to sent the request.</param>
     /// <returns>A newly created <see cref="ApiException"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [SuppressMessage(
-        "Usage",
-        "VSTHRD200:Use \"Async\" suffix for async methods",
-        Justification = "Public API name preserved for backwards compatibility.")]
     public static Task<ApiException> Create(
         HttpRequestMessage message,
         HttpMethod httpMethod,
@@ -193,7 +189,6 @@ public class ApiException : ApiExceptionBase
     /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
     /// <returns>A newly created <see cref="ApiException"/>.</returns>
     /// <exception cref="ArgumentException"><paramref name="response"/> carries a success status code, so there is no failure to represent.</exception>
-    [SuppressMessage("Usage", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "Public API name preserved for backwards compatibility.")]
     public static Task<ApiException> Create(
         HttpRequestMessage message,
         HttpMethod httpMethod,
@@ -226,7 +221,6 @@ public class ApiException : ApiExceptionBase
     /// <param name="refitSettings">Refit settings used to send the request.</param>
     /// <returns>A newly created <see cref="ApiException"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [SuppressMessage("Usage", "VSTHRD200:Use \"Async\" suffix for async methods", Justification = "Public API name preserved for backwards compatibility.")]
     public static Task<ApiException> Create(
         string exceptionMessage,
         HttpRequestMessage message,
@@ -243,10 +237,6 @@ public class ApiException : ApiExceptionBase
     /// <param name="refitSettings">Refit settings used to send the request.</param>
     /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
     /// <returns>A newly created <see cref="ApiException"/>.</returns>
-    [SuppressMessage(
-        "Usage",
-        "VSTHRD200:Use \"Async\" suffix for async methods",
-        Justification = "Public API name preserved for backwards compatibility.")]
     public static async Task<ApiException> Create(
         string exceptionMessage,
         HttpRequestMessage message,

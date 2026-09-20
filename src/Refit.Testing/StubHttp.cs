@@ -271,10 +271,6 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <param name="timeout">How long to wait for the outstanding requests to arrive before asserting.</param>
     /// <returns>A task that completes when all routes are hit, or faults with the outstanding list on timeout.</returns>
     /// <exception cref="InvalidOperationException">One or more expected routes were not hit within the timeout.</exception>
-    [SuppressMessage(
-        "Usage",
-        "VSTHRD003:Avoid awaiting foreign Tasks",
-        Justification = "The awaited task is this handler's own completion signal, set by its SendAsync; there is no foreign context or deadlock risk.")]
     public async Task VerifyAllCalledAsync(TimeSpan timeout)
     {
         lock (_gate)

@@ -42,6 +42,7 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Multipart.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Helpers.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.InlineEligibility.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Paging.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\DiagnosticDescriptors.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArray.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\ImmutableEquatableArray.Public.cs" LinkBase="InterfaceStubGenerator.Shared"/>
@@ -72,6 +73,10 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\RequestParameterModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\MultipartPartKind.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\MultipartPartModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\PagingKind.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\PagingModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\PagingNextSource.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\PagingOrigin.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\PathObjectBindingModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\ReturnTypeInfo.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
   </ItemGroup>

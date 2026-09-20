@@ -93,6 +93,7 @@ internal static partial class Parser
                 "Task`1" or "ValueTask`1" when IsInNamespace(namedType, TasksNamespace) => ReturnTypeInfo.AsyncResult,
                 "IAsyncEnumerable`1" when IsInNamespace(namedType, "System.Collections.Generic") => ReturnTypeInfo.AsyncEnumerable,
                 "IObservable`1" when IsInNamespace(namedType, "System") => ReturnTypeInfo.Observable,
+                "PagedEnumerable`2" when IsInNamespace(namedType, "Refit") => ReturnTypeInfo.Paged,
                 _ => ReturnTypeInfo.Return
             };
 

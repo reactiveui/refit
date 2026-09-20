@@ -104,6 +104,7 @@ internal static partial class Emitter
             or ReturnTypeInfo.AsyncEnumerable
             or ReturnTypeInfo.Observable
             or ReturnTypeInfo.RequestMessage
+            or ReturnTypeInfo.Paged
             or ReturnTypeInfo.Return => ReturnStatementPrefix,
             ReturnTypeInfo.SyncVoid => string.Empty,
             _ => throw new ArgumentOutOfRangeException(

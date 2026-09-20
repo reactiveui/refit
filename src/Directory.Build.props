@@ -87,7 +87,6 @@
 
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="All"/>
   </ItemGroup>
 
   <!-- Each project compiles its own copy of the polyfill shims (DynamicallyAccessedMembers,
