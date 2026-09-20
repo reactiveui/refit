@@ -100,6 +100,7 @@ public static class ApiResponseExtensions
     {
         public System.Threading.Tasks.ValueTask<Refit.IApiResponse> EnsureSuccessStatusCodeAsync() { }
         public System.Threading.Tasks.ValueTask<Refit.IApiResponse> EnsureSuccessfulAsync() { }
+        public System.Uri? GetLink(string relation) { }
     }
     extension<T>(Refit.IApiResponse<T> response)
     {
@@ -234,6 +235,16 @@ public sealed class FormField<TBody>
 public sealed class FormObjectAttribute : System.Attribute
 {
     public FormObjectAttribute() { }
+}
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+public static class GeneratedPaging
+{
+    public static string? HeaderValue(Refit.IApiResponse response, string name) { }
+    public static System.Uri? NextLink(Refit.IApiResponse response, string headerName) { }
+    public static Refit.PageContinuation<int> NextOffset<TItem>(int offset, System.Collections.Generic.IEnumerable<TItem>? items, long? total) { }
+    public static Refit.PageContinuation<TToken> NextValue<TToken>(TToken? next) where TToken : struct { }
+    public static Refit.NextLinkOriginPolicy SameOrigin(System.Net.Http.HttpClient client) { }
+    public static System.Uri? ToLink(string? link) { }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class GeneratedParameterAttributeProvider : System.Reflection.ICustomAttributeProvider
@@ -491,6 +502,14 @@ public abstract class MultipartItem
     public System.Net.Http.HttpContent ToContent() { }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+public sealed class NextLinkOriginPolicy
+{
+    public static Refit.NextLinkOriginPolicy Unrestricted { get; }
+    public bool IsAllowed(System.Uri link) { }
+    public override string ToString() { }
+    public static Refit.NextLinkOriginPolicy Allow(params System.Uri[] origins) { }
+}
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class ObjectToInferredTypesConverter : System.Text.Json.Serialization.JsonConverter<object>
 {
     public ObjectToInferredTypesConverter() { }
@@ -503,6 +522,61 @@ public sealed class OptionsAttribute : Refit.HttpMethodAttribute
 {
     public OptionsAttribute(string path) { }
     public override System.Net.Http.HttpMethod Method { get; }
+}
+public static class PageContinuation
+{
+    public static Refit.PageContinuation<TToken> To<TToken>(TToken next) { }
+}
+[System.Diagnostics.DebuggerDisplay("HasNext = {HasNext}, Token = {Token}")]
+public readonly record struct PageContinuation<TToken> : System.IEquatable<Refit.PageContinuation<TToken>>
+{
+    public bool HasNext { get; }
+    public TToken? Token { get; }
+    public static Refit.PageContinuation<TToken> End { get; }
+}
+[System.AttributeUsage(System.AttributeTargets.Parameter)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+public sealed class PageTokenAttribute : System.Attribute
+{
+    public PageTokenAttribute() { }
+}
+[System.AttributeUsage(System.AttributeTargets.Method)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+public sealed class PagedAttribute : System.Attribute
+{
+    public PagedAttribute() { }
+    public bool AnyOrigin { get; set; }
+    public string? Items { get; set; }
+    public string? Next { get; set; }
+    public string? NextHeader { get; set; }
+    public string[]? Origins { get; set; }
+    public bool SameOrigin { get; set; }
+    public string? Total { get; set; }
+}
+public static class PagedEnumerable
+{
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.PagedEnumerable<TPage, TItem> Create<TPage, TItem, TToken>(System.Func<TToken, System.Threading.CancellationToken, System.Threading.Tasks.Task<TPage>> fetch, System.Func<TPage, System.Collections.Generic.IEnumerable<TItem>?> items, System.Func<TPage, TToken, Refit.PageContinuation<TToken>> next) { }
+    public static Refit.PagedEnumerable<TPage, TItem> Create<TPage, TItem, TToken>(TToken first, System.Func<TToken, System.Threading.CancellationToken, System.Threading.Tasks.Task<TPage>> fetch, System.Func<TPage, System.Collections.Generic.IEnumerable<TItem>?> items, System.Func<TPage, TToken, Refit.PageContinuation<TToken>> next) { }
+    public static Refit.PagedEnumerable<TPage, TItem> FromCursor<TPage, TItem>(System.Func<string?, System.Threading.CancellationToken, System.Threading.Tasks.Task<TPage>> fetch, System.Func<TPage, System.Collections.Generic.IEnumerable<TItem>?> items, System.Func<TPage, string?> nextCursor) { }
+    public static Refit.PagedEnumerable<TPage, TItem> FromLinks<TPage, TItem>(Refit.NextLinkOriginPolicy originPolicy, System.Func<System.Uri?, System.Threading.CancellationToken, System.Threading.Tasks.Task<TPage>> fetch, System.Func<TPage, System.Collections.Generic.IEnumerable<TItem>?> items, System.Func<TPage, System.Uri?> nextLink) { }
+    public static Refit.PagedEnumerable<TPage, TItem> FromOffset<TPage, TItem>(System.Func<int, System.Threading.CancellationToken, System.Threading.Tasks.Task<TPage>> fetch, System.Func<TPage, System.Collections.Generic.IEnumerable<TItem>?> items, System.Func<TPage, int, int?> nextOffset) { }
+}
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+public sealed class PagedEnumerable<TPage, TItem> : System.Collections.Generic.IAsyncEnumerable<TItem>
+{
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public System.Collections.Generic.IAsyncEnumerable<TPage> AsPages() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public System.Collections.Generic.IAsyncEnumerator<TItem> GetAsyncEnumerator(System.Threading.CancellationToken cancellationToken = default) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public System.IObservable<TItem> ToObservable() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public System.IObservable<TPage> ToPageObservable() { }
+    public override string ToString() { }
+    public Refit.PagedEnumerable<TPage, TItem> WithMaxPages(int pages) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public Refit.PagedEnumerable<TPage, TItem> WithPrefetch() { }
 }
 public enum ParameterType
 {

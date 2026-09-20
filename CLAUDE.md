@@ -172,9 +172,43 @@ dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f
 
 ## Public API tracking
 
-The runtime projects use the public-API analyzer, so every public/protected member is recorded under `src/Refit/PublicAPI/<tfm>/`.
+The runtime project uses PublicApiSharp. Every public or protected member is recorded in one `src/Refit/PublicAPI/<tfm>/PublicAPI.txt` per target framework. There is no Shipped/Unshipped split and no promotion step.
 
-- New public surface goes in `PublicAPI.Unshipped.txt` for each affected TFM while you iterate.
-- **Before opening a PR, move those new entries from `PublicAPI.Unshipped.txt` into the matching `PublicAPI.Shipped.txt` (and reset each unshipped file to just `#nullable enable`).** This repo ships almost immediately after merge, so unshipped API is promoted as part of the change rather than left pending.
-- For behavior changes or public API additions, also add a breaking-changes note to the README.
-- Shipped entries are assumed to be carried forward; you do not need to call them out separately in the PR.
+- A change to the public surface fails the build with `PAS0001`, `PAS0002` or `PAS0003` until the baselines are regenerated.
+- Regenerate from `src` with `dotnet format analyzers Refit/Refit.csproj --diagnostics PAS0001 PAS0002 PAS0003 --severity info --no-restore`. Each run rewrites one target framework, so run it once per framework (ten runs), then build `Refit/Refit.csproj` to confirm.
+- Read the baseline diff before opening the PR. Added lines are a minor release. A removed or changed line is a breaking change.
+- `docs/breaking-changes.md` records the breaking changes of shipped versions, grouped by major version. Describe a new change in the pull request body, not in that file.
+
+---
+
+## Pagination
+
+`PagedEnumerable<TPage, TItem>` wraps an ordinary Refit method that returns one page and exposes a lazy sequence of items or pages. The page type is the API's own DTO or an `ApiResponse<TPage>` of it; Refit adds no page model.
+
+**Runtime (`src/Refit`)**
+
+- `PagedEnumerable` holds the factories `Create`, `FromCursor`, `FromOffset` and `FromLinks`. `PagedEnumerable{TPage,TItem}` implements `IAsyncEnumerable<TItem>` and adds `AsPages`, `WithPrefetch`, `WithMaxPages`, `ToObservable` and `ToPageObservable`.
+- `PagePump` fetches one page per call, with one page of read-ahead and a linked cancellation token. A fetch or continuation error is captured and rethrown when the consumer reaches it. Each page is disposed when the consumer moves on.
+- `PageContinuation` says whether another page follows. A `null` token, or an empty string, ends the sequence.
+- `NextLinkOriginPolicy` decides which links may be followed. A refused link is never requested, and a link with user information is always refused.
+- `LinkHeaderParser` and `IApiResponse.GetLink` read RFC 8288 `Link` headers.
+- `PagedAttribute`, `PageTokenAttribute` and `GeneratedPaging` (helpers for generated code, hidden from IntelliSense) are the generator-facing surface.
+
+**Generator (`src/InterfaceStubGenerator.Shared`)**
+
+- A method returning `Refit.PagedEnumerable<TPage,TItem>` is `ReturnTypeInfo.Paged`. `Parser.Paging.cs` reads `[Paged]` and `[PageToken]`, resolves the dotted member paths against the page type at compile time, and produces a `PagingModel` on `RequestModel.Paging`. A misconfigured method reports `RF013`. A valid method whose request cannot be generated inline reports `RF007`.
+- `Emitter.Inline.Paged.cs` emits two members per method: a sibling `BuildRefit<Method>PageRequest` that returns the `HttpRequestMessage` from the standard inline request construction (`ReturnTypeInfo.PageRequest`), and the paged method, which passes lambdas to `PagedEnumerable.Create` or `FromLinks`. Every page calls the sibling again, so a request is never sent twice.
+- Generated code stays valid at the C# 7.3 baseline: no patterns, and `static` lambdas only when `SupportsStaticLambdas`.
+- `Refit.Analyzers.Roslyn48.csproj` compiles an explicit list of shared parser and model files. A new parser or model file used by `Parser.Request.cs` is added to that list.
+
+**Rules**
+
+- A link-following method states exactly one of `Origins`, `SameOrigin` or `AnyOrigin`. The generator rejects a method that states none.
+- A paged method is not generic and declares no `CancellationToken`; the enumeration supplies the token.
+- The reflection request builder does not support `PagedEnumerable` returns.
+
+**Examples, docs and tests**
+
+- `src/examples/Documentation/Paging` holds mocked S3, Azure Blob Storage, Cosmos DB, Microsoft Graph, GitHub, Google Cloud Storage, Jira and DynamoDB services on `StubHttp`. The page project is `Pages/results-paging`.
+- The website page is `docs/documentation/refit/results/pagination.md` in the website repository.
+- `Refit.Tests` covers the runtime and generated clients (`GeneratedPagedMethodTests*`, `PagedEnumerableTests*`, `LinkHeaderParserTests`, `GeneratedPagingTests`). `Refit.GeneratorTests` covers emission and diagnostics (`PagedReturnGenerationTests`, `PagedReturnSnapshotTests`).

@@ -55,6 +55,9 @@ internal readonly record struct RequestModel(
     /// <c>Uri.GetComponents(PathAndQuery, QueryUriFormat)</c> pass.</summary>
     internal int? QueryUriFormat { get; init; }
 
+    /// <summary>Gets how a valid <c>[Paged]</c> method pages; <see langword="null"/> for every other method.</summary>
+    internal PagingModel? Paging { get; init; }
+
     /// <summary>Gets the per-call timeout in milliseconds from the method's <c>[Timeout]</c> attribute, or 0 when absent.
     /// The value is emitted into the generated send call and layered onto the request's effective cancellation token,
     /// mirroring the reflection builder's <c>RestMethodInfoInternal.TimeoutMilliseconds</c>.</summary>

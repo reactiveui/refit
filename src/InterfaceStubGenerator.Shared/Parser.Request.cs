@@ -41,7 +41,7 @@ internal static partial class Parser
 
         // A registered IReturnTypeAdapter surfaces the declared return type; the HTTP call materializes the adapter's
         // wrapped result, so classify the return types against that inner type just like a Task<T>.
-        var (adapterTypeExpression, resultTypeSource) = ResolveReturnTypeAdapter(methodSymbol.ReturnType, context);
+        var (adapterTypeExpression, resultTypeSource) = ResolveReturnShape(methodSymbol, returnTypeInfo, context);
 
         var returnTypes = GetRequestReturnTypes(resultTypeSource, context);
         var queryUriFormat = ResolveQueryUriFormat(methodSymbol);
@@ -65,15 +65,18 @@ internal static partial class Parser
             out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
+        // An invalid [Paged] configuration is reported by ParsePaging, so it is not reported again as an inline failure.
+        var paging = ParsePagingForReturn(methodSymbol, returnTypeInfo, context, out var pagingIsValid);
         var canGenerateInline = CanGenerateInlineRequest(
             parameterEligibility,
             IsInlineReturnShape(returnTypeInfo, adapterTypeExpression),
             httpMethod,
             new(path, normalizedPath),
             parameters,
-            isMultipart);
+            isMultipart)
+            && pagingIsValid;
 
-        if (!canGenerateInline)
+        if (!canGenerateInline && pagingIsValid)
         {
             ReportSourceGenOnlyAttributeMisuse(methodSymbol, context);
         }
@@ -88,7 +91,7 @@ internal static partial class Parser
             canGenerateInline,
             canGenerateInline ? adapterTypeExpression : null,
             staticHeaders,
-            parameters) { IsMultipart = isMultipart, MultipartBoundary = multipartBoundary, QueryUriFormat = queryUriFormat, TimeoutMilliseconds = timeoutMilliseconds, };
+            parameters) { IsMultipart = isMultipart, MultipartBoundary = multipartBoundary, QueryUriFormat = queryUriFormat, TimeoutMilliseconds = timeoutMilliseconds, Paging = paging, };
     }
 
     /// <summary>Resolves the HTTP verb, path, and path-parameter placeholders declared by a method's HTTP attribute.</summary>
@@ -121,13 +124,27 @@ internal static partial class Parser
             ? (QualifyType(closedAdapter, context), adapterResultType)
             : (null, returnType);
 
+    /// <summary>Resolves the type a request materializes and the adapter that surfaces it, for a method's declared return type.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="returnTypeInfo">The classified return type shape.</param>
+    /// <param name="context">The shared generation context.</param>
+    /// <returns>The adapter type expression (or null) and the result type to classify the request against.</returns>
+    /// <remarks>A <c>PagedEnumerable</c> has no adapter; each request materializes its page type.</remarks>
+    internal static (string? AdapterTypeExpression, ITypeSymbol ResultTypeSource) ResolveReturnShape(
+        IMethodSymbol methodSymbol,
+        ReturnTypeInfo returnTypeInfo,
+        in InterfaceGenerationContext context) =>
+        returnTypeInfo == ReturnTypeInfo.Paged
+            ? (null, ((INamedTypeSymbol)methodSymbol.ReturnType).TypeArguments[0])
+            : ResolveReturnTypeAdapter(methodSymbol.ReturnType, context);
+
     /// <summary>Determines whether a return type shape (or its adapter) is eligible for inline request generation.</summary>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
     /// <param name="adapterTypeExpression">The registered adapter expression, or null.</param>
     /// <returns><see langword="true"/> when the return shape can be generated inline.</returns>
     internal static bool IsInlineReturnShape(ReturnTypeInfo returnTypeInfo, string? adapterTypeExpression) =>
         returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
-            or ReturnTypeInfo.Observable or ReturnTypeInfo.RequestMessage
+            or ReturnTypeInfo.Observable or ReturnTypeInfo.RequestMessage or ReturnTypeInfo.Paged
         || adapterTypeExpression is not null;
 
     /// <summary>Reports an error when a method uses a source-generation-only attribute but cannot generate inline.</summary>
@@ -137,6 +154,16 @@ internal static partial class Parser
         IMethodSymbol methodSymbol,
         in InterfaceGenerationContext context)
     {
+        if (FindMethodRefitAttribute(methodSymbol, PagedAttributeDisplayName) is { } paged)
+        {
+            context.Diagnostics.Add(Diagnostic.Create(
+                DiagnosticDescriptors.SourceGenOnlyAttributeRequiresInlineRequest,
+                methodSymbol.Locations[0],
+                methodSymbol.Name,
+                paged.AttributeClass!.Name));
+            return;
+        }
+
         foreach (var parameter in methodSymbol.Parameters)
         {
             foreach (var attribute in parameter.GetAttributes())

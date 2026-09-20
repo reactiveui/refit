@@ -120,6 +120,15 @@ internal static partial class Emitter
         EnumFormatterScope enumFormatterScope)
     {
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
+
+        // A paged method sends one request per page, so it is emitted as a member that builds a page's request plus the
+        // method that hands it to the paging runtime.
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Paged)
+        {
+            BuildInlinePagedRefitMethod(builder, methodModel, interfaceModel, isExplicit, settingsFieldName, uniqueNames, enumFormatterScope);
+            return;
+        }
+
         var request = methodModel.Request;
         var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
         var settingsLocal = locals.New("refitSettings");
@@ -373,6 +382,13 @@ internal static partial class Emitter
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.RequestMessage)
         {
             AppendInlineRequestMessageReturn(builder, plan.RequestLocal);
+            return;
+        }
+
+        // A page-request member hands the built request to the paged method that owns sending it.
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.PageRequest)
+        {
+            AppendInlinePageRequestReturn(builder, plan.RequestLocal);
             return;
         }
 

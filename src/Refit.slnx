@@ -27,6 +27,7 @@
         <Project Path="examples/Documentation/Pages/requests-routes/requests-routes.csproj" />
         <Project Path="examples/Documentation/Pages/results-adapters/results-adapters.csproj" />
         <Project Path="examples/Documentation/Pages/results-index/results-index.csproj" />
+        <Project Path="examples/Documentation/Pages/results-paging/results-paging.csproj" />
         <Project Path="examples/Documentation/Pages/results-errors/results-errors.csproj" />
         <Project Path="examples/Documentation/Pages/results-responses/results-responses.csproj" />
         <Project Path="examples/Documentation/Pages/results-return-types/results-return-types.csproj" />

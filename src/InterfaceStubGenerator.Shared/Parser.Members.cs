@@ -10,6 +10,12 @@ namespace Refit.Generator;
 /// <summary>Parses interface properties and non-Refit methods into the models used to generate Refit stubs.</summary>
 internal static partial class Parser
 {
+    /// <summary>The name of the <c>Refit.PagedEnumerable</c> type.</summary>
+    private const string PagedEnumerableName = "PagedEnumerable";
+
+    /// <summary>The number of type arguments of <c>PagedEnumerable&lt;TPage, TItem&gt;</c>.</summary>
+    private const int PagedEnumerableArity = 2;
+
     /// <summary>Builds models for interface properties implemented by the generated stub.</summary>
     /// <param name="members">The directly declared interface members.</param>
     /// <param name="inheritedProperties">The emittable inherited properties collected during the single member walk.</param>
@@ -245,6 +251,7 @@ internal static partial class Parser
                 ("Task", 1) or ("ValueTask", 1) => ReturnTypeInfo.AsyncResult,
                 ("IAsyncEnumerable", 1) => ReturnTypeInfo.AsyncEnumerable,
                 ("IObservable", 1) => ReturnTypeInfo.Observable,
+                (PagedEnumerableName, PagedEnumerableArity) when IsInNamespace(named, "Refit") => ReturnTypeInfo.Paged,
                 ("Void", 0) => ReturnTypeInfo.SyncVoid,
                 _ => ReturnTypeInfo.Return
             }

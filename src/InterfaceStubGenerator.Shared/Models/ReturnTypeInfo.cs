@@ -26,4 +26,10 @@ internal enum ReturnTypeInfo
 
     /// <summary>The method returns the built <c>Task&lt;HttpRequestMessage&gt;</c> without sending it.</summary>
     RequestMessage = 6,
+
+    /// <summary>The method returns a <c>PagedEnumerable&lt;TPage, TItem&gt;</c> that sends one request per page.</summary>
+    Paged = 7,
+
+    /// <summary>A generated member that builds one page's request and returns it without sending it.</summary>
+    PageRequest = 8,
 }

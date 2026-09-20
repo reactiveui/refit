@@ -31,6 +31,17 @@ internal static class DiagnosticDescriptors
             DiagnosticSeverity.Error,
             true);
 
+    /// <summary>Diagnostic reported when a method that returns <c>PagedEnumerable</c> is not configured in a way the generator can emit.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    internal static readonly DiagnosticDescriptor InvalidPagedMethod =
+        new(
+            "RF013",
+            "Paged method is not configured correctly",
+            "Method '{0}' cannot be generated as a paged method: {1}",
+            Category,
+            DiagnosticSeverity.Error,
+            true);
+
     /// <summary>The diagnostic category for Refit generator diagnostics.</summary>
     private const string Category = "Refit";
 }
