@@ -81,7 +81,7 @@ public sealed class PagedEnumerable<TPage, TItem> : IAsyncEnumerable<TItem>
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public IAsyncEnumerator<TItem> GetAsyncEnumerator(CancellationToken cancellationToken = default) =>
-        EnumerateItemsAsync(default).GetAsyncEnumerator(cancellationToken);
+        EnumerateItemsAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
 
     /// <summary>Enumerates the items of each page, keeping a page alive while its items are being consumed.</summary>
     /// <param name="cancellationToken">A token that cancels the enumeration.</param>
