@@ -3,6 +3,7 @@
 Every breaking change and notable addition, newest first. Each major version links back to the feature documentation
 in the [main README](../README.md).
 
+* [V16.x.x](#v16xx)
 * [V15.x.x](#v15xx)
 * [V14.x.x](#v14xx)
 * [V13.x.x](#v13xx)
@@ -10,6 +11,18 @@ in the [main README](../README.md).
 * [V11.x.x](#v11xx)
 * [Updates in 8.0.x](#updates-in-80x)
 * [V6.x.x](#v6xx)
+
+## V16.x.x
+
+### Breaking changes in V16.x
+
+* **The .NET 11 assemblies are built without runtime-async.** Refit 12.0.0 to 15.2.0 built the .NET 11 assemblies with
+  the runtime-async compiler feature on. The feature needs a runtime that supports it: CoreCLR does and Mono does not, so
+  a Refit built with it can fail in every app that runs on Mono, which includes Blazor WebAssembly unless it opts into
+  CoreCLR, WASI, Android API levels 21 to 23, and apps that set `UseMonoRuntime=true`. A NuGet package ships one build
+  for every runtime, so Refit leaves the feature off. The public API is unchanged. Apps that target .NET 10 or older are
+  unaffected because only the .NET 11 assemblies used the feature. Apps on .NET 11 that run on CoreCLR do not get the
+  speed gain inside Refit's own async code, and can turn runtime-async on in their own app when it runs only on CoreCLR.
 
 ## V15.x.x
 
