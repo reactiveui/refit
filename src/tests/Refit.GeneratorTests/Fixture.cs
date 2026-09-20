@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -54,14 +55,26 @@ public static class Fixture
 
     /// <summary>Verifies generator output for an interface body snippet, ignoring non-interface results.</summary>
     /// <param name="body">The interface member body source.</param>
+    /// <param name="memberName">The calling test member name used to derive the snapshot name.</param>
+    /// <param name="filePath">The calling test source path used to derive the snapshot type name.</param>
     /// <returns>A task representing the verification.</returns>
-    public static Task VerifyForBody(string body) => VerifyForBody(body, true);
+    public static Task VerifyForBody(
+        string body,
+        [CallerMemberName] string memberName = "",
+        [CallerFilePath] string filePath = "") =>
+        VerifyForBody(body, true, memberName, filePath);
 
     /// <summary>Verifies generator output for an interface body snippet.</summary>
     /// <param name="body">The interface member body source.</param>
     /// <param name="ignoreNonInterfaces">Whether to ignore non-interface generated results.</param>
+    /// <param name="memberName">The calling test member name used to derive the snapshot name.</param>
+    /// <param name="filePath">The calling test source path used to derive the snapshot type name.</param>
     /// <returns>A task representing the verification.</returns>
-    public static Task VerifyForBody(string body, bool ignoreNonInterfaces)
+    public static Task VerifyForBody(
+        string body,
+        bool ignoreNonInterfaces,
+        [CallerMemberName] string memberName = "",
+        [CallerFilePath] string filePath = "")
     {
         var source =
             $$"""
@@ -82,7 +95,7 @@ public static class Fixture
               }
               """;
 
-        return VerifyGenerator(source, ignoreNonInterfaces);
+        return VerifyGenerator(source, ignoreNonInterfaces, filePath, memberName);
     }
 
     /// <summary>Generates output for an interface body snippet and returns the requested generated file.</summary>
@@ -212,8 +225,13 @@ public static class Fixture
 
     /// <summary>Verifies generator output for type declarations within a namespace.</summary>
     /// <param name="declarations">The type declarations source.</param>
+    /// <param name="memberName">The calling test member name used to derive the snapshot name.</param>
+    /// <param name="filePath">The calling test source path used to derive the snapshot type name.</param>
     /// <returns>A task representing the verification.</returns>
-    public static Task VerifyForType(string declarations)
+    public static Task VerifyForType(
+        string declarations,
+        [CallerMemberName] string memberName = "",
+        [CallerFilePath] string filePath = "")
     {
         var source =
             $$"""
@@ -231,13 +249,18 @@ public static class Fixture
               {{declarations}}
               """;
 
-        return VerifyGenerator(source);
+        return VerifyGenerator(source, true, filePath, memberName);
     }
 
     /// <summary>Verifies generator output for top-level declarations.</summary>
     /// <param name="declarations">The declarations source.</param>
+    /// <param name="memberName">The calling test member name used to derive the snapshot name.</param>
+    /// <param name="filePath">The calling test source path used to derive the snapshot type name.</param>
     /// <returns>A task representing the verification.</returns>
-    public static Task VerifyForDeclaration(string declarations)
+    public static Task VerifyForDeclaration(
+        string declarations,
+        [CallerMemberName] string memberName = "",
+        [CallerFilePath] string filePath = "")
     {
         var source =
             $$"""
@@ -253,7 +276,7 @@ public static class Fixture
               {{declarations}}
               """;
 
-        return VerifyGenerator(source);
+        return VerifyGenerator(source, true, filePath, memberName);
     }
 
     /// <summary>Generates output for top-level declarations and returns the requested generated file.</summary>
@@ -454,8 +477,14 @@ public static class Fixture
     /// <summary>Runs the generator over the source and returns the verification result.</summary>
     /// <param name="source">The source to compile and generate from.</param>
     /// <param name="ignoreNonInterfaces">Whether to ignore non-interface generated results.</param>
-    /// <returns>A task producing the verification result.</returns>
-    private static Task<VerifyResult> VerifyGenerator(string source, bool ignoreNonInterfaces = true)
+    /// <param name="filePath">The caller source file path used to derive the snapshot type name.</param>
+    /// <param name="memberName">The caller member name used to derive the snapshot method name.</param>
+    /// <returns>A task that completes once the generated output has been verified.</returns>
+    private static Task VerifyGenerator(
+        string source,
+        bool ignoreNonInterfaces,
+        string filePath,
+        string memberName)
     {
         var compilation = CreateLibrary(source);
 
@@ -463,16 +492,14 @@ public static class Fixture
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var ranDriver = driver.RunGenerators(compilation);
-        var settings = new VerifySettings();
-        if (ignoreNonInterfaces)
-        {
-            settings.IgnoreGeneratedResult(static x =>
-                x.HintName.Contains("PreserveAttribute.g.cs", StringComparison.Ordinal));
-            settings.IgnoreGeneratedResult(static x => x.HintName.Contains("Generated.g.cs", StringComparison.Ordinal));
-        }
-
-        var verify = Verify(ranDriver, settings);
-        return verify.ToTask();
+        return GeneratorSnapshot.VerifyAsync(
+            ranDriver,
+            Path.GetFileNameWithoutExtension(filePath),
+            memberName,
+            ignoreNonInterfaces
+                ? static x => x.HintName.Contains("PreserveAttribute.g.cs", StringComparison.Ordinal)
+                    || x.HintName.Contains("Generated.g.cs", StringComparison.Ordinal)
+                : null);
     }
 
     /// <summary>Runs the generator and returns a generated source by hint name.</summary>

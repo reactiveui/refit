@@ -6,6 +6,35 @@
     "semanticCommits": "enabled",
     "packageRules": [
         {
+            "description": "Use a lower-bound bump for bare or open-ended NuGet versions so Renovate preserves the permitted version range.",
+            "matchManagers": [
+                "nuget"
+            ],
+            "rangeStrategy": "bump"
+        },
+        {
+            "description": "Keep the Blazor/WebUtilities packages on the .NET 11 train, accepting its preview/RC builds and 11.0.0 GA only.",
+            "matchManagers": [
+                "nuget"
+            ],
+            "matchPackageNames": [
+                "Microsoft.AspNetCore.Components.WebAssembly",
+                "Microsoft.AspNetCore.Components.WebAssembly.DevServer",
+                "Microsoft.AspNetCore.WebUtilities"
+            ],
+            "allowedVersions": "/^11\\.0\\.0(?:-(?:preview|rc)\\.\\d+\\.\\d+\\.\\d+)?$/"
+        },
+        {
+            "description": "Keep the preview .NET SDK channel in the netfx smoke workflow on .NET 11.",
+            "matchManagers": [
+                "custom.regex"
+            ],
+            "matchPackageNames": [
+                "dotnet-sdk"
+            ],
+            "allowedVersions": "/^11\\./"
+        },
+        {
             "description": "Legacy System.* compatibility packages are pinned to their 4.x line for the net4*/netstandard targets. Cap Renovate below 5.0.0 so the .NET monorepo v10 updates do not bump these and break those targets. The modern 10.x System.* entries (selected by the IsTargetFrameworkCompatible bands) are unaffected because this rule only matches versions currently on 4.x.",
             "matchManagers": [
                 "nuget"
@@ -51,17 +80,6 @@
             ]
         },
         {
-            "description": "Verify.TUnit is built against a specific TUnit version. The shared preset groups TUnit separately from Verify.*, which can split a matched pair across two PRs and red the build; keep them together here.",
-            "matchManagers": [
-                "nuget"
-            ],
-            "groupName": "TUnit",
-            "matchPackageNames": [
-                "/^TUnit(\\.|$)/",
-                "/^Verify\\./"
-            ]
-        },
-        {
             "description": "Serilog sinks are versioned against the Serilog core they bind to.",
             "matchManagers": [
                 "nuget"
@@ -72,15 +90,29 @@
             ]
         },
         {
-            "description": "Test and benchmark helpers that sit outside the framework cohorts the shared preset already groups.",
+            "description": "Benchmark helpers that sit outside the framework cohorts the shared preset already groups.",
             "matchManagers": [
                 "nuget"
             ],
-            "groupName": "test tooling",
+            "groupName": "benchmark tooling",
             "matchPackageNames": [
-                "/^AutoFixture(\\.|$)/",
                 "/^BenchmarkDotNet(\\.|$)/"
             ]
+        }
+    ],
+    "configMigration": true,
+    "customManagers": [
+        {
+            "customType": "regex",
+            "managerFilePatterns": [
+                "/.github/workflows/netfx-smoke\\.yml$/"
+            ],
+            "matchStrings": [
+                "dotnet-version:\\s*(?<currentValue>\\d+(?:\\.\\d+){0,2}(?:-[0-9A-Za-z.-]+|\\.x)?)"
+            ],
+            "depNameTemplate": "dotnet-sdk",
+            "datasourceTemplate": "dotnet-version",
+            "versioningTemplate": "semver-coerced"
         }
     ]
 }

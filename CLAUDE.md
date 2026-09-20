@@ -138,6 +138,9 @@ dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f
 - The generated-code compliance project is `src/tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj`.
 - `RefitEmitGeneratedCodeMarkers=false` is used by generated-code compliance tests so analyzers treat generator output as normal source.
 - Keep generated source compatible with the repository `.editorconfig`; avoid broad `#pragma warning disable`.
+- Generator snapshots live in `src/tests/Refit.GeneratorTests/_snapshots`. Run the affected test with
+  `ACCEPT_SNAPSHOTS=1` to intentionally accept changed generated output, then rerun it without that
+  variable to verify the snapshots.
 
 ### Generator performance
 
@@ -175,4 +178,3 @@ The runtime projects use the public-API analyzer, so every public/protected memb
 - **Before opening a PR, move those new entries from `PublicAPI.Unshipped.txt` into the matching `PublicAPI.Shipped.txt` (and reset each unshipped file to just `#nullable enable`).** This repo ships almost immediately after merge, so unshipped API is promoted as part of the change rather than left pending.
 - For behavior changes or public API additions, also add a breaking-changes note to the README.
 - Shipped entries are assumed to be carried forward; you do not need to call them out separately in the PR.
-

@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Net;
-using AutoFixture;
 using BenchmarkDotNet.Attributes;
 
 namespace Refit.Benchmarks;
@@ -17,9 +16,6 @@ public class EndToEndBenchmark
 
     /// <summary>The number of users used in the ten-user benchmarks.</summary>
     private const int TenUsers = 10;
-
-    /// <summary>The fixture used to generate sample user data.</summary>
-    private readonly Fixture _autoFixture = new();
 
     /// <summary>The generated sample users keyed by model count.</summary>
     private readonly Dictionary<int, IEnumerable<User>> _users = [];
@@ -106,7 +102,22 @@ public class EndToEndBenchmark
                             HttpStatusCode.InternalServerError),
                 });
 
-        _users[TenUsers] = _autoFixture.CreateMany<User>(TenUsers);
+        var users = new User[TenUsers];
+        for (var index = 0; index < users.Length; index++)
+        {
+            var userNumber = index + 1;
+            users[index] = new User
+            {
+                Id = userNumber,
+                Name = $"User {userNumber}",
+                Bio = $"Biography for user {userNumber}",
+                Followers = userNumber,
+                Following = index,
+                Url = $"https://github.com/user-{userNumber}",
+            };
+        }
+
+        _users[TenUsers] = users;
 
         return Task.CompletedTask;
     }

@@ -1,13 +1,37 @@
-@using BlazorWasmIssue2065.Shared
+@using BlazorWasmIssue2065.Pages
+@inject NavigationManager Navigation
 
-<Router AppAssembly="@typeof(Program).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
-        <FocusOnNavigate RouteData="@routeData" Selector="h1"/>
-    </Found>
-    <NotFound>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Not found</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+@*
+    This sample exercises Refit's browser-wasm trimming/AOT path. Avoid Router and LayoutView here:
+    their parameter binding reflects over framework properties annotated with
+    DynamicallyAccessedMembers, which produces IL2110/IL2111 independently of Refit.
+    The sample only has two fixed routes, so dispatch them statically to keep linker analysis exact.
+*@
+<div class="page">
+    <main>
+        @switch (CurrentPath)
+        {
+            case "":
+                <Index />
+                break;
+            case "issue2067":
+                <Issue2067 />
+                break;
+            default:
+                <p role="alert">Not found</p>
+                break;
+        }
+    </main>
+</div>
+
+@code {
+    private string CurrentPath
+    {
+        get
+        {
+            var path = Navigation.ToBaseRelativePath(Navigation.Uri);
+            var separatorIndex = path.AsSpan().IndexOfAny('?', '#');
+            return separatorIndex < 0 ? path : path[..separatorIndex];
+        }
+    }
+}

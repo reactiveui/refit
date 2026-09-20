@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -15,8 +16,9 @@ public class InterfaceStubGeneratorTests
 {
     /// <summary>Runs the interface stub generator over the supplied source file and verifies the output.</summary>
     /// <param name="input">The path to the source file to feed to the generator.</param>
-    /// <returns>The snapshot verification result for the generated output.</returns>
-    public static async Task<VerifyResult> VerifyGenerator(string input)
+    /// <param name="memberName">The calling test member name used to derive the snapshot name.</param>
+    /// <returns>A task that completes once the generated output has been verified.</returns>
+    public static async Task VerifyGenerator(string input, [CallerMemberName] string memberName = "")
     {
         var source = await File.ReadAllTextAsync(input);
         var compilation = Fixture.CreateLibrary(
@@ -26,7 +28,7 @@ public class InterfaceStubGeneratorTests
         var driver = CSharpGeneratorDriver.Create(generator);
         var ranDriver = driver.RunGenerators(compilation);
 
-        return await Verify(ranDriver).ToTask();
+        await GeneratorSnapshot.VerifyAsync(ranDriver, nameof(InterfaceStubGeneratorTests), memberName);
     }
 
     /// <summary>Verifies the generator produces no output for a source file with no Refit interfaces.</summary>

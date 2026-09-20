@@ -11,9 +11,6 @@
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="TUnit" />
-    <PackageReference Include="Verify.DiffPlex" />
-    <PackageReference Include="Verify.SourceGenerators" />
-    <PackageReference Include="Verify.TUnit" />
     <PackageReference Include="ReactiveUI.Primitives" ExcludeAssets="analyzers" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
@@ -28,7 +25,11 @@
     <ProjectReference Include="..\..\Refit.Reflection\Refit.Reflection.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Refit.GeneratorTests\_snapshots\**">
+    <AssemblyMetadata Include="GeneratorSnapshotDirectory" Value="$(MSBuildProjectDirectory)\_snapshots" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="_snapshots\**\*.cs" />
+    <None Update="_snapshots\**">
       <Link>%(RecursiveDir)\resources\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
