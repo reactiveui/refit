@@ -354,6 +354,25 @@ internal static class HttpClientFactoryCore
         return builder;
     }
 
+#if NET8_0_OR_GREATER
+    /// <summary>Wraps a settings factory so the settings it produces run on a source-generated JSON context.</summary>
+    /// <param name="settings">A factory that produces the Refit settings, or null.</param>
+    /// <param name="context">The generated context to register.</param>
+    /// <param name="allowReflectionFallback">Whether a type no resolver describes may use reflection-based JSON.</param>
+    /// <returns>A factory whose settings keep the serializer options they came with and gain the context, or use the context's own options when the factory yields no settings.</returns>
+    internal static Func<IServiceProvider, RefitSettings?> WithJsonContext(
+        Func<IServiceProvider, RefitSettings?>? settings,
+        System.Text.Json.Serialization.JsonSerializerContext context,
+        bool allowReflectionFallback)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(context);
+
+        return provider => settings?.Invoke(provider) is { } supplied
+            ? supplied.UseJsonContext(context, allowReflectionFallback)
+            : RefitSettings.ForJsonContext(context, allowReflectionFallback);
+    }
+
+#endif
     /// <summary>Resolves and caches the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
     /// <returns>The open generic <c>RequestBuilder.ForType</c> method definition.</returns>
     [RequiresUnreferencedCode("Resolving RequestBuilder.ForType by reflection requires method metadata to be available at runtime.")]

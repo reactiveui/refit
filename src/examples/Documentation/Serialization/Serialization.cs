@@ -3,17 +3,24 @@
 // See the LICENSE file in the project root for full license information.
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Refit.Testing;
 
 namespace Refit.Documentation;
 
 /// <summary>Checks generated metadata, synchronous and streaming serialization and missing-type failures.</summary>
 internal static class Serialization
 {
+    /// <summary>The camelCase reply the local people service sends.</summary>
+    private const string PersonJson = "{\"id\":1,\"name\":\"Ada\"}";
+
     /// <summary>Resolves only models registered with the shared generated JSON context.</summary>
     private static readonly JsonSerializerOptions Options = new(SampleJsonContext.Default.Options) { TypeInfoResolver = SampleJsonContext.Default, };
 
     /// <summary>Reuses immutable generated-metadata serializer configuration across the demonstrations.</summary>
     private static readonly SystemTextJsonContentSerializer Serializer = new(Options);
+
+    /// <summary>Builds a serializer straight from the shared generated JSON context, which never falls back to reflection.</summary>
+    private static readonly SystemTextJsonContentSerializer ContextSerializer = SystemTextJsonContentSerializer.ForContext(SampleJsonContext.Default);
 
     /// <summary>Checks person serialization paths, combined contexts and rejection of missing metadata.</summary>
     /// <returns>A task that completes after the sample assertions pass.</returns>
@@ -43,12 +50,53 @@ internal static class Serialization
 
         SampleCheck.Equal("Ada", restored?.Name);
         SampleCheck.Equal(Options, Serializer.SerializerOptions);
+        await RunContextSerializerAsync();
+        await RunContextClientAsync();
         await RunDefaultsAsync();
         VerifyFieldNames();
         await RunFastPathAsync();
         await RunCombinedContextsAsync();
         VerifyMissingMetadata();
     }
+
+    /// <summary>Round-trips a person through a serializer built straight from the JSON context.</summary>
+    /// <returns>A task that completes after the round trip is checked.</returns>
+    private static async Task RunContextSerializerAsync()
+    {
+        using HttpContent content = ContextSerializer.ToHttpContent(new Person(1, "Ada"));
+        Person? person = await ContextSerializer.FromHttpContentAsync<Person>(content);
+        Console.WriteLine(person?.Name); // Ada
+
+        SampleCheck.Equal("Ada", person?.Name);
+        SampleCheck.Equal(SampleJsonContext.Default.Options, ContextSerializer.SerializerOptions);
+    }
+
+    /// <summary>Creates a generated client from the JSON context alone, then from settings, and reads a person through each.</summary>
+    /// <returns>A task that completes after both replies are checked.</returns>
+    private static async Task RunContextClientAsync()
+    {
+        using StubHttp http = new() { { Route.Get("/people/{id}"), Reply.Json(PersonJson) }, { Route.Get("/people/{id}"), Reply.Json(PersonJson) } };
+        using HttpClient client = CreateClient(http);
+
+        IPeopleApi api = RestService.ForGenerated<IPeopleApi>(client, SampleJsonContext.Default);
+        Person person = await api.GetPersonAsync(1, CancellationToken.None);
+        Console.WriteLine(person.Name); // Ada
+
+        SampleCheck.Equal(new(1, "Ada"), person);
+
+        RefitSettings settings = new(Serializer);
+        IPeopleApi withSettings = RestService.ForGenerated<IPeopleApi>(client, settings);
+        Person fromSettings = await withSettings.GetPersonAsync(1, CancellationToken.None);
+        Console.WriteLine(fromSettings.Name); // Ada
+
+        SampleCheck.Equal(person, fromSettings);
+        await http.VerifyAllCalledAsync();
+    }
+
+    /// <summary>Creates a client whose requests go to a local handler.</summary>
+    /// <param name="http">The handler that answers every request.</param>
+    /// <returns>A client with the people service base address. The caller owns the handler.</returns>
+    private static HttpClient CreateClient(StubHttp http) => new(http, disposeHandler: false) { BaseAddress = new("https://people.example") };
 
     /// <summary>Checks fresh defaults and configuring the default constructor for generated metadata.</summary>
     /// <returns>Completion of the serializer default checks.</returns>
@@ -108,10 +156,18 @@ internal static class Serialization
         SampleCheck.Equal(0, fastOptions.Converters.Count);
     }
 
-    /// <summary>Checks that combining generated contexts enables the separately registered page model.</summary>
+    /// <summary>Checks that registering a second context enables the separately registered page model.</summary>
     /// <returns>A task that completes after the sample assertions pass.</returns>
     private static async Task RunCombinedContextsAsync()
     {
+        RefitSettings settings = RefitSettings.ForJsonContext(SampleJsonContext.Default).UseJsonContext(PageJsonContext.Default);
+        SystemTextJsonContentSerializer registeredSerializer = (SystemTextJsonContentSerializer)settings.ContentSerializer;
+        using HttpContent registeredContent = registeredSerializer.ToHttpContent(new Page<Person>([new(1, "Ada")]));
+        Page<Person>? registeredPage = await registeredSerializer.FromHttpContentAsync<Page<Person>>(registeredContent);
+        Console.WriteLine(registeredPage?.Items[0].Name); // Ada
+
+        SampleCheck.Equal("Ada", registeredPage?.Items[0].Name);
+
         IJsonTypeInfoResolver resolver = JsonTypeInfoResolver.Combine(SampleJsonContext.Default, PageJsonContext.Default);
         JsonSerializerOptions combinedOptions = new(SampleJsonContext.Default.Options) { TypeInfoResolver = resolver };
         SystemTextJsonContentSerializer combinedSerializer = new(combinedOptions);

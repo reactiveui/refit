@@ -156,9 +156,9 @@ internal static partial class Parser
         ref bool implicitBodyAssigned)
     {
         var parameterType = QualifyType(parameter.Type, context.Generation);
-        if (IsCancellationToken(parameter.Type))
+        if (TryParseCallInfrastructureParameter(parameter, parameterType, context, out var infrastructureParameter))
         {
-            return CancellationTokenParameter(parameter, parameterType, context.Locations, context.Generation);
+            return infrastructureParameter;
         }
 
         // A [Url] parameter supplies the absolute request URI. Only a string or Uri can be emitted inline; any other
@@ -209,6 +209,35 @@ internal static partial class Parser
                 ?? ClassifyLooseParameter(parameter, parameterType, context, ref implicitBodyAssigned);
     }
 
+    /// <summary>Tries to parse a parameter that steers the call rather than supplying request data: a cancellation token
+    /// or <c>JsonTypeInfo&lt;T&gt;</c> metadata. Neither becomes a route, query, header or body value.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The lookup state used to classify the parameter.</param>
+    /// <param name="parsed">Receives the parsed parameter and eligibility counters.</param>
+    /// <returns><see langword="true"/> when the parameter is a cancellation token or JSON type metadata.</returns>
+    internal static bool TryParseCallInfrastructureParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in LooseParameterContext context,
+        out ParsedRequestParameter parsed)
+    {
+        if (IsCancellationToken(parameter.Type))
+        {
+            parsed = CancellationTokenParameter(parameter, parameterType, context.Locations, context.Generation);
+            return true;
+        }
+
+        if (IsJsonTypeInfo(parameter.Type, out var target))
+        {
+            parsed = JsonTypeInfoParameter(parameter, parameterType, QualifyType(target, context.Generation), context.Generation);
+            return true;
+        }
+
+        parsed = default;
+        return false;
+    }
+
     /// <summary>Builds the cancellation token parameter binding.</summary>
     /// <param name="parameter">The parameter symbol.</param>
     /// <param name="parameterType">The parameter type display string.</param>
@@ -236,6 +265,148 @@ internal static partial class Parser
             0,
             1,
             0);
+
+    /// <summary>Builds the binding for a <c>JsonTypeInfo&lt;T&gt;</c> parameter.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="target">The fully-qualified type the metadata describes.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    internal static ParsedRequestParameter JsonTypeInfoParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        string target,
+        in InterfaceGenerationContext context) =>
+        new(
+            new(
+                parameter.MetadataName,
+                parameterType,
+                null,
+                BuildParameterAttributes(parameter, context),
+                RequestParameterKind.JsonTypeInfo,
+                CanBeNull(parameter.Type, parameter.NullableAnnotation),
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                BodyBufferMode.None) { JsonTypeInfoTarget = target, },
+            true,
+            0,
+            0,
+            0);
+
+    /// <summary>Checks that each <c>JsonTypeInfo&lt;T&gt;</c> parameter describes the JSON body or the reply, and reports RF014 when one does not.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="parameters">The parsed request parameters.</param>
+    /// <param name="deserializedResultType">The fully-qualified type the reply is read as.</param>
+    /// <param name="canGenerateInline">Whether the rest of the request can be generated inline.</param>
+    /// <param name="context">The shared generation context that collects diagnostics.</param>
+    /// <returns><see langword="true"/> when the parameters are usable, or the method has none.</returns>
+    internal static bool ValidateJsonTypeInfoParameters(
+        IMethodSymbol methodSymbol,
+        ImmutableEquatableArray<RequestParameterModel> parameters,
+        string deserializedResultType,
+        bool canGenerateInline,
+        in InterfaceGenerationContext context)
+    {
+        string? bodyType = null;
+        HashSet<string>? seen = null;
+        var valid = true;
+        foreach (var parameter in parameters)
+        {
+            if (parameter.Kind != RequestParameterKind.JsonTypeInfo)
+            {
+                continue;
+            }
+
+            bodyType ??= FindJsonBodyType(parameters) ?? string.Empty;
+            seen ??= new HashSet<string>(StringComparer.Ordinal);
+            var target = parameter.JsonTypeInfoTarget!;
+            var problem = DescribeJsonTypeInfoProblem(target, seen.Add(target), bodyType, deserializedResultType, canGenerateInline);
+            if (problem is null)
+            {
+                continue;
+            }
+
+            context.Diagnostics.Add(Diagnostic.Create(
+                DiagnosticDescriptors.InvalidJsonTypeInfoParameter,
+                methodSymbol.Locations[0],
+                methodSymbol.Name,
+                problem));
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    /// <summary>Reports RF014 for a <c>JsonTypeInfo&lt;T&gt;</c> parameter when generated request building is switched off,
+    /// because only generated requests pass the metadata on.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="context">The shared generation context that collects diagnostics.</param>
+    internal static void ReportJsonTypeInfoParameterWithoutGeneratedRequests(
+        IMethodSymbol methodSymbol,
+        in InterfaceGenerationContext context)
+    {
+        foreach (var parameter in methodSymbol.Parameters)
+        {
+            if (!IsJsonTypeInfo(parameter.Type, out _))
+            {
+                continue;
+            }
+
+            context.Diagnostics.Add(Diagnostic.Create(
+                DiagnosticDescriptors.InvalidJsonTypeInfoParameter,
+                methodSymbol.Locations[0],
+                methodSymbol.Name,
+                "generated request building is switched off"));
+            return;
+        }
+    }
+
+    /// <summary>Describes why a <c>JsonTypeInfo&lt;T&gt;</c> parameter cannot be used, or reports that it can.</summary>
+    /// <param name="target">The fully-qualified type the metadata describes.</param>
+    /// <param name="firstOfTarget">Whether this is the first parameter that describes <paramref name="target"/>.</param>
+    /// <param name="bodyType">The JSON body type, or an empty string when there is none.</param>
+    /// <param name="deserializedResultType">The fully-qualified type the reply is read as.</param>
+    /// <param name="canGenerateInline">Whether the request can be generated inline.</param>
+    /// <returns>The problem text, or <see langword="null"/> when the parameter is usable.</returns>
+    internal static string? DescribeJsonTypeInfoProblem(
+        string target,
+        bool firstOfTarget,
+        string bodyType,
+        string deserializedResultType,
+        bool canGenerateInline)
+    {
+        if (!canGenerateInline)
+        {
+            return "its request cannot be generated inline";
+        }
+
+        if (!firstOfTarget)
+        {
+            return $"it declares more than one JsonTypeInfo<{target}> parameter";
+        }
+
+        return target == bodyType || target == deserializedResultType
+            ? null
+            : $"JsonTypeInfo<{target}> matches neither the JSON body type nor the type the reply is read as";
+    }
+
+    /// <summary>Finds the type of the body parameter when it is serialized as JSON.</summary>
+    /// <param name="parameters">The parsed request parameters.</param>
+    /// <returns>The fully-qualified body type, or <see langword="null"/> when there is no JSON body.</returns>
+    internal static string? FindJsonBodyType(ImmutableEquatableArray<RequestParameterModel> parameters)
+    {
+        foreach (var parameter in parameters)
+        {
+            if (parameter.Kind == RequestParameterKind.Body
+                && parameter.BodySerializationMethod is not ("UrlEncoded" or "JsonLines"))
+            {
+                return parameter.Type;
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>Parses a parameter bound to a path placeholder, when one exists.</summary>
     /// <param name="parameter">The parameter to parse.</param>

@@ -35,4 +35,7 @@ internal enum RequestParameterKind
 
     /// <summary>The parameter supplies one (or, for an enumerable, each) part of a multipart form body.</summary>
     MultipartPart = 9,
+
+    /// <summary>The parameter supplies the <c>JsonTypeInfo&lt;T&gt;</c> metadata used to serialize the body or read the reply.</summary>
+    JsonTypeInfo = 10,
 }

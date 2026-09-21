@@ -80,21 +80,7 @@ public static partial class GeneratedRequestRunner
         var content = CreateSerializedBodyContent(settings, body, serializationMethod);
 
         // A synchronously-serialized body is already a buffer (and lets the fast-path engage), so never re-stream it.
-        return streamBody && !UsesSynchronousSerialization(settings)
-            ? new PushStreamContent(
-                async (stream, _, _) =>
-                {
-#if NET8_0_OR_GREATER
-                    await using (stream.ConfigureAwait(false))
-#else
-                    using (stream)
-#endif
-                    {
-                        await content.CopyToAsync(stream).ConfigureAwait(false);
-                    }
-                },
-                content.Headers.ContentType)
-            : content;
+        return streamBody && !UsesSynchronousSerialization(settings) ? StreamBodyContent(content) : content;
     }
 
     /// <summary>Serializes a generated request body as JSON Lines (newline-delimited JSON).</summary>
@@ -220,4 +206,23 @@ public static partial class GeneratedRequestRunner
         && body is not Stream
         && body is not string
         && body is not System.Collections.IDictionary;
+
+    /// <summary>Wraps serialized content so it is copied into the request stream when the request is sent.</summary>
+    /// <param name="content">The serialized content.</param>
+    /// <returns>Content that pushes <paramref name="content"/> to the request stream.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static HttpContent StreamBodyContent(HttpContent content) =>
+        new PushStreamContent(
+            async (stream, _, _) =>
+            {
+#if NET8_0_OR_GREATER
+                await using (stream.ConfigureAwait(false))
+#else
+                using (stream)
+#endif
+                {
+                    await content.CopyToAsync(stream).ConfigureAwait(false);
+                }
+            },
+            content.Headers.ContentType);
 }

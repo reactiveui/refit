@@ -33,5 +33,6 @@
     <Compile Include="../../Bodies/*.cs" Link="Bodies/%(Filename)%(Extension)" />
     <Compile Include="../../Rationale/*.cs" Link="Rationale/%(Filename)%(Extension)" />
     <Compile Include="../../Aot/*.cs" Link="Aot/%(Filename)%(Extension)" />
+    <Compile Include="../../JsonContexts/*.cs" Link="JsonContexts/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

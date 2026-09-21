@@ -24,7 +24,11 @@ namespace Refit;
 /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters.
 /// </remarks>
 [System.Diagnostics.DebuggerDisplay("{SerializerOptions}")]
+#if NET8_0_OR_GREATER
+public sealed partial class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
+#else
 public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
+#endif
     : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer, ISynchronousContentDeserializer
 {
     /// <summary>Justification shared by the reflection-fallback trim/AOT suppressions.</summary>

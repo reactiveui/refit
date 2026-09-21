@@ -4,3 +4,5 @@
 using Refit.Documentation.SampleHost host = new();
 
 await Refit.Documentation.Bodies.RunAsync(host);
+
+await Refit.Documentation.JsonContexts.JsonTypeInfoParameterSample.RunAsync();
