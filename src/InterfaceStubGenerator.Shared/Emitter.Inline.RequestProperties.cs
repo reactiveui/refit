@@ -106,6 +106,19 @@ internal static partial class Emitter
             var key = ToCSharpStringLiteral(parameter.PropertyKey);
             AppendRequestProperty(sb, bodyIndent, requestLocal, parameter.Type, key, $"@{parameter.Name}");
         }
+
+        // A JsonTypeInfo<T> parameter that describes the reply rides on the request so the runner reads the reply with it.
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind != RequestParameterKind.JsonTypeInfo || parameter.JsonTypeInfoTarget != request.DeserializedResultType)
+            {
+                continue;
+            }
+
+            _ = sb.Append(bodyIndent).Append("global::Refit.GeneratedRequestRunner.SetRequestJsonTypeInfo<")
+                .Append(parameter.JsonTypeInfoTarget).Append(">(").Append(requestLocal).Append(ArgumentSeparator)
+                .Append('@').Append(parameter.Name).AppendLine(");");
+        }
     }
 
     /// <summary>Appends one <c>AddRequestProperty&lt;T&gt;</c> statement directly into the request-property buffer.</summary>

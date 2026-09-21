@@ -70,7 +70,7 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
             return Json("""{"name":"native-aot"}""");
         }
 
-        return request.RequestUri?.AbsolutePath == "/status"
+        return request.RequestUri?.AbsolutePath is "/status" or "/unregistered"
             ? Json("""{"name":"native-aot"}""")
             : new(HttpStatusCode.NotFound);
     }

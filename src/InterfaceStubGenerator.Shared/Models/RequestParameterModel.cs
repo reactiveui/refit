@@ -71,4 +71,8 @@ internal readonly record struct RequestParameterModel(
     /// <summary>Gets the multipart part descriptor when this parameter contributes a <c>[Multipart]</c> form part —
     /// set for <see cref="RequestParameterKind.MultipartPart"/> parameters and <see langword="null"/> otherwise.</summary>
     internal MultipartPartModel? MultipartPart { get; init; }
+
+    /// <summary>Gets the fully-qualified type argument of a <see cref="RequestParameterKind.JsonTypeInfo"/> parameter,
+    /// the type its metadata describes, or <see langword="null"/> for every other parameter.</summary>
+    internal string? JsonTypeInfoTarget { get; init; }
 }

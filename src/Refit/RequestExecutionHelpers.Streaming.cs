@@ -57,8 +57,7 @@ internal static partial class RequestExecutionHelpers
                 var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 await using (stream.ConfigureAwait(false))
                 {
-                    await foreach (var item in streamingSerializer
-                        .DeserializeStreamAsync<T>(stream, format, cancellationToken)
+                    await foreach (var item in ReadStream<T>(streamingSerializer, settings, request, stream, format, cancellationToken)
                         .ConfigureAwait(false))
                     {
                         yield return item;
@@ -66,8 +65,7 @@ internal static partial class RequestExecutionHelpers
                 }
 #else
                 using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
-                await foreach (var item in streamingSerializer
-                    .DeserializeStreamAsync<T>(stream, format, cancellationToken)
+                await foreach (var item in ReadStream<T>(streamingSerializer, settings, request, stream, format, cancellationToken)
                     .ConfigureAwait(false))
                 {
                     yield return item;
@@ -79,6 +77,39 @@ internal static partial class RequestExecutionHelpers
         {
             timeoutSource?.Dispose();
         }
+    }
+
+    /// <summary>Reads the framed response stream, with explicit JSON type metadata when the caller supplied it for the request.</summary>
+    /// <typeparam name="T">The element type to deserialize.</typeparam>
+    /// <param name="streamingSerializer">The serializer that reads framed streams.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="request">The request message, which can carry explicit JSON type metadata for the reply.</param>
+    /// <param name="stream">The response body stream.</param>
+    /// <param name="format">The framing of the stream.</param>
+    /// <param name="cancellationToken">A token to cancel enumeration.</param>
+    /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "SST2307:Generic method type parameters should be inferable from the parameters",
+        Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
+    internal static IAsyncEnumerable<T?> ReadStream<T>(
+        IStreamingContentSerializer streamingSerializer,
+        RefitSettings settings,
+        HttpRequestMessage request,
+        Stream stream,
+        StreamingContentFormat format,
+        CancellationToken cancellationToken)
+    {
+#if NET8_0_OR_GREATER
+        if (GeneratedRequestRunner.GetRequestJsonTypeInfo<T>(request) is { } typeInfo)
+        {
+            return GeneratedRequestRunner.RequireJsonTypeInfoSerializer(settings)
+                .DeserializeStreamAsync(stream, format, typeInfo, cancellationToken);
+        }
+#endif
+        _ = settings;
+        _ = request;
+        return streamingSerializer.DeserializeStreamAsync<T>(stream, format, cancellationToken);
     }
 
     /// <summary>Chooses the streaming frame format from the response content type.</summary>

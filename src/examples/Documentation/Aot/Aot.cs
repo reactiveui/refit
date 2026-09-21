@@ -6,7 +6,7 @@ using Refit.Testing;
 
 namespace Refit.Documentation;
 
-/// <summary>Checks generated client dispatch with explicitly registered JSON metadata.</summary>
+/// <summary>Checks generated client dispatch with a JSON context and no reflection-based JSON.</summary>
 internal static class Aot
 {
     /// <summary>Reusable metadata for the person returned by the native-compatible call.</summary>
@@ -22,11 +22,19 @@ internal static class Aot
     {
         host.Http.Add(Route.Get("/people/{id}"), Reply.Json("{\"id\":1,\"name\":\"Ada\"}"));
 
-        IPeopleApi api = RestService.ForGenerated<IPeopleApi>(host.Client, Settings);
+        IPeopleApi api = RestService.ForGenerated<IPeopleApi>(host.Client, SampleJsonContext.Default);
         Person person = await api.GetPersonAsync(1, CancellationToken.None);
         Console.WriteLine(person.Name); // Ada
 
         SampleCheck.Equal(new(1, "Ada"), person);
+
+        host.Http.Add(Route.Get("/people/{id}"), Reply.Json("{\"id\":1,\"name\":\"Ada\"}"));
+
+        IPeopleApi withSettings = RestService.ForGenerated<IPeopleApi>(host.Client, Settings);
+        Person fromSettings = await withSettings.GetPersonAsync(1, CancellationToken.None);
+        Console.WriteLine(fromSettings.Name); // Ada
+
+        SampleCheck.Equal(person, fromSettings);
         await host.Http.VerifyAllCalledAsync();
     }
 }

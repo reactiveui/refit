@@ -263,4 +263,21 @@ public partial class HttpClientFactoryExtensionsTests
                     ServiceClientName))
             .ThrowsExactly<ArgumentNullException>();
     }
+
+    /// <summary>Verifies the keyed generated-only DI helper resolves no settings when it is given no settings factory.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task AddKeyedRefitGeneratedClientWithoutSettingsFactoryResolvesNullSettings()
+    {
+        var serviceCollection = new ServiceCollection();
+        _ = serviceCollection.AddKeyedRefitGeneratedClient<IGeneratedSettingsFactoryApi>(
+            GeneratedServiceKey,
+            (Func<IServiceProvider, RefitSettings?>?)null);
+
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+
+        await Assert.That(
+                serviceProvider.GetRequiredKeyedService<SettingsFor<IGeneratedSettingsFactoryApi>>(GeneratedServiceKey).Settings)
+            .IsNull();
+    }
 }

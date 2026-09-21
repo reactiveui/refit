@@ -25,6 +25,9 @@ internal partial class RestMethodInfoInternal
         TimeSpan.FromSeconds(1));
 #endif
 
+    /// <summary>The full name of the open generic <c>JsonTypeInfo&lt;T&gt;</c> type, matched by name so every target framework can compile the check.</summary>
+    private const string JsonTypeInfoDefinitionName = "System.Text.Json.Serialization.Metadata.JsonTypeInfo`1";
+
     /// <summary>The index of the header collection parameter, or a negative value when none is present.</summary>
     private readonly int _headerCollectionParameterIndex;
 
@@ -74,6 +77,7 @@ internal partial class RestMethodInfoInternal
 
         // Exclude cancellation token parameters from this list
         ParameterInfoArray = GetNonCancellationTokenParameters(methodInfo.GetParameters());
+        VerifyNoJsonTypeInfoParameters(methodInfo, ParameterInfoArray);
 
         // Read every parameter's request-shaping attributes once. Each classifier below then consults this set instead
         // of issuing its own GetCustomAttribute call, which would re-enumerate the same attribute records (allocating a
@@ -308,6 +312,26 @@ internal partial class RestMethodInfoInternal
     [RequiresUnreferencedCode("Reading request object properties requires public property metadata to be available at runtime.")]
     internal static PropertyInfo[] GetParameterProperties(ParameterInfo parameter) =>
         ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(parameter.ParameterType);
+
+    /// <summary>Rejects a <c>JsonTypeInfo&lt;T&gt;</c> parameter, which only generated request building passes on; here it would
+    /// be taken for a body or query value.</summary>
+    /// <param name="methodInfo">The reflected method information.</param>
+    /// <param name="parameters">The parameters the request is mapped from.</param>
+    /// <exception cref="ArgumentException">A parameter is <c>JsonTypeInfo&lt;T&gt;</c>.</exception>
+    internal static void VerifyNoJsonTypeInfoParameters(MethodInfo methodInfo, ParameterInfo[] parameters)
+    {
+        foreach (var parameter in parameters)
+        {
+            var type = parameter.ParameterType;
+            if (!type.IsGenericType || type.GetGenericTypeDefinition().FullName != JsonTypeInfoDefinitionName)
+            {
+                continue;
+            }
+
+            throw new ArgumentException(
+                $"Method {methodInfo.Name} declares the JsonTypeInfo<T> parameter '{parameter.Name}', which only generated request building supports.");
+        }
+    }
 
     /// <summary>Verifies that the relative URL path is well formed and free of injection characters.</summary>
     /// <param name="relativePath">The relative URL path to validate.</param>

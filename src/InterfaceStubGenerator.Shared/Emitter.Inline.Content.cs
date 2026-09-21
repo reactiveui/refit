@@ -50,27 +50,43 @@ internal static partial class Emitter
                     """) + compression;
         }
 
+        return BuildInlineJsonBody(plan, bodyParameter, bodyIndent) + compression;
+    }
+
+    /// <summary>Builds the content assignment for a JSON body: JSON Lines, or a body serialized through the content
+    /// serializer with explicit <c>JsonTypeInfo&lt;T&gt;</c> metadata when the method declares a parameter for it.</summary>
+    /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
+    /// <param name="bodyParameter">The body parameter model.</param>
+    /// <param name="bodyIndent">The method body indentation.</param>
+    /// <returns>The generated content assignment.</returns>
+    internal static string BuildInlineJsonBody(
+        in InlineMethodPlan plan,
+        in RequestParameterModel bodyParameter,
+        string bodyIndent)
+    {
+        var settingsLocal = plan.SettingsLocal;
         if (bodyParameter.BodySerializationMethod == "JsonLines")
         {
             return $$"""
-                {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<{{bodyParameter.Type}}>(
+                {{bodyIndent}}{{plan.RequestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<{{bodyParameter.Type}}>(
                 {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    @{{bodyParameter.Name}});
 
-                """ + compression;
+                """;
         }
 
-        var streamBodyExpression = BuildStreamBodyExpression(bodyParameter, settingsLocal);
-        var serializationMethodExpression = BuildBodySerializationMethodExpression(bodyParameter);
+        var typeInfoArgument = plan.BodyTypeInfoExpression is { } typeInfoExpression
+            ? $"{bodyIndent}    {typeInfoExpression},\n"
+            : string.Empty;
 
         return $$"""
-            {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<{{bodyParameter.Type}}>(
+            {{bodyIndent}}{{plan.RequestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<{{bodyParameter.Type}}>(
             {{bodyIndent}}    {{settingsLocal}},
             {{bodyIndent}}    @{{bodyParameter.Name}},
-            {{bodyIndent}}    {{serializationMethodExpression}},
-            {{bodyIndent}}    {{streamBodyExpression}});
+            {{typeInfoArgument}}{{bodyIndent}}    {{BuildBodySerializationMethodExpression(bodyParameter)}},
+            {{bodyIndent}}    {{BuildStreamBodyExpression(bodyParameter, settingsLocal)}});
 
-            """ + compression;
+            """;
     }
 
     /// <summary>Emits the content-coding wrap for a body, or nothing when no coding can apply.</summary>

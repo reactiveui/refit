@@ -4,3 +4,5 @@
 using Refit.Documentation.SampleHost host = new();
 
 await Refit.Documentation.ReflectionClients.RunAsync(host);
+
+await Refit.Documentation.Clients.RunAsync(host);

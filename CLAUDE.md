@@ -181,6 +181,21 @@ The runtime project uses PublicApiSharp. Every public or protected member is rec
 
 ---
 
+## JSON context registration
+
+A source-generated `JsonSerializerContext` is registered at runtime; the generator never emits `[JsonSerializable]` because one JSON source generator cannot read another's output. Every member below is `#if NET8_0_OR_GREATER`.
+
+- `RestService.ForGenerated<T>` and `HttpClientFactoryExtensions.AddRefitGeneratedClient<T>` / `AddKeyedRefitGeneratedClient<T>` have overloads that take a context, with `RefitSettings` and `bool allowReflectionFallback` variants. `RefitSettings.ForJsonContext` / `UseJsonContext` and `SystemTextJsonContentSerializer.ForContext` / `WithContext` back them, and serve the reflection-based APIs too.
+- With no settings the context's own `Options` are used unchanged. With settings, the settings' serializer options are copied and kept (naming, converters, existing resolvers first, `DefaultJsonTypeInfoResolver` modifiers carried onto the context) and the context is appended as a metadata source. The context's `[JsonSourceGenerationOptions]` naming is not applied in that mode.
+- Reflection-based JSON is off unless `allowReflectionFallback` is `true`; a type the context does not describe throws `NotSupportedException`. A context declared without `[JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]` reads camelCase replies as default values, so every example context carries that attribute.
+- `IJsonTypeInfoContentSerializer` is the optional capability for explicit `JsonTypeInfo<T>` overloads; `SystemTextJsonContentSerializer` implements it.
+- A Refit method may declare `JsonTypeInfo<T>` parameters. `Parser.IsJsonTypeInfo` classifies them as `RequestParameterKind.JsonTypeInfo` (`RequestParameterModel.JsonTypeInfoTarget` holds `T`); each one is matched by `T` to the JSON body type or to the type the reply is read as. A body match makes the emitter call `GeneratedRequestRunner.CreateBodyContent(settings, body, typeInfo, ...)`; a reply match emits `SetRequestJsonTypeInfo<T>`, which stores the metadata in the request options for `RequestExecutionHelpers.DeserializeSerializedContentAsync` and `ReadStream`. Anything else reports `RF014` (`Parser.ValidateJsonTypeInfoParameters`), including a method that cannot be generated inline or generated request building being off, because the reflection request builder would treat the parameter as a body or query value.
+- `GeneratedRequestRunner.JsonTypeInfo.cs` is `NET8_0_OR_GREATER` only; `JsonTypeInfoParameterGenerationTests` and `JsonTypeInfoParameterSnapshotTests` cover the generator, `GeneratedJsonTypeInfoParameterTests` runs generated clients, and `Refit.GeneratedCode.TestModels/Scenarios/IGeneratedJsonMetadataApi.cs` compiles the output under the repo analyzers.
+- `RestService`, `RefitSettings` and `SystemTextJsonContentSerializer` are `partial` only on `NET8_0_OR_GREATER` (a `partial` with one declaration raises `SST1419` on the .NET Framework targets). The two `RestService.ForGenerated<T>(…, RefitSettings)` overloads carry `[OverloadResolutionPriority(1)]` so `ForGenerated<T>(client, new())` still binds to the settings overload; `Refit.csproj` compiles the polyfill on `net8.0` for it.
+- `Refit.NativeAotSmoke` publishes with `ForGenerated(client, context)` and asserts an undescribed reply type fails; run it after touching this area: `dotnet publish Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj -c Release -r linux-x64` from `src`, then execute the binary under `bin/Release/net8.0/linux-x64/publish/`.
+
+---
+
 ## Pagination
 
 `PagedEnumerable<TPage, TItem>` wraps an ordinary Refit method that returns one page and exposes a lazy sequence of items or pages. The page type is the API's own DTO or an `ApiResponse<TPage>` of it; Refit adds no page model.

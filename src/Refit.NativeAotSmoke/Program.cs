@@ -1,11 +1,12 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Text.Json;
 using Refit;
 using Refit.NativeAotSmoke;
 
 const int ExpectedTodoId = 42;
+
+const string ExpectedTodoTitle = "prove native aot";
 
 const int FormCount = 2;
 
@@ -17,15 +18,20 @@ var handler = new NativeAotSmokeHandler();
 
 using var client = new HttpClient(handler) { BaseAddress = new("https://aot.refit.test") };
 
-var jsonOptions = new JsonSerializerOptions(AotJsonContext.Default.Options) { TypeInfoResolver = AotJsonContext.Default, };
+var api = SmokeApiFactory.Create(client, AotJsonContext.Default);
 
-var api = SmokeApiFactory.Create(client, jsonOptions);
+var created = await api.CreateTodoAsync(new(ExpectedTodoTitle)).ConfigureAwait(false);
 
-var created = await api.CreateTodoAsync(new("prove native aot")).ConfigureAwait(false);
-
-if (created.Id != ExpectedTodoId || created.Title != "prove native aot")
+if (created.Id != ExpectedTodoId || created.Title != ExpectedTodoTitle)
 {
     throw new InvalidOperationException("The AOT POST response was not deserialized correctly.");
+}
+
+var described = await api.CreateDescribedTodoAsync(new(ExpectedTodoTitle), AotJsonContext.Default.Todo).ConfigureAwait(false);
+
+if (described.Id != ExpectedTodoId || described.Title != ExpectedTodoTitle)
+{
+    throw new InvalidOperationException("The AOT method that takes JsonTypeInfo metadata did not round-trip the item.");
 }
 
 var formResponse = await api.SubmitFormAsync(new("Ada", FormCount)).ConfigureAwait(false);
@@ -67,6 +73,17 @@ if (searched.Name != "native-aot" || !handler.SawExpectedQuery)
 if (!handler.SawFormBody)
 {
     throw new InvalidOperationException("The AOT URL-encoded request body was not serialized through generated Refit code.");
+}
+
+// The context does not describe SmokeUnregistered, so reading it fails instead of falling back to reflection.
+try
+{
+    _ = await api.GetUnregisteredAsync().ConfigureAwait(false);
+    throw new InvalidOperationException("The AOT client read a type its JSON context does not describe.");
+}
+catch (Exception ex) when (ex.GetBaseException() is NotSupportedException)
+{
+    // Expected: the generated JSON context is the only metadata source.
 }
 
 // A missed generated-client lookup forces the interface assembly's module initializer and looks again, which is what

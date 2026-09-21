@@ -165,7 +165,8 @@ internal static partial class Emitter
             parameterInfoNames,
             paramInfoSb,
             emission,
-            locals);
+            locals,
+            BuildBodyTypeInfoExpression(request, bodyParameter));
         BuildInlineRefitMethodBody(builder, methodModel, interfaceModel, isExplicit, settingsFieldName, uniqueNames, plan);
     }
 
@@ -662,6 +663,28 @@ internal static partial class Emitter
             : $"@{cancellationToken.Value.Name}";
     }
 
+    /// <summary>Finds the <c>JsonTypeInfo&lt;T&gt;</c> parameter that describes a JSON body.</summary>
+    /// <param name="request">The request model to inspect.</param>
+    /// <param name="bodyParameter">The body parameter, or null when the method has none.</param>
+    /// <returns>The parameter expression, or <see langword="null"/> when no such parameter exists.</returns>
+    internal static string? BuildBodyTypeInfoExpression(in RequestModel request, RequestParameterModel? bodyParameter)
+    {
+        if (bodyParameter is not { } body || body.BodySerializationMethod is "UrlEncoded" or "JsonLines")
+        {
+            return null;
+        }
+
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind == RequestParameterKind.JsonTypeInfo && parameter.JsonTypeInfoTarget == body.Type)
+            {
+                return $"@{parameter.Name}";
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>Builds the body serialization enum expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter.</param>
     /// <returns>The serialization method expression.</returns>
@@ -706,6 +729,8 @@ internal static partial class Emitter
     /// <param name="ParamInfoBuilder">The builder holding the emitted attribute-provider fields.</param>
     /// <param name="Emission">The inline value-emission context.</param>
     /// <param name="Locals">The method-scope unique local name builder.</param>
+    /// <param name="BodyTypeInfoExpression">The expression for the <c>JsonTypeInfo&lt;T&gt;</c> parameter that describes the
+    /// JSON body, or <see langword="null"/> when the body is serialized through the content serializer's own lookup.</param>
     internal readonly record struct InlineMethodPlan(
         RequestParameterModel? BodyParameter,
         string SettingsLocal,
@@ -717,5 +742,6 @@ internal static partial class Emitter
         Dictionary<string, string> ParameterInfoNames,
         PooledStringBuilder ParamInfoBuilder,
         InlineValueEmission Emission,
-        UniqueNameBuilder Locals);
+        UniqueNameBuilder Locals,
+        string? BodyTypeInfoExpression);
 }

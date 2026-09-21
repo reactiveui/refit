@@ -15,6 +15,7 @@ internal static class Streaming
     {
         const int ExpectedPeople = 2;
         const int DeadlineSeconds = 10;
+        const int RequestsPerFormat = 2;
 
         foreach ((string body, string mediaType) in new[]
         {
@@ -24,9 +25,10 @@ internal static class Streaming
         })
         {
             host.Http.Add(Route.Get("/people"), Reply.Text(body, mediaType));
+            host.Http.Add(Route.Get("/people"), Reply.Text(body, mediaType));
 
             int before = host.Http.Requests.Count;
-            IStreamingApi api = RestService.ForGenerated<IStreamingApi>(host.Client, host.Settings);
+            IStreamingApi api = RestService.ForGenerated<IStreamingApi>(host.Client, SampleJsonContext.Default);
             int count = 0;
 
             using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(DeadlineSeconds));
@@ -36,9 +38,18 @@ internal static class Streaming
                 count++;
             }
 
+            IStreamingApi withSettings = RestService.ForGenerated<IStreamingApi>(host.Client, host.Settings);
+            int settingsCount = 0;
+            await foreach (Person fromSettings in withSettings.ReadPeopleAsync(cancellation.Token))
+            {
+                Console.WriteLine(fromSettings.Name); // Ada, then Grace
+                settingsCount++;
+            }
+
             await host.Http.VerifyAllCalledAsync();
             SampleCheck.Equal(ExpectedPeople, count);
-            SampleCheck.Equal(before + 1, host.Http.Requests.Count);
+            SampleCheck.Equal(ExpectedPeople, settingsCount);
+            SampleCheck.Equal(before + RequestsPerFormat, host.Http.Requests.Count);
         }
     }
 }

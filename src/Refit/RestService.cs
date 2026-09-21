@@ -9,7 +9,11 @@ using System.Runtime.CompilerServices;
 namespace Refit;
 
 /// <summary>Creates Refit interface implementations.</summary>
+#if NET8_0_OR_GREATER
+public static partial class RestService
+#else
 public static class RestService
+#endif
 {
     /// <summary>Caches the resolved generated implementation type per interface.</summary>
     private static readonly ConcurrentDictionary<Type, Type> _typeMapping = new();
@@ -82,6 +86,9 @@ public static class RestService
     /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no generated implementation is registered for <typeparamref name="T"/>.</exception>
+#if NET8_0_OR_GREATER
+    [OverloadResolutionPriority(1)]
+#endif
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -123,6 +130,9 @@ public static class RestService
     /// <param name="settings"><see cref="RefitSettings"/> to use to configure the generated client.</param>
     /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
     /// <exception cref="InvalidOperationException">Thrown when no generated implementation is registered for <typeparamref name="T"/>.</exception>
+#if NET8_0_OR_GREATER
+    [OverloadResolutionPriority(1)]
+#endif
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",

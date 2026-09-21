@@ -42,6 +42,17 @@ internal static class DiagnosticDescriptors
             DiagnosticSeverity.Error,
             true);
 
+    /// <summary>Diagnostic reported when a <c>JsonTypeInfo&lt;T&gt;</c> parameter cannot supply metadata the generator can pass on.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    internal static readonly DiagnosticDescriptor InvalidJsonTypeInfoParameter =
+        new(
+            "RF014",
+            "JsonTypeInfo parameter is not usable",
+            "Method '{0}' cannot use its JsonTypeInfo parameter: {1}",
+            Category,
+            DiagnosticSeverity.Error,
+            true);
+
     /// <summary>The diagnostic category for Refit generator diagnostics.</summary>
     private const string Category = "Refit";
 }

@@ -162,6 +162,23 @@ internal static partial class Parser
         };
     }
 
+    /// <summary>Determines whether a type is <c>System.Text.Json.Serialization.Metadata.JsonTypeInfo&lt;T&gt;</c>.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <param name="target">Receives the type argument <c>T</c> the metadata describes.</param>
+    /// <returns><see langword="true"/> when the type is a closed <c>JsonTypeInfo&lt;T&gt;</c>.</returns>
+    internal static bool IsJsonTypeInfo(ITypeSymbol type, out ITypeSymbol target)
+    {
+        if (type is INamedTypeSymbol { Name: "JsonTypeInfo", TypeArguments: [var argument] } named
+            && IsInNamespace(named, "System.Text.Json.Serialization.Metadata"))
+        {
+            target = argument;
+            return true;
+        }
+
+        target = type;
+        return false;
+    }
+
     /// <summary>Tries to parse an explicitly attributed body parameter.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
     /// <param name="parameterType">The parameter type display string.</param>

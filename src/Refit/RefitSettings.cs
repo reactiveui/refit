@@ -14,7 +14,11 @@ namespace Refit;
     "Reliability",
     "SST2403:'this' escapes from a constructor before the object is fully built",
     Justification = "The default exception-factory delegate captures the settings instance but is only invoked after construction completes.")]
+#if NET8_0_OR_GREATER
+public partial class RefitSettings
+#else
 public class RefitSettings
+#endif
 {
     /// <summary>Initializes a new instance of the <see cref="RefitSettings"/> class.</summary>
 #if NET8_0_OR_GREATER

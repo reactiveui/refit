@@ -11,7 +11,7 @@ namespace Refit.Tests;
 /// <summary>
 /// Verifies the JSON Lines streaming deserializer returns its pooled buffer whether enumeration runs to completion
 /// or the caller disposes early, exercising the reader's <see langword="try"/>/<see langword="finally"/> teardown.
-/// Drives <see cref="SystemTextJsonContentSerializer.DeserializeStreamAsync{T}"/> directly so the buffered manual
+/// Drives <see cref="SystemTextJsonContentSerializer.DeserializeStreamAsync{T}(Stream, StreamingContentFormat, CancellationToken)"/> directly so the buffered manual
 /// reader path is enumerated without HTTP plumbing.
 /// </summary>
 public sealed class JsonLinesStreamTeardownTests

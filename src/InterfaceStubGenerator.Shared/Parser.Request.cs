@@ -34,6 +34,7 @@ internal static partial class Parser
         if (!context.GeneratedRequestBuilding)
         {
             ReportSourceGenOnlyAttributeMisuse(methodSymbol, context);
+            ReportJsonTypeInfoParameterWithoutGeneratedRequests(methodSymbol, context);
             return RequestModel.Empty;
         }
 
@@ -79,6 +80,11 @@ internal static partial class Parser
         if (!canGenerateInline && pagingIsValid)
         {
             ReportSourceGenOnlyAttributeMisuse(methodSymbol, context);
+        }
+
+        if (!ValidateJsonTypeInfoParameters(methodSymbol, parameters, returnTypes.DeserializedResultType, canGenerateInline, context))
+        {
+            canGenerateInline = false;
         }
 
         return new(

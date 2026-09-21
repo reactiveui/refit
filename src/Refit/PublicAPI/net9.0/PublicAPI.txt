@@ -293,6 +293,7 @@ public static class GeneratedRequestRunner
     public static bool CanUnrollForm(object? body) { }
     public static System.Net.Http.HttpContent CompressBodyContent(System.Net.Http.HttpContent content, Refit.RefitSettings settings, Refit.RequestCompression compression, System.IO.Compression.CompressionLevel level) { }
     public static System.Net.Http.HttpContent CreateBodyContent<TBody>(Refit.RefitSettings settings, TBody body, Refit.BodySerializationMethod serializationMethod, bool streamBody) { }
+    public static System.Net.Http.HttpContent CreateBodyContent<TBody>(Refit.RefitSettings settings, TBody body, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TBody>? typeInfo, Refit.BodySerializationMethod serializationMethod, bool streamBody) { }
     public static System.Net.Http.HttpContent CreateJsonLinesBodyContent<TBody>(Refit.RefitSettings settings, TBody body) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static System.Net.Http.HttpContent CreateStreamContent(System.IO.Stream stream) { }
@@ -310,6 +311,7 @@ public static class GeneratedRequestRunner
     public static System.Threading.Tasks.Task SendVoidAsync(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, bool bufferBody, System.Threading.CancellationToken cancellationToken) { }
     public static System.Net.Http.HttpContent SerializeMultipartPart<T>(Refit.RefitSettings settings, T value, string fieldName) { }
     public static void SetHeader(System.Net.Http.HttpRequestMessage request, string name, string? value, bool validateHeaders) { }
+    public static void SetRequestJsonTypeInfo<T>(System.Net.Http.HttpRequestMessage request, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T>? typeInfo) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static void SetRequestTimeout(System.Net.Http.HttpRequestMessage request, int timeoutMilliseconds) { }
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -418,6 +420,15 @@ public interface IHttpContentSerializer
     System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
     string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+}
+public interface IJsonTypeInfoContentSerializer
+{
+    T? DeserializeFromString<T>(string content, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
+    System.Collections.Generic.IAsyncEnumerable<T?> DeserializeStreamAsync<T>(System.IO.Stream stream, Refit.StreamingContentFormat format, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo, System.Threading.CancellationToken cancellationToken = default) { }
+    System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo, System.Threading.CancellationToken cancellationToken = default) { }
+    System.Net.Http.HttpContent ToHttpContent<T>(T item, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
+    System.Net.Http.HttpContent ToHttpContentSynchronous<T>(T item, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
+    System.Net.Http.HttpContent ToStreamingHttpContent<T>(T item, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
 }
 public interface IQueryConverter<in T>
 {
@@ -705,8 +716,12 @@ public class RefitSettings
     public bool ValidateHeaders { get; set; }
     public System.Version Version { get; set; }
     public System.Net.Http.HttpVersionPolicy VersionPolicy { get; set; }
+    public Refit.RefitSettings UseJsonContext(System.Text.Json.Serialization.JsonSerializerContext context) { }
+    public Refit.RefitSettings UseJsonContext(System.Text.Json.Serialization.JsonSerializerContext context, bool allowReflectionFallback) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.RefitSettings CamelCase() { }
+    public static Refit.RefitSettings ForJsonContext(System.Text.Json.Serialization.JsonSerializerContext context) { }
+    public static Refit.RefitSettings ForJsonContext(System.Text.Json.Serialization.JsonSerializerContext context, bool allowReflectionFallback) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.RefitSettings KebabCase() { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -811,8 +826,18 @@ public static class RestService
     public static T ForGenerated<T>(System.Net.Http.HttpClient client) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static T ForGenerated<T>(string hostUrl) { }
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public static T ForGenerated<T>(System.Net.Http.HttpClient client, Refit.RefitSettings settings) { }
+    public static T ForGenerated<T>(System.Net.Http.HttpClient client, System.Text.Json.Serialization.JsonSerializerContext context) { }
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public static T ForGenerated<T>(string hostUrl, Refit.RefitSettings settings) { }
+    public static T ForGenerated<T>(string hostUrl, System.Text.Json.Serialization.JsonSerializerContext context) { }
+    public static T ForGenerated<T>(System.Net.Http.HttpClient client, System.Text.Json.Serialization.JsonSerializerContext context, Refit.RefitSettings settings) { }
+    public static T ForGenerated<T>(System.Net.Http.HttpClient client, System.Text.Json.Serialization.JsonSerializerContext context, bool allowReflectionFallback) { }
+    public static T ForGenerated<T>(string hostUrl, System.Text.Json.Serialization.JsonSerializerContext context, Refit.RefitSettings settings) { }
+    public static T ForGenerated<T>(string hostUrl, System.Text.Json.Serialization.JsonSerializerContext context, bool allowReflectionFallback) { }
+    public static T ForGenerated<T>(System.Net.Http.HttpClient client, System.Text.Json.Serialization.JsonSerializerContext context, Refit.RefitSettings settings, bool allowReflectionFallback) { }
+    public static T ForGenerated<T>(string hostUrl, System.Text.Json.Serialization.JsonSerializerContext context, Refit.RefitSettings settings, bool allowReflectionFallback) { }
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static void RegisterGeneratedFactory(System.Type refitInterfaceType, System.Func<System.Net.Http.HttpClient, Refit.IRequestBuilder, object> factory) { }
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
@@ -841,20 +866,30 @@ public enum StreamingContentFormat
     ServerSentEvents = 2,
 }
 [System.Diagnostics.DebuggerDisplay("{SerializerOptions}")]
-public sealed class SystemTextJsonContentSerializer : Refit.IHttpContentSerializer, Refit.IStreamingContentSerializer, Refit.ISynchronousContentDeserializer, Refit.ISynchronousContentSerializer
+public sealed class SystemTextJsonContentSerializer : Refit.IHttpContentSerializer, Refit.IJsonTypeInfoContentSerializer, Refit.IStreamingContentSerializer, Refit.ISynchronousContentDeserializer, Refit.ISynchronousContentSerializer
 {
     public SystemTextJsonContentSerializer() { }
     public SystemTextJsonContentSerializer(System.Text.Json.JsonSerializerOptions jsonSerializerOptions) { }
     public System.Text.Json.JsonSerializerOptions SerializerOptions { get; }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public T? DeserializeFromString<T>(string content) { }
+    public T? DeserializeFromString<T>(string content, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
     public System.Collections.Generic.IAsyncEnumerable<T?> DeserializeStreamAsync<T>(System.IO.Stream stream, Refit.StreamingContentFormat format, System.Threading.CancellationToken cancellationToken = default) { }
+    public System.Collections.Generic.IAsyncEnumerable<T?> DeserializeStreamAsync<T>(System.IO.Stream stream, Refit.StreamingContentFormat format, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo, System.Threading.CancellationToken cancellationToken = default) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
+    public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo, System.Threading.CancellationToken cancellationToken = default) { }
     public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+    public System.Net.Http.HttpContent ToHttpContent<T>(T item, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
     public System.Net.Http.HttpContent ToHttpContentSynchronous<T>(T item) { }
+    public System.Net.Http.HttpContent ToHttpContentSynchronous<T>(T item, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
     public System.Net.Http.HttpContent ToStreamingHttpContent<T>(T item) { }
+    public System.Net.Http.HttpContent ToStreamingHttpContent<T>(T item, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
+    public Refit.SystemTextJsonContentSerializer WithContext(System.Text.Json.Serialization.JsonSerializerContext context) { }
+    public Refit.SystemTextJsonContentSerializer WithContext(System.Text.Json.Serialization.JsonSerializerContext context, bool allowReflectionFallback) { }
+    public static Refit.SystemTextJsonContentSerializer ForContext(System.Text.Json.Serialization.JsonSerializerContext context) { }
+    public static Refit.SystemTextJsonContentSerializer ForContext(System.Text.Json.Serialization.JsonSerializerContext context, bool allowReflectionFallback) { }
     public static System.Text.Json.JsonSerializerOptions GetDefaultJsonSerializerOptions() { }
     public static System.Text.Json.JsonSerializerOptions GetFastPathJsonSerializerOptions() { }
 }

@@ -30,6 +30,7 @@ internal static class Bodies
     internal static async Task RunAsync(SampleHost host)
     {
         AddBodyRoute(host, "/body/json", PersonJson);
+        AddBodyRoute(host, "/body/json", PersonJson);
         AddBodyRoute(host, "/body/text", "hello");
         AddBodyRoute(host, "/body/quoted", "\"quoted\"");
         AddBodyRoute(host, "/body/stream", "stream text");
@@ -41,7 +42,7 @@ internal static class Bodies
         host.Http.Add(new() { Method = HttpMethod.Post, Template = "/body/gzip", Headers = [("Content-Encoding", "gzip")], WhereAsync = CheckGzipAsync, }, Reply.Json(PersonJson));
 
         const int graceId = 2;
-        IBodyApi api = RestService.ForGenerated<IBodyApi>(host.Client, Settings);
+        IBodyApi api = RestService.ForGenerated<IBodyApi>(host.Client, SampleJsonContext.Default);
         Person saved = await api.JsonAsync(new(1, "Ada"));
         await api.TextAsync("hello");
         await api.QuotedAsync("quoted");
@@ -57,8 +58,12 @@ internal static class Bodies
         await api.GzipAsync(new(1, "Ada"));
         Console.WriteLine(saved.Name); // Ada
 
+        IBodyApi withSettings = RestService.ForGenerated<IBodyApi>(host.Client, Settings);
+        Person savedWithSettings = await withSettings.JsonAsync(new(1, "Ada"));
+
         SampleCheck.Equal(true, stream.CanRead);
         SampleCheck.Equal("Ada", saved.Name);
+        SampleCheck.Equal(saved, savedWithSettings);
         await BodyPolicies.RunAsync(host);
         await host.Http.VerifyAllCalledAsync();
     }

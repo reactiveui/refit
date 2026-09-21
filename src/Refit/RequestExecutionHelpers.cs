@@ -449,7 +449,7 @@ internal static partial class RequestExecutionHelpers
         {
             body =
                 exception is null
-                    ? await DeserializeContentAsync<TBody>(response, content, settings, cancellationToken)
+                    ? await DeserializeContentAsync<TBody>(request, response, content, settings, cancellationToken)
                         .ConfigureAwait(false)
                     : default;
         }
@@ -488,7 +488,7 @@ internal static partial class RequestExecutionHelpers
     {
         try
         {
-            return await DeserializeContentAsync<T>(response, content, settings, cancellationToken)
+            return await DeserializeContentAsync<T>(request, response, content, settings, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -544,6 +544,7 @@ internal static partial class RequestExecutionHelpers
 
     /// <summary>Deserializes the response content into the requested type.</summary>
     /// <typeparam name="T">The type to deserialize into.</typeparam>
+    /// <param name="request">The request message, which can carry explicit JSON type metadata for the reply.</param>
     /// <param name="response">The response message.</param>
     /// <param name="content">The response content.</param>
     /// <param name="settings">The Refit settings to use.</param>
@@ -554,6 +555,7 @@ internal static partial class RequestExecutionHelpers
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
     internal static async ValueTask<T?> DeserializeContentAsync<T>(
+        HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
         RefitSettings settings,
@@ -601,6 +603,7 @@ internal static partial class RequestExecutionHelpers
         }
 
         return await DeserializeSerializedContentAsync<T>(
+                request,
                 response,
                 content,
                 settings,
@@ -610,6 +613,7 @@ internal static partial class RequestExecutionHelpers
 
     /// <summary>Buffers and deserializes serialized content via the configured serializer.</summary>
     /// <typeparam name="T">The type to deserialize into.</typeparam>
+    /// <param name="request">The request message, which can carry explicit JSON type metadata for the reply.</param>
     /// <param name="response">The response message.</param>
     /// <param name="content">The response content.</param>
     /// <param name="settings">The Refit settings to use.</param>
@@ -620,6 +624,7 @@ internal static partial class RequestExecutionHelpers
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
     internal static async ValueTask<T?> DeserializeSerializedContentAsync<T>(
+        HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
         RefitSettings settings,
@@ -633,9 +638,20 @@ internal static partial class RequestExecutionHelpers
 
         await TryBufferContentAsync(content, cancellationToken).ConfigureAwait(false);
 
+#if NET8_0_OR_GREATER
+        return GeneratedRequestRunner.GetRequestJsonTypeInfo<T>(request) is { } typeInfo
+            ? await GeneratedRequestRunner.RequireJsonTypeInfoSerializer(settings)
+                .FromHttpContentAsync(content, typeInfo, cancellationToken)
+                .ConfigureAwait(false)
+            : await settings.ContentSerializer
+                .FromHttpContentAsync<T>(content, cancellationToken)
+                .ConfigureAwait(false);
+#else
+        _ = request;
         return await settings.ContentSerializer
             .FromHttpContentAsync<T>(content, cancellationToken)
             .ConfigureAwait(false);
+#endif
     }
 
     /// <summary>Attempts to buffer content into memory, ignoring buffering failures but honouring cancellation.</summary>
