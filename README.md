@@ -98,10 +98,12 @@ See [breaking changes](https://github.com/reactiveui/refit/blob/main/docs/breaki
 
 ## Sponsors
 
-Refit is supported by [JetBrains](https://www.jetbrains.com/) and by
-[Anthropic](https://www.anthropic.com/) through [Claude](https://claude.com/).
-[OpenAI](https://openai.com/) supports Refit's maintainers with [Codex](https://openai.com/codex/)
-through [Codex for Open Source](https://developers.openai.com/community/codex-for-oss).
+[JetBrains](https://www.jetbrains.com/) gives Refit's maintainers licences for its tools through its
+[open source support programme](https://www.jetbrains.com/community/opensource/).
+[Anthropic](https://www.anthropic.com/) supports them with [Claude](https://claude.com/) through
+[Claude for Open Source](https://claude.com/contact-sales/claude-for-oss).
+[OpenAI](https://openai.com/) supports them with [Codex](https://openai.com/codex/) through
+[Codex for Open Source](https://developers.openai.com/community/codex-for-oss).
 
 [![JetBrains](https://raw.githubusercontent.com/reactiveui/refit/main/images/jetbrains.svg)](https://www.jetbrains.com/)
 [![Claude by Anthropic](https://raw.githubusercontent.com/reactiveui/refit/main/images/claude.svg)](https://claude.com/)
