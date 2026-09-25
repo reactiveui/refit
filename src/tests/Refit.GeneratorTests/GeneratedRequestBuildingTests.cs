@@ -89,12 +89,12 @@ public partial class GeneratedRequestBuildingTests
         var generated = Fixture.GenerateForBody(
             """
             [Post("/import")]
-            Task Import([Body(BodySerializationMethod.JsonLines)] IEnumerable<string> documents);
+            Task Import([Body(BodySerializationMethod.JsonLines)] IEnumerable<object> documents);
             """,
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent");
+        await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<");
     }
 
     /// <summary>Verifies an inherited Refit method is emitted through an explicit interface implementation.</summary>

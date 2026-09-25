@@ -179,6 +179,91 @@ internal static partial class Parser
         return false;
     }
 
+    /// <summary>Finds the element type a JSON Lines body can be written with while keeping the element type.</summary>
+    /// <param name="type">The declared body type.</param>
+    /// <param name="isAsync">Receives whether the body is an asynchronous sequence.</param>
+    /// <returns>
+    /// The element type of an <c>IAsyncEnumerable&lt;T&gt;</c> body that is not also a synchronous sequence, or of an
+    /// <c>IEnumerable&lt;T&gt;</c> body whose element type has no derived types; otherwise <see langword="null"/>.
+    /// </returns>
+    /// <remarks>
+    /// An asynchronous sequence was never written one element per line, so it always takes the typed path. A
+    /// synchronous sequence already is, with every element serialized as <see cref="object"/>. It takes the typed
+    /// path only when its element type is a value type or sealed class, where serializing it as the declared type
+    /// writes the same JSON. Any other element type keeps the untyped path; callers who want the declared type
+    /// pass a <c>JsonLinesContent&lt;T&gt;</c> body.
+    /// </remarks>
+    internal static ITypeSymbol? FindJsonLinesElementType(ITypeSymbol type, out bool isAsync)
+    {
+        isAsync = false;
+        if (type.SpecialType == SpecialType.System_String
+            || type is ITypeParameterSymbol
+            || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+        {
+            return null;
+        }
+
+        ITypeSymbol? asyncElement = null;
+        ITypeSymbol? syncElement = null;
+        var syncCount = 0;
+        var asyncCount = 0;
+        var implementsEnumerable = type.SpecialType == SpecialType.System_Collections_IEnumerable;
+        ClassifySequenceInterface(type, ref asyncElement, ref asyncCount, ref syncElement, ref syncCount, ref implementsEnumerable);
+        foreach (var implemented in type.AllInterfaces)
+        {
+            ClassifySequenceInterface(implemented, ref asyncElement, ref asyncCount, ref syncElement, ref syncCount, ref implementsEnumerable);
+        }
+
+        if (asyncCount == 1 && !implementsEnumerable)
+        {
+            isAsync = true;
+            return asyncElement;
+        }
+
+        return syncCount == 1 && syncElement is { IsValueType: true } or { IsSealed: true, TypeKind: not TypeKind.TypeParameter }
+            ? syncElement
+            : null;
+    }
+
+    /// <summary>Records whether one type is a generic sequence interface, and its element type.</summary>
+    /// <param name="candidate">The declared type or one of its interfaces.</param>
+    /// <param name="asyncElement">The element type of the last <c>IAsyncEnumerable&lt;T&gt;</c> seen.</param>
+    /// <param name="asyncCount">The number of <c>IAsyncEnumerable&lt;T&gt;</c> interfaces seen.</param>
+    /// <param name="syncElement">The element type of the last <c>IEnumerable&lt;T&gt;</c> seen.</param>
+    /// <param name="syncCount">The number of <c>IEnumerable&lt;T&gt;</c> interfaces seen.</param>
+    /// <param name="implementsEnumerable">Set when the candidate is the non-generic <c>IEnumerable</c>.</param>
+    internal static void ClassifySequenceInterface(
+        ITypeSymbol candidate,
+        ref ITypeSymbol? asyncElement,
+        ref int asyncCount,
+        ref ITypeSymbol? syncElement,
+        ref int syncCount,
+        ref bool implementsEnumerable)
+    {
+        if (candidate.SpecialType == SpecialType.System_Collections_IEnumerable)
+        {
+            implementsEnumerable = true;
+            return;
+        }
+
+        if (candidate is not INamedTypeSymbol { IsGenericType: true, TypeArguments: [var element] } named)
+        {
+            return;
+        }
+
+        if (named.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
+        {
+            syncElement = element;
+            syncCount++;
+        }
+        else if (named is { Name: "IAsyncEnumerable", TypeKind: TypeKind.Interface }
+                 && IsInNamespace(named, "System.Collections.Generic"))
+        {
+            asyncElement = element;
+            asyncCount++;
+        }
+    }
+
     /// <summary>Tries to parse an explicitly attributed body parameter.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
     /// <param name="parameterType">The parameter type display string.</param>
@@ -202,6 +287,10 @@ internal static partial class Parser
             var formFields = bodyInfo.SerializationMethod == "UrlEncoded"
                 ? TryBuildFormFields(parameter.Type, context)
                 : null;
+            var isAsyncJsonLines = false;
+            var jsonLinesElement = bodyInfo.SerializationMethod == "JsonLines"
+                ? FindJsonLinesElementType(parameter.Type, out isAsyncJsonLines)
+                : null;
             bodyParameter = new(
                     parameter.MetadataName,
                     parameterType,
@@ -212,7 +301,14 @@ internal static partial class Parser
                     string.Empty,
                     string.Empty,
                     bodyInfo.SerializationMethod,
-                bodyInfo.BufferMode) { FormFields = formFields, Compression = bodyInfo.Compression, CompressionLevel = bodyInfo.CompressionLevel, };
+                bodyInfo.BufferMode)
+            {
+                FormFields = formFields,
+                Compression = bodyInfo.Compression,
+                CompressionLevel = bodyInfo.CompressionLevel,
+                JsonLinesElementType = jsonLinesElement is null ? null : QualifyType(jsonLinesElement, context),
+                IsAsyncJsonLines = isAsyncJsonLines,
+            };
             return true;
         }
 

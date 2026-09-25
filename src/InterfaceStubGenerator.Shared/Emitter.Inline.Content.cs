@@ -65,6 +65,20 @@ internal static partial class Emitter
         string bodyIndent)
     {
         var settingsLocal = plan.SettingsLocal;
+        if (bodyParameter.BodySerializationMethod == "JsonLines" && bodyParameter.JsonLinesElementType is { } elementType)
+        {
+            var factory = bodyParameter.IsAsyncJsonLines
+                ? "CreateAsyncJsonLinesBodyContent"
+                : "CreateTypedJsonLinesBodyContent";
+
+            return $$"""
+                {{bodyIndent}}{{plan.RequestLocal}}.Content = global::Refit.GeneratedRequestRunner.{{factory}}<{{elementType}}>(
+                {{bodyIndent}}    {{settingsLocal}},
+                {{bodyIndent}}    @{{bodyParameter.Name}});
+
+                """;
+        }
+
         if (bodyParameter.BodySerializationMethod == "JsonLines")
         {
             return $$"""

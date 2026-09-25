@@ -309,6 +309,31 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 #endif
 #endif
 
+    /// <summary>Determines whether <see cref="ToHttpContent{T}(T)"/> writes a declared-type value as it writes it passed as <see cref="object"/>.</summary>
+    /// <param name="declaredType">The declared type of the values.</param>
+    /// <returns>
+    /// <see langword="true"/> when the type has no derived types (a value type or sealed class), so the runtime type
+    /// the <see cref="object"/> path resolves is always <paramref name="declaredType"/>, and no configured converter
+    /// replaces the built-in handling of <see cref="object"/>.
+    /// </returns>
+    internal bool WritesDeclaredTypeAsObject(Type declaredType)
+    {
+        if (!declaredType.IsValueType && !declaredType.IsSealed)
+        {
+            return false;
+        }
+
+        foreach (var converter in jsonSerializerOptions.Converters)
+        {
+            if (converter.CanConvert(typeof(object)))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 #if NET8_0_OR_GREATER
     /// <summary>Gets the JSON type metadata for the given type from the configured options.</summary>
     /// <typeparam name="T">The type to resolve metadata for.</typeparam>

@@ -37,6 +37,10 @@ internal partial class RequestBuilderImplementation
     internal static readonly MethodInfo SerializeBodyStreamingMethod =
         FindDeclaredMethod(nameof(SerializeBodyStreamingGeneric));
 
+    /// <summary>Cached reflection handle to the generated-code factory for asynchronous JSON Lines bodies.</summary>
+    internal static readonly MethodInfo CreateAsyncJsonLinesBodyContentMethod =
+        typeof(GeneratedRequestRunner).GetMethod(nameof(GeneratedRequestRunner.CreateAsyncJsonLinesBodyContent))!;
+
     /// <summary>Maps a single header, header-collection or authorization parameter into the pending headers.</summary>
     /// <param name="restMethod">The rest method being invoked.</param>
     /// <param name="i">The index of the parameter.</param>
@@ -200,6 +204,66 @@ internal partial class RequestBuilderImplementation
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     internal static HttpContent SerializeBodyStreamingGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
         serializer.ToStreamingHttpContent((T)body!);
+
+    /// <summary>Finds the element type of a JSON Lines body declared as an asynchronous sequence.</summary>
+    /// <param name="declaredBodyType">The declared type of the body parameter.</param>
+    /// <returns>
+    /// The <c>T</c> of the single <see cref="IAsyncEnumerable{T}"/> the type is or implements, or <see langword="null"/>
+    /// when it is also a synchronous sequence or is not an asynchronous one; the source generator selects the same bodies.
+    /// </returns>
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2070:GetInterfaces",
+        Justification = "The reflection request builder reads interfaces of the declared parameter type, which the method signature roots.")]
+    internal static Type? FindAsyncJsonLinesElementType(Type declaredBodyType)
+    {
+        if (typeof(IEnumerable).IsAssignableFrom(declaredBodyType))
+        {
+            return null;
+        }
+
+        Type? element = null;
+        var count = 0;
+        if (IsAsyncEnumerable(declaredBodyType))
+        {
+            element = declaredBodyType.GetGenericArguments()[0];
+            count++;
+        }
+
+        foreach (var implemented in declaredBodyType.GetInterfaces())
+        {
+            if (!IsAsyncEnumerable(implemented))
+            {
+                continue;
+            }
+
+            element = implemented.GetGenericArguments()[0];
+            count++;
+        }
+
+        return count == 1 ? element : null;
+
+        static bool IsAsyncEnumerable(Type type) =>
+            type.IsInterface && type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IAsyncEnumerable<>);
+    }
+
+    /// <summary>Creates the content for a JSON Lines body, keeping the element type of an asynchronous sequence.</summary>
+    /// <param name="settings">The Refit settings supplying the content serializer.</param>
+    /// <param name="restMethod">The rest method being invoked.</param>
+    /// <param name="param">The body argument value.</param>
+    /// <returns>The JSON Lines content.</returns>
+    [UnconditionalSuppressMessage(
+        "AOT",
+        "IL2060:MakeGenericMethod",
+        Justification = "The reflection request builder intentionally closes the JSON Lines factory over the declared element type.")]
+    [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+    internal static HttpContent CreateJsonLinesContent(RefitSettings settings, RestMethodInfoInternal restMethod, object param)
+    {
+        var declaredBodyType = restMethod.ParameterInfoArray[restMethod.BodyParameterInfo!.Item3].ParameterType;
+        return FindAsyncJsonLinesElementType(declaredBodyType) is { } elementType
+            ? (HttpContent)CreateAsyncJsonLinesBodyContentMethod.MakeGenericMethod(elementType).Invoke(null, [settings, param])!
+            : new JsonLinesContent(AsJsonLinesSequence(param), settings.ContentSerializer);
+    }
 
     /// <summary>Coerces a JSON Lines body argument into the sequence of values to serialize line by line.</summary>
     /// <param name="param">The body argument value.</param>

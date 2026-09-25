@@ -25,6 +25,7 @@ public static class Reply
 {
     public static Refit.Testing.StubResponse Content(System.Net.Http.HttpContent body) { }
     public static Refit.Testing.StubResponse From(System.Func<System.Net.Http.HttpRequestMessage, System.Net.Http.HttpResponseMessage> responder) { }
+    public static Refit.Testing.StubResponse From(System.Func<System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage>> responder) { }
     public static Refit.Testing.StubResponse From(System.Func<System.Net.Http.HttpRequestMessage, System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage>> responder) { }
     public static Refit.Testing.StubResponse Json(string body) { }
     public static Refit.Testing.StubResponse Json(string body, System.Net.HttpStatusCode status) { }
@@ -154,6 +155,7 @@ public sealed class StubHttp : System.Net.Http.HttpMessageHandler, System.Collec
 public sealed class StubResponse
 {
     public StubResponse() { }
+    public System.Func<System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken, System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage>>? CancellableResponderAsync { get; init; }
     public System.Net.Http.HttpContent? Content { get; init; }
     public string? ContentType { get; init; }
     public string? Json { get; init; }

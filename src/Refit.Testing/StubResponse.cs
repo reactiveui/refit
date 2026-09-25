@@ -36,6 +36,12 @@ public sealed class StubResponse
     /// <summary>Gets an asynchronous factory that produces the full response, for responders that await. Takes precedence over <see cref="Responder"/>.</summary>
     public Func<HttpRequestMessage, Task<HttpResponseMessage>>? ResponderAsync { get; init; }
 
+    /// <summary>
+    /// Gets an asynchronous factory that also receives the send's cancellation token, for responders that read a
+    /// streaming request body and must stop when the caller cancels. Takes precedence over <see cref="ResponderAsync"/>.
+    /// </summary>
+    public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? CancellableResponderAsync { get; init; }
+
     /// <summary>Gets a factory that serializes a typed response body using the client's own content serializer.</summary>
     internal Func<IHttpContentSerializer, HttpContent>? BodyFactory { get; init; }
 }
