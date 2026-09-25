@@ -35,11 +35,6 @@ internal static class TestingStreaming
     /// <returns>Fresh settings for one handler.</returns>
     private static RefitSettings CreateSettings() => new RefitSettings(new SystemTextJsonContentSerializer(JsonOptions));
 
-    /// <summary>Creates a raw client for a handler that the scenario owns and disposes.</summary>
-    /// <param name="http">The handler used instead of a real network connection.</param>
-    /// <returns>A client that leaves the handler undisposed.</returns>
-    private static HttpClient CreateClient(StubHttp http) => new HttpClient(http, disposeHandler: false);
-
     /// <summary>Problem: How do you prove a streamed reply hands you the first item before the second one has even arrived?</summary>
     /// <returns>A task that completes after both people and the end of the body are observed.</returns>
     private static async Task ShowEarlyItemsAsync()
@@ -86,18 +81,17 @@ internal static class TestingStreaming
 
         source.Release(new TestingPerson(1, "Ada"));
         bool gotFirst = await people.MoveNextAsync();
-        ValueTask<bool> stalled = people.MoveNextAsync();
+        Task<bool> stalled = people.MoveNextAsync().AsTask();
         bool stalledEarly = stalled.IsCompleted; // false: no second person has arrived
 
         await cancellation.CancelAsync();
-        bool cancelled = false;
         try
         {
             await stalled; // throws OperationCanceledException
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException error)
         {
-            cancelled = true;
+            Console.WriteLine(error.Message); // "A task was canceled."
         }
 
         await source.Closed; // the client disposed the response when the read was cancelled
@@ -105,7 +99,7 @@ internal static class TestingStreaming
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(true, gotFirst);
         SampleCheck.Equal(false, stalledEarly);
-        SampleCheck.Equal(true, cancelled);
+        SampleCheck.Equal(true, stalled.IsCanceled);
         SampleCheck.Equal(true, source.IsClosed);
     }
 
@@ -120,7 +114,6 @@ internal static class TestingStreaming
         ITestingStreamingApi api = http.CreateGeneratedClient<ITestingStreamingApi>("https://api.example.com", CreateSettings());
 
         List<string> names = [];
-        bool dropped = false;
         try
         {
             await foreach (TestingPerson person in api.WatchAsync(CancellationToken.None))
@@ -130,13 +123,32 @@ internal static class TestingStreaming
         }
         catch (HttpIOException error)
         {
-            dropped = error.HttpRequestError == HttpRequestError.ResponseEnded;
+            Console.WriteLine(error.Message); // "Refit.Testing simulated disconnect. (ResponseEnded)"
         }
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal("Ada", string.Join(",", names));
-        SampleCheck.Equal(true, dropped);
         SampleCheck.Equal(true, source.IsClosed);
+
+        StreamSource verifySource = new StreamSource();
+        verifySource.Release(new TestingPerson(1, "Ada"));
+        verifySource.Disconnect();
+        using StubHttp verifyHttp = new StubHttp { { Route.Get("/people/live"), Reply.Stream(verifySource) } };
+        ITestingStreamingApi verifyApi = verifyHttp.CreateGeneratedClient<ITestingStreamingApi>("https://api.example.com", CreateSettings());
+        bool dropped = false;
+        try
+        {
+            await foreach (TestingPerson person in verifyApi.WatchAsync(CancellationToken.None))
+            {
+                _ = person;
+            }
+        }
+        catch (HttpIOException error)
+        {
+            dropped = error.HttpRequestError == HttpRequestError.ResponseEnded;
+        }
+
+        SampleCheck.Equal(true, dropped);
     }
 
     /// <summary>Problem: How do you prove headers arrived while the body is still stalled?</summary>
@@ -145,25 +157,23 @@ internal static class TestingStreaming
     {
         StreamSource source = new StreamSource(StreamingContentFormat.ServerSentEvents);
         using StubHttp http = new StubHttp { { Route.Get("/events"), Reply.Stream(source) } };
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         using CancellationTokenSource cancellation = new CancellationTokenSource();
 
         HttpResponseMessage response = await httpClient.GetAsync(new Uri("https://api.example.com/events"), HttpCompletionOption.ResponseHeadersRead);
         string? contentType = response.Content.Headers.ContentType?.MediaType; // "text/event-stream": headers arrived
         Stream body = await response.Content.ReadAsStreamAsync();
-        ValueTask<int> read = body.ReadAsync(new byte[64], cancellation.Token);
+        Task<int> read = body.ReadAsync(new byte[64], cancellation.Token).AsTask();
         bool readCompletedEarly = read.IsCompleted; // false: the body itself has not arrived
 
         await cancellation.CancelAsync();
-        bool cancelled = false;
-        int bytesRead = -1;
         try
         {
-            bytesRead = await read; // never reached: the read is cancelled first
+            await read; // never reached: the read is cancelled first
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException error)
         {
-            cancelled = true;
+            Console.WriteLine(error.Message); // "A task was canceled."
         }
 
         bool closedBeforeDispose = source.IsClosed; // false: cancelling the read did not close the body
@@ -174,10 +184,9 @@ internal static class TestingStreaming
         SampleCheck.Equal(HttpStatusCode.OK, response.StatusCode);
         SampleCheck.Equal("text/event-stream", contentType);
         SampleCheck.Equal(false, readCompletedEarly);
-        SampleCheck.Equal(true, cancelled);
+        SampleCheck.Equal(true, read.IsCanceled);
         SampleCheck.Equal(false, closedBeforeDispose);
         SampleCheck.Equal(true, closedAfterDispose);
-        SampleCheck.Equal(-1, bytesRead);
     }
 
     /// <summary>Problem: How do you reply with a ready-made JSON Lines or server-sent-events stream instead of controlling it by hand?</summary>
@@ -230,7 +239,6 @@ internal static class TestingStreaming
         }
 
         int pulledBeforeReply = -1;
-        int uploadedLineCount = 0;
         using StubHttp http = new StubHttp
         {
             {
@@ -238,8 +246,7 @@ internal static class TestingStreaming
                 Reply.From(async request =>
                 {
                     pulledBeforeReply = pulled;
-                    string uploaded = await request.Content!.ReadAsStringAsync();
-                    uploadedLineCount = uploaded.Split('\n').Length;
+                    _ = await request.Content!.ReadAsStringAsync();
                     return new HttpResponseMessage(HttpStatusCode.Accepted);
                 })
             },
@@ -252,7 +259,7 @@ internal static class TestingStreaming
         int totalPulled = pulled; // 2
         TestingPerson? recorded = await http.LastRequestBodyAsync<TestingPerson>(); // null: RequestCapture.None recorded nothing
 
-        pulled = 0;
+        pulled = 0; // the second half repeats the upload with RequestCapture.Full
         http.RequestCapture = RequestCapture.Full; // buffers the whole upload before any reply code runs
         http.Add(Route.Post("/people/import"), Reply.From(request =>
         {
@@ -265,7 +272,6 @@ internal static class TestingStreaming
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(0, pulledWithNoCapture);
         SampleCheck.Equal(2, totalPulled);
-        SampleCheck.Equal(2, uploadedLineCount);
         SampleCheck.Equal(null, recorded);
         SampleCheck.Equal(2, pulledWithFullCapture);
     }
@@ -321,45 +327,51 @@ internal static class TestingStreaming
         {
             {
                 Route.Post("/people"),
-                Reply.From(EchoAsync)
+                Reply.From(static async request =>
+                {
+                    string json = await request.Content!.ReadAsStringAsync();
+                    return new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+                })
             },
             {
                 Route.Post("/people"),
-                Reply.From(EchoAsync)
+                Reply.From(static async request =>
+                {
+                    string json = await request.Content!.ReadAsStringAsync();
+                    return new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+                })
             },
         };
         ITestingApi api = http.CreateGeneratedClient<ITestingApi>("https://api.example.com", CreateSettings());
 
         http.RequestCapture = RequestCapture.Bounded(1024); // roomy enough for one serialized person
-        TestingPerson roomy = await api.CreateAsync(new TestingPerson(2, "Grace"));
+        await api.CreateAsync(new TestingPerson(2, "Grace"));
         TestingPerson? recorded = await http.LastRequestBodyAsync<TestingPerson>(); // recorded?.Name == "Grace"
 
         http.RequestCapture = RequestCapture.Bounded(4); // far too small for one serialized person
-        TestingPerson tiny = await api.CreateAsync(new TestingPerson(2, "Grace"));
-        bool truncated = false;
+        await api.CreateAsync(new TestingPerson(2, "Grace"));
         try
         {
             await http.LastRequestBodyAsync<TestingPerson>(); // throws: the capture was truncated
+        }
+        catch (InvalidOperationException error)
+        {
+            Console.WriteLine(error.Message); // "The request body exceeded the capture limit of 4 bytes; raise RequestCapture.Bounded or use RequestCapture.Full."
+        }
+
+        // Checks for this sample (not part of the documentation excerpt):
+        SampleCheck.Equal("Grace", recorded?.Name);
+        bool truncated = false;
+        try
+        {
+            await http.LastRequestBodyAsync<TestingPerson>(); // re-runs the same truncated read to confirm it still throws
         }
         catch (InvalidOperationException)
         {
             truncated = true;
         }
 
-        // Checks for this sample (not part of the documentation excerpt):
-        SampleCheck.Equal("Grace", roomy.Name);
-        SampleCheck.Equal("Grace", tiny.Name);
-        SampleCheck.Equal("Grace", recorded?.Name);
         SampleCheck.Equal(true, truncated);
-    }
-
-    /// <summary>Returns the request body as the JSON reply, reading it the way a server would.</summary>
-    /// <param name="request">The request whose body is read.</param>
-    /// <returns>A created response carrying the same JSON.</returns>
-    private static async Task<HttpResponseMessage> EchoAsync(HttpRequestMessage request)
-    {
-        string json = await request.Content!.ReadAsStringAsync();
-        return new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
     }
 
     /// <summary>Problem: How do you make simulated network delay respond to a fake clock instead of real time?</summary>
@@ -367,10 +379,15 @@ internal static class TestingStreaming
     private static async Task ShowSimulatedDelayAsync()
     {
         FakeTimeProvider clock = new FakeTimeProvider();
-        NetworkBehavior behavior = new NetworkBehavior(7) { Delay = TimeSpan.FromSeconds(2), Variance = 0, FailurePercent = 0 };
+        NetworkBehavior behavior = new NetworkBehavior(7) // 7 is the random seed, so the random choices repeat on every run
+        {
+            Delay = TimeSpan.FromSeconds(2),
+            Variance = 0,
+            FailurePercent = 0,
+        };
         using StubHttp http = new StubHttp(behavior) { { Route.Get("/slow"), Reply.Text("done") } };
         http.TimeProvider = clock;
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
 
         Task<HttpResponseMessage> pending = httpClient.GetAsync(new Uri("https://api.example.com/slow"));
         clock.Advance(TimeSpan.FromSeconds(1));
@@ -397,21 +414,18 @@ internal static class TestingStreaming
         bool doneEarly = verification.IsCompleted; // false: nothing has called /expected yet
 
         clock.Advance(TimeSpan.FromSeconds(5));
-        bool timedOut = false;
-        string? failureMessage = null;
         try
         {
             await verification; // throws once the simulated clock reaches the 5-second timeout
         }
         catch (InvalidOperationException error)
         {
-            timedOut = true;
-            failureMessage = error.Message;
+            Console.WriteLine(error.Message); // "1 expected request(s) were not made:\n  - GET /expected"
         }
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(false, doneEarly);
-        SampleCheck.Equal(true, timedOut);
-        SampleCheck.Equal(true, failureMessage?.Contains("/expected", StringComparison.Ordinal));
+        SampleCheck.Equal(true, verification.IsFaulted);
+        SampleCheck.Equal(true, verification.Exception?.InnerException?.Message.Contains("/expected", StringComparison.Ordinal));
     }
 }

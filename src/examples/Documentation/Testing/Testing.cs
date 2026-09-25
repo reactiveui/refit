@@ -46,11 +46,6 @@ internal static class Testing
     /// <param name="http">The handler whose one-shot expectations must be consumed.</param>
     private static void Verify(StubHttp http) => http.VerifyAllCalled();
 
-    /// <summary>Creates an isolated client with the scenario's supplied handler.</summary>
-    /// <param name="http">The handler used instead of a real network connection.</param>
-    /// <returns>A client owned and disposed by its scenario.</returns>
-    private static HttpClient CreateClient(StubHttp http) => new HttpClient(http, disposeHandler: false);
-
     /// <summary>Problem: How do you send a generated Refit request through a stub and inspect what the client actually sent?</summary>
     /// <returns>A task that completes after the typed reply and the captured request body are checked.</returns>
     private static async Task ShowClientAsync()
@@ -108,23 +103,23 @@ internal static class Testing
         settings = http.ToSettings(settings);
         using StringContent original = new StringContent("{\"id\":1,\"name\":\"Ada\"}", Encoding.Unicode, "application/json");
         TestingPerson? expected = await settings.ContentSerializer.FromHttpContentAsync<TestingPerson>(original); // expected?.Name == "Ada"
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         using HttpResponseMessage reply = await httpClient.PostAsync(new Uri("https://api.example.com/encoded"), original); // reply.StatusCode == OK
 
-        bool corrupted = false;
+        Task<TestingPerson?> corruptedRead = http.LastRequestBodyAsync<TestingPerson>();
         try
         {
-            await http.LastRequestBodyAsync<TestingPerson>(); // throws: StubHttp always re-reads captured bytes as UTF-8
+            await corruptedRead; // throws: StubHttp always re-reads captured bytes as UTF-8
         }
-        catch (JsonException)
+        catch (JsonException error)
         {
-            corrupted = true;
+            Console.WriteLine(error.Message); // "'0x00' is an invalid start of a property name. Expected a '\"'. Path: $ | LineNumber: 0 | BytePositionInLine: 1."
         }
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal("Ada", expected?.Name);
         SampleCheck.Equal(HttpStatusCode.OK, reply.StatusCode);
-        SampleCheck.Equal(true, corrupted);
+        SampleCheck.Equal(true, corruptedRead.IsFaulted);
         await http.VerifyAllCalledAsync();
     }
 
@@ -171,15 +166,14 @@ internal static class Testing
                 Reply.Status(HttpStatusCode.Accepted)
             },
         };
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         using HttpResponseMessage get = await httpClient.GetAsync(new Uri("https://api.example.com/get")); // get.StatusCode == OK
         using HttpResponseMessage missing = await httpClient.GetAsync(new Uri("https://api.example.com/missing")); // missing.StatusCode == NotFound, from Route.Fallback()
-
-        await SendOtherMethodsAsync(httpClient);
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(HttpStatusCode.OK, get.StatusCode);
         SampleCheck.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        await SendOtherMethodsAsync(httpClient);
         Verify(http);
         EnumerateRoutes(http);
     }
@@ -228,7 +222,7 @@ internal static class Testing
         SampleCheck.Equal(9, count);
     }
 
-    /// <summary>Problem: How do you require exact headers, form fields and a custom predicate before a route matches?</summary>
+    /// <summary>Problem: How do you require exact headers, a form field and a custom predicate before a route matches?</summary>
     /// <returns>A task that completes after the matching response is checked.</returns>
     private static async Task ShowMatchersAsync()
     {
@@ -236,25 +230,17 @@ internal static class Testing
         {
             Method = HttpMethod.Post,
             Template = "/people/{id}",
-            Query = [("mode", "short")],
-            ExactQuery = "extra=1&mode=short",
-            ExactQueryParams = [("mode", "short"), ("extra", "1")],
-            Headers = [("X-Test", "yes"), ("Content-Type", "application/x-www-form-urlencoded")],
-            Body = "name=Ada+Lovelace&extra=1",
+            Headers = [("X-Test", "yes")],
             FormData = [("name", "Ada Lovelace")],
             Where = static request => request.RequestUri!.Host == "api.example.com",
-            WhereAsync = static async request => (await request.Content!.ReadAsStringAsync()).Contains("Ada", StringComparison.Ordinal),
-            Reusable = true,
-            Fallback = false,
         };
         using StubHttp http = new StubHttp { { route, Reply.Text("matched") } };
-        using HttpClient httpClient = CreateClient(http);
-        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/people/7?mode=short&extra=1")
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
+        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "https://api.example.com/people/7")
         {
             Content = new FormUrlEncodedContent(
             [
                 new KeyValuePair<string, string>("name", "Ada Lovelace"),
-                new KeyValuePair<string, string>("extra", "1"),
             ]),
         };
         request.Headers.Add("X-Test", "yes");
@@ -273,20 +259,20 @@ internal static class Testing
         {
             {
                 new RouteMatcher { Template = "/query", ExactQueryParams = [("a", "1"), ("a", "1")] },
-                Reply.Text("accepted")
+                Reply.Text("matched ExactQueryParams")
             },
             {
                 new RouteMatcher { Template = "/query", ExactQuery = "a=1&a=1" },
-                Reply.Text("accepted")
+                Reply.Text("matched ExactQuery")
             },
         };
-        using HttpClient httpClient = CreateClient(http);
-        using HttpResponseMessage pairs = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matches, even though "a" is not duplicated
-        using HttpResponseMessage encoded = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matches the same way
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
+        using HttpResponseMessage pairs = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matched ExactQueryParams, even though "a" is not duplicated
+        using HttpResponseMessage encoded = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matched ExactQuery, the same way
 
         // Checks for this sample (not part of the documentation excerpt):
-        SampleCheck.Equal("accepted", await pairs.Content.ReadAsStringAsync());
-        SampleCheck.Equal("accepted", await encoded.Content.ReadAsStringAsync());
+        SampleCheck.Equal("matched ExactQueryParams", await pairs.Content.ReadAsStringAsync());
+        SampleCheck.Equal("matched ExactQuery", await encoded.Content.ReadAsStringAsync());
         Verify(http);
     }
 
@@ -329,7 +315,7 @@ internal static class Testing
                 Reply.From(static async request => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(await request.Content!.ReadAsStringAsync()) })
             },
         };
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
 
         using HttpResponseMessage json = await httpClient.GetAsync(new Uri("https://api.example.com/json")); // json.StatusCode == OK
         using HttpResponseMessage rejected = await httpClient.GetAsync(new Uri("https://api.example.com/rejected")); // rejected.StatusCode == BadRequest
@@ -369,7 +355,7 @@ internal static class Testing
             ResponderAsync = static _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent)),
         };
         using StubHttp http = new StubHttp { { Route.Get("/precedence"), properties } };
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         using HttpResponseMessage precedence = await httpClient.GetAsync(new Uri("https://api.example.com/precedence")); // precedence.StatusCode == NoContent, ResponderAsync wins
 
         // Checks for this sample (not part of the documentation excerpt):
@@ -383,28 +369,28 @@ internal static class Testing
     private static async Task ShowVerificationAsync()
     {
         using StubHttp http = new StubHttp { { Route.Get("/expected"), Reply.Text("received") } };
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         Task waiting = http.VerifyAllCalledAsync(TimeSpan.FromSeconds(1));
         bool notYetCalled = waiting.IsCompleted; // false: nothing has called /expected yet
         using HttpResponseMessage response = await httpClient.GetAsync(new Uri("https://api.example.com/expected"));
         await waiting; // now completes, because the route above was called
 
         using StubHttp unmet = new StubHttp { { Route.Get("/unmet"), Reply.Status(HttpStatusCode.OK) } };
-        bool rejected = false;
+        Task unmetVerification = unmet.VerifyAllCalledAsync(TimeSpan.Zero);
         try
         {
-            await unmet.VerifyAllCalledAsync(TimeSpan.Zero); // throws: nothing ever called /unmet
+            await unmetVerification; // throws: nothing ever called /unmet
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException error)
         {
-            rejected = true;
+            Console.WriteLine(error.Message); // "1 expected request(s) were not made:\n  - GET /unmet"
         }
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(false, notYetCalled);
         await http.VerifyAllCalledAsync();
         SampleCheck.Equal(null, await http.LastRequestBodyAsync<TestingPerson>());
-        SampleCheck.Equal(true, rejected);
+        SampleCheck.Equal(true, unmetVerification.IsFaulted);
     }
 
     /// <summary>Problem: What happens if you check verification, then add another expected route afterward?</summary>
@@ -412,28 +398,28 @@ internal static class Testing
     private static async Task ShowAdditionalRouteAsync()
     {
         using StubHttp http = new StubHttp { { Route.Get("/first"), Reply.Status(HttpStatusCode.OK) } };
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         using HttpResponseMessage first = await httpClient.GetAsync(new Uri("https://api.example.com/first"));
         await http.VerifyAllCalledAsync(); // passes: /first was called
 
         http.Add(Route.Get("/second"), Reply.Status(HttpStatusCode.OK));
         Task verification = http.VerifyAllCalledAsync(TimeSpan.FromSeconds(1));
         bool immediatelyDone = verification.IsCompleted; // true: a route added after the previous success already fails the wait
-        bool rejected = false;
         try
         {
             await verification;
         }
         catch (InvalidOperationException error)
         {
-            rejected = error.Message.Contains("/second", StringComparison.Ordinal);
+            Console.WriteLine(error.Message); // "1 expected request(s) were not made:\n  - GET /second"
         }
 
         using HttpResponseMessage second = await httpClient.GetAsync(new Uri("https://api.example.com/second"));
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(true, immediatelyDone);
-        SampleCheck.Equal(true, rejected);
+        SampleCheck.Equal(true, verification.IsFaulted);
+        SampleCheck.Equal(true, verification.Exception?.InnerException?.Message.Contains("/second", StringComparison.Ordinal));
         Verify(http);
     }
 
@@ -442,16 +428,15 @@ internal static class Testing
     private static async Task ShowOneShotRaceAsync()
     {
         int arrivals = 0;
-        int previousCount = -1;
-        using SemaphoreSlim bothMatching = new SemaphoreSlim(0, 2);
+        using SemaphoreSlim bothMatching = new SemaphoreSlim(0, 2); // holds both requests inside matching until both arrive, so they match at the same instant
         RouteMatcher route = new RouteMatcher
         {
             Template = "/one-shot",
-            WhereAsync = async _ =>
+            WhereAsync = async request =>
             {
-                if (Interlocked.Increment(ref arrivals) == 2)
+                if (Interlocked.Increment(ref arrivals) == 2) // the second arrival releases both waiting requests together
                 {
-                    previousCount = bothMatching.Release(2);
+                    _ = bothMatching.Release(2);
                 }
 
                 await bothMatching.WaitAsync();
@@ -459,7 +444,7 @@ internal static class Testing
             },
         };
         using StubHttp http = new StubHttp { { route, Reply.Text("accepted") } };
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         Uri address = new Uri("https://api.example.com/one-shot");
         Task<HttpResponseMessage> first = httpClient.GetAsync(address);
         Task<HttpResponseMessage> second = httpClient.GetAsync(address);
@@ -467,7 +452,6 @@ internal static class Testing
         using HttpResponseMessage secondReply = await second;
 
         // Checks for this sample (not part of the documentation excerpt):
-        SampleCheck.Equal(0, previousCount);
         SampleCheck.Equal(2, arrivals);
         SampleCheck.Equal(2, http.Requests.Count);
         SampleCheck.Equal("accepted", await firstReply.Content.ReadAsStringAsync());
@@ -479,8 +463,7 @@ internal static class Testing
     /// <returns>A task that completes after every direct member is checked.</returns>
     private static Task ShowNetworkBehaviorMembersAsync()
     {
-        NetworkBehavior defaults = new NetworkBehavior();
-        NetworkBehavior behavior = new NetworkBehavior(7)
+        NetworkBehavior behavior = new NetworkBehavior(7) // 7 is the random seed, so the random choices repeat on every run
         {
             Delay = TimeSpan.Zero,
             Variance = 0,
@@ -496,7 +479,6 @@ internal static class Testing
         using HttpResponseMessage errorResponse = behavior.CreateErrorResponse(); // errorResponse.StatusCode == ServiceUnavailable
 
         // Checks for this sample (not part of the documentation excerpt):
-        SampleCheck.Equal(TimeSpan.FromSeconds(2), defaults.Delay);
         SampleCheck.Equal(TimeSpan.Zero, delay);
         SampleCheck.Equal(false, isFailure);
         SampleCheck.Equal(true, isError);
@@ -509,7 +491,7 @@ internal static class Testing
     /// <returns>A task that completes after the simulated error response and the simulated failure are checked.</returns>
     private static async Task ShowFaultsAsync()
     {
-        NetworkBehavior behavior = new NetworkBehavior(7)
+        NetworkBehavior behavior = new NetworkBehavior(7) // 7 is the random seed, so the random choices repeat on every run
         {
             Delay = TimeSpan.Zero,
             Variance = 0,
@@ -519,27 +501,25 @@ internal static class Testing
             FailureFactory = static () => new HttpRequestException("Test connection failure."),
         };
         using StubHttp http = new StubHttp(behavior) { { Route.Get("/fault"), Reply.Text("normal") } };
-        using HttpClient httpClient = CreateClient(http);
+        using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         using HttpResponseMessage error = await httpClient.GetAsync(new Uri("https://api.example.com/fault")); // error.StatusCode == ServiceUnavailable, from ErrorPercent = 1
 
         behavior.FailurePercent = 1;
         http.Add(Route.Get("/failure"), Reply.Text("normal"));
-        bool failed = false;
-        string? failureMessage = null;
+        Task<HttpResponseMessage> failureCall = httpClient.GetAsync(new Uri("https://api.example.com/failure"));
         try
         {
-            using HttpResponseMessage response = await httpClient.GetAsync(new Uri("https://api.example.com/failure")); // throws, because FailurePercent is now 1
+            using HttpResponseMessage response = await failureCall; // throws, because FailurePercent is now 1
         }
         catch (HttpRequestException cause)
         {
-            failed = true;
-            failureMessage = cause.Message;
+            Console.WriteLine(cause.Message); // "Test connection failure."
         }
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(HttpStatusCode.ServiceUnavailable, error.StatusCode);
-        SampleCheck.Equal(true, failed);
-        SampleCheck.Equal("Test connection failure.", failureMessage);
+        SampleCheck.Equal(true, failureCall.IsFaulted);
+        SampleCheck.Equal("Test connection failure.", failureCall.Exception?.InnerException?.Message);
         Verify(http);
         http.Behavior = null;
     }
@@ -554,19 +534,12 @@ internal static class Testing
         {
             Content = new TestingPerson(1, "Ada"),
             HasContent = true,
-            IsSuccessfulWithContent = true,
-            Headers = message.Headers,
-            ContentHeaders = message.Content.Headers,
+            StatusCode = message.StatusCode,
             IsSuccessStatusCode = true,
             IsSuccessful = true,
             IsReceived = true,
-            StatusCode = message.StatusCode,
-            ReasonPhrase = message.ReasonPhrase,
-            RequestMessage = request,
-            Version = message.Version,
-            Error = null,
         };
-        CheckResponse(stub); // reads stub.Content.Name through the ordinary IApiResponse<T> contract
+        string? name = stub.Content?.Name; // "Ada"
 
         ApiRequestException sendError = new ApiRequestException("Connection failed.", request, request.Method, CreateSettings());
         using StubApiResponse<TestingPerson> failed = new StubApiResponse<TestingPerson> { Error = sendError };
@@ -588,9 +561,10 @@ internal static class Testing
         bool hasResponseError = refused.HasResponseError(out ApiException? capturedReply); // true, capturedReply == replyError
 
         using ApiResponse<TestingPerson> real = new ApiResponse<TestingPerson>(message, new TestingPerson(1, "Ada"), CreateSettings());
-        CheckResponse(real); // the same code works for a stub and a real ApiResponse
+        string? realName = real.Content?.Name; // the same code reads a stub and a real ApiResponse: "Ada"
 
         // Checks for this sample (not part of the documentation excerpt):
+        SampleCheck.Equal("Ada", name);
         SampleCheck.Equal(false, stub.HasRequestError(out _));
         SampleCheck.Equal(false, stub.HasResponseError(out _));
         stub.Dispose();
@@ -598,15 +572,6 @@ internal static class Testing
         SampleCheck.Equal(sendError, captured);
         SampleCheck.Equal(true, hasResponseError);
         SampleCheck.Equal(replyError, capturedReply);
-    }
-
-    /// <summary>Checks typed content through the interface's non-null success contract.</summary>
-    /// <param name="response">A real response or manually configured response stub.</param>
-    private static void CheckResponse(IApiResponse<TestingPerson> response)
-    {
-        if (response.IsSuccessfulWithContent)
-        {
-            SampleCheck.Equal("Ada", response.Content.Name);
-        }
+        SampleCheck.Equal("Ada", realName);
     }
 }

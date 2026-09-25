@@ -18,6 +18,8 @@ internal static class TestingReflection
         TestingPerson first = await defaults.GetAsync(1); // first.Name == "Ada"
 
         RefitSettings settings = new RefitSettings(new SystemTextJsonContentSerializer(TestingJsonContext.Default.Options));
+
+        // each route answers once, so add another for the second call
         http.Add(Route.Get("/people/1"), Reply.Json("{\"id\":1,\"name\":\"Ada\"}"));
         ITestingApi configured = http.CreateClient<ITestingApi>("https://api.example.com", settings);
         TestingPerson second = await configured.GetAsync(1); // second == first
