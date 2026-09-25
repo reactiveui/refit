@@ -8,6 +8,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Refit.Testing.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="..\Shared\HttpContentExtensions.cs" Link="Shared\HttpContentExtensions.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -84,36 +84,47 @@ internal sealed class AsyncEnumerableObservable<T>(IAsyncEnumerable<T> source) :
         /// <returns>A task that completes when the sequence has ended or the subscription was disposed.</returns>
         private async Task DeliverAsync(IAsyncEnumerator<T> enumerator, CancellationToken cancellationToken)
         {
-            while (true)
+            var delivering = true;
+            while (delivering)
             {
-                bool hasNext;
-                try
-                {
-                    hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
-                }
-                catch (Exception error)
-                {
-                    if (!cancellationToken.IsCancellationRequested)
-                    {
-                        _observer.OnError(error);
-                    }
-
-                    return;
-                }
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                if (!hasNext)
-                {
-                    _observer.OnCompleted();
-                    return;
-                }
-
-                _observer.OnNext(enumerator.Current);
+                delivering = await DeliverNextAsync(enumerator, cancellationToken).ConfigureAwait(false);
             }
+        }
+
+        /// <summary>Delivers the next element, or completion or the failure of the sequence, unless the subscription was disposed.</summary>
+        /// <param name="enumerator">The enumerator to advance.</param>
+        /// <param name="cancellationToken">A token that is cancelled when the subscription is disposed.</param>
+        /// <returns><see langword="true"/> when an element was delivered and more may follow; otherwise <see langword="false"/>.</returns>
+        private async Task<bool> DeliverNextAsync(IAsyncEnumerator<T> enumerator, CancellationToken cancellationToken)
+        {
+            bool hasNext;
+            try
+            {
+                hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
+            }
+            catch (Exception error)
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    _observer.OnError(error);
+                }
+
+                return false;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return false;
+            }
+
+            if (!hasNext)
+            {
+                _observer.OnCompleted();
+                return false;
+            }
+
+            _observer.OnNext(enumerator.Current);
+            return true;
         }
     }
 }

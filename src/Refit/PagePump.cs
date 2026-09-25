@@ -34,14 +34,10 @@ internal static class PagePump
         {
             var current = await FetchAsync(first, fetch, next, stop.Token).ConfigureAwait(false);
             var fetched = 1;
-            while (true)
+            current.ThrowIfFailed();
+            var more = current.HasPage;
+            while (more)
             {
-                current.ThrowIfFailed();
-                if (!current.HasPage)
-                {
-                    break;
-                }
-
                 if (prefetch && current.CanAdvance(fetched, maxPages))
                 {
                     readAhead = FetchAsync(current.Continuation.Token!, fetch, next, stop.Token);
@@ -57,9 +53,11 @@ internal static class PagePump
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!current.ShouldAdvance(fetched, maxPages))
+                more = current.ShouldAdvance(fetched, maxPages);
+                if (!more)
                 {
-                    break;
+                    // The loop condition ends the sequence.
+                    continue;
                 }
 
                 fetched++;
@@ -67,6 +65,8 @@ internal static class PagePump
                     ? await FetchAsync(current.Continuation.Token!, fetch, next, stop.Token).ConfigureAwait(false)
                     : await readAhead.ConfigureAwait(false);
                 readAhead = null;
+                current.ThrowIfFailed();
+                more = current.HasPage;
             }
         }
         finally

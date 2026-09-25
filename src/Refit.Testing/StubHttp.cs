@@ -56,8 +56,8 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <summary>Tracks, by index, which non-reusable route has already satisfied a request.</summary>
     private readonly List<bool> _consumed = [];
 
-    /// <summary>The buffered request bodies, parallel to <see cref="_requests"/>, captured before disposal.</summary>
-    private readonly List<CapturedBody?> _bodies = [];
+    /// <summary>The recorded request bodies, parallel to <see cref="_requests"/>, captured before disposal.</summary>
+    private readonly List<CapturedRequestBody?> _bodies = [];
 
     /// <summary>Guards mutation of the rule lists, <see cref="_requests"/> and <see cref="_outstanding"/>.</summary>
     private readonly Lock _gate = new();
@@ -73,6 +73,12 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
     /// <summary>The serializer used for typed replies and typed request capture; replaced by <see cref="ToSettings(RefitSettings)"/>.</summary>
     private IHttpContentSerializer _serializer = new SystemTextJsonContentSerializer();
+
+    /// <summary>The clock for simulated delays and verification timeouts.</summary>
+    private TimeProvider _timeProvider = TimeProvider.System;
+
+    /// <summary>The request-body capture policy.</summary>
+    private RequestCapture _requestCapture = RequestCapture.Full;
 
     /// <summary>The number of non-reusable routes not yet consumed.</summary>
     private int _outstanding;
@@ -90,6 +96,38 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
     /// <summary>Gets or sets the network behavior simulated for each matched request; <c>null</c> disables simulation.</summary>
     public NetworkBehavior? Behavior { get; set; }
+
+    /// <summary>
+    /// Gets or sets the clock that schedules <see cref="Behavior"/> delays and <see cref="VerifyAllCalledAsync(TimeSpan)"/>
+    /// timeouts. Defaults to <see cref="TimeProvider.System"/>. Assign a fake clock (for example <c>FakeTimeProvider</c>) so
+    /// a test advances simulated time itself instead of waiting for it.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">The value is <see langword="null"/>.</exception>
+    public TimeProvider TimeProvider
+    {
+        get => _timeProvider;
+        set
+        {
+            ArgumentExceptionHelper.ThrowIfNull(value);
+            _timeProvider = value;
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets how request bodies are captured. Defaults to <see cref="RequestCapture.Full"/>, which buffers each
+    /// body before matching. Use <see cref="RequestCapture.None"/> or <see cref="RequestCapture.Bounded(int)"/> to let the
+    /// reply code consume a streaming upload incrementally.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">The value is <see langword="null"/>.</exception>
+    public RequestCapture RequestCapture
+    {
+        get => _requestCapture;
+        set
+        {
+            ArgumentExceptionHelper.ThrowIfNull(value);
+            _requestCapture = value;
+        }
+    }
 
     /// <summary>Adds a route and its reply to the table. Called by the collection initializer.</summary>
     /// <param name="route">The route matcher.</param>
@@ -206,15 +244,18 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
     /// <summary>Deserializes the body of the most recent request using the client's content serializer.</summary>
     /// <typeparam name="T">The type to deserialize the request body into.</typeparam>
-    /// <returns>The deserialized request body, or <see langword="default"/> when content is absent or could not be buffered. Captured empty content is passed to the serializer.</returns>
-    /// <exception cref="InvalidOperationException">No request has been received yet.</exception>
+    /// <returns>
+    /// The deserialized request body, or <see langword="default"/> when content is absent, could not be buffered or was not
+    /// captured under <see cref="RequestCapture"/>. Captured empty content is passed to the serializer.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">No request has been received yet, or a bounded capture is truncated or not yet read to the end.</exception>
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The body type is intentionally specified explicitly by the caller, like a deserialization target.")]
     public Task<T?> LastRequestBodyAsync<T>()
     {
-        CapturedBody? body;
+        CapturedRequestBody? body;
         lock (_gate)
         {
             if (_bodies.Count == 0)
@@ -231,15 +272,19 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <summary>Deserializes the body of the request at <paramref name="index"/> using the client's content serializer.</summary>
     /// <typeparam name="T">The type to deserialize the request body into.</typeparam>
     /// <param name="index">The zero-based index into <see cref="Requests"/>.</param>
-    /// <returns>The deserialized request body, or <see langword="default"/> when content is absent or could not be buffered. Captured empty content is passed to the serializer.</returns>
+    /// <returns>
+    /// The deserialized request body, or <see langword="default"/> when content is absent, could not be buffered or was not
+    /// captured under <see cref="RequestCapture"/>. Captured empty content is passed to the serializer.
+    /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">No request exists at <paramref name="index"/>.</exception>
+    /// <exception cref="InvalidOperationException">A bounded capture is truncated or not yet read to the end.</exception>
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The body type is intentionally specified explicitly by the caller, like a deserialization target.")]
     public Task<T?> RequestBodyAsync<T>(int index)
     {
-        CapturedBody? body;
+        CapturedRequestBody? body;
         lock (_gate)
         {
             if (index < 0 || index >= _bodies.Count)
@@ -284,7 +329,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         if (!_allConsumed.Task.IsCompleted)
         {
             using var cts = new CancellationTokenSource();
-            var delay = Task.Delay(timeout, cts.Token);
+            var delay = DelayAsync(_timeProvider, timeout, cts.Token);
             var winner = await Task.WhenAny(_allConsumed.Task, delay).ConfigureAwait(false);
             if (winner == _allConsumed.Task)
             {
@@ -365,14 +410,15 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     /// <summary>Determines whether the request satisfies every matcher on the route.</summary>
     /// <param name="route">The candidate route.</param>
     /// <param name="request">The incoming request.</param>
+    /// <param name="capture">The capture policy, which decides whether the body can be read for matching.</param>
     /// <param name="cancellationToken">A token to cancel body reads.</param>
     /// <returns><see langword="true"/> when the request matches.</returns>
-    private static async Task<bool> MatchesAsync(RouteMatcher route, HttpRequestMessage request, CancellationToken cancellationToken) =>
+    private static async Task<bool> MatchesAsync(RouteMatcher route, HttpRequestMessage request, RequestCapture capture, CancellationToken cancellationToken) =>
         (route.Method is null || request.Method == route.Method)
             && MatchesTemplate(route.Template, request.RequestUri)
             && MatchesQuery(route, request.RequestUri)
             && (route.Headers is null || MatchesHeaders(request, route.Headers))
-            && await MatchesBodyAsync(route, request, cancellationToken).ConfigureAwait(false)
+            && await MatchesBodyAsync(route, request, capture, cancellationToken).ConfigureAwait(false)
             && await MatchesPredicatesAsync(route, request).ConfigureAwait(false);
 
     /// <summary>Applies the synchronous and asynchronous request predicates, if any.</summary>
@@ -394,6 +440,19 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         source.Cancel();
         return Task.CompletedTask;
     }
+#endif
+
+    /// <summary>Waits on the supplied clock, so a fake clock controls when simulated time passes.</summary>
+    /// <param name="timeProvider">The clock.</param>
+    /// <param name="delay">The time to wait.</param>
+    /// <param name="cancellationToken">A token to cancel the wait.</param>
+    /// <returns>A task that completes when the clock reaches the delay.</returns>
+#if NET8_0_OR_GREATER
+    private static Task DelayAsync(TimeProvider timeProvider, TimeSpan delay, CancellationToken cancellationToken) =>
+        Task.Delay(delay, timeProvider, cancellationToken);
+#else
+    private static Task DelayAsync(TimeProvider timeProvider, TimeSpan delay, CancellationToken cancellationToken) =>
+        timeProvider.Delay(delay, cancellationToken);
 #endif
 
     /// <summary>Builds the configured response for a matched route.</summary>
@@ -446,14 +505,14 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The body type is intentionally specified explicitly by the caller, like a deserialization target.")]
-    private Task<T?> DeserializeBodyAsync<T>(CapturedBody? body)
+    private Task<T?> DeserializeBodyAsync<T>(CapturedRequestBody? body)
     {
-        if (body is not { } captured)
+        if (body is null)
         {
             return Task.FromResult<T?>(default);
         }
 
-        var content = new StringContent(captured.Text, Encoding.UTF8, captured.MediaType ?? "application/json");
+        var content = new StringContent(body.GetText(), Encoding.UTF8, body.MediaType ?? "application/json");
         return _serializer.FromHttpContentAsync<T>(content);
     }
 
@@ -467,8 +526,22 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     private async Task BufferRequestAsync(HttpRequestMessage request, int index)
     {
         var content = request.Content;
-        if (content is null)
+        var policy = _requestCapture;
+        if (content is null || !policy.IsEnabled)
         {
+            return;
+        }
+
+        if (!policy.BuffersBody)
+        {
+            // Bounded capture: leave the body unread and record it as the reply code consumes it.
+            var bounded = new CapturedRequestBody(content.Headers.ContentType?.MediaType, policy.MaxBytes);
+            request.Content = new CapturingContent(content, bounded);
+            lock (_gate)
+            {
+                _bodies[index] = bounded;
+            }
+
             return;
         }
 
@@ -499,9 +572,12 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
         request.Content = replacement;
 
+        var captured = new CapturedRequestBody(content.Headers.ContentType?.MediaType, null);
+        captured.Append(bytes);
+        captured.Complete();
         lock (_gate)
         {
-            _bodies[index] = new CapturedBody(Encoding.UTF8.GetString(bytes), content.Headers.ContentType?.MediaType);
+            _bodies[index] = captured;
         }
     }
 
@@ -571,7 +647,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
             return null;
         }
 
-        await Task.Delay(behavior.NextDelay(), cancellationToken).ConfigureAwait(false);
+        await DelayAsync(_timeProvider, behavior.NextDelay(), cancellationToken).ConfigureAwait(false);
 
         if (behavior.NextIsFailure())
         {
@@ -613,7 +689,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
                 continue;
             }
 
-            if (await MatchesAsync(route, request, cancellationToken).ConfigureAwait(false))
+            if (await MatchesAsync(route, request, _requestCapture, cancellationToken).ConfigureAwait(false))
             {
                 return i;
             }
@@ -621,11 +697,6 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
 
         return -1;
     }
-
-    /// <summary>A request body buffered at send time, with its media type, for later typed deserialization.</summary>
-    /// <param name="Text">The raw request body text.</param>
-    /// <param name="MediaType">The request content media type, if any.</param>
-    private readonly record struct CapturedBody(string Text, string? MediaType);
 
     /// <summary>
     /// A re-readable in-memory replacement for a consumed request body that reports a length only when the

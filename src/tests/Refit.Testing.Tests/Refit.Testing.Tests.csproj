@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="TUnit" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <ProjectReference Include="..\..\Refit.Testing\Refit.Testing.csproj" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
     <ProjectReference Include="..\..\Refit.Reflection\Refit.Reflection.csproj" />

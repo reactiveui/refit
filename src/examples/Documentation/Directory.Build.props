@@ -1,0 +1,9 @@
+<Project>
+  <!-- Keep the repository-wide settings; this file only adds what the documentation examples share. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <ItemGroup>
+    <!-- Every page project compiles the shared example sources, and the testing examples use FakeTimeProvider. -->
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+</Project>

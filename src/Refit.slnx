@@ -42,6 +42,7 @@
         <Project Path="examples/Documentation/Pages/testing-replies/testing-replies.csproj" />
         <Project Path="examples/Documentation/Pages/testing-response-stubs/testing-response-stubs.csproj" />
         <Project Path="examples/Documentation/Pages/testing-routes/testing-routes.csproj" />
+        <Project Path="examples/Documentation/Pages/testing-streaming/testing-streaming.csproj" />
         <Project Path="examples/Documentation/Pages/testing-verification/testing-verification.csproj" />
         <Project Path="examples/Documentation/Pages/why-refit/why-refit.csproj" />
         <Project Path="examples/Documentation/Pages/aot/aot.csproj" />
