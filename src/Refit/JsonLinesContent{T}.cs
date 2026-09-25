@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -21,6 +22,12 @@ namespace Refit;
 /// <see cref="IAsyncEnumerable{T}.GetAsyncEnumerator(CancellationToken)"/> and to every write. The enumerator is
 /// always disposed, including when the send fails or is cancelled. Before waiting on an element the producer has not
 /// finished, the lines already written are flushed so they reach the server without waiting for the next element.
+/// </para>
+/// <para>
+/// Lines from an <see cref="IAsyncEnumerable{T}"/> each end with a line feed, so every line is complete the moment it
+/// is written and a server reading line by line can act on it while the producer is still working. Lines from an
+/// <see cref="IEnumerable{T}"/> are separated by line feeds with none after the last, byte for byte as
+/// <see cref="JsonLinesContent"/> writes them.
 /// </para>
 /// <para>
 /// Content built from an <see cref="IAsyncEnumerable{T}"/> can be sent once. Sending it again throws
@@ -127,27 +134,30 @@ public sealed class JsonLinesContent<T> : HttpContent
         return await moveNext.ConfigureAwait(false);
     }
 
-    /// <summary>Writes one element, preceded by a line separator unless it is the first.</summary>
+    /// <summary>Writes the line-feed byte that separates or terminates lines.</summary>
+    /// <param name="stream">The request body stream.</param>
+    /// <param name="cancellationToken">A token to cancel the write.</param>
+    /// <returns>A task that completes when the byte has been written.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Task WriteLineSeparatorAsync(Stream stream, CancellationToken cancellationToken) =>
+#if NET8_0_OR_GREATER
+        stream.WriteAsync(LineSeparator, cancellationToken).AsTask();
+#else
+        stream.WriteAsync(LineSeparator, 0, LineSeparator.Length, cancellationToken);
+#endif
+
+    /// <summary>Serializes one element as <typeparamref name="T"/> into the request body.</summary>
     /// <param name="stream">The request body stream.</param>
     /// <param name="item">The element to serialize.</param>
-    /// <param name="first">Whether this is the first element.</param>
     /// <param name="cancellationToken">A token to cancel the write.</param>
     /// <returns>A task that completes when the element has been written.</returns>
-    private async Task WriteItemAsync(Stream stream, T item, bool first, CancellationToken cancellationToken)
+    private async Task WriteItemAsync(Stream stream, T item, CancellationToken cancellationToken)
     {
-        if (!first)
-        {
-#if NET8_0_OR_GREATER
-            await stream.WriteAsync(LineSeparator, cancellationToken).ConfigureAwait(false);
-#else
-            await stream.WriteAsync(LineSeparator, 0, LineSeparator.Length, cancellationToken).ConfigureAwait(false);
-#endif
-        }
-
         using var content = _serializer.ToHttpContent(item);
 #if NET8_0_OR_GREATER
         await content.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
 #else
+        cancellationToken.ThrowIfCancellationRequested();
         await content.CopyToAsync(stream).ConfigureAwait(false);
 #endif
     }
@@ -185,7 +195,12 @@ public sealed class JsonLinesContent<T> : HttpContent
         foreach (var item in items)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await WriteItemAsync(stream, item, first, cancellationToken).ConfigureAwait(false);
+            if (!first)
+            {
+                await WriteLineSeparatorAsync(stream, cancellationToken).ConfigureAwait(false);
+            }
+
+            await WriteItemAsync(stream, item, cancellationToken).ConfigureAwait(false);
             first = false;
         }
     }
@@ -200,12 +215,12 @@ public sealed class JsonLinesContent<T> : HttpContent
         var enumerator = items.GetAsyncEnumerator(cancellationToken);
         try
         {
-            var first = true;
             var unflushed = false;
             while (await MoveNextAsync(enumerator, stream, unflushed, cancellationToken).ConfigureAwait(false))
             {
-                await WriteItemAsync(stream, enumerator.Current, first, cancellationToken).ConfigureAwait(false);
-                first = false;
+                // Terminate every line, so a server reading line by line can act on it before the next one exists.
+                await WriteItemAsync(stream, enumerator.Current, cancellationToken).ConfigureAwait(false);
+                await WriteLineSeparatorAsync(stream, cancellationToken).ConfigureAwait(false);
                 unflushed = true;
             }
         }

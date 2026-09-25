@@ -31,10 +31,11 @@ public sealed class JsonLinesUploadAcceptanceTests
     private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// Verifies the stubbed server receives the first record's bytes while the producer is still suspended
+    /// Verifies the stubbed server receives the first record as a complete line while the producer is still suspended
     /// producing the rest: the producer blocks, after yielding its first record, on a gate that only opens once the
-    /// server-side responder has observed that record's bytes. If the body were serialized eagerly before the send
-    /// (buffering the whole sequence), the gate would never open and the wait would time out.
+    /// server-side responder has received that record's terminating line feed. If the body were buffered before the
+    /// send, or the line were only terminated when the next record starts, the gate would never open and the wait
+    /// would time out.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -161,9 +162,12 @@ public sealed class JsonLinesUploadAcceptanceTests
         }
     }
 
-    /// <summary>A write-only stream that signals once its first write is observed, discarding the bytes written.</summary>
-    /// <param name="firstWriteObserved">Completed the first time a write is observed.</param>
-    private sealed class SignalingStream(TaskCompletionSource firstWriteObserved) : Stream
+    /// <summary>
+    /// A write-only stream that signals once it has received a complete line (a line feed), discarding the bytes
+    /// written. A server reading line by line can act on a record only at that point.
+    /// </summary>
+    /// <param name="firstLineObserved">Completed the first time a line feed is written.</param>
+    private sealed class SignalingStream(TaskCompletionSource firstLineObserved) : Stream
     {
         /// <inheritdoc/>
         public override bool CanRead => false;
@@ -199,13 +203,23 @@ public sealed class JsonLinesUploadAcceptanceTests
         public override void SetLength(long value) => throw new NotSupportedException();
 
         /// <inheritdoc/>
-        public override void Write(byte[] buffer, int offset, int count) => _ = firstWriteObserved.TrySetResult();
+        public override void Write(byte[] buffer, int offset, int count) => Observe(buffer.AsSpan(offset, count));
 
         /// <inheritdoc/>
         public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
-            _ = firstWriteObserved.TrySetResult();
+            Observe(buffer.Span);
             return ValueTask.CompletedTask;
+        }
+
+        /// <summary>Signals when the written bytes complete a line.</summary>
+        /// <param name="written">The bytes just written.</param>
+        private void Observe(ReadOnlySpan<byte> written)
+        {
+            if (written.IndexOf((byte)'\n') >= 0)
+            {
+                _ = firstLineObserved.TrySetResult();
+            }
         }
     }
 }

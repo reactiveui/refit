@@ -85,7 +85,7 @@ public class JsonLinesContentTypedTests
 
         var body = await content.ReadAsStringAsync();
 
-        await Assert.That(body).IsEqualTo("{\"id\":\"0\",\"name\":\"n0\"}\n{\"id\":\"1\",\"name\":\"n1\"}\n{\"id\":\"2\",\"name\":\"n2\"}");
+        await Assert.That(body).IsEqualTo("{\"id\":\"0\",\"name\":\"n0\"}\n{\"id\":\"1\",\"name\":\"n1\"}\n{\"id\":\"2\",\"name\":\"n2\"}\n");
     }
 
     /// <summary>Verifies a synchronous source is re-enumerated on every send.</summary>

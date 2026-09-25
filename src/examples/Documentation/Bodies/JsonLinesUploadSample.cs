@@ -3,153 +3,55 @@
 // See the LICENSE file in the project root for full license information.
 using System.Net;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Refit.Testing;
 
 namespace Refit.Documentation;
 
 /// <summary>
-/// Uploads typed JSON Lines bodies from asynchronous and synchronous sequences: an <see cref="IAsyncEnumerable{T}"/>
-/// producer, a registered <see cref="JsonSerializerContext"/> for AOT execution, the typed
-/// <see cref="IEnumerable{T}"/> case, the explicit escape hatch that forces a declared element type, retry guidance
-/// for a single-use asynchronous body, and buffering a body outside this path when a caller needs a known length.
+/// Uploading many records to a bulk endpoint as JSON Lines (one JSON object per line), without first building a list
+/// of every record in memory.
 /// </summary>
 internal static class JsonLinesUploadSample
 {
-    /// <summary>The base address used by every scenario's generated client.</summary>
-    private const string BaseUrl = "https://imports.example";
-
-    /// <summary>The route every typed-record scenario uploads to.</summary>
-    private const string RecordsPath = "/imports/records";
-
-    /// <summary>The route the escape-hatch and buffered scenarios upload to.</summary>
-    private const string EventsPath = "/imports/events";
-
-    /// <summary>The identifier of the first record the producer yields.</summary>
-    private const int FirstRecordId = 1;
-
-    /// <summary>The identifier of the second record the producer yields.</summary>
-    private const int SecondRecordId = 2;
-
-    /// <summary>The stock-keeping unit of the first record the producer yields.</summary>
-    private const string FirstRecordSku = "SKU-1";
-
-    /// <summary>The stock-keeping unit of the second record the producer yields.</summary>
-    private const string SecondRecordSku = "SKU-2";
-
-    /// <summary>The quantity of the first record the producer yields.</summary>
-    private const int FirstRecordQuantity = 10;
-
-    /// <summary>The quantity of the second record the producer yields.</summary>
-    private const int SecondRecordQuantity = 20;
-
-    /// <summary>The first record's expected JSON line.</summary>
-    private const string FirstRecordJson = """{"id":1,"sku":"SKU-1","quantity":10}""";
-
-    /// <summary>The second record's expected JSON line.</summary>
-    private const string SecondRecordJson = """{"id":2,"sku":"SKU-2","quantity":20}""";
-
-    /// <summary>The exact request body written for the two-record upload, matching the producer's output.</summary>
-    private const string RecordsBody = $"{FirstRecordJson}\n{SecondRecordJson}";
-
-    /// <summary>Reusable metadata for <see cref="ImportRecord"/>, backed by the registered generated context.</summary>
-    private static readonly JsonSerializerOptions JsonOptions = new(ImportRecordsJsonContext.Default.Options) { TypeInfoResolver = ImportRecordsJsonContext.Default };
-
     /// <summary>Runs every JSON Lines upload scenario.</summary>
-    /// <returns>A task that completes after every assertion.</returns>
+    /// <returns>A task that completes after every scenario has checked its result.</returns>
     internal static async Task RunAsync()
     {
-        await UploadAsyncProducerAsync();
-        await UploadWithGeneratedContextAsync();
-        await UploadTypedEnumerableAsync();
-        await UploadPolymorphicEscapeHatchAsync();
-        await ShowRetryGuidanceAsync();
-        await ShowBufferedUploadAsync();
-    }
-
-    /// <summary>Creates settings whose serializer has generated metadata for <see cref="ImportRecord"/>.</summary>
-    /// <returns>Fresh settings for one handler.</returns>
-    private static RefitSettings CreateSettings() => new(new SystemTextJsonContentSerializer(JsonOptions));
-
-    /// <summary>Creates a client that routes through the handler, reused for the whole scenario rather than per call.</summary>
-    /// <param name="http">The handler used instead of a real network connection.</param>
-    /// <returns>A client owned and disposed by its scenario.</returns>
-    private static HttpClient CreateClient(StubHttp http) => new(http, disposeHandler: false) { BaseAddress = new(BaseUrl) };
-
-    /// <summary>
-    /// Produces records asynchronously, one at a time. A real producer would read rows from a database cursor or a
-    /// paged API instead of yielding immediately; <see cref="Task.Yield"/> only stands in for that latency here.
-    /// </summary>
-    /// <param name="cancellationToken">The token the caller's send flows into this producer, checked between rows.</param>
-    /// <returns>The two records, yielded as they become available.</returns>
-    private static async IAsyncEnumerable<ImportRecord> ProduceRecordsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        await Task.Yield();
-        yield return new(FirstRecordId, FirstRecordSku, FirstRecordQuantity);
-        cancellationToken.ThrowIfCancellationRequested();
-        await Task.Yield();
-        yield return new(SecondRecordId, SecondRecordSku, SecondRecordQuantity);
-    }
-
-    /// <summary>Uploads records from an asynchronous producer, passing the caller's token to both the send and the producer.</summary>
-    /// <returns>A task that completes after the upload is answered and its body is checked.</returns>
-    private static async Task UploadAsyncProducerAsync()
-    {
-        using CancellationTokenSource cancellation = new();
-        using StubHttp http = new() { { new() { Method = HttpMethod.Post, Template = RecordsPath, Body = RecordsBody }, Reply.Status(HttpStatusCode.Accepted) } };
-        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>(BaseUrl, CreateSettings());
-
-        await api.ImportRecordsAsync(ProduceRecordsAsync(cancellation.Token), cancellation.Token);
-        await http.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Creates the generated client straight from the registered context, skipping reflection entirely.</summary>
-    /// <returns>A task that completes after the context-backed upload is answered.</returns>
-    private static async Task UploadWithGeneratedContextAsync()
-    {
-        using StubHttp http = new() { { new() { Method = HttpMethod.Post, Template = RecordsPath, Body = RecordsBody }, Reply.Status(HttpStatusCode.Accepted) } };
-        using HttpClient client = CreateClient(http);
-        IJsonLinesUploadApi api = RestService.ForGenerated<IJsonLinesUploadApi>(client, ImportRecordsJsonContext.Default);
-
-        await api.ImportRecordsAsync(ProduceRecordsAsync(CancellationToken.None), CancellationToken.None);
-        await http.VerifyAllCalledAsync();
+        await UploadRecordsAsTheyAreProducedAsync();
+        await UploadWithSourceGeneratedJsonAsync();
+        await UploadAListYouAlreadyHaveAsync();
+        await UploadABaseTypeWithItsDiscriminatorAsync();
+        await RetryWithAFreshSequenceAsync();
+        await SendAKnownContentLengthAsync();
     }
 
     /// <summary>
-    /// Uploads a materialized batch. <see cref="ImportRecord"/> is sealed, so the generator already writes it typed
-    /// from a plain <see cref="IEnumerable{T}"/>: this is the same bytes as an untyped upload, without the escape hatch.
+    /// Produces records one at a time. A real producer would read rows from a database or a file; here each record
+    /// is made up on the spot.
     /// </summary>
-    /// <returns>A task that completes after the batch upload is answered.</returns>
-    private static async Task UploadTypedEnumerableAsync()
+    /// <param name="cancellationToken">
+    /// Refit passes the request's cancellation token in here, so cancelling the upload also stops the producer.
+    /// </param>
+    /// <returns>The records, each one yielded as soon as it is ready.</returns>
+    private static async IAsyncEnumerable<ImportRecord> ProduceRecordsAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        using StubHttp http = new() { { new() { Method = HttpMethod.Post, Template = RecordsPath, Body = RecordsBody }, Reply.Status(HttpStatusCode.Accepted) } };
-        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>(BaseUrl, CreateSettings());
-
-        ImportRecord[] batch =
-        [
-            new(FirstRecordId, FirstRecordSku, FirstRecordQuantity),
-            new(SecondRecordId, SecondRecordSku, SecondRecordQuantity),
-        ];
-        await api.ImportRecordBatchAsync(batch);
-        await http.VerifyAllCalledAsync();
+        for (int id = 1; id <= 2; id++)
+        {
+            await Task.Delay(10, cancellationToken); // Pretend the next row takes a moment to read.
+            yield return new ImportRecord(id, $"SKU-{id}", id * 10);
+        }
     }
 
-    /// <summary>
-    /// Forces the declared element type for a non-sealed type. <see cref="AuditEvent"/> is abstract, so the
-    /// generator cannot write it typed automatically; building <see cref="JsonLinesContent{T}"/> explicitly and
-    /// passing it as the body is the escape hatch, and it keeps the discriminator the type declares.
-    /// </summary>
-    /// <returns>A task that completes after the discriminated event is checked and the upload is answered.</returns>
-    private static async Task UploadPolymorphicEscapeHatchAsync()
+    /// <summary>Problem: I have records coming from a slow source and want to upload them without waiting for all of them.</summary>
+    /// <returns>A task that completes after the upload is checked.</returns>
+    private static async Task UploadRecordsAsTheyAreProducedAsync()
     {
-        RefitSettings settings = RefitSettings.CamelCase();
         string? uploaded = null;
         using StubHttp http = new()
         {
             {
-                Route.Post(EventsPath),
+                Route.Post("/imports/records"),
                 Reply.From(async request =>
                 {
                     uploaded = await request.Content!.ReadAsStringAsync();
@@ -157,97 +59,146 @@ internal static class JsonLinesUploadSample
                 })
             },
         };
-        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>(BaseUrl, settings);
+        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com");
+        using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(30));
 
-        AuditEvent[] events = [new LoginEvent("a-1", "10.0.0.1")];
+        // Refit writes each record as the producer yields it. Nothing is collected into a list first.
+        await api.ImportRecordsAsync(ProduceRecordsAsync(), cancellation.Token);
+
+        Console.Write(uploaded);
+
+        // {"id":1,"sku":"SKU-1","quantity":10}
+        // {"id":2,"sku":"SKU-2","quantity":20}
+        if (uploaded != "{\"id\":1,\"sku\":\"SKU-1\",\"quantity\":10}\n{\"id\":2,\"sku\":\"SKU-2\",\"quantity\":20}\n")
+        {
+            throw new InvalidOperationException($"Unexpected upload: {uploaded}");
+        }
+    }
+
+    /// <summary>Problem: my app is trimmed or Native AOT, so JSON must come from source-generated metadata.</summary>
+    /// <returns>A task that completes after the upload is checked.</returns>
+    private static async Task UploadWithSourceGeneratedJsonAsync()
+    {
+        using StubHttp http = new() { { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) } };
+        using HttpClient httpClient = new(http, disposeHandler: false) { BaseAddress = new("https://api.example.com") };
+
+        // Each record is written as ImportRecord, using the metadata ImportRecordsJsonContext generated for it.
+        IJsonLinesUploadApi api = RestService.ForGenerated<IJsonLinesUploadApi>(httpClient, ImportRecordsJsonContext.Default);
+        await api.ImportRecordsAsync(ProduceRecordsAsync(), CancellationToken.None);
+
+        await http.VerifyAllCalledAsync();
+    }
+
+    /// <summary>Problem: I already have the records in an array or list and just want them sent as JSON Lines.</summary>
+    /// <returns>A task that completes after the upload is checked.</returns>
+    private static async Task UploadAListYouAlreadyHaveAsync()
+    {
+        using StubHttp http = new() { { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) } };
+        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com");
+
+        ImportRecord[] records = [new ImportRecord(1, "SKU-1", 10), new ImportRecord(2, "SKU-2", 20)];
+        await api.ImportRecordBatchAsync(records);
+
+        await http.VerifyAllCalledAsync();
+    }
+
+    /// <summary>
+    /// Problem: my records share a base type, and the server needs each line to say which kind it is.
+    /// Refit only writes the declared type on its own when that type can't have subclasses, so here we build the
+    /// content ourselves and pass it as the body.
+    /// </summary>
+    /// <returns>A task that completes after the upload is checked.</returns>
+    private static async Task UploadABaseTypeWithItsDiscriminatorAsync()
+    {
+        string? uploaded = null;
+        using StubHttp http = new()
+        {
+            {
+                Route.Post("/imports/events"),
+                Reply.From(async request =>
+                {
+                    uploaded = await request.Content!.ReadAsStringAsync();
+                    return new HttpResponseMessage(HttpStatusCode.Accepted);
+                })
+            },
+        };
+        RefitSettings settings = new();
+        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com", settings);
+
+        AuditEvent[] events = [new LoginEvent("ada", "10.0.0.1")];
+
+        // JsonLinesContent<AuditEvent> writes every line as AuditEvent, so the "kind" discriminator is included.
         using JsonLinesContent<AuditEvent> content = new(events, settings.ContentSerializer);
         await api.ImportRawAsync(content);
 
-        Console.WriteLine(uploaded); // The camelCase JSON line, carrying the "login" discriminator.
-        SampleCheck.Equal(true, uploaded?.Contains("\"kind\":\"login\"", StringComparison.Ordinal));
+        Console.WriteLine(uploaded); // {"kind":"login","ipAddress":"10.0.0.1","actorId":"ada"}
+        if (uploaded is null || !uploaded.Contains("\"kind\":\"login\"", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Unexpected upload: {uploaded}");
+        }
+    }
+
+    /// <summary>
+    /// Problem: the server was busy and I want to try the upload again.
+    /// An async upload can only be sent once, because the records are never kept in memory. To retry, call the method
+    /// again with a fresh sequence.
+    /// </summary>
+    /// <returns>A task that completes after the retry is checked.</returns>
+    private static async Task RetryWithAFreshSequenceAsync()
+    {
+        // The first attempt gets "503 Service Unavailable"; the second is accepted.
+        using StubHttp http = new() { { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.ServiceUnavailable) }, { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) } };
+        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com");
+
+        try
+        {
+            await api.ImportRecordsAsync(ProduceRecordsAsync(), CancellationToken.None);
+        }
+        catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.ServiceUnavailable)
+        {
+            // Start the producer again from the beginning, instead of trying to resend the first request.
+            await api.ImportRecordsAsync(ProduceRecordsAsync(), CancellationToken.None);
+        }
+
         await http.VerifyAllCalledAsync();
     }
 
     /// <summary>
-    /// Shows that a single-use asynchronous body cannot be resent, and the supported retry: build a new request from
-    /// a fresh sequence rather than resending the same content.
+    /// Problem: the server insists on a Content-Length header, so the size must be known before sending.
+    /// Streaming never knows the size up front, so collect the records and buffer the body yourself.
     /// </summary>
-    /// <returns>A task that completes after the rejected resend and the successful retry are checked.</returns>
-    private static async Task ShowRetryGuidanceAsync()
+    /// <returns>A task that completes after the upload is checked.</returns>
+    private static async Task SendAKnownContentLengthAsync()
     {
-        RefitSettings settings = CreateSettings();
-        using JsonLinesContent<ImportRecord> sentOnce = new(ProduceRecordsAsync(CancellationToken.None), settings.ContentSerializer);
-        await using MemoryStream firstSend = new();
-        await sentOnce.CopyToAsync(firstSend, CancellationToken.None);
-        bool rejected = false;
-        try
-        {
-            // Never resend the same async-source content: nothing is buffered to replay it. A real send, not just a
-            // second read, is what actually re-enumerates the producer, so this uses CopyToAsync directly rather
-            // than a caching read like ReadAsStringAsync.
-            await using MemoryStream secondSend = new();
-            await sentOnce.CopyToAsync(secondSend, CancellationToken.None);
-        }
-        catch (InvalidOperationException)
-        {
-            rejected = true;
-        }
-
-        SampleCheck.Equal(true, rejected);
-
+        long? sentLength = null;
         using StubHttp http = new()
         {
-            { new() { Method = HttpMethod.Post, Template = RecordsPath, Body = RecordsBody }, Reply.Status(HttpStatusCode.ServiceUnavailable) },
-            { new() { Method = HttpMethod.Post, Template = RecordsPath, Body = RecordsBody }, Reply.Status(HttpStatusCode.Accepted) },
+            {
+                Route.Post("/imports/events"),
+                Reply.From(request =>
+                {
+                    sentLength = request.Content!.Headers.ContentLength;
+                    return new HttpResponseMessage(HttpStatusCode.Accepted);
+                })
+            },
         };
-        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>(BaseUrl, settings);
-        bool succeeded = await RetryOnceAsync(api);
+        RefitSettings settings = new();
+        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com", settings);
 
-        SampleCheck.Equal(true, succeeded);
-        await http.VerifyAllCalledAsync();
-    }
-
-    /// <summary>Calls the upload once, and retries exactly once with a fresh producer if the first reply fails.</summary>
-    /// <param name="api">The client whose second configured reply succeeds.</param>
-    /// <returns><see langword="true"/> once an attempt succeeds.</returns>
-    private static async Task<bool> RetryOnceAsync(IJsonLinesUploadApi api)
-    {
-        try
+        List<ImportRecord> records = [];
+        await foreach (ImportRecord record in ProduceRecordsAsync())
         {
-            // Every attempt calls the method again with a fresh producer, never the exhausted content.
-            await api.ImportRecordsAsync(ProduceRecordsAsync(CancellationToken.None), CancellationToken.None);
-            return true;
-        }
-        catch (ApiException)
-        {
-            // The first reply failed; retry once with a fresh sequence.
-            await api.ImportRecordsAsync(ProduceRecordsAsync(CancellationToken.None), CancellationToken.None);
-            return true;
-        }
-    }
-
-    /// <summary>
-    /// Buffers a body outside the lazy JSON Lines path for a caller that needs a known Content-Length: materializes
-    /// the sequence, then loads the content into a buffer before sending.
-    /// </summary>
-    /// <returns>A task that completes after the buffered upload's known length and answer are checked.</returns>
-    private static async Task ShowBufferedUploadAsync()
-    {
-        RefitSettings settings = CreateSettings();
-        List<ImportRecord> materialized = [];
-        await foreach (ImportRecord record in ProduceRecordsAsync(CancellationToken.None))
-        {
-            materialized.Add(record);
+            records.Add(record);
         }
 
-        using JsonLinesContent<ImportRecord> content = new(materialized, settings.ContentSerializer);
-        await content.LoadIntoBufferAsync(CancellationToken.None);
-        Console.WriteLine(content.Headers.ContentLength); // A known length now that the body is buffered.
-        SampleCheck.Equal(true, content.Headers.ContentLength > 0);
-
-        using StubHttp http = new() { { Route.Post(EventsPath), Reply.Status(HttpStatusCode.Accepted) } };
-        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>(BaseUrl, settings);
+        using JsonLinesContent<ImportRecord> content = new(records, settings.ContentSerializer);
+        await content.LoadIntoBufferAsync(); // Serializes everything now, so the length is known.
         await api.ImportRawAsync(content);
-        await http.VerifyAllCalledAsync();
+
+        Console.WriteLine(sentLength); // 73
+        if (sentLength is null or 0)
+        {
+            throw new InvalidOperationException("The upload had no Content-Length.");
+        }
     }
 }

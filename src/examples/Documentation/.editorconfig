@@ -13,6 +13,17 @@ csharp_style_var_elsewhere = false:suggestion
 # Documentation-specific exemptions belong only in the website documentation folder.
 # Complete source examples keep the inherited XML documentation diagnostics enabled.
 
+# Readers learn from concrete values ("Ada", "/imports/records", 10). Naming every literal as a constant only for
+# the analyzer sends them scrolling away from the line they are reading.
+dotnet_diagnostic.SST1486.severity = none
+dotnet_diagnostic.SST1471.severity = none
+# Samples show results as comments beside the line that produces them, which can look like commented-out code.
+dotnet_diagnostic.SST1148.severity = none
+# A sample's own "throw if the result is wrong" check is not part of an API contract that needs <exception> docs.
+dotnet_diagnostic.SST1662.severity = none
+# Samples build a client inline so the reader sees where it comes from; IHttpClientFactory is covered separately.
+dotnet_diagnostic.PSH1418.severity = none
+
 [TestingFrameworks/**/*.cs]
 # These tests are written for a beginner reading real test-framework code, not for API consumers browsing
 # IntelliSense: a plain "// Problem: ..." comment naming what the test is for reads better here than a
@@ -21,10 +32,6 @@ csharp_style_var_elsewhere = false:suggestion
 dotnet_diagnostic.SST1600.severity = none
 dotnet_diagnostic.SST1601.severity = none
 dotnet_diagnostic.SST1663.severity = none
-# Friendly, concrete literals ("Ada", "Grace", the number of seconds in a delay) are the point of a readable
-# test; naming them as constants only for the analyzer defeats a test a newcomer can read top to bottom.
-dotnet_diagnostic.SST1486.severity = none
-dotnet_diagnostic.SST1471.severity = none
 # A tiny record and JSON context used only by these tests do not need a [DebuggerDisplay]; that is
 # production-strictness these samples do not need.
 dotnet_diagnostic.SST2334.severity = none

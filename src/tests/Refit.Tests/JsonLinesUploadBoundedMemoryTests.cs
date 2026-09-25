@@ -63,12 +63,12 @@ public sealed class JsonLinesUploadBoundedMemoryTests
     /// <returns>The zero-padded identifier.</returns>
     private static string FormatId(int index) => index.ToString($"D{IdWidth}", CultureInfo.InvariantCulture);
 
-    /// <summary>Computes the exact cumulative byte count expected once <paramref name="completed"/> records, separated by single-byte line breaks, have been written.</summary>
+    /// <summary>Computes the exact cumulative byte count expected once <paramref name="completed"/> records, each terminated by a single-byte line break, have been written.</summary>
     /// <param name="completed">The number of fully-written records.</param>
     /// <param name="lineLength">The byte length of one serialized record.</param>
     /// <returns>The expected cumulative byte count.</returns>
     private static long ExpectedBytesAfter(int completed, int lineLength) =>
-        completed == 0 ? 0 : ((long)completed * lineLength) + (completed - 1);
+        (long)completed * (lineLength + 1);
 
     /// <summary>Produces records, asserting before each one (after the first) that the stream has already received at least the previous record's bytes.</summary>
     /// <param name="count">The number of records to produce.</param>
