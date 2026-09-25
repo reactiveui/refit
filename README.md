@@ -21,7 +21,7 @@ Website code blocks can show a subset of a complete example and omit its test se
 | --- | --- |
 | [Refit](https://www.nuget.org/packages/Refit/) | Generated HTTP clients, request attributes, serializers and response types. Includes the generator, interface analyzers and code fixes. |
 | [Refit.HttpClientFactory](https://www.nuget.org/packages/Refit.HttpClientFactory/) | Register clients with dependency injection and `IHttpClientFactory`, including generated-only and keyed registrations. |
-| [Refit.Testing](https://www.nuget.org/packages/Refit.Testing/) | Match outgoing requests, supply local replies, verify calls and simulate network faults. |
+| [Refit.Testing](https://www.nuget.org/packages/Refit.Testing/) | Match outgoing requests, supply local replies, verify calls and simulate network faults. Release streamed replies chunk by chunk, choose how request bodies are captured, and control simulated time. |
 | [Refit.Newtonsoft.Json](https://www.nuget.org/packages/Refit.Newtonsoft.Json/) | Serialize content with Newtonsoft.Json. |
 | [Refit.Xml](https://www.nuget.org/packages/Refit.Xml/) | Serialize XML content. |
 | [Refit.Reflection](https://www.nuget.org/packages/Refit.Reflection/) | Optional request building through runtime reflection. Use generated clients for trimmed and Native AOT apps. |
@@ -40,8 +40,11 @@ and [AOT guidance](https://www.reactiveui.net/documentation/refit/aot/).
 | Serialized bodies, forms, buffering and request compression | [Bodies](https://www.reactiveui.net/documentation/refit/requests/bodies/) |
 | `Task<T>`, `ValueTask<T>`, `IObservable<T>` and response wrappers | [Return types](https://www.reactiveui.net/documentation/refit/results/return-types/) and [responses](https://www.reactiveui.net/documentation/refit/results/responses/) |
 | Streamed JSON arrays, JSON Lines and server-sent events | [Streaming](https://www.reactiveui.net/documentation/refit/results/streaming/) |
+| Lazy paging over cursors, offsets and `Link` headers with `PagedEnumerable<TPage, TItem>` | [Pagination](https://www.reactiveui.net/documentation/refit/results/pagination/) |
+| JSON contexts registered at client creation and per-method `JsonTypeInfo<T>` parameters | [JSON](https://www.reactiveui.net/documentation/refit/serialization/json/) |
 | HTTP, transport and deserialization failures | [Errors](https://www.reactiveui.net/documentation/refit/results/errors/) |
 | Local replies, request verification and simulated faults | [Testing](https://www.reactiveui.net/documentation/refit/testing/) |
+| Deterministic tests of streamed replies, stalled or dropped bodies, streaming uploads and simulated time | [Testing streams, uploads and time](https://www.reactiveui.net/documentation/refit/testing/streaming/) |
 
 See [why use Refit](https://www.reactiveui.net/documentation/refit/why-refit/) for equivalent
 manual HTTP code and trade-offs. The website records known behavior discrepancies beside
@@ -61,11 +64,14 @@ to find types, overloads, parameters and return values across all topics on one 
 | Client creation and request builders | Create generated or reflection clients, create owned `HttpClient` instances and supply request builders. | [Client creation](https://www.reactiveui.net/documentation/refit/clients/creation/) and [request builders](https://www.reactiveui.net/documentation/refit/clients/request-builders/) |
 | Settings and request metadata | Configure serializers, formatters, exception factories, transport behavior, request options, timeouts, versions and URL resolution. | [Settings](https://www.reactiveui.net/documentation/refit/clients/settings/), [metadata](https://www.reactiveui.net/documentation/refit/advanced/method-metadata/) and [helpers](https://www.reactiveui.net/documentation/refit/advanced/request-helpers/) |
 | Return types, responses and adapters | Choose `Task`, `ValueTask`, `IObservable<T>`, `IAsyncEnumerable<T>`, response wrappers and custom return adapters. | [Return types](https://www.reactiveui.net/documentation/refit/results/return-types/), [responses](https://www.reactiveui.net/documentation/refit/results/responses/), [streaming](https://www.reactiveui.net/documentation/refit/results/streaming/) and [adapters](https://www.reactiveui.net/documentation/refit/results/adapters/) |
+| Pagination | Return `PagedEnumerable<TPage, TItem>` with `[Paged]` and `[PageToken]`, or build one with `Create`, `FromCursor`, `FromOffset` and `FromLinks`; limit, prefetch or observe pages. | [Pagination](https://www.reactiveui.net/documentation/refit/results/pagination/) |
 | Errors and problem details | Read typed error content, create or transform API and transport exceptions, enforce success and redact sensitive details. | [Errors](https://www.reactiveui.net/documentation/refit/results/errors/) |
 | Content serializers | Use System.Text.Json, JSON Lines, synchronous or streaming serializer capabilities and custom serializers. | [JSON](https://www.reactiveui.net/documentation/refit/serialization/json/) and [content](https://www.reactiveui.net/documentation/refit/serialization/content/) |
+| JSON context registration | Pass a `JsonSerializerContext` to `RestService.ForGenerated<T>`, `AddRefitGeneratedClient<T>` or `RefitSettings.ForJsonContext`, and declare `JsonTypeInfo<T>` method parameters. Reflection-based JSON stays off unless you allow it. | [Register a context](https://www.reactiveui.net/documentation/refit/serialization/json/#register-a-context) and [pass metadata to a method](https://www.reactiveui.net/documentation/refit/serialization/json/#pass-metadata-to-a-method) |
 | Alternate serializers | Configure Newtonsoft.Json and XML serializers with their settings. | [Newtonsoft.Json](https://www.reactiveui.net/documentation/refit/serialization/newtonsoft-json/) and [XML](https://www.reactiveui.net/documentation/refit/serialization/xml/) |
 | HTTP client factory and dependency injection | Register generated, reflection or keyed clients, settings holders and authorization providers. | [Dependency injection](https://www.reactiveui.net/documentation/refit/clients/dependency-injection/) |
 | Testing routes, replies, faults and verification | Match requests, create replies, inject failures or delays, inspect bodies and verify calls. | [Testing](https://www.reactiveui.net/documentation/refit/testing/) |
+| Testing streams, uploads and time | Release streamed items with `StreamSource` and `Reply.Stream`, send fixed `Reply.JsonLines` or `Reply.ServerSentEvents` bodies, drop or stall a body, choose `StubHttp.RequestCapture` (`Full`, `None` or `Bounded`) and set `StubHttp.TimeProvider` to a fake clock. | [Testing streams, uploads and time](https://www.reactiveui.net/documentation/refit/testing/streaming/) |
 | Advanced generated request helpers | Extend or inspect request construction through query builders, parameter providers and helper contracts. | [Query builder](https://www.reactiveui.net/documentation/refit/advanced/query-builder/) and [request helpers](https://www.reactiveui.net/documentation/refit/advanced/request-helpers/) |
 
 ## Build requirements and targets

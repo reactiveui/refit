@@ -115,13 +115,21 @@ public sealed partial class StubHttp
     /// <summary>Reads and compares the request body for the exact-body and form-data matchers.</summary>
     /// <param name="route">The candidate route.</param>
     /// <param name="request">The incoming request.</param>
+    /// <param name="capture">The capture policy; body matching requires a buffered body.</param>
     /// <param name="cancellationToken">A token to cancel the body read.</param>
     /// <returns><see langword="true"/> when the body matches (or no body matcher is set).</returns>
-    private static async Task<bool> MatchesBodyAsync(RouteMatcher route, HttpRequestMessage request, CancellationToken cancellationToken)
+    /// <exception cref="InvalidOperationException">The route matches on the body but the capture policy leaves the body unread.</exception>
+    private static async Task<bool> MatchesBodyAsync(RouteMatcher route, HttpRequestMessage request, RequestCapture capture, CancellationToken cancellationToken)
     {
         if (route.Body is null && route.FormData is null)
         {
             return true;
+        }
+
+        if (!capture.BuffersBody)
+        {
+            throw new InvalidOperationException(
+                $"The route {route.Template} matches on the request body, which requires RequestCapture.Full; matching would consume an unbuffered body.");
         }
 
         var body = request.Content is null

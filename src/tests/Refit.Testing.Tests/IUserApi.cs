@@ -24,4 +24,10 @@ public interface IUserApi
     /// <returns>The HTTP response.</returns>
     [Post("/users")]
     Task<HttpResponseMessage> CreateUserResponse([Body] NewUser user);
+
+    /// <summary>Streams users one at a time, as they are released by the server.</summary>
+    /// <param name="cancellationToken">A token that cancels the streaming enumeration.</param>
+    /// <returns>An asynchronous sequence of users.</returns>
+    [Get("/users/stream")]
+    IAsyncEnumerable<User> StreamUsersAsync(CancellationToken cancellationToken);
 }

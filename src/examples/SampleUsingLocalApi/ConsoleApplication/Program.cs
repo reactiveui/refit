@@ -42,9 +42,12 @@ internal static class Program
         var restApiService = RestService.For<IRestService>(client);
         Console.WriteLine(
             "Enter from the following numbers to access the APIs,\n1 for get ,\n2 for get with argument, \n3 for post,\n4 for put, \n5 for Delete \n");
-        while (true)
+
+        // Read menu choices until standard input ends.
+        string? line;
+        while ((line = Console.ReadLine()) is not null)
         {
-            switch (int.Parse(Console.ReadLine() ?? InvalidOption.ToString()))
+            switch (int.TryParse(line, out var option) ? option : InvalidOption)
             {
                 case GetWithNoParameterOption:
                 {

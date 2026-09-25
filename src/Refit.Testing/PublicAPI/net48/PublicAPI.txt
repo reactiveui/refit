@@ -1,3 +1,4 @@
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Testing.Tests")]
 namespace Refit.Testing;
 
 [System.Diagnostics.DebuggerDisplay("{Delay}")]
@@ -27,11 +28,25 @@ public static class Reply
     public static Refit.Testing.StubResponse From(System.Func<System.Net.Http.HttpRequestMessage, System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage>> responder) { }
     public static Refit.Testing.StubResponse Json(string body) { }
     public static Refit.Testing.StubResponse Json(string body, System.Net.HttpStatusCode status) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.Testing.StubResponse JsonLines<T>(System.Collections.Generic.IEnumerable<T> items) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.Testing.StubResponse ServerSentEvents<T>(System.Collections.Generic.IEnumerable<T> items) { }
     public static Refit.Testing.StubResponse Status(System.Net.HttpStatusCode statusCode) { }
+    public static Refit.Testing.StubResponse Stream(Refit.Testing.StreamSource source) { }
     public static Refit.Testing.StubResponse Text(string body) { }
     public static Refit.Testing.StubResponse Text(string body, string contentType) { }
     public static Refit.Testing.StubResponse With<T>(T body) { }
     public static Refit.Testing.StubResponse With<T>(T body, System.Net.HttpStatusCode status) { }
+}
+[System.Diagnostics.DebuggerDisplay("Enabled = {IsEnabled}, MaxBytes = {MaxBytes}")]
+public sealed class RequestCapture
+{
+    public bool IsEnabled { get; }
+    public int? MaxBytes { get; }
+    public static Refit.Testing.RequestCapture Full { get; }
+    public static Refit.Testing.RequestCapture None { get; }
+    public static Refit.Testing.RequestCapture Bounded(int maxBytes) { }
 }
 public static class Route
 {
@@ -62,6 +77,25 @@ public sealed class RouteMatcher
     public System.Func<System.Net.Http.HttpRequestMessage, bool>? Where { get; init; }
     public System.Func<System.Net.Http.HttpRequestMessage, System.Threading.Tasks.Task<bool>>? WhereAsync { get; init; }
 }
+[System.Diagnostics.DebuggerDisplay("{Format} ReleasedChunks = {ReleasedChunks}")]
+public sealed class StreamSource
+{
+    public StreamSource() { }
+    public StreamSource(Refit.StreamingContentFormat format) { }
+    public System.Threading.Tasks.Task Closed { get; }
+    public Refit.StreamingContentFormat Format { get; }
+    public bool IsClosed { get; }
+    public string MediaType { get; }
+    public int ReadChunks { get; }
+    public int ReleasedChunks { get; }
+    public void Complete() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public void Disconnect() { }
+    public void Fail(System.Exception error) { }
+    public void Release<T>(T item) { }
+    public void ReleaseBytes(byte[] bytes) { }
+    public void ReleaseText(string text) { }
+}
 [System.Diagnostics.DebuggerDisplay("StubApiResponse: {StatusCode}, Content = {Content}")]
 public sealed class StubApiResponse<T> : Refit.IApiResponse<T>
 {
@@ -89,7 +123,9 @@ public sealed class StubHttp : System.Net.Http.HttpMessageHandler, System.Collec
     public StubHttp() { }
     public StubHttp(Refit.Testing.NetworkBehavior behavior) { }
     public Refit.Testing.NetworkBehavior? Behavior { get; set; }
+    public Refit.Testing.RequestCapture RequestCapture { get; set; }
     public System.Collections.Generic.IReadOnlyList<System.Net.Http.HttpRequestMessage> Requests { get; }
+    public System.TimeProvider TimeProvider { get; set; }
     public void Add(Refit.Testing.RouteMatcher route, Refit.Testing.StubResponse response) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public T CreateClient<T>(string hostUrl) { }

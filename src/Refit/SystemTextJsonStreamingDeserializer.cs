@@ -80,7 +80,9 @@ internal static class SystemTextJsonStreamingDeserializer
         var end = 0;
         try
         {
-            while (true)
+            // -1 until the first read; 0 once the stream has ended.
+            var read = -1;
+            while (read != 0)
             {
                 var newline = Array.IndexOf(buffer, (byte)'\n', start, end - start);
                 if (newline >= 0)
@@ -108,25 +110,21 @@ internal static class SystemTextJsonStreamingDeserializer
                 }
 
 #if NET8_0_OR_GREATER
-                var read = await stream
+                read = await stream
                     .ReadAsync(buffer.AsMemory(end), cancellationToken)
                     .ConfigureAwait(false);
 #else
-                var read = await stream
+                read = await stream
                     .ReadAsync(buffer, end, buffer.Length - end, cancellationToken)
                     .ConfigureAwait(false);
 #endif
-                if (read == 0)
-                {
-                    if (!SystemTextJsonContentSerializer.IsBlankLine(buffer, start, end - start))
-                    {
-                        yield return DeserializeLine<T>(buffer, start, end - start, options);
-                    }
-
-                    yield break;
-                }
-
                 end += read;
+            }
+
+            // The stream ended; whatever follows the last newline is the final line.
+            if (!SystemTextJsonContentSerializer.IsBlankLine(buffer, start, end - start))
+            {
+                yield return DeserializeLine<T>(buffer, start, end - start, options);
             }
         }
         finally

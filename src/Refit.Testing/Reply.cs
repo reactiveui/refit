@@ -2,8 +2,10 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 
 namespace Refit.Testing;
 
@@ -58,6 +60,38 @@ public static class Reply
     /// <returns>A configured <see cref="StubResponse"/>.</returns>
     public static StubResponse Content(HttpContent body) => new() { Content = body };
 
+    /// <summary>
+    /// Replies at once with status 200 and a body the test releases through <paramref name="source"/>. The client reads
+    /// each chunk only after it is released, so a test controls exactly when streamed items arrive.
+    /// </summary>
+    /// <param name="source">The controllable body; it feeds exactly one response.</param>
+    /// <returns>A configured <see cref="StubResponse"/>.</returns>
+    public static StubResponse Stream(StreamSource source)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(source);
+        return new() { BodyFactory = source.CreateContent };
+    }
+
+    /// <summary>
+    /// Replies with a JSON Lines body (<c>application/x-ndjson</c>) that sends one chunk per item, serialized by the
+    /// client's content serializer, and has no <c>Content-Length</c>. Each response gets a fresh copy of the items.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="items">The items to send, in order.</param>
+    /// <returns>A configured <see cref="StubResponse"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StubResponse JsonLines<T>(IEnumerable<T> items) => Chunked(StreamingContentFormat.JsonLines, items);
+
+    /// <summary>
+    /// Replies with a server-sent events body (<c>text/event-stream</c>) that sends one <c>data</c> event per item,
+    /// serialized by the client's content serializer. Each response gets a fresh copy of the items.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="items">The items to send, in order.</param>
+    /// <returns>A configured <see cref="StubResponse"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StubResponse ServerSentEvents<T>(IEnumerable<T> items) => Chunked(StreamingContentFormat.ServerSentEvents, items);
+
     /// <summary>Replies with a response built from the request, for total control.</summary>
     /// <param name="responder">A factory that produces the response from the request.</param>
     /// <returns>A configured <see cref="StubResponse"/>.</returns>
@@ -67,4 +101,28 @@ public static class Reply
     /// <param name="responder">An asynchronous factory that produces the response from the request.</param>
     /// <returns>A configured <see cref="StubResponse"/>.</returns>
     public static StubResponse From(Func<HttpRequestMessage, Task<HttpResponseMessage>> responder) => new() { ResponderAsync = responder };
+
+    /// <summary>Builds a reply whose body releases every item and then completes, one chunk per item.</summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="format">The framing.</param>
+    /// <param name="items">The items to send.</param>
+    /// <returns>A configured <see cref="StubResponse"/>.</returns>
+    private static StubResponse Chunked<T>(StreamingContentFormat format, IEnumerable<T> items)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(items);
+        return new()
+        {
+            BodyFactory = serializer =>
+            {
+                var source = new StreamSource(format);
+                foreach (var item in items)
+                {
+                    source.Release(item);
+                }
+
+                source.Complete();
+                return source.CreateContent(serializer);
+            },
+        };
+    }
 }
