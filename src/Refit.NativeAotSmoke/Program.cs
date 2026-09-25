@@ -250,17 +250,10 @@ Console.WriteLine(
 
 Console.WriteLine("Native AOT Refit smoke test passed.");
 
-/// <summary>Produces <see cref="SmokeRecord"/> values lazily, one at a time, pausing after the first element until
-/// <paramref name="continueAfterFirst"/> is released, so a consumer can observe backpressure. The token flows in
-/// through <see cref="EnumeratorCancellationAttribute"/> because it is supplied by the collection's caller via
-/// <c>GetAsyncEnumerator(CancellationToken)</c>, not by this method's own caller.</summary>
-/// <param name="count">The number of records to produce.</param>
-/// <param name="continueAfterFirst">Released to let the producer continue past its first element.</param>
-/// <param name="onYielded">Invoked immediately before each record is handed to the consumer via <c>yield return</c>.</param>
-/// <param name="onFinally">Invoked when the producer's <c>finally</c> block runs, on any exit path.</param>
-/// <param name="onCompletedAll">Invoked once every record has been produced, before the method returns.</param>
-/// <param name="enumeratorCancellationToken">The token supplied by the enumerable's caller.</param>
-/// <returns>The lazily produced sequence.</returns>
+// Produces records lazily, pausing after the first until continueAfterFirst is released so a consumer can observe
+// the first line before production completes. The token arrives through [EnumeratorCancellation] because Refit
+// supplies it via GetAsyncEnumerator(CancellationToken). onYielded runs before each yield, onFinally on every exit
+// path, and onCompletedAll only when every record was produced.
 static async IAsyncEnumerable<SmokeRecord> ProduceUploadRecordsAsync(
     int count,
     SemaphoreSlim continueAfterFirst,
