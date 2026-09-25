@@ -293,11 +293,13 @@ public static class GeneratedRequestRunner
     public static string BuildRequestPath<T>(string relativePathTemplate, bool allowUnmatchedParameter, (int StartIdx, int EndIdx) range, T value, string? format) where T : System.ISpanFormattable { }
     public static bool CanUnrollForm(object? body) { }
     public static System.Net.Http.HttpContent CompressBodyContent(System.Net.Http.HttpContent content, Refit.RefitSettings settings, Refit.RequestCompression compression, System.IO.Compression.CompressionLevel level) { }
+    public static System.Net.Http.HttpContent CreateAsyncJsonLinesBodyContent<TElement>(Refit.RefitSettings settings, System.Collections.Generic.IAsyncEnumerable<TElement>? body) { }
     public static System.Net.Http.HttpContent CreateBodyContent<TBody>(Refit.RefitSettings settings, TBody body, Refit.BodySerializationMethod serializationMethod, bool streamBody) { }
     public static System.Net.Http.HttpContent CreateBodyContent<TBody>(Refit.RefitSettings settings, TBody body, System.Text.Json.Serialization.Metadata.JsonTypeInfo<TBody>? typeInfo, Refit.BodySerializationMethod serializationMethod, bool streamBody) { }
     public static System.Net.Http.HttpContent CreateJsonLinesBodyContent<TBody>(Refit.RefitSettings settings, TBody body) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static System.Net.Http.HttpContent CreateStreamContent(System.IO.Stream stream) { }
+    public static System.Net.Http.HttpContent CreateTypedJsonLinesBodyContent<TElement>(Refit.RefitSettings settings, System.Collections.Generic.IEnumerable<TElement>? body) { }
     public static System.Net.Http.HttpContent CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings settings, TBody body) { }
     public static System.Net.Http.HttpContent CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings settings, TBody body, Refit.FormField<TBody>[] fields) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -486,6 +488,15 @@ public sealed class JsonLinesContent : System.Net.Http.HttpContent
     public JsonLinesContent(System.Collections.IEnumerable items, Refit.IHttpContentSerializer serializer) { }
     public static string JsonLinesMediaType { get; }
     protected override System.Threading.Tasks.Task SerializeToStreamAsync(System.IO.Stream stream, System.Net.TransportContext? context) { }
+    protected override bool TryComputeLength(out long length) { }
+}
+[System.Diagnostics.DebuggerDisplay("JsonLinesContent<{typeof(T).Name,nq}>")]
+public sealed class JsonLinesContent<T> : System.Net.Http.HttpContent
+{
+    public JsonLinesContent(System.Collections.Generic.IAsyncEnumerable<T> items, Refit.IHttpContentSerializer serializer) { }
+    public JsonLinesContent(System.Collections.Generic.IEnumerable<T> items, Refit.IHttpContentSerializer serializer) { }
+    protected override System.Threading.Tasks.Task SerializeToStreamAsync(System.IO.Stream stream, System.Net.TransportContext? context) { }
+    protected override System.Threading.Tasks.Task SerializeToStreamAsync(System.IO.Stream stream, System.Net.TransportContext? context, System.Threading.CancellationToken cancellationToken) { }
     protected override bool TryComputeLength(out long length) { }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]

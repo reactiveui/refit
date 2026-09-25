@@ -102,6 +102,16 @@ public static class Reply
     /// <returns>A configured <see cref="StubResponse"/>.</returns>
     public static StubResponse From(Func<HttpRequestMessage, Task<HttpResponseMessage>> responder) => new() { ResponderAsync = responder };
 
+    /// <summary>
+    /// Replies with a response built asynchronously from the request and the send's cancellation token. Pass the token
+    /// to <c>request.Content.CopyToAsync</c> to read a streaming upload the way a network handler does, so cancelling
+    /// the call reaches the content being written.
+    /// </summary>
+    /// <param name="responder">An asynchronous factory that produces the response from the request and cancellation token.</param>
+    /// <returns>A configured <see cref="StubResponse"/>.</returns>
+    public static StubResponse From(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> responder) =>
+        new() { CancellableResponderAsync = responder };
+
     /// <summary>Builds a reply whose body releases every item and then completes, one chunk per item.</summary>
     /// <typeparam name="T">The item type.</typeparam>
     /// <param name="format">The framing.</param>

@@ -109,6 +109,39 @@ public static partial class GeneratedRequestRunner
         return new JsonLinesContent(items, settings.ContentSerializer);
     }
 
+    /// <summary>Serializes a generated JSON Lines body declared as a synchronous sequence of a sealed or value element type.</summary>
+    /// <typeparam name="TElement">The declared element type.</typeparam>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="body">The sequence body value.</param>
+    /// <returns>The HTTP content for the JSON Lines body.</returns>
+    /// <remarks>
+    /// Elements are serialized as <typeparamref name="TElement"/> only when that writes the same JSON as
+    /// <see cref="CreateJsonLinesBodyContent{TBody}"/>, which serializes each element as <see cref="object"/>: the
+    /// element type has no derived types and the serializer is the built-in <see cref="SystemTextJsonContentSerializer"/>
+    /// with no converter for <see cref="object"/>. Otherwise the body is written exactly as that method writes it.
+    /// </remarks>
+    public static HttpContent CreateTypedJsonLinesBodyContent<TElement>(
+        RefitSettings settings,
+        IEnumerable<TElement>? body) =>
+        body is null or HttpContent or Stream
+            || settings.ContentSerializer is not SystemTextJsonContentSerializer serializer
+            || !serializer.WritesDeclaredTypeAsObject(typeof(TElement))
+            ? CreateJsonLinesBodyContent(settings, body)
+            : new JsonLinesContent<TElement>(body, serializer);
+
+    /// <summary>Serializes a generated JSON Lines body declared as an asynchronous sequence.</summary>
+    /// <typeparam name="TElement">The declared element type, passed to the serializer for every element.</typeparam>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="body">The asynchronous sequence body value.</param>
+    /// <returns>Single-use HTTP content that writes the sequence as it is produced.</returns>
+    /// <remarks>A <see langword="null"/> body is written as a single <c>null</c> line, as <see cref="CreateJsonLinesBodyContent{TBody}"/> writes it.</remarks>
+    public static HttpContent CreateAsyncJsonLinesBodyContent<TElement>(
+        RefitSettings settings,
+        IAsyncEnumerable<TElement>? body) =>
+        body is null or HttpContent or Stream
+            ? CreateJsonLinesBodyContent(settings, body)
+            : new JsonLinesContent<TElement>(body, settings.ContentSerializer);
+
     /// <summary>Serializes a generated URL-encoded request body using the declared body type.</summary>
     /// <typeparam name="TBody">The declared body type.</typeparam>
     /// <param name="settings">The Refit settings to use.</param>

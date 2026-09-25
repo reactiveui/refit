@@ -1,0 +1,11 @@
+<Project>
+  <!-- A nested Directory.Packages.props stops MSBuild's upward search, so import the repo's own
+       package versions explicitly, then add the packages this framework needs. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Packages.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <ItemGroup>
+    <PackageVersion Include="NUnit" Version="4.6.1"/>
+    <!-- NUnit3TestAdapter 6.0+ runs natively under Microsoft Testing Platform. -->
+    <PackageVersion Include="NUnit3TestAdapter" Version="6.3.0"/>
+  </ItemGroup>
+</Project>

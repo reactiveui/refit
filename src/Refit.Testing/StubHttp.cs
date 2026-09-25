@@ -400,7 +400,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
             return faulted;
         }
 
-        var response = await BuildResponseAsync(_responses[index], request).ConfigureAwait(false);
+        var response = await BuildResponseAsync(_responses[index], request, cancellationToken).ConfigureAwait(false);
 
         // Honor cancellation requested during matching or by a responder (e.g. a test that cancels mid-send).
         cancellationToken.ThrowIfCancellationRequested();
@@ -455,22 +455,32 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         timeProvider.Delay(delay, cancellationToken);
 #endif
 
+    /// <summary>Runs the reply's custom responder, if it has one.</summary>
+    /// <param name="response">The matched reply.</param>
+    /// <param name="request">The request being answered.</param>
+    /// <param name="cancellationToken">The send's cancellation token, passed to a cancellable responder.</param>
+    /// <returns>The responder's message, or <see langword="null"/> when the reply has no responder.</returns>
+    private static async Task<HttpResponseMessage?> InvokeResponderAsync(StubResponse response, HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (response.CancellableResponderAsync is not null)
+        {
+            return await response.CancellableResponderAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+
+        return response.ResponderAsync is not null
+            ? await response.ResponderAsync(request).ConfigureAwait(false)
+            : response.Responder?.Invoke(request);
+    }
+
     /// <summary>Builds the configured response for a matched route.</summary>
     /// <param name="response">The matched reply.</param>
     /// <param name="request">The request being answered.</param>
+    /// <param name="cancellationToken">The send's cancellation token, passed to a cancellable responder.</param>
     /// <returns>The response message.</returns>
-    private async Task<HttpResponseMessage> BuildResponseAsync(StubResponse response, HttpRequestMessage request)
+    private async Task<HttpResponseMessage> BuildResponseAsync(StubResponse response, HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        if (response.ResponderAsync is not null)
+        if (await InvokeResponderAsync(response, request, cancellationToken).ConfigureAwait(false) is { } custom)
         {
-            var custom = await response.ResponderAsync(request).ConfigureAwait(false);
-            custom.RequestMessage ??= request;
-            return custom;
-        }
-
-        if (response.Responder is not null)
-        {
-            var custom = response.Responder(request);
             custom.RequestMessage ??= request;
             return custom;
         }

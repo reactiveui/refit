@@ -1,0 +1,10 @@
+<Project>
+  <!-- A nested Directory.Packages.props stops MSBuild's upward search, so import the repo's own
+       package versions explicitly, then add the one package this framework needs. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Packages.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <ItemGroup>
+    <!-- xunit.v3 runs natively under Microsoft Testing Platform: no separate VSTest adapter needed. -->
+    <PackageVersion Include="xunit.v3" Version="4.0.1"/>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+<Project>
+  <!-- A nested Directory.Packages.props stops MSBuild's upward search, so import the repo's own
+       package versions explicitly, then add the packages this framework needs. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Packages.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <ItemGroup>
+    <PackageVersion Include="MSTest.TestFramework" Version="4.4.1"/>
+    <!-- MSTest.TestAdapter runs natively under Microsoft Testing Platform (the MSTest runner). -->
+    <PackageVersion Include="MSTest.TestAdapter" Version="4.4.1"/>
+  </ItemGroup>
+</Project>

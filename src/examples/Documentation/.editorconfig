@@ -12,3 +12,41 @@ csharp_style_var_elsewhere = false:suggestion
 
 # Documentation-specific exemptions belong only in the website documentation folder.
 # Complete source examples keep the inherited XML documentation diagnostics enabled.
+
+# Readers learn from concrete values ("Ada", "/imports/records", 10). Naming every literal as a constant only for
+# the analyzer sends them scrolling away from the line they are reading.
+dotnet_diagnostic.SST1486.severity = none
+dotnet_diagnostic.SST1471.severity = none
+# Samples show results as comments beside the line that produces them, which can look like commented-out code.
+dotnet_diagnostic.SST1148.severity = none
+# A sample's own "throw if the result is wrong" check is not part of an API contract that needs <exception> docs.
+dotnet_diagnostic.SST1662.severity = none
+# Samples build a client inline so the reader sees where it comes from; IHttpClientFactory is covered separately.
+dotnet_diagnostic.PSH1418.severity = none
+
+# Samples name the type they create ("new Person(1, \"Ada\")") so a reader never has to work out what "new(...)" builds.
+dotnet_diagnostic.SST2202.severity = none
+dotnet_diagnostic.IDE0090.severity = none
+# One initializer entry per line, with braces on their own lines, reads better in samples than one long line.
+dotnet_diagnostic.SST1531.severity = none
+# Samples call methods for their effect and ignore the value, as readers do; "_ =" discards only add noise here.
+dotnet_diagnostic.SST2221.severity = none
+dotnet_diagnostic.IDE0058.severity = none
+dotnet_diagnostic.CA1806.severity = none
+# [MethodImpl(AggressiveInlining)] on small sample helpers is performance tuning that distracts from what they show.
+dotnet_diagnostic.PSH1410.severity = none
+
+[TestingFrameworks/**/*.cs]
+# These tests are written for a beginner reading real test-framework code, not for API consumers browsing
+# IntelliSense: a plain "// Problem: ..." comment naming what the test is for reads better here than a
+# required /// doc comment on every [Fact]/[Test]/[TestMethod], and public test classes/methods do not need
+# XML docs (GenerateDocumentationFile is also off for these projects; see their .csproj).
+dotnet_diagnostic.SST1600.severity = none
+dotnet_diagnostic.SST1601.severity = none
+dotnet_diagnostic.SST1663.severity = none
+# A tiny record and JSON context used only by these tests do not need a [DebuggerDisplay]; that is
+# production-strictness these samples do not need.
+dotnet_diagnostic.SST2334.severity = none
+# xUnit's "pass TestContext.Current.CancellationToken" suggestion would make the xUnit project's tests differ
+# from the otherwise-identical NUnit/MSTest/TUnit versions just to satisfy one framework's analyzer.
+dotnet_diagnostic.xUnit1051.severity = none

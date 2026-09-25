@@ -89,12 +89,99 @@ public partial class GeneratedRequestBuildingTests
         var generated = Fixture.GenerateForBody(
             """
             [Post("/import")]
-            Task Import([Body(BodySerializationMethod.JsonLines)] IEnumerable<string> documents);
+            Task Import([Body(BodySerializationMethod.JsonLines)] IEnumerable<object> documents);
             """,
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent");
+        await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<");
+    }
+
+    /// <summary>Verifies an <see cref="IAsyncEnumerable{T}"/> JSON Lines body emits the asynchronous typed body factory, keeping the declared element type.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsAsyncJsonLinesBodyContentForAsyncEnumerableBody()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Post("/import")]
+            Task Import([Body(BodySerializationMethod.JsonLines)] IAsyncEnumerable<object> documents);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.CreateAsyncJsonLinesBodyContent<");
+    }
+
+    /// <summary>Verifies a synchronous JSON Lines body whose element type is a value type emits the typed body factory.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsTypedJsonLinesBodyContentForValueTypeElementBody()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Post("/import")]
+            Task Import([Body(BodySerializationMethod.JsonLines)] List<int> documents);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.CreateTypedJsonLinesBodyContent<");
+    }
+
+    /// <summary>Verifies a synchronous JSON Lines body declared as a plain string still emits the untyped body factory.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsUntypedJsonLinesBodyContentForStringBody()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Post("/import")]
+            Task Import([Body(BodySerializationMethod.JsonLines)] string document);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<");
+        await Assert.That(generated).DoesNotContain("CreateTypedJsonLinesBodyContent<");
+        await Assert.That(generated).DoesNotContain("CreateAsyncJsonLinesBodyContent<");
+    }
+
+    /// <summary>Verifies a synchronous JSON Lines body whose element type is sealed emits the typed body factory, and a non-sealed element type keeps the untyped one.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsTypedJsonLinesBodyContentForSealedElementBody()
+    {
+        var generated = Fixture.GenerateForDeclaration(
+            """
+            namespace RefitGeneratorTest;
+
+            public sealed class SealedDocument
+            {
+                public string? Id { get; set; }
+            }
+
+            public class OpenDocument
+            {
+                public string? Id { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Post("/import")]
+                Task ImportSealed([Body(BodySerializationMethod.JsonLines)] IEnumerable<SealedDocument> documents);
+
+                [Post("/import")]
+                Task ImportOpen([Body(BodySerializationMethod.JsonLines)] IEnumerable<OpenDocument> documents);
+            }
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated)
+            .Contains("global::Refit.GeneratedRequestRunner.CreateTypedJsonLinesBodyContent<global::RefitGeneratorTest.SealedDocument>");
+        await Assert.That(generated)
+            .Contains("global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<global::System.Collections.Generic.IEnumerable<global::RefitGeneratorTest.OpenDocument>>");
     }
 
     /// <summary>Verifies an inherited Refit method is emitted through an explicit interface implementation.</summary>

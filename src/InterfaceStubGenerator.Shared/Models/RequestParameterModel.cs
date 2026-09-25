@@ -75,4 +75,11 @@ internal readonly record struct RequestParameterModel(
     /// <summary>Gets the fully-qualified type argument of a <see cref="RequestParameterKind.JsonTypeInfo"/> parameter,
     /// the type its metadata describes, or <see langword="null"/> for every other parameter.</summary>
     internal string? JsonTypeInfoTarget { get; init; }
+
+    /// <summary>Gets the fully-qualified element type a JSON Lines body is written with, or <see langword="null"/>
+    /// when the body keeps the untyped path that serializes every element as <see cref="object"/>.</summary>
+    internal string? JsonLinesElementType { get; init; }
+
+    /// <summary>Gets a value indicating whether a typed JSON Lines body is an <c>IAsyncEnumerable&lt;T&gt;</c>.</summary>
+    internal bool IsAsyncJsonLines { get; init; }
 }

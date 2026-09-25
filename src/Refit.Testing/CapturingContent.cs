@@ -46,6 +46,16 @@ internal sealed class CapturingContent : HttpContent
         _capture.Complete();
     }
 
+#if NET8_0_OR_GREATER
+    /// <inheritdoc/>
+    protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken cancellationToken)
+    {
+        // Pass the token on so a streaming body being recorded still observes the send's cancellation.
+        await _inner.CopyToAsync(new CaptureStream(stream, _capture, ownsInner: false), cancellationToken).ConfigureAwait(false);
+        _capture.Complete();
+    }
+#endif
+
     /// <inheritdoc/>
     protected override async Task<Stream> CreateContentReadStreamAsync() =>
         new CaptureStream(await _inner.ReadAsStreamAsync().ConfigureAwait(false), _capture, ownsInner: true);

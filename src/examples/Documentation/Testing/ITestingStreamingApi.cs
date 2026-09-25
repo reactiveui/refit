@@ -17,4 +17,11 @@ internal interface ITestingStreamingApi
     /// <returns>A task that completes when the upload has been answered.</returns>
     [Post("/people/import")]
     Task ImportAsync([Body(BodySerializationMethod.JsonLines)] IEnumerable<TestingPerson> people);
+
+    /// <summary>Uploads people as JSON Lines from an asynchronous producer, one serialized person per line as it arrives.</summary>
+    /// <param name="people">The people to upload; enumerated once while the body is written.</param>
+    /// <param name="cancellationToken">The token that flows to the producer and to every write.</param>
+    /// <returns>A task that completes when the upload has been answered.</returns>
+    [Post("/people/import-live")]
+    Task ImportLiveAsync([Body(BodySerializationMethod.JsonLines)] IAsyncEnumerable<TestingPerson> people, CancellationToken cancellationToken);
 }

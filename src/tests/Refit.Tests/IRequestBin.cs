@@ -84,6 +84,12 @@ public interface IRequestBin
     [Post("/foo")]
     Task PostJsonLinesString([Body(BodySerializationMethod.JsonLines)] string line);
 
+    /// <summary>Posts an asynchronous sequence serialized as JSON Lines, keeping the declared element type.</summary>
+    /// <param name="records">The records to post, one JSON document per line.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Post("/foo")]
+    Task PostJsonLinesAsync([Body(BodySerializationMethod.JsonLines)] IAsyncEnumerable<JsonLineRecord> records);
+
     /// <summary>Exercises a route whose template parameter shares the generated code-gen variable name.</summary>
     /// <param name="arguments">The path segment value.</param>
     /// <returns>A task that completes when the request finishes.</returns>

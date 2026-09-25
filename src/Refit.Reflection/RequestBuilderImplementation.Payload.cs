@@ -76,7 +76,7 @@ internal partial class RequestBuilderImplementation
 
             case BodySerializationMethod.JsonLines:
             {
-                ret.Content = new JsonLinesContent(AsJsonLinesSequence(param), _serializer);
+                ret.Content = CreateJsonLinesContent(_settings, restMethod, param);
                 break;
             }
 
