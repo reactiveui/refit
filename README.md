@@ -98,11 +98,15 @@ See [breaking changes](https://github.com/reactiveui/refit/blob/main/docs/breaki
 
 ## Sponsors
 
-Refit is supported by [JetBrains](https://www.jetbrains.com/),
-[Anthropic](https://www.anthropic.com/) through [Claude](https://claude.com/), and
-[OpenAI](https://openai.com/) through [Codex](https://openai.com/codex/).
+Refit is supported by [JetBrains](https://www.jetbrains.com/) and by
+[Anthropic](https://www.anthropic.com/) through [Claude](https://claude.com/).
+[OpenAI](https://openai.com/) supports Refit's maintainers with [Codex](https://openai.com/codex/)
+through [Codex for Open Source](https://developers.openai.com/community/codex-for-oss).
 
 [![JetBrains](https://raw.githubusercontent.com/reactiveui/refit/main/images/jetbrains.svg)](https://www.jetbrains.com/)
 [![Claude by Anthropic](https://raw.githubusercontent.com/reactiveui/refit/main/images/claude.svg)](https://claude.com/)
+[![OpenAI](https://raw.githubusercontent.com/reactiveui/refit/main/images/openai.svg)](https://openai.com/codex/)
+
+JetBrains, Claude, Anthropic, OpenAI and Codex names and logos are trademarks of their respective owners.
 
 Refit is licensed under the [MIT license](https://github.com/reactiveui/refit/blob/main/LICENSE).
