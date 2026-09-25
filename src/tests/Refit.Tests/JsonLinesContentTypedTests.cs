@@ -277,6 +277,32 @@ public class JsonLinesContentTypedTests
 
         await Assert.That(tracker.Disposed).IsTrue();
     }
+
+    /// <summary>
+    /// Verifies the token-less serialize override, the entry point on .NET Framework where the cancellable overload
+    /// does not exist, writes the same body as a normal send.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Security",
+        "SES1406:Avoid reaching non-public members through reflection",
+        Justification = "HttpContent on .NET 8+ always calls the cancellable overload; reflection is the only way to exercise the .NET Framework entry point here.")]
+    public async Task TokenlessSerializeOverrideWritesTheSameBody()
+    {
+        using var content = new JsonLinesContent<SealedRecord>([new("1", "a"), new("2", "b")], Serializer);
+        var tokenless = typeof(JsonLinesContent<SealedRecord>).GetMethod(
+            "SerializeToStreamAsync",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+            [typeof(Stream), typeof(System.Net.TransportContext)])!;
+
+        await using var direct = new MemoryStream();
+        await (Task)tokenless.Invoke(content, [direct, null])!;
+        await using var sent = new MemoryStream();
+        await content.CopyToAsync(sent);
+
+        await Assert.That(direct.ToArray()).IsEquivalentTo(sent.ToArray());
+    }
 #endif
 
     /// <summary>Verifies the typed factory falls back to the untyped content for a non-<see cref="SystemTextJsonContentSerializer"/> serializer.</summary>
