@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 60 900 580">
+  <defs>
+    <linearGradient id="green" gradientUnits="userSpaceOnUse" x1="0" y1="80" x2="0" y2="620">
+      <stop offset="0" stop-color="#2BB673"/>
+      <stop offset="1" stop-color="#009444"/>
+    </linearGradient>
+    <linearGradient id="blue" gradientUnits="userSpaceOnUse" x1="0" y1="80" x2="0" y2="620">
+      <stop offset="0" stop-color="#31AFF3"/>
+      <stop offset="1" stop-color="#319AF3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Interface: brace and member lines -->
+  <g fill="none" stroke="url(#blue)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M205,140 H180 A40,40 0 0 0 140,180 V325 L102,365 L140,405 V550 A40,40 0 0 0 180,590 H205"/>
+    <path d="M245,265 H320"/>
+    <path d="M245,465 H320"/>
+  </g>
+  <path d="M245,365 H350" fill="none" stroke="#2BB673" stroke-width="34" stroke-linecap="round"/>
+
+  <!-- Refit r, drawn in the ReactiveUI rounded stroke style -->
+  <g fill="none" stroke="url(#green)" stroke-width="124" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M470,205 V528"/>
+    <path d="M470,340 C470,250 540,205 625,205 H655"/>
+  </g>
+
+  <!-- HTTP calls going out -->
+  <g fill="none" stroke="url(#blue)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M605,365 H730 L790,305 H830"/>
+    <path d="M605,528 H730 L790,588 H830"/>
+  </g>
+  <path d="M605,446 H870" fill="none" stroke="#2BB673" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="850" cy="305" r="40" fill="url(#blue)"/>
+  <circle cx="890" cy="446" r="40" fill="#2BB673"/>
+  <circle cx="850" cy="588" r="40" fill="url(#blue)"/>
+</svg>

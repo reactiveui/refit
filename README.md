@@ -1,4 +1,4 @@
-![Refit](images/logo.png)
+<img src="images/refit-logo.svg" alt="Refit" width="320">
 
 # Refit
 
@@ -98,7 +98,12 @@ See [breaking changes](docs/breaking-changes.md),
 
 ## Sponsors
 
-[![JetBrains](images/jetbrains.svg)](https://www.jetbrains.com)
-[![Claude](images/claude.svg)](https://claude.com)
+Refit is supported by [JetBrains](https://www.jetbrains.com/),
+[Anthropic](https://www.anthropic.com/) through [Claude](https://claude.com/), and
+[OpenAI](https://openai.com/) through [Codex](https://openai.com/codex/).
+
+<a href="https://www.jetbrains.com/"><picture><source media="(prefers-color-scheme: dark)" srcset="images/jetbrains-dark.svg"><img src="images/jetbrains.svg" alt="JetBrains" height="40"></picture></a>
+&nbsp;&nbsp;
+<a href="https://claude.com/"><picture><source media="(prefers-color-scheme: dark)" srcset="images/claude-dark.svg"><img src="images/claude.svg" alt="Claude by Anthropic" height="40"></picture></a>
 
 Refit is licensed under the [MIT license](LICENSE).

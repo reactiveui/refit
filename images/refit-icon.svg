@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="green" gradientUnits="userSpaceOnUse" x1="0" y1="40" x2="0" y2="472">
+      <stop offset="0" stop-color="#2BB673"/>
+      <stop offset="1" stop-color="#009444"/>
+    </linearGradient>
+    <linearGradient id="blue" gradientUnits="userSpaceOnUse" x1="0" y1="40" x2="0" y2="472">
+      <stop offset="0" stop-color="#31AFF3"/>
+      <stop offset="1" stop-color="#319AF3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Refit r, drawn in the ReactiveUI rounded stroke style -->
+  <g fill="none" stroke="url(#green)" stroke-width="112" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M110,112 V400"/>
+    <path d="M110,232 C110,152 172,112 248,112 H278"/>
+  </g>
+
+  <!-- HTTP calls going out -->
+  <g fill="none" stroke="url(#blue)" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M240,256 H330 L380,206 H400"/>
+    <path d="M240,404 H330 L380,454 H400"/>
+  </g>
+  <path d="M240,330 H430" fill="none" stroke="#2BB673" stroke-width="40" stroke-linecap="round"/>
+  <circle cx="416" cy="206" r="44" fill="url(#blue)"/>
+  <circle cx="444" cy="330" r="44" fill="#2BB673"/>
+  <circle cx="416" cy="454" r="44" fill="url(#blue)"/>
+</svg>
