@@ -79,7 +79,10 @@ internal static class JsonLinesUploadSample
     /// <returns>A task that completes after the upload is checked.</returns>
     private static async Task UploadWithSourceGeneratedJsonAsync()
     {
-        using StubHttp http = new() { { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) } };
+        using StubHttp http = new()
+        {
+            { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) },
+        };
         using HttpClient httpClient = new(http, disposeHandler: false) { BaseAddress = new Uri("https://api.example.com") };
 
         // Each record is written as ImportRecord, using the metadata ImportRecordsJsonContext generated for it.
@@ -94,7 +97,10 @@ internal static class JsonLinesUploadSample
     /// <returns>A task that completes after the upload is checked.</returns>
     private static async Task UploadAListYouAlreadyHaveAsync()
     {
-        using StubHttp http = new() { { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) } };
+        using StubHttp http = new()
+        {
+            { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) },
+        };
         IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com");
 
         ImportRecord[] records = [new ImportRecord(1, "SKU-1", 10), new ImportRecord(2, "SKU-2", 20)];

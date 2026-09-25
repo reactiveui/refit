@@ -9,21 +9,21 @@ namespace Refit.Documentation;
 /// <summary>Exercises reflection-capable client factories in a JIT test host.</summary>
 internal static class TestingReflection
 {
-    /// <summary>Checks both reflection-capable factory overloads through local typed HTTP calls.</summary>
-    /// <returns>A task that completes after both clients return the expected person.</returns>
+    /// <summary>Problem: How do you create a reflection-based Refit client, with no source generator, against a stub?</summary>
+    /// <returns>A task that completes after both reflection-capable factory overloads are checked.</returns>
     internal static async Task RunAsync()
     {
-        using StubHttp http = new();
+        using StubHttp http = new StubHttp { { Route.Get("/people/1"), Reply.Json("{\"id\":1,\"name\":\"Ada\"}") } };
+        ITestingApi defaults = http.CreateClient<ITestingApi>("https://api.example.com");
+        TestingPerson first = await defaults.GetAsync(1); // first.Name == "Ada"
+
+        RefitSettings settings = new RefitSettings(new SystemTextJsonContentSerializer(TestingJsonContext.Default.Options));
         http.Add(Route.Get("/people/1"), Reply.Json("{\"id\":1,\"name\":\"Ada\"}"));
-        ITestingApi defaults = http.CreateClient<ITestingApi>("https://people.example");
-        SampleCheck.Equal(true, defaults is not null);
-        TestingPerson first = await defaults!.GetAsync(1);
+        ITestingApi configured = http.CreateClient<ITestingApi>("https://api.example.com", settings);
+        TestingPerson second = await configured.GetAsync(1); // second == first
+
+        // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal("Ada", first.Name);
-        RefitSettings settings = new(new SystemTextJsonContentSerializer(TestingJsonContext.Default.Options));
-        http.Add(Route.Get("/people/1"), Reply.Json("{\"id\":1,\"name\":\"Ada\"}"));
-        ITestingApi configured = http.CreateClient<ITestingApi>("https://people.example", settings);
-        SampleCheck.Equal(true, configured is not null);
-        TestingPerson second = await configured!.GetAsync(1);
         SampleCheck.Equal(first, second);
         await http.VerifyAllCalledAsync();
     }
