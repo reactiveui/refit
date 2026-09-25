@@ -1,4 +1,4 @@
-<img src="images/refit-logo.svg" alt="Refit" width="320">
+![Refit](https://raw.githubusercontent.com/reactiveui/refit/main/images/refit-logo.svg)
 
 # Refit
 
@@ -89,10 +89,10 @@ dotnet build Refit.slnx -c Release
 
 Each website page links to its own project under `examples/Documentation/Pages`. Run a page project,
 such as `examples/Documentation/Pages/requests-routes/requests-routes.csproj`, to check its local
-reply assertions without contacting a live service. The [documentation examples README](src/examples/Documentation/README.md)
+reply assertions without contacting a live service. The [documentation examples README](https://github.com/reactiveui/refit/blob/main/src/examples/Documentation/README.md)
 lists the source layout and independent projects.
 
-See [breaking changes](docs/breaking-changes.md),
+See [breaking changes](https://github.com/reactiveui/refit/blob/main/docs/breaking-changes.md),
 [GitHub releases](https://github.com/reactiveui/refit/releases), and
 [contributing](https://www.reactiveui.net/contribute/).
 
@@ -102,8 +102,7 @@ Refit is supported by [JetBrains](https://www.jetbrains.com/),
 [Anthropic](https://www.anthropic.com/) through [Claude](https://claude.com/), and
 [OpenAI](https://openai.com/) through [Codex](https://openai.com/codex/).
 
-<a href="https://www.jetbrains.com/"><picture><source media="(prefers-color-scheme: dark)" srcset="images/jetbrains-dark.svg"><img src="images/jetbrains.svg" alt="JetBrains" height="40"></picture></a>
-&nbsp;&nbsp;
-<a href="https://claude.com/"><picture><source media="(prefers-color-scheme: dark)" srcset="images/claude-dark.svg"><img src="images/claude.svg" alt="Claude by Anthropic" height="40"></picture></a>
+[![JetBrains](https://raw.githubusercontent.com/reactiveui/refit/main/images/jetbrains.svg)](https://www.jetbrains.com/)
+[![Claude by Anthropic](https://raw.githubusercontent.com/reactiveui/refit/main/images/claude.svg)](https://claude.com/)
 
-Refit is licensed under the [MIT license](LICENSE).
+Refit is licensed under the [MIT license](https://github.com/reactiveui/refit/blob/main/LICENSE).
