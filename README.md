@@ -109,6 +109,7 @@ See [breaking changes](https://github.com/reactiveui/refit/blob/main/docs/breaki
 [![Claude by Anthropic](https://raw.githubusercontent.com/reactiveui/refit/main/images/claude.svg)](https://claude.com/)
 [![OpenAI](https://raw.githubusercontent.com/reactiveui/refit/main/images/openai.svg)](https://openai.com/codex/)
 
+See [our sponsors](https://www.reactiveui.net/sponsors/) for more information.
 JetBrains, Claude, Anthropic, OpenAI and Codex names and logos are trademarks of their respective owners.
 
 Refit is licensed under the [MIT license](https://github.com/reactiveui/refit/blob/main/LICENSE).
