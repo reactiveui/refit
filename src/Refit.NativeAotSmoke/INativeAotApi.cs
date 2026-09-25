@@ -68,4 +68,13 @@ public interface INativeAotApi
     /// <returns>An observable sequence of raw responses.</returns>
     [Get("/legacy")]
     IObservable<HttpResponseMessage> ObserveLegacy();
+
+    /// <summary>Uploads a typed asynchronous sequence as JSON Lines (newline-delimited JSON), proving
+    /// <c>GeneratedRequestRunner.CreateAsyncJsonLinesBodyContent</c> serializes each element with the registered
+    /// JSON context's metadata for <see cref="SmokeRecord"/>, with no reflection.</summary>
+    /// <param name="records">The records to upload, produced lazily.</param>
+    /// <param name="cancellationToken">A token that cancels the upload, flowed into the producer's enumerator.</param>
+    /// <returns>A task that completes when the upload has been sent.</returns>
+    [Post("/uploads")]
+    Task UploadAsync([Body(BodySerializationMethod.JsonLines)] IAsyncEnumerable<SmokeRecord> records, CancellationToken cancellationToken);
 }

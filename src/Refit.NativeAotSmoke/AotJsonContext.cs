@@ -8,6 +8,7 @@ namespace Refit.NativeAotSmoke;
 /// <summary>The source-generated JSON serializer context for the native AOT smoke test.</summary>
 [JsonSerializable(typeof(Todo))]
 [JsonSerializable(typeof(ServiceStatus))]
+[JsonSerializable(typeof(SmokeRecord))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true)]
