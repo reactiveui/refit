@@ -94,5 +94,22 @@ Refit-Tests/test-results
 *.svclog
 **/BenchmarkDotNet.Artifacts
 
-# Local agent worktrees and scratch
+# Local agent worktrees, settings and scratch
 .claude/
+.codex/
+.cursor/
+.gemini/
+.aider*
+.windsurf/
+.continue/
+.cline/
+.clinerules/
+.roo/
+.kiro/
+.junie/
+.opencode/
+.amazonq/
+.augment/
+.zed/
+.worktrees/
+CLAUDE.local.md
