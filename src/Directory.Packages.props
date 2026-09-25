@@ -16,7 +16,7 @@
 
 
   <ItemGroup Label="ReactiveUI Primitives">
-    <PackageVersion Include="ReactiveUI.Primitives" Version="8.0.0"/>
+    <PackageVersion Include="ReactiveUI.Primitives" Version="8.1.0"/>
   </ItemGroup>
 
   <ItemGroup Label="Build And Versioning">
