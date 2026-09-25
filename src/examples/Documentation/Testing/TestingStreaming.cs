@@ -246,7 +246,7 @@ internal static class TestingStreaming
                 Reply.From(async request =>
                 {
                     pulledBeforeReply = pulled;
-                    _ = await request.Content!.ReadAsStringAsync();
+                    await request.Content!.ReadAsStringAsync(); // read the whole upload
                     return new HttpResponseMessage(HttpStatusCode.Accepted);
                 })
             },

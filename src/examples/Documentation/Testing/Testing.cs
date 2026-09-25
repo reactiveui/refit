@@ -438,7 +438,7 @@ internal static class Testing
             {
                 if (Interlocked.Increment(ref arrivals) == 2) // the second arrival releases both waiting requests together
                 {
-                    _ = bothMatching.Release(2);
+                    bothMatching.Release(2);
                 }
 
                 await bothMatching.WaitAsync();

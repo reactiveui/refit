@@ -29,6 +29,10 @@ dotnet_diagnostic.SST2202.severity = none
 dotnet_diagnostic.IDE0090.severity = none
 # One initializer entry per line, with braces on their own lines, reads better in samples than one long line.
 dotnet_diagnostic.SST1531.severity = none
+# Samples call methods for their effect and ignore the value, as readers do; "_ =" discards only add noise here.
+dotnet_diagnostic.SST2221.severity = none
+dotnet_diagnostic.IDE0058.severity = none
+dotnet_diagnostic.CA1806.severity = none
 # [MethodImpl(AggressiveInlining)] on small sample helpers is performance tuning that distracts from what they show.
 dotnet_diagnostic.PSH1410.severity = none
 
