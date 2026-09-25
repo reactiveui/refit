@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Time.Testing;
@@ -61,6 +62,7 @@ internal static class TestingStreaming
         await ShowStalledBodyAsync();
         await ShowFixedStreamsAsync();
         await ShowUploadAsync();
+        await ShowLiveUploadAsync();
         await ShowBoundedCaptureAsync();
         await ShowSimulatedDelayAsync();
         await ShowVerificationTimeoutAsync();
@@ -271,6 +273,56 @@ internal static class TestingStreaming
         }));
         await api.ImportAsync(Upload());
         SampleCheck.Equal(StreamedPeople, pulledBeforeReply);
+    }
+
+    /// <summary>Produces people asynchronously, one at a time, so the request body is written as each becomes available.</summary>
+    /// <param name="cancellationToken">The token the caller's send flows into this producer.</param>
+    /// <returns>The people, yielded as they become available.</returns>
+    private static async IAsyncEnumerable<TestingPerson> ProduceLiveAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.Yield();
+        yield return new(1, FirstName);
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.Yield();
+        yield return new(SecondId, SecondName);
+    }
+
+    /// <summary>
+    /// Checks reading an asynchronous JSON Lines upload line by line as it arrives, using the cancellable
+    /// <c>Reply.From</c> responder overload with capture disabled so the responder reads the live, unbuffered
+    /// request stream instead of a body <see cref="StubHttp"/> already buffered.
+    /// </summary>
+    /// <returns>A task that completes after every line is read in arrival order and the upload is answered.</returns>
+    private static async Task ShowLiveUploadAsync()
+    {
+        List<string> received = [];
+        using StubHttp http = new()
+        {
+            {
+                Route.Post("/people/import-live"),
+                Reply.From(async (request, cancellationToken) =>
+                {
+                    await using Stream body = await request.Content!.ReadAsStreamAsync(cancellationToken);
+                    using StreamReader reader = new(body);
+                    string? line;
+                    while ((line = await reader.ReadLineAsync(cancellationToken)) is not null)
+                    {
+                        received.Add(line);
+                    }
+
+                    return new HttpResponseMessage(HttpStatusCode.Accepted);
+                })
+            },
+        };
+        http.RequestCapture = RequestCapture.None;
+        ITestingStreamingApi api = http.CreateGeneratedClient<ITestingStreamingApi>(BaseUrl, CreateSettings());
+
+        await api.ImportLiveAsync(ProduceLiveAsync(CancellationToken.None), CancellationToken.None);
+
+        SampleCheck.Equal(StreamedPeople, received.Count);
+        SampleCheck.Equal(true, received[0].Contains(FirstName, StringComparison.Ordinal));
+        SampleCheck.Equal(true, received[1].Contains(SecondName, StringComparison.Ordinal));
     }
 
     /// <summary>Checks typed inspection under a byte limit, including an upload larger than the limit.</summary>
