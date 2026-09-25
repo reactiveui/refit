@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.IO.Pipelines;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -275,42 +276,118 @@ internal static class TestingStreaming
         SampleCheck.Equal(StreamedPeople, pulledBeforeReply);
     }
 
-    /// <summary>Produces people asynchronously, one at a time, so the request body is written as each becomes available.</summary>
+    /// <summary>
+    /// Produces people asynchronously, one at a time, pausing after the first until <paramref name="firstPersonObserved"/>
+    /// completes. The pause only lifts once the reader has actually consumed the first uploaded person, so the second
+    /// person can never be produced (and therefore never written) before the first one was genuinely read.
+    /// </summary>
+    /// <param name="firstPersonObserved">Completes once the reader has consumed the first uploaded person.</param>
     /// <param name="cancellationToken">The token the caller's send flows into this producer.</param>
     /// <returns>The people, yielded as they become available.</returns>
-    private static async IAsyncEnumerable<TestingPerson> ProduceLiveAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    private static async IAsyncEnumerable<TestingPerson> ProduceGatedLiveAsync(
+        TaskCompletionSource firstPersonObserved,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         await Task.Yield();
         yield return new(1, FirstName);
+        await firstPersonObserved.Task; // Only continue once the reader has genuinely consumed the first person.
         cancellationToken.ThrowIfCancellationRequested();
-        await Task.Yield();
         yield return new(SecondId, SecondName);
     }
 
+    /// <summary>Copies a request's content into a pipe writer, then completes the writer.</summary>
+    /// <param name="request">The request whose content is copied.</param>
+    /// <param name="writer">The writer half of the pipe fed to the concurrent reader.</param>
+    /// <param name="cancellationToken">The token that cancels the copy.</param>
+    /// <returns>A task that completes once the content has been fully written and the writer completed.</returns>
+    private static async Task CopyRequestToPipeAsync(HttpRequestMessage request, PipeWriter writer, CancellationToken cancellationToken)
+    {
+        Exception? failure = null;
+        try
+        {
+            await using Stream writerStream = writer.AsStream();
+            await request.Content!.CopyToAsync(writerStream, cancellationToken);
+        }
+        catch (Exception error)
+        {
+            failure = error;
+            throw;
+        }
+        finally
+        {
+            await writer.CompleteAsync(failure);
+        }
+    }
+
     /// <summary>
-    /// Checks reading an asynchronous JSON Lines upload line by line as it arrives, using the cancellable
-    /// <c>Reply.From</c> responder overload with capture disabled so the responder reads the live, unbuffered
-    /// request stream instead of a body <see cref="StubHttp"/> already buffered.
+    /// Reads JSON Lines people from a pipe reader as they arrive, recording each person and when the first one was
+    /// observed. Reading is driven by <c>JsonSerializer.DeserializeAsyncEnumerable</c> with a source-generated
+    /// <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfo{T}"/> and <c>topLevelValues: true</c>, which
+    /// yields each JSON value as soon as its closing brace arrives instead of
+    /// waiting for a line-feed byte. JSON Lines content only writes its separator <em>before</em> an element after the
+    /// first, so the first person's bytes never gain a trailing newline until the second one starts: a reader that
+    /// waited for '\n' would block forever on a single-element upload.
     /// </summary>
-    /// <returns>A task that completes after every line is read in arrival order and the upload is answered.</returns>
+    /// <param name="reader">The reader half of the pipe fed by the concurrent writer.</param>
+    /// <param name="received">The people observed, in arrival order.</param>
+    /// <param name="events">A shared, order-sensitive log of produce/observe events used to prove incremental delivery.</param>
+    /// <param name="firstPersonObserved">Completed once the first person has been added to <paramref name="received"/>.</param>
+    /// <param name="cancellationToken">The token that cancels the read.</param>
+    /// <returns>A task that completes once the writer has finished and every person has been read.</returns>
+    private static async Task ReadPeopleFromPipeAsync(
+        PipeReader reader,
+        List<TestingPerson> received,
+        List<string> events,
+        TaskCompletionSource firstPersonObserved,
+        CancellationToken cancellationToken)
+    {
+        IAsyncEnumerable<TestingPerson?> people = JsonSerializer.DeserializeAsyncEnumerable(
+            reader.AsStream(),
+            TestingJsonContext.Default.TestingPerson,
+            topLevelValues: true,
+            cancellationToken);
+        await foreach (TestingPerson? person in people.WithCancellation(cancellationToken))
+        {
+            if (person is not null)
+            {
+                received.Add(person);
+            }
+
+            if (received.Count != 1)
+            {
+                continue;
+            }
+
+            events.Add("observed-first-person");
+            firstPersonObserved.SetResult();
+        }
+    }
+
+    /// <summary>
+    /// Checks reading an asynchronous JSON Lines upload one person at a time as it genuinely arrives. The cancellable
+    /// <c>Reply.From</c> responder overload with capture disabled lets the responder read the live, unbuffered
+    /// request stream instead of a body <see cref="StubHttp"/> already buffered. Copying that stream's content
+    /// through a <see cref="Pipe"/> concurrently with a streaming JSON reader (instead of buffering the whole body
+    /// with <c>ReadAsStreamAsync</c> first) is what makes the read incremental: the producer is gated so it cannot
+    /// yield its second person until the reader has genuinely consumed the first one.
+    /// </summary>
+    /// <returns>A task that completes after every person is read in arrival order and the upload is answered.</returns>
     private static async Task ShowLiveUploadAsync()
     {
-        List<string> received = [];
+        List<TestingPerson> received = [];
+        List<string> events = [];
+        TaskCompletionSource firstPersonObserved = new(TaskCreationOptions.RunContinuationsAsynchronously);
         using StubHttp http = new()
         {
             {
                 Route.Post("/people/import-live"),
                 Reply.From(async (request, cancellationToken) =>
                 {
-                    await using Stream body = await request.Content!.ReadAsStreamAsync(cancellationToken);
-                    using StreamReader reader = new(body);
-                    string? line;
-                    while ((line = await reader.ReadLineAsync(cancellationToken)) is not null)
-                    {
-                        received.Add(line);
-                    }
-
+                    Pipe pipe = new();
+                    Task writing = CopyRequestToPipeAsync(request, pipe.Writer, cancellationToken);
+                    Task reading = ReadPeopleFromPipeAsync(pipe.Reader, received, events, firstPersonObserved, cancellationToken);
+                    await Task.WhenAll(writing, reading);
                     return new HttpResponseMessage(HttpStatusCode.Accepted);
                 })
             },
@@ -318,11 +395,16 @@ internal static class TestingStreaming
         http.RequestCapture = RequestCapture.None;
         ITestingStreamingApi api = http.CreateGeneratedClient<ITestingStreamingApi>(BaseUrl, CreateSettings());
 
-        await api.ImportLiveAsync(ProduceLiveAsync(CancellationToken.None), CancellationToken.None);
+        await api.ImportLiveAsync(ProduceGatedLiveAsync(firstPersonObserved, CancellationToken.None), CancellationToken.None);
 
         SampleCheck.Equal(StreamedPeople, received.Count);
-        SampleCheck.Equal(true, received[0].Contains(FirstName, StringComparison.Ordinal));
-        SampleCheck.Equal(true, received[1].Contains(SecondName, StringComparison.Ordinal));
+        SampleCheck.Equal(FirstName, received[0].Name);
+        SampleCheck.Equal(SecondName, received[1].Name);
+
+        // The reader observed the first person while the producer was still gated, proving the body
+        // was read incrementally rather than buffered in full before the reader saw anything.
+        SampleCheck.Equal(1, events.Count);
+        SampleCheck.Equal("observed-first-person", events[0]);
     }
 
     /// <summary>Checks typed inspection under a byte limit, including an upload larger than the limit.</summary>

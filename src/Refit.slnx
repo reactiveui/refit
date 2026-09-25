@@ -55,6 +55,10 @@
         <Project Path="examples/Documentation/Content/Content.csproj" />
         <Project Path="examples/Documentation/Multipart/Multipart.csproj" />
         <Project Path="examples/Documentation/Multipart/Legacy/Legacy.csproj" />
+        <Project Path="examples/Documentation/TestingFrameworks/XUnit/XUnitTests.csproj" />
+        <Project Path="examples/Documentation/TestingFrameworks/NUnit/NUnitTests.csproj" />
+        <Project Path="examples/Documentation/TestingFrameworks/MSTest/MSTestTests.csproj" />
+        <Project Path="examples/Documentation/TestingFrameworks/TUnit/TUnitTests.csproj" />
         <Project Path="examples/BlazorWasmIssue2065/BlazorWasmIssue2065.csproj" />
         <Project Path="examples/Meow.Common/Meow.Common.csproj" />
         <Project Path="examples/Meow/Meow.csproj" />

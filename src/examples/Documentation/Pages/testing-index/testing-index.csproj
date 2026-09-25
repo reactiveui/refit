@@ -16,6 +16,6 @@
     <ProjectReference Include="../../../../InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../../../Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <Compile Include="Program.cs" />
-    <Compile Include="../../**/*.cs" Exclude="../../Pages/**;../../Tooling/**;../../Aot/NativeClient/**;../../Bodies/Compression/**;../../Multipart/Legacy/**;../../**/Program.cs;../../**/obj/**;../../**/bin/**" Link="Source/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../**/*.cs" Exclude="../../Pages/**;../../Tooling/**;../../Aot/NativeClient/**;../../Bodies/Compression/**;../../Multipart/Legacy/**;../../TestingFrameworks/**;../../**/Program.cs;../../**/obj/**;../../**/bin/**" Link="Source/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

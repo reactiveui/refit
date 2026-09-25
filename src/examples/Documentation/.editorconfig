@@ -12,3 +12,22 @@ csharp_style_var_elsewhere = false:suggestion
 
 # Documentation-specific exemptions belong only in the website documentation folder.
 # Complete source examples keep the inherited XML documentation diagnostics enabled.
+
+[TestingFrameworks/**/*.cs]
+# These tests are written for a beginner reading real test-framework code, not for API consumers browsing
+# IntelliSense: a plain "// Problem: ..." comment naming what the test is for reads better here than a
+# required /// doc comment on every [Fact]/[Test]/[TestMethod], and public test classes/methods do not need
+# XML docs (GenerateDocumentationFile is also off for these projects; see their .csproj).
+dotnet_diagnostic.SST1600.severity = none
+dotnet_diagnostic.SST1601.severity = none
+dotnet_diagnostic.SST1663.severity = none
+# Friendly, concrete literals ("Ada", "Grace", the number of seconds in a delay) are the point of a readable
+# test; naming them as constants only for the analyzer defeats a test a newcomer can read top to bottom.
+dotnet_diagnostic.SST1486.severity = none
+dotnet_diagnostic.SST1471.severity = none
+# A tiny record and JSON context used only by these tests do not need a [DebuggerDisplay]; that is
+# production-strictness these samples do not need.
+dotnet_diagnostic.SST2334.severity = none
+# xUnit's "pass TestContext.Current.CancellationToken" suggestion would make the xUnit project's tests differ
+# from the otherwise-identical NUnit/MSTest/TUnit versions just to satisfy one framework's analyzer.
+dotnet_diagnostic.xUnit1051.severity = none

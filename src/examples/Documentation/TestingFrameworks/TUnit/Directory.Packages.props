@@ -1,0 +1,5 @@
+<Project>
+  <!-- A nested Directory.Packages.props stops MSBuild's upward search, so import the repo's own
+       package versions explicitly. TUnit already has a PackageVersion there, so nothing to add here. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Packages.props', '$(MSBuildThisFileDirectory)../'))" />
+</Project>
