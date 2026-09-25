@@ -24,5 +24,10 @@ jobs:
             sonarCpdExclusions: '**/tests/**,**/benchmarks/**,**/examples/**'
             sonarTestExclusions: '**/tests/**,**/benchmarks/**,**/examples/**'
             testTimeout: '15m'
+            # The MSTest, NUnit and xUnit documentation examples still build, but their hosts reject the TUnit-only
+            # detailed-logging switches, so the coverage run takes the test suites and the TUnit example.
+            testProjects: |
+                tests/**/*.csproj
+                examples/Documentation/TestingFrameworks/TUnit/*.csproj
         secrets:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

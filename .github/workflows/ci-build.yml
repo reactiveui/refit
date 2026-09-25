@@ -17,5 +17,10 @@ jobs:
         with:
             srcFolder: src
             minverMinimumMajorMinor: '10.2'
+            # The MSTest, NUnit and xUnit documentation examples still build, but their hosts reject the TUnit-only
+            # detailed-logging switches, so the coverage run takes the test suites and the TUnit example.
+            testProjects: |
+                tests/**/*.csproj
+                examples/Documentation/TestingFrameworks/TUnit/*.csproj
         secrets:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
