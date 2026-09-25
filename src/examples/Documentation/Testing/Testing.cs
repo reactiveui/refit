@@ -268,6 +268,8 @@ internal static class Testing
         };
         using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         using HttpResponseMessage pairs = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matched ExactQueryParams, even though "a" is not duplicated
+
+        // Each route answers once, so this second request can only match the ExactQuery route, and it accepts it too.
         using HttpResponseMessage encoded = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matched ExactQuery, the same way
 
         // Checks for this sample (not part of the documentation excerpt):
