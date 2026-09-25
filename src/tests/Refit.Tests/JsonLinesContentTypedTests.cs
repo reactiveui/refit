@@ -19,6 +19,12 @@ public class JsonLinesContentTypedTests
     /// <summary>The number of sends performed by the re-enumeration test.</summary>
     private const int TwoSends = 2;
 
+    /// <summary>The name of the first element produced by a two-element gated sequence.</summary>
+    private const string FirstElementName = "first";
+
+    /// <summary>The name of the second element produced by a two-element gated sequence.</summary>
+    private const string SecondElementName = "second";
+
     /// <summary>The serializer used directly by these tests.</summary>
     private static readonly SystemTextJsonContentSerializer Serializer = new();
 
@@ -229,10 +235,47 @@ public class JsonLinesContentTypedTests
 
         static async IAsyncEnumerable<SealedRecord> GatedAsync(TaskCompletionSource gate)
         {
-            yield return new("1", "first");
+            yield return new("1", FirstElementName);
             await gate.Task;
-            yield return new("2", "second");
+            yield return new("2", SecondElementName);
         }
+    }
+
+    /// <summary>Verifies a flush failure that occurs while the producer's next step is still pending is rethrown
+    /// only after that step completes, so the enumerator is disposed once, after the pending step finishes rather
+    /// than while it is still in flight.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task FlushFailurePropagatesAfterThePendingProducerStepCompletes()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var flushInvoked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tracker = new DisposeTracker();
+        var stream = new FlushThrowingStream(flushInvoked);
+        var content = new JsonLinesContent<SealedRecord>(GatedTrackedAsync(gate, tracker), Serializer);
+        try
+        {
+            var copy = content.CopyToAsync(stream, CancellationToken.None);
+
+            // The flush that precedes the wait on the still-pending second element has already run (and failed) by
+            // the time this point is reached: CopyToAsync only suspends once it starts awaiting that pending step.
+            await flushInvoked.Task.WaitAsync(FlushWaitTimeout);
+            await Assert.That(tracker.Disposed).IsFalse();
+
+            gate.SetResult();
+
+            // HttpContent.CopyToAsync wraps a stream-copy failure in HttpRequestException; the flush failure
+            // survives as its InnerException.
+            var exception = await Assert.That(async () => await copy).ThrowsExactly<HttpRequestException>();
+
+            await Assert.That(exception!.InnerException).IsTypeOf<IOException>();
+        }
+        finally
+        {
+            content.Dispose();
+        }
+
+        await Assert.That(tracker.Disposed).IsTrue();
     }
 #endif
 
@@ -397,10 +440,10 @@ public class JsonLinesContentTypedTests
     {
         try
         {
-            yield return new("1", "first");
+            yield return new("1", FirstElementName);
             await cts.CancelAsync();
             cancellationToken.ThrowIfCancellationRequested();
-            yield return new("2", "second");
+            yield return new("2", SecondElementName);
         }
         finally
         {
@@ -419,6 +462,24 @@ public class JsonLinesContentTypedTests
         capture(cancellationToken);
         await Task.CompletedTask;
         yield return new("1", "a");
+    }
+
+    /// <summary>Produces two elements, awaiting a gate between them, and records enumerator disposal.</summary>
+    /// <param name="gate">Completed to release the second element.</param>
+    /// <param name="tracker">Records whether the enumerator was disposed.</param>
+    /// <returns>The asynchronous sequence.</returns>
+    private static async IAsyncEnumerable<SealedRecord> GatedTrackedAsync(TaskCompletionSource gate, DisposeTracker tracker)
+    {
+        try
+        {
+            yield return new("1", FirstElementName);
+            await gate.Task;
+            yield return new("2", SecondElementName);
+        }
+        finally
+        {
+            tracker.Disposed = true;
+        }
     }
 #endif
 
@@ -502,6 +563,18 @@ public class JsonLinesContentTypedTests
         {
             await base.WriteAsync(buffer, cancellationToken);
             _writes++;
+        }
+    }
+
+    /// <summary>A stream whose flush always fails, recording that it was invoked before throwing.</summary>
+    /// <param name="flushInvoked">Completed the moment <see cref="FlushAsync"/> is invoked, before it throws.</param>
+    private sealed class FlushThrowingStream(TaskCompletionSource flushInvoked) : MemoryStream
+    {
+        /// <inheritdoc/>
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            _ = flushInvoked.TrySetResult();
+            throw new IOException("Flush failed.");
         }
     }
 #endif
