@@ -266,6 +266,124 @@ public static partial class GeneratorComponentTests
             await Assert.That(belowNumericRange).IsEqualTo((false, true));
         }
 
+        /// <summary>
+        /// Verifies <see cref="Parser.FindJsonLinesElementType"/> keeps a synchronous sequence's declared element only
+        /// when it has no derived types (a value type or sealed class, including <see langword="string"/> and an
+        /// array element), falls back to <see langword="null"/> for one that does, and rejects <see langword="string"/>
+        /// itself, a nullable value type and a type parameter as not being sequences at all.
+        /// </summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task FindJsonLinesElementType_ClassifiesSynchronousBodiesAndNonSequences()
+        {
+            var symbols = CreateJsonLinesTestSymbols();
+
+            // A string body is treated as a single line, never enumerated element by element.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.StringType, out var stringIsAsync)).IsNull();
+            await Assert.That(stringIsAsync).IsFalse();
+
+            // A nullable value type body is not a sequence.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.NullableOf.Construct(symbols.IntType), out _)).IsNull();
+
+            // A generic type parameter body cannot be classified at compile time.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.TypeParameter, out _)).IsNull();
+
+            // List<int>: a synchronous sequence whose element is a value type keeps the declared element.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.ListOf.Construct(symbols.IntType), out var listIsAsync))
+                .IsEqualTo(symbols.IntType);
+            await Assert.That(listIsAsync).IsFalse();
+
+            // IEnumerable<SealedRec>: a synchronous sequence whose element is sealed keeps the declared element.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.EnumerableOf.Construct(symbols.SealedRec), out _))
+                .IsEqualTo(symbols.SealedRec);
+
+            // IEnumerable<string>: string is itself sealed, so it also keeps the declared element.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.EnumerableOf.Construct(symbols.StringType), out _))
+                .IsEqualTo(symbols.StringType);
+
+            // SealedRec[]: an array of a sealed element type keeps the declared element, just like IEnumerable<T>.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.Compilation.CreateArrayTypeSymbol(symbols.SealedRec), out _))
+                .IsEqualTo(symbols.SealedRec);
+
+            // IEnumerable<object>: object has derived types, so the untyped fallback applies.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.EnumerableOf.Construct(symbols.ObjectType), out _)).IsNull();
+
+            // IEnumerable<NonSealedRec>: a non-sealed element type keeps the untyped fallback.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.EnumerableOf.Construct(symbols.NonSealedRec), out _)).IsNull();
+        }
+
+        /// <summary>
+        /// Verifies <see cref="Parser.FindJsonLinesElementType"/> keeps an asynchronous sequence's element type
+        /// regardless of whether it has derived types, unless the same declared type is also a synchronous sequence
+        /// (a type implementing both <see cref="IEnumerable{T}"/> and <see cref="IAsyncEnumerable{T}"/>), in which
+        /// case it is not treated as async.
+        /// </summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task FindJsonLinesElementType_ClassifiesAsynchronousBodies()
+        {
+            var symbols = CreateJsonLinesTestSymbols();
+
+            // IAsyncEnumerable<int>: an asynchronous sequence always keeps the declared element.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.AsyncEnumerableOf.Construct(symbols.IntType), out var asyncIsAsync))
+                .IsEqualTo(symbols.IntType);
+            await Assert.That(asyncIsAsync).IsTrue();
+
+            // A type implementing both IEnumerable<int> and IAsyncEnumerable<int> is not treated as async: the
+            // synchronous element still applies because the type also satisfies the non-generic IEnumerable check.
+            await Assert.That(Parser.FindJsonLinesElementType(symbols.BothInterfaces, out var bothIsAsync)).IsEqualTo(symbols.IntType);
+            await Assert.That(bothIsAsync).IsFalse();
+        }
+
+        /// <summary>Builds the compilation and resolved symbols shared by the JSON Lines element-type classification tests.</summary>
+        /// <returns>The compilation and every symbol the tests need.</returns>
+        private static JsonLinesTestSymbols CreateJsonLinesTestSymbols()
+        {
+            var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+                """
+                using System.Collections;
+                using System.Collections.Generic;
+                using System.Threading;
+
+                public sealed class SealedRec { }
+
+                public class NonSealedRec { }
+
+                public interface IGen
+                {
+                    void M<T>(T value);
+                }
+
+                public sealed class BothInterfaces : IEnumerable<int>, IAsyncEnumerable<int>
+                {
+                    public IEnumerator<int> GetEnumerator() => throw new System.NotImplementedException();
+
+                    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+                    public IAsyncEnumerator<int> GetAsyncEnumerator(CancellationToken cancellationToken = default) =>
+                        throw new System.NotImplementedException();
+                }
+                """));
+
+            return new(
+                compilation,
+                compilation.GetSpecialType(SpecialType.System_Int32),
+                compilation.GetSpecialType(SpecialType.System_String),
+                compilation.GetSpecialType(SpecialType.System_Object),
+                compilation.GetSpecialType(SpecialType.System_Nullable_T),
+                compilation.GetTypeByMetadataName("SealedRec")!,
+                compilation.GetTypeByMetadataName("NonSealedRec")!,
+                compilation.GetTypeByMetadataName("BothInterfaces")!,
+                compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1")!,
+                compilation.GetTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1")!,
+                compilation.GetTypeByMetadataName("System.Collections.Generic.List`1")!,
+                compilation.GetTypeByMetadataName("IGen")!
+                    .GetMembers("M")
+                    .OfType<IMethodSymbol>()
+                    .Single()
+                    .TypeParameters[0]);
+        }
+
         /// <summary>Creates a non-body parameter model.</summary>
         /// <returns>The request parameter model.</returns>
         private static RequestParameterModel CreateHeaderParameter() =>
@@ -286,5 +404,32 @@ public static partial class GeneratorComponentTests
                 string.Empty,
                 serializationMethod,
                 BodyBufferMode.Buffered);
+
+        /// <summary>The compilation and symbols shared by the JSON Lines element-type classification tests.</summary>
+        /// <param name="Compilation">The compilation the symbols were resolved from.</param>
+        /// <param name="IntType">The <see langword="int"/> special type.</param>
+        /// <param name="StringType">The <see langword="string"/> special type.</param>
+        /// <param name="ObjectType">The <see langword="object"/> special type.</param>
+        /// <param name="NullableOf">The unconstructed <see cref="Nullable{T}"/> type.</param>
+        /// <param name="SealedRec">A sealed reference type declared in the compilation.</param>
+        /// <param name="NonSealedRec">A non-sealed reference type declared in the compilation.</param>
+        /// <param name="BothInterfaces">A type implementing both <c>IEnumerable&lt;int&gt;</c> and <c>IAsyncEnumerable&lt;int&gt;</c>.</param>
+        /// <param name="EnumerableOf">The unconstructed <see cref="IEnumerable{T}"/> type.</param>
+        /// <param name="AsyncEnumerableOf">The unconstructed <see cref="IAsyncEnumerable{T}"/> type.</param>
+        /// <param name="ListOf">The unconstructed <see cref="List{T}"/> type.</param>
+        /// <param name="TypeParameter">A generic method type parameter.</param>
+        private sealed record JsonLinesTestSymbols(
+            Compilation Compilation,
+            ITypeSymbol IntType,
+            ITypeSymbol StringType,
+            ITypeSymbol ObjectType,
+            INamedTypeSymbol NullableOf,
+            INamedTypeSymbol SealedRec,
+            INamedTypeSymbol NonSealedRec,
+            INamedTypeSymbol BothInterfaces,
+            INamedTypeSymbol EnumerableOf,
+            INamedTypeSymbol AsyncEnumerableOf,
+            INamedTypeSymbol ListOf,
+            ITypeParameterSymbol TypeParameter);
     }
 }

@@ -321,6 +321,31 @@ public partial class RequestBuilderTests
         await Assert.That(request.Content).IsTypeOf<JsonLinesContent>();
     }
 
+    /// <summary>An <see cref="IAsyncEnumerable{T}"/> JSON Lines body is routed to the typed JSON Lines content via the reflection path, keeping the declared element type.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <remarks>
+    /// <see cref="RequestBuilderTestExtensions.BuildRequestFactoryForMethod"/> awaits the whole send before returning,
+    /// so the request (and its content) may already be disposed by the time this test runs; the exact serialized
+    /// output of <see cref="JsonLinesContent{T}"/> is covered directly by <c>JsonLinesContentTypedTests</c>.
+    /// </remarks>
+    [Test]
+    public async Task JsonLinesAsyncRequestBodyUsesTypedJsonLinesContent()
+    {
+        var fixture = new RequestBuilderImplementation<IRequestBin>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IRequestBin.PostJsonLinesAsync));
+
+        var request = await factory([ProduceAsync()]);
+
+        await Assert.That(request.Content).IsTypeOf<JsonLinesContent<JsonLineRecord>>();
+
+        static async IAsyncEnumerable<JsonLineRecord> ProduceAsync()
+        {
+            await Task.Yield();
+            yield return new JsonLineRecord { Id = "1", Name = "a" };
+            yield return new JsonLineRecord { Id = "2", Name = "b" };
+        }
+    }
+
     /// <summary>A stream response is wrapped in an ApiResponse.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

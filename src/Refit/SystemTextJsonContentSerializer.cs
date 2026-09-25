@@ -325,7 +325,11 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
         foreach (var converter in jsonSerializerOptions.Converters)
         {
-            if (converter.CanConvert(typeof(object)))
+            // ObjectToInferredTypesConverter is the built-in handling of object the doc above refers to: its
+            // Write serializes by the value's own runtime type (see its implementation), which is always
+            // declaredType here (a value type or sealed class has no derived types), so it writes the same JSON a
+            // typed write would. Only a converter replacing that behavior forces the untyped fallback.
+            if (converter is not ObjectToInferredTypesConverter && converter.CanConvert(typeof(object)))
             {
                 return false;
             }
