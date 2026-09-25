@@ -252,7 +252,7 @@ public class JsonLinesContentTypedTests
         var flushInvoked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var tracker = new DisposeTracker();
         var stream = new FlushThrowingStream(flushInvoked);
-        var content = new JsonLinesContent<SealedRecord>(GatedTrackedAsync(gate, tracker), Serializer);
+        var content = new JsonLinesContent<SealedRecord>(GatedTrackedAsync(gate, tracker, stream), Serializer);
         try
         {
             var copy = content.CopyToAsync(stream, CancellationToken.None);
@@ -493,12 +493,14 @@ public class JsonLinesContentTypedTests
     /// <summary>Produces two elements, awaiting a gate between them, and records enumerator disposal.</summary>
     /// <param name="gate">Completed to release the second element.</param>
     /// <param name="tracker">Records whether the enumerator was disposed.</param>
+    /// <param name="stream">Armed once the first element has been written, just before waiting on the gate.</param>
     /// <returns>The asynchronous sequence.</returns>
-    private static async IAsyncEnumerable<SealedRecord> GatedTrackedAsync(TaskCompletionSource gate, DisposeTracker tracker)
+    private static async IAsyncEnumerable<SealedRecord> GatedTrackedAsync(TaskCompletionSource gate, DisposeTracker tracker, FlushThrowingStream stream)
     {
         try
         {
             yield return new("1", FirstElementName);
+            stream.Armed = true;
             await gate.Task;
             yield return new("2", SecondElementName);
         }
@@ -592,13 +594,25 @@ public class JsonLinesContentTypedTests
         }
     }
 
-    /// <summary>A stream whose flush always fails, recording that it was invoked before throwing.</summary>
-    /// <param name="flushInvoked">Completed the moment <see cref="FlushAsync"/> is invoked, before it throws.</param>
+    /// <summary>A stream whose flush fails once armed, recording that it was invoked before throwing.</summary>
+    /// <param name="flushInvoked">Completed the moment an armed <see cref="FlushAsync"/> is invoked, before it throws.</param>
+    /// <remarks>
+    /// It is armed only when the producer reaches its gate: on .NET 11 the JSON serializer also flushes the
+    /// destination after writing each element, and that flush must not be the one that fails.
+    /// </remarks>
     private sealed class FlushThrowingStream(TaskCompletionSource flushInvoked) : MemoryStream
     {
+        /// <summary>Gets or sets a value indicating whether the next flush fails.</summary>
+        internal bool Armed { get; set; }
+
         /// <inheritdoc/>
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
+            if (!Armed)
+            {
+                return base.FlushAsync(cancellationToken);
+            }
+
             _ = flushInvoked.TrySetResult();
             throw new IOException("Flush failed.");
         }
