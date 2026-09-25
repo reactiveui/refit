@@ -84,6 +84,8 @@ internal static class Testing
         RefitSettings fresh = http.ToSettings(); // fresh.HttpMessageHandlerFactory!() == http
         RefitSettings supplied = CreateSettings();
         RefitSettings wired = http.ToSettings(supplied); // wired is the same instance as supplied
+
+        // Uses default settings, which replaces the serializer wired in above: the stub keeps one, and the last call wins.
         ITestingApi api = http.CreateGeneratedClient<ITestingApi>("https://api.example.com");
 
         // Checks for this sample (not part of the documentation excerpt):
@@ -142,56 +144,44 @@ internal static class Testing
                 Reply.Status(HttpStatusCode.Created)
             },
             {
-                Route.Put("/put"),
-                Reply.Status(HttpStatusCode.NoContent)
-            },
-            {
-                Route.Delete("/delete"),
-                Reply.Status(HttpStatusCode.NoContent)
-            },
-            {
-                Route.Patch("/patch"),
-                Reply.Status(HttpStatusCode.NoContent)
-            },
-            {
-                Route.Head("/head"),
-                Reply.Status(HttpStatusCode.OK)
-            },
-            {
-                Route.For(HttpMethod.Options, "/options"),
-                Reply.Status(HttpStatusCode.OK)
-            },
-            {
                 Route.Any("/any"),
                 Reply.Status(HttpStatusCode.Accepted)
             },
         };
         using HttpClient httpClient = new HttpClient(http, disposeHandler: false);
         using HttpResponseMessage get = await httpClient.GetAsync(new Uri("https://api.example.com/get")); // get.StatusCode == OK
+        using HttpResponseMessage post = await httpClient.PostAsync(new Uri("https://api.example.com/post"), null); // post.StatusCode == Created
+        using HttpResponseMessage delete = await httpClient.DeleteAsync(new Uri("https://api.example.com/any")); // delete.StatusCode == Accepted, Route.Any matches every method
         using HttpResponseMessage missing = await httpClient.GetAsync(new Uri("https://api.example.com/missing")); // missing.StatusCode == NotFound, from Route.Fallback()
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(HttpStatusCode.OK, get.StatusCode);
+        SampleCheck.Equal(HttpStatusCode.Created, post.StatusCode);
+        SampleCheck.Equal(HttpStatusCode.Accepted, delete.StatusCode);
         SampleCheck.Equal(HttpStatusCode.NotFound, missing.StatusCode);
-        await SendOtherMethodsAsync(httpClient);
+        await SendOtherMethodsAsync(http, httpClient);
         Verify(http);
         EnumerateRoutes(http);
     }
 
-    /// <summary>Sends the remaining method-factory routes after the GET and fallback checks.</summary>
-    /// <param name="httpClient">The client attached to the method-factory table.</param>
+    /// <summary>Adds and sends the remaining method-factory routes the excerpt does not show.</summary>
+    /// <param name="http">The stub the routes are added to.</param>
+    /// <param name="httpClient">The client attached to the stub.</param>
     /// <returns>A task that completes after each route returns a successful status.</returns>
-    private static async Task SendOtherMethodsAsync(HttpClient httpClient)
+    private static async Task SendOtherMethodsAsync(StubHttp http, HttpClient httpClient)
     {
+        http.Add(Route.Put("/put"), Reply.Status(HttpStatusCode.NoContent));
+        http.Add(Route.Delete("/delete"), Reply.Status(HttpStatusCode.NoContent));
+        http.Add(Route.Patch("/patch"), Reply.Status(HttpStatusCode.NoContent));
+        http.Add(Route.Head("/head"), Reply.Status(HttpStatusCode.OK));
+        http.Add(Route.For(HttpMethod.Options, "/options"), Reply.Status(HttpStatusCode.OK));
         foreach ((HttpMethod method, string path) in new (HttpMethod, string)[]
         {
-            (HttpMethod.Post, "post"),
             (HttpMethod.Put, "put"),
             (HttpMethod.Delete, "delete"),
             (HttpMethod.Patch, "patch"),
             (HttpMethod.Head, "head"),
             (HttpMethod.Options, "options"),
-            (HttpMethod.Trace, "any"),
         })
         {
             using HttpRequestMessage request = new HttpRequestMessage(method, $"https://api.example.com/{path}");
@@ -270,7 +260,7 @@ internal static class Testing
         using HttpResponseMessage pairs = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matched ExactQueryParams, even though "a" is not duplicated
 
         // Each route answers once, so this second request can only match the ExactQuery route, and it accepts it too.
-        using HttpResponseMessage encoded = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matched ExactQuery, the same way
+        using HttpResponseMessage encoded = await httpClient.GetAsync(new Uri("https://api.example.com/query?a=1&b=2")); // matched ExactQuery: "a=1&a=1" also accepts a query with a single a=1
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal("matched ExactQueryParams", await pairs.Content.ReadAsStringAsync());
@@ -532,13 +522,17 @@ internal static class Testing
     {
         using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "https://api.example.com/people/1");
         using HttpResponseMessage message = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request, Content = new StringContent("{\"id\":1,\"name\":\"Ada\"}") };
-        StubApiResponse<TestingPerson> stub = new StubApiResponse<TestingPerson>
+        using StubApiResponse<TestingPerson> stub = new StubApiResponse<TestingPerson>
         {
             Content = new TestingPerson(1, "Ada"),
             HasContent = true,
             StatusCode = message.StatusCode,
+            Headers = message.Headers,
+            ContentHeaders = message.Content.Headers,
+            Version = message.Version,
             IsSuccessStatusCode = true,
             IsSuccessful = true,
+            IsSuccessfulWithContent = true,
             IsReceived = true,
         };
         string? name = stub.Content?.Name; // "Ada"
@@ -569,7 +563,6 @@ internal static class Testing
         SampleCheck.Equal("Ada", name);
         SampleCheck.Equal(false, stub.HasRequestError(out _));
         SampleCheck.Equal(false, stub.HasResponseError(out _));
-        stub.Dispose();
         SampleCheck.Equal(true, hasRequestError);
         SampleCheck.Equal(sendError, captured);
         SampleCheck.Equal(true, hasResponseError);

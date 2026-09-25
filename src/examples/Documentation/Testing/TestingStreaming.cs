@@ -280,6 +280,12 @@ internal static class TestingStreaming
     /// <returns>A task that completes after every uploaded line is read.</returns>
     private static async Task ShowLiveUploadAsync()
     {
+        static async IAsyncEnumerable<TestingPerson> UploadPeopleAsync()
+        {
+            yield return new TestingPerson(1, "Ada");
+            yield return new TestingPerson(2, "Grace");
+        }
+
         List<string> lines = [];
         using StubHttp http = new StubHttp
         {
@@ -305,12 +311,6 @@ internal static class TestingStreaming
         http.RequestCapture = RequestCapture.None;
         ITestingStreamingApi api = http.CreateGeneratedClient<ITestingStreamingApi>("https://api.example.com", CreateSettings());
 
-        static async IAsyncEnumerable<TestingPerson> UploadPeopleAsync()
-        {
-            yield return new TestingPerson(1, "Ada");
-            yield return new TestingPerson(2, "Grace");
-        }
-
         await api.ImportLiveAsync(UploadPeopleAsync(), CancellationToken.None); // lines now has one JSON object per uploaded person
 
         // Checks for this sample (not part of the documentation excerpt):
@@ -323,24 +323,18 @@ internal static class TestingStreaming
     /// <returns>A task that completes after both the recorded and the truncated bodies are checked.</returns>
     private static async Task ShowBoundedCaptureAsync()
     {
+        // Reading the body is what fills a bounded capture, so the reply echoes the uploaded person back.
+        StubResponse echo = Reply.From(static async request =>
+        {
+            string json = await request.Content!.ReadAsStringAsync();
+            return new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+        });
+
+        // Each route answers once, and this sample sends two requests.
         using StubHttp http = new StubHttp
         {
-            {
-                Route.Post("/people"),
-                Reply.From(static async request =>
-                {
-                    string json = await request.Content!.ReadAsStringAsync();
-                    return new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
-                })
-            },
-            {
-                Route.Post("/people"),
-                Reply.From(static async request =>
-                {
-                    string json = await request.Content!.ReadAsStringAsync();
-                    return new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
-                })
-            },
+            { Route.Post("/people"), echo },
+            { Route.Post("/people"), echo },
         };
         ITestingApi api = http.CreateGeneratedClient<ITestingApi>("https://api.example.com", CreateSettings());
 
