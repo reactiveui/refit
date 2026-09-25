@@ -29,4 +29,13 @@ internal interface IJsonLinesUploadApi
     /// <returns>A task that completes when the upload has been answered.</returns>
     [Post("/imports/events")]
     Task ImportRawAsync([Body] HttpContent content);
+
+    /// <summary>
+    /// Uploads caller-built content for a record import without further serialization. This is for content the
+    /// caller has already built, such as a pre-buffered body with a known length.
+    /// </summary>
+    /// <param name="content">The caller-built JSON Lines content.</param>
+    /// <returns>A task that completes when the upload has been answered.</returns>
+    [Post("/imports/records")]
+    Task ImportRecordContentAsync([Body] HttpContent content);
 }

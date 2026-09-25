@@ -13,21 +13,27 @@ public sealed class ErrorHandlingTests
 {
     // Problem: my API can return 404 for a person who doesn't exist. Does my code notice?
     [Test]
-    public async Task GetMissingPerson_ReturnsNotFound()
+    public void GetMissingPerson_ReturnsNotFound()
     {
-        using StubHttp http = new() { { Route.Get("/people/{id}"), Reply.Status(HttpStatusCode.NotFound) } };
-        using HttpClient httpClient = TestClient.Create(http);
+        using StubHttp http = new()
+        {
+            { Route.Get("/people/{id}"), Reply.Status(HttpStatusCode.NotFound) },
+        };
+        IPeopleApi api = http.CreateGeneratedClient<IPeopleApi>("https://api.example.com", TestSettings.Create());
 
-        using HttpResponseMessage response = await httpClient.GetAsync(new Uri("https://api.example.com/people/99"));
+        ApiException? error = Assert.ThrowsAsync<ApiException>(() => api.GetPersonAsync(99));
 
-        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(error?.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
     }
 
     // Problem: how do I make sure a test actually called the API it set up?
     [Test]
     public void ForgottenApiCall_FailsVerification()
     {
-        using StubHttp http = new() { { Route.Get("/people/1"), Reply.Status(HttpStatusCode.OK) } };
+        using StubHttp http = new()
+        {
+            { Route.Get("/people/1"), Reply.Status(HttpStatusCode.OK) },
+        };
 
         InvalidOperationException? error = Assert.Throws<InvalidOperationException>(http.VerifyAllCalled);
 

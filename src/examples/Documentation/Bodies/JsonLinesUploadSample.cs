@@ -80,11 +80,12 @@ internal static class JsonLinesUploadSample
     private static async Task UploadWithSourceGeneratedJsonAsync()
     {
         using StubHttp http = new() { { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) } };
-        using HttpClient httpClient = new(http, disposeHandler: false) { BaseAddress = new("https://api.example.com") };
+        using HttpClient httpClient = new(http, disposeHandler: false) { BaseAddress = new Uri("https://api.example.com") };
 
         // Each record is written as ImportRecord, using the metadata ImportRecordsJsonContext generated for it.
         IJsonLinesUploadApi api = RestService.ForGenerated<IJsonLinesUploadApi>(httpClient, ImportRecordsJsonContext.Default);
-        await api.ImportRecordsAsync(ProduceRecordsAsync(), CancellationToken.None);
+        using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(30));
+        await api.ImportRecordsAsync(ProduceRecordsAsync(), cancellation.Token);
 
         await http.VerifyAllCalledAsync();
     }
@@ -147,17 +148,22 @@ internal static class JsonLinesUploadSample
     private static async Task RetryWithAFreshSequenceAsync()
     {
         // The first attempt gets "503 Service Unavailable"; the second is accepted.
-        using StubHttp http = new() { { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.ServiceUnavailable) }, { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) } };
+        using StubHttp http = new()
+        {
+            { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.ServiceUnavailable) },
+            { Route.Post("/imports/records"), Reply.Status(HttpStatusCode.Accepted) },
+        };
         IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com");
+        using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(30));
 
         try
         {
-            await api.ImportRecordsAsync(ProduceRecordsAsync(), CancellationToken.None);
+            await api.ImportRecordsAsync(ProduceRecordsAsync(), cancellation.Token);
         }
         catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.ServiceUnavailable)
         {
             // Start the producer again from the beginning, instead of trying to resend the first request.
-            await api.ImportRecordsAsync(ProduceRecordsAsync(), CancellationToken.None);
+            await api.ImportRecordsAsync(ProduceRecordsAsync(), cancellation.Token);
         }
 
         await http.VerifyAllCalledAsync();
@@ -174,7 +180,7 @@ internal static class JsonLinesUploadSample
         using StubHttp http = new()
         {
             {
-                Route.Post("/imports/events"),
+                Route.Post("/imports/records"),
                 Reply.From(request =>
                 {
                     sentLength = request.Content!.Headers.ContentLength;
@@ -193,7 +199,7 @@ internal static class JsonLinesUploadSample
 
         using JsonLinesContent<ImportRecord> content = new(records, settings.ContentSerializer);
         await content.LoadIntoBufferAsync(); // Serializes everything now, so the length is known.
-        await api.ImportRawAsync(content);
+        await api.ImportRecordContentAsync(content);
 
         Console.WriteLine(sentLength); // 73
         if (sentLength is null or 0)

@@ -15,7 +15,10 @@ public sealed class GettingStartedTests
     [Test]
     public async Task GetPerson_ReturnsTheStubbedPerson()
     {
-        using StubHttp http = new() { { Route.Get("/people/{id}"), Reply.With(new Person(1, "Ada")) } };
+        using StubHttp http = new()
+        {
+            { Route.Get("/people/{id}"), Reply.With(new Person(1, "Ada")) },
+        };
         IPeopleApi api = http.CreateGeneratedClient<IPeopleApi>("https://api.example.com", TestSettings.Create());
 
         Person person = await api.GetPersonAsync(1);
@@ -27,10 +30,13 @@ public sealed class GettingStartedTests
     [Test]
     public async Task CreatePerson_SendsTheRightJsonBody()
     {
-        using StubHttp http = new() { { Route.Post("/people"), Reply.With(new Person(2, "Grace"), HttpStatusCode.Created) } };
+        using StubHttp http = new()
+        {
+            { Route.Post("/people"), Reply.With(new Person(2, "Grace"), HttpStatusCode.Created) },
+        };
         IPeopleApi api = http.CreateGeneratedClient<IPeopleApi>("https://api.example.com", TestSettings.Create());
 
-        await api.CreatePersonAsync(new(2, "Grace"));
+        await api.CreatePersonAsync(new Person(2, "Grace"));
 
         Person? sentPerson = await http.LastRequestBodyAsync<Person>();
         Assert.That(sentPerson?.Name, Is.EqualTo("Grace"));

@@ -13,19 +13,26 @@ public sealed class ErrorHandlingTests
     [Test]
     public async Task GetMissingPerson_ReturnsNotFound()
     {
-        using StubHttp http = new() { { Route.Get("/people/{id}"), Reply.Status(HttpStatusCode.NotFound) } };
-        using HttpClient httpClient = TestClient.Create(http);
+        using StubHttp http = new()
+        {
+            { Route.Get("/people/{id}"), Reply.Status(HttpStatusCode.NotFound) },
+        };
+        IPeopleApi api = http.CreateGeneratedClient<IPeopleApi>("https://api.example.com", TestSettings.Create());
 
-        using HttpResponseMessage response = await httpClient.GetAsync(new Uri("https://api.example.com/people/99"));
+        ApiException? error = await Assert.That(async () => await api.GetPersonAsync(99))
+            .ThrowsExactly<ApiException>();
 
-        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+        await Assert.That(error?.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
     // Problem: how do I make sure a test actually called the API it set up?
     [Test]
     public async Task ForgottenApiCall_FailsVerification()
     {
-        using StubHttp http = new() { { Route.Get("/people/1"), Reply.Status(HttpStatusCode.OK) } };
+        using StubHttp http = new()
+        {
+            { Route.Get("/people/1"), Reply.Status(HttpStatusCode.OK) },
+        };
 
         InvalidOperationException? error = await Assert.That(http.VerifyAllCalled).ThrowsExactly<InvalidOperationException>();
 

@@ -24,6 +24,12 @@ dotnet_diagnostic.SST1662.severity = none
 # Samples build a client inline so the reader sees where it comes from; IHttpClientFactory is covered separately.
 dotnet_diagnostic.PSH1418.severity = none
 
+# Samples name the type they create ("new Person(1, \"Ada\")") so a reader never has to work out what "new(...)" builds.
+dotnet_diagnostic.SST2202.severity = none
+dotnet_diagnostic.IDE0090.severity = none
+# One initializer entry per line, with braces on their own lines, reads better in samples than one long line.
+dotnet_diagnostic.SST1531.severity = none
+
 [TestingFrameworks/**/*.cs]
 # These tests are written for a beginner reading real test-framework code, not for API consumers browsing
 # IntelliSense: a plain "// Problem: ..." comment naming what the test is for reads better here than a
