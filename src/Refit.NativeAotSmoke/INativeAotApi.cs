@@ -65,9 +65,16 @@ public interface INativeAotApi
 
     /// <summary>An intentionally reflection-backed method shape proving the generated fallback builds cleanly
     /// under full trimming with IL2026/IL3050 promoted to errors (reactiveui/refit#2200). It is never invoked.</summary>
-    /// <returns>An observable sequence of raw responses.</returns>
+    /// <param name="filters">A query object whose shape is only known at runtime, so the generator falls back.</param>
+    /// <returns>The reply text.</returns>
+    /// <remarks>The shape must stay one the generator cannot build (RF006 reason <c>UnsupportedQueryType</c>);
+    /// <c>GeneratedRequestSupportTableTests</c> pins that classification.</remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Refit",
+        "RF006",
+        Justification = "The reflection fallback is the point of this member: it proves the fallback trims cleanly.")]
     [Get("/legacy")]
-    IObservable<HttpResponseMessage> ObserveLegacy();
+    Task<string> SearchLegacyAsync(object filters);
 
     /// <summary>Uploads a typed asynchronous sequence as JSON Lines (newline-delimited JSON), proving
     /// <c>GeneratedRequestRunner.CreateAsyncJsonLinesBodyContent</c> serializes each element with the registered

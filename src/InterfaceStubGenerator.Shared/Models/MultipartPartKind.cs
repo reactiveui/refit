@@ -7,9 +7,9 @@ namespace Refit.Generator;
 /// <summary>Classifies how one multipart part is added to the generated <c>MultipartFormDataContent</c>.</summary>
 /// <remarks>
 /// Each value maps to one arm of the reflection request builder's <c>AddMultipartItem</c> dispatch, resolved statically
-/// from the part's declared type. There is deliberately no serialize arm: a part whose declared type would fall through
-/// to the content serializer is not statically dispatchable with byte parity, so the whole method keeps using the
-/// reflection request builder instead.
+/// from the part's declared type. A declared class or struct goes through the content serializer (<see cref="Serialized"/>).
+/// Only a part typed as <c>object</c>, an interface, or an open type parameter is not statically dispatchable, because
+/// its runtime type decides the arm, so the whole method keeps using the reflection request builder.
 /// </remarks>
 internal enum MultipartPartKind
 {
@@ -34,7 +34,7 @@ internal enum MultipartPartKind
     /// <summary>The value is a date/time or <see cref="System.Guid"/> rendered by the form URL-encoded formatter.</summary>
     Formattable = 6,
 
-    /// <summary>The value is a sealed or value type (a bool, enum, or sealed DTO) written through the content serializer,
-    /// matching the reflection builder's <c>AddSerializedMultipartItem</c> serializer fallback.</summary>
+    /// <summary>The value is a declared class or struct (for example a bool, enum, or DTO) written through the content
+    /// serializer, matching the reflection builder's <c>AddSerializedMultipartItem</c> serializer fallback.</summary>
     Serialized = 7,
 }

@@ -285,22 +285,23 @@ internal static partial class Parser
     /// <summary>Determines whether all body bindings are supported by the initial inline emitter.</summary>
     /// <param name="parameters">The parsed request parameter models.</param>
     /// <returns><see langword="true"/> when every body binding is supported.</returns>
-    internal static bool IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel> parameters)
-    {
-        foreach (var parameter in parameters)
-        {
-            if (parameter.Kind != RequestParameterKind.Body)
-            {
-                continue;
-            }
+    internal static bool IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel> parameters) =>
+        FindUnsupportedInlineBody(parameters) < 0;
 
-            if (parameter.BodySerializationMethod.Length == 0)
+    /// <summary>Finds the first body binding whose serialization method the inline emitter does not know.</summary>
+    /// <param name="parameters">The parsed request parameter models.</param>
+    /// <returns>The ordinal of the unsupported body parameter, or -1 when every body binding is supported.</returns>
+    internal static int FindUnsupportedInlineBody(ImmutableEquatableArray<RequestParameterModel> parameters)
+    {
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            if (parameters[i] is { Kind: RequestParameterKind.Body, BodySerializationMethod.Length: 0 })
             {
-                return false;
+                return i;
             }
         }
 
-        return true;
+        return -1;
     }
 
     /// <summary>Determines whether the shared runner should dispose the response.</summary>

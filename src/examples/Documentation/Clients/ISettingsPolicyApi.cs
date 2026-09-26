@@ -26,6 +26,10 @@ internal interface ISettingsPolicyApi
 
     /// <summary>Builds a path with a placeholder reserved for later rewriting.</summary>
     /// <returns>The unsent request owned by the caller.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Refit",
+        "RF015",
+        Justification = "The sample demonstrates RefitSettings.AllowUnmatchedRouteParameters, which leaves {tenant} for later rewriting.")]
     [Get("/policy/{tenant}")]
     Task<HttpRequestMessage> UnmatchedAsync();
 }

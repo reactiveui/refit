@@ -13,6 +13,9 @@ public sealed class RefitInterfaceAnalyzerTests
     /// <summary>The diagnostic identifier for methods that fall back to the reflection request builder.</summary>
     private const string GeneratedRequestBuildingFallbackDiagnosticId = "RF006";
 
+    /// <summary>The diagnostic identifier for route placeholders that bind no parameter.</summary>
+    private const string UnboundRoutePlaceholderDiagnosticId = "RF015";
+
     /// <summary>A Refit method shape that the generator cannot build inline, so it falls back to reflection (RF006).</summary>
     private const string ReflectionFallbackMethodBody =
         """
@@ -506,5 +509,88 @@ public sealed class RefitInterfaceAnalyzerTests
 
         await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .DoesNotContain("RF005");
+    }
+
+    /// <summary>Verifies a route placeholder no parameter binds is reported on the placeholder itself.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReportsUnboundRoutePlaceholderAtThePlaceholder()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Get("/users/{id}/posts")]
+            Task<string> GetPosts(string userId);
+            """);
+
+        var unbound = diagnostics.Single(static diagnostic => diagnostic.Id == UnboundRoutePlaceholderDiagnosticId);
+        var text = await unbound.Location.SourceTree!.GetTextAsync();
+        var message = unbound.GetMessage(System.Globalization.CultureInfo.InvariantCulture);
+
+        await Assert.That(text.ToString(unbound.Location.SourceSpan)).IsEqualTo("{id}");
+        await Assert.That(message).Contains("'{id}'");
+        await Assert.That(message).Contains("[AliasAs(\"id\")]");
+        await Assert.That(message).Contains("AllowUnmatchedRouteParameters");
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id)).DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
+    }
+
+    /// <summary>Verifies the suggested parameter name drops the round-trip prefix and any dotted property path.</summary>
+    /// <param name="path">The route template.</param>
+    /// <param name="suggestion">The expected suggested parameter name.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("/files/{**path}", "path")]
+    [Arguments("/orders/{order.Id}", "order")]
+    [Arguments("/items/{item?}", "item")]
+    public async Task UnboundRoutePlaceholderSuggestsTheParameterName(string path, string suggestion)
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            $$"""
+            [Get("{{path}}")]
+            Task<string> Fetch();
+            """);
+
+        var unbound = diagnostics.Single(static diagnostic => diagnostic.Id == UnboundRoutePlaceholderDiagnosticId);
+        await Assert.That(unbound.GetMessage(System.Globalization.CultureInfo.InvariantCulture))
+            .Contains($"Add a parameter named '{suggestion}'");
+    }
+
+    /// <summary>Verifies placeholders bound by name, alias, round trip, optional marker, dotted property, header or query are not reported.</summary>
+    /// <param name="body">The interface member body source.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("[Get(\"/users/{id}\")] Task<string> Get(string id);")]
+    [Arguments("[Get(\"/users/{ID}\")] Task<string> Get(string id);")]
+    [Arguments("[Get(\"/users/{id}\")] Task<string> Get([AliasAs(\"id\")] string userId);")]
+    [Arguments("[Get(\"/files/{**path}\")] Task<string> Get(string path);")]
+    [Arguments("[Get(\"/items/{item?}\")] Task<string> Get(int? item);")]
+    [Arguments("[Get(\"/users/{id}\")] Task<string> Get([Header(\"X-Id\")] string id);")]
+    [Arguments("[Get(\"/search?q={q}\")] Task<string> Search(string q);")]
+    [Arguments("[Get(\"/pairs/{pair.Key}\")] Task<string> Get(System.Collections.Generic.KeyValuePair<string, int> pair);")]
+    public async Task DoesNotReportBoundRoutePlaceholders(string body)
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(body);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id)).DoesNotContain(UnboundRoutePlaceholderDiagnosticId);
+    }
+
+    /// <summary>Verifies the placeholder check stays off where the reflection builder binds and validates the route itself.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DoesNotReportUnboundRoutePlaceholderWithoutGeneratedRequests()
+    {
+        const string body =
+            """
+            [Get("/users/{id}")]
+            Task<string> Get(string userId);
+
+            [Get("/query/{id}")]
+            Task<string> Search(object filters);
+            """;
+
+        var reflectionOnly = await AnalyzerFixture.RunForBody(body, generatedRequestBuilding: false);
+        var generated = await AnalyzerFixture.RunForBody(body);
+
+        await Assert.That(reflectionOnly.Select(static diagnostic => diagnostic.Id)).DoesNotContain(UnboundRoutePlaceholderDiagnosticId);
+        await Assert.That(generated.Count(static diagnostic => diagnostic.Id == UnboundRoutePlaceholderDiagnosticId)).IsEqualTo(1);
     }
 }

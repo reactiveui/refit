@@ -62,4 +62,9 @@ internal readonly record struct RequestModel(
     /// The value is emitted into the generated send call and layered onto the request's effective cancellation token,
     /// mirroring the reflection builder's <c>RestMethodInfoInternal.TimeoutMilliseconds</c>.</summary>
     internal int TimeoutMilliseconds { get; init; }
+
+    /// <summary>Gets why the request is not generated inline, and which parameter caused it; <see cref="InlineFallback.None"/>
+    /// when <see cref="CanGenerateInline"/> is set. The generator only reads <see cref="CanGenerateInline"/>; the RF006
+    /// analyzer turns this into its explanation, so both always come from the same classification.</summary>
+    internal InlineFallback Fallback { get; init; }
 }

@@ -63,30 +63,23 @@ internal static partial class Parser
             allowImplicitBody,
             isMultipart,
             context,
-            out var parameterEligibility);
+            out var parameterFallback);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
         // An invalid [Paged] configuration is reported by ParsePaging, so it is not reported again as an inline failure.
         var paging = ParsePagingForReturn(methodSymbol, returnTypeInfo, context, out var pagingIsValid);
-        var canGenerateInline = CanGenerateInlineRequest(
-            parameterEligibility,
-            IsInlineReturnShape(returnTypeInfo, adapterTypeExpression),
-            httpMethod,
-            new(path, normalizedPath),
-            parameters,
-            isMultipart)
-            && pagingIsValid;
+        var fallback = pagingIsValid
+            ? ClassifyInlineRequest(
+                parameterFallback,
+                IsInlineReturnShape(returnTypeInfo, adapterTypeExpression),
+                httpMethod,
+                new(path, normalizedPath),
+                parameters,
+                isMultipart)
+            : InlineFallback.ForMethod(InlineFallbackReason.InvalidPagedMethod);
 
-        if (!canGenerateInline && pagingIsValid)
-        {
-            ReportSourceGenOnlyAttributeMisuse(methodSymbol, context);
-        }
-
-        if (!ValidateJsonTypeInfoParameters(methodSymbol, parameters, returnTypes.DeserializedResultType, canGenerateInline, context))
-        {
-            canGenerateInline = false;
-        }
-
+        fallback = ReportFallbackConsequences(methodSymbol, fallback, pagingIsValid, parameters, returnTypes.DeserializedResultType, context);
+        var canGenerateInline = fallback.IsNone;
         return new(
             httpMethod,
             normalizedPath,
@@ -97,7 +90,44 @@ internal static partial class Parser
             canGenerateInline,
             canGenerateInline ? adapterTypeExpression : null,
             staticHeaders,
-            parameters) { IsMultipart = isMultipart, MultipartBoundary = multipartBoundary, QueryUriFormat = queryUriFormat, TimeoutMilliseconds = timeoutMilliseconds, Paging = paging, };
+            parameters)
+        {
+            IsMultipart = isMultipart,
+            MultipartBoundary = multipartBoundary,
+            QueryUriFormat = queryUriFormat,
+            TimeoutMilliseconds = timeoutMilliseconds,
+            Paging = paging,
+            Fallback = fallback,
+        };
+    }
+
+    /// <summary>Reports the diagnostics that depend on whether the request is generated inline, and folds an unusable
+    /// <c>JsonTypeInfo&lt;T&gt;</c> parameter into the fallback.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="fallback">The classification so far.</param>
+    /// <param name="pagingIsValid">Whether the <c>[Paged]</c> configuration, if any, is valid.</param>
+    /// <param name="parameters">The parsed request parameters.</param>
+    /// <param name="deserializedResultType">The fully-qualified type the reply is read as.</param>
+    /// <param name="context">The shared generation context that collects diagnostics.</param>
+    /// <returns>The final classification.</returns>
+    internal static InlineFallback ReportFallbackConsequences(
+        IMethodSymbol methodSymbol,
+        in InlineFallback fallback,
+        bool pagingIsValid,
+        ImmutableEquatableArray<RequestParameterModel> parameters,
+        string deserializedResultType,
+        in InterfaceGenerationContext context)
+    {
+        if (!fallback.IsNone && pagingIsValid)
+        {
+            ReportSourceGenOnlyAttributeMisuse(methodSymbol, context);
+        }
+
+        // Keep an earlier, more specific reason: RF014 then only repeats that the request is not generated inline.
+        return ValidateJsonTypeInfoParameters(methodSymbol, parameters, deserializedResultType, fallback.IsNone, context)
+            || !fallback.IsNone
+            ? fallback
+            : InlineFallback.ForMethod(InlineFallbackReason.InvalidJsonTypeInfoParameter);
     }
 
     /// <summary>Resolves the HTTP verb, path, and path-parameter placeholders declared by a method's HTTP attribute.</summary>
@@ -197,71 +227,111 @@ internal static partial class Parser
     internal static bool IsBodyCapableHttpMethod(string httpMethod) =>
         httpMethod is "POST" or "PUT" or "PATCH";
 
-    /// <summary>Determines whether a method's request can be constructed by generated inline code.</summary>
-    /// <param name="parameterEligibility">Whether every parameter binding is inline-supported.</param>
+    /// <summary>Classifies whether a method's request can be constructed by generated inline code, and if not, why.</summary>
+    /// <param name="parameterFallback">The first parameter binding that is not inline-supported, if any.</param>
     /// <param name="returnShapeEligible">Whether the return shape is inline-eligible (a built-in async shape or an adapter-backed return type).</param>
     /// <param name="httpMethod">The HTTP method name.</param>
     /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
     /// <param name="parameters">The parsed request parameter models.</param>
     /// <param name="isMultipart">Whether the method is multipart, which cannot also carry an explicit <c>[Body]</c>.</param>
-    /// <returns><see langword="true"/> when the request is inline-eligible.</returns>
+    /// <returns><see cref="InlineFallback.None"/> when the request is inline-eligible; otherwise the first limitation found.</returns>
     /// <remarks>
     /// Generic methods are inline-eligible: a type parameter flows straight through to the generic runner
     /// (<c>SendAsync&lt;T, TBody&gt;</c>) with no reflection. Positions where an open type parameter cannot generate
     /// correctly or trim-safely — a complex query object (its properties are only known per value) or a form-url-encoded
-    /// body (<c>[DynamicallyAccessedMembers]</c>) — are excluded upstream through <paramref name="parameterEligibility"/>.
+    /// body (<c>[DynamicallyAccessedMembers]</c>) — are excluded upstream through <paramref name="parameterFallback"/>.
+    /// Method-level problems are checked before parameter problems, so the reason reported is the one to fix first.
     /// </remarks>
-    internal static bool CanGenerateInlineRequest(
-        bool parameterEligibility,
+    internal static InlineFallback ClassifyInlineRequest(
+        in InlineFallback parameterFallback,
         bool returnShapeEligible,
         string httpMethod,
         in RequestPathForms path,
         ImmutableEquatableArray<RequestParameterModel> parameters,
-        bool isMultipart) =>
-        parameterEligibility
-        && returnShapeEligible
-        && httpMethod.Length > 0
-        && IsPathSupported(path.Raw)
-        && IsPathSupported(path.Normalized)
-        && IsSupportedInlineBody(parameters)
-        && IsUrlBindingSupported(path, parameters)
+        bool isMultipart)
+    {
+        if (!returnShapeEligible)
+        {
+            return InlineFallback.ForMethod(InlineFallbackReason.UnsupportedReturnType);
+        }
+
+        if (httpMethod.Length == 0)
+        {
+            return InlineFallback.ForMethod(InlineFallbackReason.UnreadableHttpMethod);
+        }
+
+        if (!IsPathSupported(path.Raw) || !IsPathSupported(path.Normalized))
+        {
+            return InlineFallback.ForMethod(InlineFallbackReason.UnsupportedPathTemplate);
+        }
+
+        if (!parameterFallback.IsNone)
+        {
+            return parameterFallback;
+        }
+
+        var unknownBody = FindUnsupportedInlineBody(parameters);
+        if (unknownBody >= 0)
+        {
+            return new(InlineFallbackReason.UnknownBodySerialization, unknownBody);
+        }
+
+        var url = FindUnsupportedUrlBinding(path, parameters);
+        if (url >= 0)
+        {
+            return new(InlineFallbackReason.UrlParameterWithPath, url);
+        }
 
         // A multipart method with an explicit [Body] is an invalid combination the reflection builder rejects; fall
         // back so its validation still throws instead of emitting a non-multipart body request.
-        && (!isMultipart || !HasBodyParameter(parameters));
+        var body = isMultipart ? FindBodyParameter(parameters) : -1;
+        return body >= 0
+            ? new(InlineFallbackReason.MultipartWithBody, body)
+            : InlineFallback.None;
+    }
 
-    /// <summary>Determines whether a method's <c>[Url]</c> binding, if any, can be emitted inline.</summary>
+    /// <summary>Finds the <c>[Url]</c> parameter that cannot be emitted inline, if any.</summary>
     /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
     /// <param name="parameters">The parsed request parameter models.</param>
-    /// <returns><see langword="true"/> when the method has no <c>[Url]</c> parameter, or has exactly one alongside an
-    /// empty path template and no path placeholders. Other shapes fall back to the reflection builder, whose
-    /// validation throws for the invalid combination.</returns>
-    internal static bool IsUrlBindingSupported(
+    /// <returns>-1 when the method has no <c>[Url]</c> parameter, or has exactly one alongside an empty path template
+    /// and no path placeholders; otherwise the ordinal of the offending <c>[Url]</c> parameter (the second when two are
+    /// declared).</returns>
+    internal static int FindUnsupportedUrlBinding(
         in RequestPathForms path,
         ImmutableEquatableArray<RequestParameterModel> parameters)
     {
         var urlCount = 0;
+        var urlOrdinal = -1;
         var hasPathParameter = false;
-        foreach (var parameter in parameters)
+        for (var i = 0; i < parameters.Count; i++)
         {
-            if (parameter.Kind == RequestParameterKind.Url)
+            var kind = parameters[i].Kind;
+            if (kind == RequestParameterKind.Url)
             {
+                // Blame the first [Url] parameter, or the second when there is more than one.
+                urlOrdinal = urlOrdinal < 0 || urlCount == 1 ? i : urlOrdinal;
                 urlCount++;
             }
-            else if (parameter.Kind == RequestParameterKind.Path)
+            else if (kind == RequestParameterKind.Path)
             {
                 hasPathParameter = true;
             }
         }
 
-        // A method with no [Url] parameter is unconstrained here. Otherwise the [Url] parameter provides the full
-        // absolute URI, so the path template must be empty and carry no placeholders, and only one may supply the URL.
-        return urlCount == 0
-            || (urlCount == 1
-                && !hasPathParameter
-                && IsEmptyOrRootPath(path.Raw)
-                && IsEmptyOrRootPath(path.Normalized));
+        return urlCount == 0 || IsSingleUrlBindingSupported(path, urlCount, hasPathParameter) ? -1 : urlOrdinal;
     }
+
+    /// <summary>Determines whether a method's <c>[Url]</c> parameters can supply the request URI inline.</summary>
+    /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
+    /// <param name="urlCount">The number of <c>[Url]</c> parameters.</param>
+    /// <param name="hasPathParameter">Whether any parameter binds a path placeholder.</param>
+    /// <returns><see langword="true"/> for exactly one <c>[Url]</c> parameter with an empty path template and no path
+    /// placeholders, because the <c>[Url]</c> parameter provides the full absolute URI.</returns>
+    internal static bool IsSingleUrlBindingSupported(in RequestPathForms path, int urlCount, bool hasPathParameter) =>
+        urlCount == 1
+        && !hasPathParameter
+        && IsEmptyOrRootPath(path.Raw)
+        && IsEmptyOrRootPath(path.Normalized);
 
     /// <summary>Determines whether a path template is empty or the bare root, so a <c>[Url]</c> parameter may supply the URI.</summary>
     /// <param name="path">The path template.</param>
@@ -604,7 +674,40 @@ internal static partial class Parser
         bool CanGenerateInline,
         int BodyCount,
         int CancellationTokenCount,
-        int HeaderCollectionCount);
+        int HeaderCollectionCount)
+    {
+        /// <summary>Gets why the parameter cannot be emitted inline; <see cref="InlineFallbackReason.None"/> when it can.</summary>
+        internal InlineFallbackReason FallbackReason { get; init; }
+    }
+
+    /// <summary>Running counts of the bindings a method may declare at most once.</summary>
+    /// <param name="Body">The number of body parameters.</param>
+    /// <param name="CancellationToken">The number of cancellation token parameters.</param>
+    /// <param name="HeaderCollection">The number of header collection parameters.</param>
+    /// <param name="Authorize">The number of <c>[Authorize]</c> parameters.</param>
+    internal readonly record struct SingleBindingCounts(int Body, int CancellationToken, int HeaderCollection, int Authorize)
+    {
+        /// <summary>Gets the binding that appears more than once, or <see cref="InlineFallbackReason.None"/>.</summary>
+        internal InlineFallbackReason Problem =>
+            this switch
+            {
+                { Body: > 1 } => InlineFallbackReason.MultipleBodies,
+                { CancellationToken: > 1 } => InlineFallbackReason.MultipleCancellationTokens,
+                { HeaderCollection: > 1 } => InlineFallbackReason.MultipleHeaderCollections,
+                { Authorize: > 1 } => InlineFallbackReason.MultipleAuthorizeParameters,
+                _ => InlineFallbackReason.None,
+            };
+
+        /// <summary>Adds one parsed parameter's bindings.</summary>
+        /// <param name="parsed">The parsed parameter.</param>
+        /// <returns>The updated counts.</returns>
+        internal SingleBindingCounts Add(in ParsedRequestParameter parsed) =>
+            new(
+                Body + parsed.BodyCount,
+                CancellationToken + parsed.CancellationTokenCount,
+                HeaderCollection + parsed.HeaderCollectionCount,
+                Authorize + (IsAuthorizeParameter(parsed.Parameter) ? 1 : 0));
+    }
 
     /// <summary>The raw and normalized forms of a method's path template.</summary>
     /// <param name="Raw">The raw path literal from the HTTP method attribute.</param>

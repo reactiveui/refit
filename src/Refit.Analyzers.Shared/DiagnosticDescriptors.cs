@@ -58,10 +58,23 @@ internal static class DiagnosticDescriptors
         new(
             DiagnosticIds.GeneratedRequestBuildingFallback,
             "Refit method is not compatible with generated-only client registration",
-            string.Concat(
-                "Method {0}.{1} uses request features the Refit source generator cannot build without reflection, so it falls back to the reflection request builder. ",
-                "It will throw at runtime when resolved through AddRefitGeneratedClient (generated-only) or under NativeAOT. ",
-                "Use RestService.For where reflection is acceptable, or change the method to use only features supported by generated request building."),
+            "Method {0}.{1} falls back to the reflection request builder because {2}. {3}. {4}.",
+            Category,
+            DiagnosticSeverity.Warning,
+            true,
+            "The Refit source generator cannot build this method's request without reflection. The message names the "
+            + "parameter, return type or attribute responsible and the change that lets the request be generated. To fail "
+            + "the build on any fallback, set <RefitRequireGeneratedRequests>true</RefitRequireGeneratedRequests> or "
+            + "'dotnet_diagnostic.RF006.severity = error'.");
+
+    /// <summary>Diagnostic reported when a route placeholder binds no method parameter.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    internal static readonly DiagnosticDescriptor UnboundRoutePlaceholder =
+        new(
+            DiagnosticIds.UnboundRoutePlaceholder,
+            "Route placeholder has no matching parameter",
+            "Route placeholder '{{{0}}}' in method {1}.{2} matches no parameter, so the request throws ArgumentException "
+            + "unless RefitSettings.AllowUnmatchedRouteParameters is enabled. Add a parameter named '{3}' or use [AliasAs(\"{3}\")] on an existing one.",
             Category,
             DiagnosticSeverity.Warning,
             true);

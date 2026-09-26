@@ -62,20 +62,20 @@ internal static partial class Parser
             ? boundary
             : DefaultMultipartBoundary;
 
-    /// <summary>Determines whether any parameter is an explicit request body binding.</summary>
+    /// <summary>Finds the first explicit request body binding.</summary>
     /// <param name="parameters">The parsed request parameter models.</param>
-    /// <returns><see langword="true"/> when a parameter carries <c>[Body]</c>.</returns>
-    internal static bool HasBodyParameter(ImmutableEquatableArray<RequestParameterModel> parameters)
+    /// <returns>The ordinal of the first parameter carrying <c>[Body]</c>, or -1 when there is none.</returns>
+    internal static int FindBodyParameter(ImmutableEquatableArray<RequestParameterModel> parameters)
     {
-        foreach (var parameter in parameters)
+        for (var i = 0; i < parameters.Count; i++)
         {
-            if (parameter.Kind == RequestParameterKind.Body)
+            if (parameters[i].Kind == RequestParameterKind.Body)
             {
-                return true;
+                return i;
             }
         }
 
-        return false;
+        return -1;
     }
 
     /// <summary>Classifies one parameter of a multipart method into a form part, a query binding, or a fallback.</summary>
@@ -94,12 +94,18 @@ internal static partial class Parser
         {
             return TryBuildQueryModel(parameter, context.UrlName, context.FormattableSymbol, context.Generation, out var query)
                 ? new(QueryRequestParameter(parameter, parameterType, query!, context.Generation), true, 0, 0, 0)
-                : new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+                : UnsupportedQueryParameter(parameter, parameterType, context.Generation);
         }
 
         return TryBuildMultipartPart(parameter, context) is { } part
             ? new(MultipartRequestParameter(parameter, parameterType, part, context.Generation), true, 0, 0, 0)
-            : new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+            : UnsupportedParameter(
+                parameter,
+                parameterType,
+                context.Generation,
+                HasParameterAttribute(parameter, FormObjectAttributeDisplayName)
+                    ? InlineFallbackReason.FormObjectMultipartPart
+                    : InlineFallbackReason.UnsupportedMultipartPart);
     }
 
     /// <summary>Builds the multipart part descriptor for a parameter whose declared type is statically dispatchable.</summary>
@@ -226,9 +232,9 @@ internal static partial class Parser
             return MultipartPartKind.Formattable;
         }
 
-        // A sealed or value type (bool, enum, sealed DTO) is written through the content serializer, exactly as the
-        // reflection builder's serializer fallback does; its declared type is the runtime type, so the serialized form
-        // matches. An open, interface, or object-typed part stays on the reflection path (runtime type decides).
+        // A declared class or struct (bool, enum, DTO) is written through the content serializer, as the reflection
+        // builder's serializer fallback does. An open, interface, or object-typed part stays on the reflection path
+        // (runtime type decides).
         return IsConcreteComplexType(type) ? MultipartPartKind.Serialized : null;
     }
 

@@ -13,6 +13,12 @@ namespace Refit.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
 {
+    /// <summary>The RF006 diagnostic property naming the <c>InlineFallbackReason</c>.</summary>
+    internal const string FallbackReasonProperty = "Reason";
+
+    /// <summary>The RF006 diagnostic property holding the responsible parameter's ordinal, when one is responsible.</summary>
+    internal const string FallbackParameterProperty = "ParameterOrdinal";
+
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
         CreateSupportedDiagnostics();
@@ -49,7 +55,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <returns>The supported diagnostics.</returns>
     private static ImmutableArray<DiagnosticDescriptor> CreateSupportedDiagnostics()
     {
-        const int supportedDiagnosticCount = 9;
+        const int supportedDiagnosticCount = 10;
         var builder = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(supportedDiagnosticCount);
         builder.Add(DiagnosticDescriptors.InvalidRefitMember);
         builder.Add(DiagnosticDescriptors.InvalidRouteBackslash);
@@ -60,6 +66,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         builder.Add(DiagnosticDescriptors.MultipleAuthorizeParameters);
         builder.Add(DiagnosticDescriptors.MultipleBodyParameters);
         builder.Add(DiagnosticDescriptors.MultipartBodyParameter);
+        builder.Add(DiagnosticDescriptors.UnboundRoutePlaceholder);
         return builder.MoveToImmutable();
     }
 
@@ -212,25 +219,181 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         ReportMultipartBodyDiagnostic(method, reportDiagnostic);
         ReportParameterShapeDiagnostics(method, reportDiagnostic);
 
-        // The eligibility decision is the source generator's own classifier, compiled into this assembly,
-        // so RF006 can never drift from what the generator actually emits.
-        if (!analysis.ReportGeneratedRequestBuildingFallback
-            || Refit.Generator.Parser.CanBuildRequestInline(
-                method,
-                httpMethodAttribute,
-                analysis.FormattableInterface,
-                analysis.ReturnTypeAdapterInterface,
-                analysis.ReturnTypeAdapters,
-                analysis.IndexedCollectionFormatValue))
+        // Both remaining checks read the generated request, which only exists when generated request building is on.
+        if (!analysis.ReportGeneratedRequestBuildingFallback)
         {
             return;
         }
 
+        // The eligibility decision and its reason are the source generator's own classifier, compiled into this
+        // assembly, so RF006 can never drift from what the generator actually emits.
+        var request = Refit.Generator.Parser.ClassifyRequest(
+            method,
+            httpMethodAttribute,
+            analysis.FormattableInterface,
+            analysis.ReturnTypeAdapterInterface,
+            analysis.ReturnTypeAdapters,
+            analysis.IndexedCollectionFormatValue);
+        if (request.CanGenerateInline)
+        {
+            // The reflection builder binds placeholders by its own rules and validates them itself at runtime, so the
+            // placeholder check only covers requests the generator builds.
+            ReportUnboundRoutePlaceholders(method, httpMethod, request, reportDiagnostic);
+            return;
+        }
+
+        ReportGeneratedRequestBuildingFallback(method, httpMethod, request.Fallback, reportDiagnostic);
+    }
+
+    /// <summary>Reports RF006 at the declaration responsible for a method's fallback, naming the reason and remedy.</summary>
+    /// <param name="method">The Refit method.</param>
+    /// <param name="httpMethod">The method's HTTP method attribute.</param>
+    /// <param name="fallback">The classifier's fallback for the method.</param>
+    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
+    private static void ReportGeneratedRequestBuildingFallback(
+        IMethodSymbol method,
+        AttributeData? httpMethod,
+        in Refit.Generator.InlineFallback fallback,
+        Action<Diagnostic> reportDiagnostic)
+    {
+        var explanation = FallbackExplanation.Describe(method, fallback);
         reportDiagnostic(Diagnostic.Create(
             DiagnosticDescriptors.GeneratedRequestBuildingFallback,
-            FirstLocation(method),
+            FallbackExplanation.Locate(method, fallback, httpMethod),
+            CreateFallbackProperties(fallback),
             method.ContainingType.Name,
-            method.Name));
+            method.Name,
+            explanation.Problem,
+            explanation.Remedy,
+            explanation.Compatibility));
+    }
+
+    /// <summary>Carries the machine-readable fallback reason on the diagnostic for tooling and code fixes.</summary>
+    /// <param name="fallback">The classifier's fallback for the method.</param>
+    /// <returns>The diagnostic properties.</returns>
+    private static ImmutableDictionary<string, string?> CreateFallbackProperties(in Refit.Generator.InlineFallback fallback)
+    {
+        var properties = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
+        properties.Add(FallbackReasonProperty, fallback.Reason.ToString());
+        if (fallback.ParameterOrdinal >= 0)
+        {
+            properties.Add(FallbackParameterProperty, fallback.ParameterOrdinal.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        return properties.ToImmutable();
+    }
+
+    /// <summary>Reports RF015 for each placeholder in a generated request's path that no parameter fills.</summary>
+    /// <param name="method">The Refit method.</param>
+    /// <param name="httpMethod">The method's HTTP method attribute.</param>
+    /// <param name="request">The classifier's parsed request.</param>
+    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <remarks>A placeholder is bound when a parsed path parameter or path-object property covers its range - the same
+    /// ranges the emitter substitutes - so anything left over is exactly what the generated request would leave in the
+    /// URL and reject at runtime.</remarks>
+    private static void ReportUnboundRoutePlaceholders(
+        IMethodSymbol method,
+        AttributeData? httpMethod,
+        in Refit.Generator.RequestModel request,
+        Action<Diagnostic> reportDiagnostic)
+    {
+        var placeholders = Refit.Generator.Parser.ExtractPathParameterPlaceholderNames(request.Path);
+        foreach (var placeholder in placeholders.Occurrences)
+        {
+            if (IsPlaceholderBound(placeholder.Location, request.Parameters))
+            {
+                continue;
+            }
+
+            var text = request.Path[placeholder.Location];
+            reportDiagnostic(Diagnostic.Create(
+                DiagnosticDescriptors.UnboundRoutePlaceholder,
+                LocatePlaceholder(httpMethod!, text),
+                text[1..^1],
+                method.ContainingType.Name,
+                method.Name,
+                SuggestParameterName(placeholder.Name)));
+        }
+    }
+
+    /// <summary>Determines whether a parsed parameter fills a placeholder range.</summary>
+    /// <param name="range">The placeholder's range in the path.</param>
+    /// <param name="parameters">The parsed request parameters.</param>
+    /// <returns><see langword="true"/> when a path parameter or a path-object property covers the range.</returns>
+    private static bool IsPlaceholderBound(
+        Range range,
+        Refit.Generator.ImmutableEquatableArray<Refit.Generator.RequestParameterModel> parameters)
+    {
+        foreach (var parameter in parameters)
+        {
+            if (CoversRange(parameter, range))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Determines whether one parsed parameter fills a placeholder range.</summary>
+    /// <param name="parameter">The parsed request parameter.</param>
+    /// <param name="range">The placeholder's range in the path.</param>
+    /// <returns><see langword="true"/> when the parameter's path locations or path-object bindings include the range.</returns>
+    private static bool CoversRange(in Refit.Generator.RequestParameterModel parameter, Range range)
+    {
+        if (parameter.Locations is { } locations)
+        {
+            foreach (var location in locations)
+            {
+                if (location.Equals(range))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (parameter.PathObjectBindings is { } bindings)
+        {
+            foreach (var binding in bindings)
+            {
+                if (binding.Location.Equals(range))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Suggests the parameter name a placeholder expects.</summary>
+    /// <param name="placeholderName">The placeholder name, optional marker already removed.</param>
+    /// <returns>The name without a round-trip <c>**</c> prefix, and only the root of a dotted property path.</returns>
+    private static string SuggestParameterName(string placeholderName)
+    {
+        const string roundTripPrefix = "**";
+        var name = placeholderName.StartsWith(roundTripPrefix, StringComparison.Ordinal)
+            ? placeholderName[roundTripPrefix.Length..]
+            : placeholderName;
+        var dot = name.IndexOf('.');
+        return dot > 0 ? name[..dot] : name;
+    }
+
+    /// <summary>Locates a placeholder inside the HTTP method attribute's path literal.</summary>
+    /// <param name="httpMethod">The method's HTTP method attribute.</param>
+    /// <param name="placeholder">The placeholder text including its braces.</param>
+    /// <returns>The placeholder's span within the literal when it can be found, else the path argument's location.</returns>
+    /// <remarks>A placeholder only exists when the path came from the first constructor argument of a source-declared
+    /// HTTP method attribute, so the attribute, its syntax and that argument are always present here.</remarks>
+    private static Location LocatePlaceholder(AttributeData httpMethod, string placeholder)
+    {
+        var attribute = (Microsoft.CodeAnalysis.CSharp.Syntax.AttributeSyntax)httpMethod.ApplicationSyntaxReference!.GetSyntax();
+        var pathArgument = attribute.ArgumentList!.Arguments[0];
+        var literal = pathArgument.Expression.GetFirstToken();
+        var offset = literal.Text.IndexOf(placeholder, StringComparison.Ordinal);
+        return offset < 0
+            ? pathArgument.GetLocation()
+            : Location.Create(pathArgument.SyntaxTree, new(literal.SpanStart + offset, placeholder.Length));
     }
 
     /// <summary>Reports diagnostics for directly declared non-Refit methods on a Refit interface.</summary>
