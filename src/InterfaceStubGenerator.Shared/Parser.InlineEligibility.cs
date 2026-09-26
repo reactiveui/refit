@@ -40,7 +40,34 @@ internal static partial class Parser
     /// <param name="indexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c> resolved once from the
     /// compilation, or <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
     /// <returns><see langword="true"/> when the method's request is inline-eligible.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool CanBuildRequestInline(
+        IMethodSymbol methodSymbol,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        INamedTypeSymbol? formattableSymbol,
+        INamedTypeSymbol? returnTypeAdapterInterface,
+        INamedTypeSymbol[] returnTypeAdapters,
+        int? indexedCollectionFormatValue = null) =>
+        ClassifyRequest(
+            methodSymbol,
+            httpMethodBaseAttributeSymbol,
+            formattableSymbol,
+            returnTypeAdapterInterface,
+            returnTypeAdapters,
+            indexedCollectionFormatValue).CanGenerateInline;
+
+    /// <summary>Parses a method's request exactly as the generator does, so the analyzer can report why it falls back.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The resolved <c>Refit.HttpMethodAttribute</c> symbol.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="returnTypeAdapterInterface">The resolved <c>Refit.IReturnTypeAdapter`2</c> symbol, or null.</param>
+    /// <param name="returnTypeAdapters">The discovered <c>IReturnTypeAdapter</c> implementations.</param>
+    /// <param name="indexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c>, or
+    /// <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
+    /// <returns>The parsed request. <see cref="RequestModel.Fallback"/> names the limitation when
+    /// <see cref="RequestModel.CanGenerateInline"/> is unset.</returns>
+    /// <remarks>The path excludes any interface-level route prefix, so placeholder checks see only the method's own template.</remarks>
+    internal static RequestModel ClassifyRequest(
         IMethodSymbol methodSymbol,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         INamedTypeSymbol? formattableSymbol,
@@ -50,7 +77,7 @@ internal static partial class Parser
     {
         if (FindHttpMethodAttribute(methodSymbol, httpMethodBaseAttributeSymbol) is null)
         {
-            return false;
+            return RequestModel.Empty with { Fallback = InlineFallback.ForMethod(InlineFallbackReason.MissingHttpMethodAttribute) };
         }
 
         // The diagnostics collected here duplicate what the generator itself reports, so they are discarded.
@@ -76,8 +103,7 @@ internal static partial class Parser
             QualifiedTypeCache: new Dictionary<ISymbol, string>(SymbolEqualityComparer.Default),
             FormattableClassificationCache: new Dictionary<ISymbol, (bool Formattable, bool SpanFormattable)>(SymbolEqualityComparer.Default),
             IndexedCollectionFormatValue: indexedCollectionFormatValue);
-        return ParseRequest(methodSymbol, ClassifyInlineReturnShape(methodSymbol.ReturnType), context)
-            .CanGenerateInline;
+        return ParseRequest(methodSymbol, ClassifyInlineReturnShape(methodSymbol.ReturnType), context);
     }
 
     /// <summary>Classifies a return type into the shape buckets inline eligibility distinguishes.</summary>

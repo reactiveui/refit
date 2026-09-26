@@ -25,7 +25,7 @@ internal static partial class Parser
     {
         if (TryBuildPathObjectBindings(parameter, context.UrlName, context) is not { } bindings)
         {
-            return new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+            return UnsupportedParameter(parameter, parameterType, context.Generation, InlineFallbackReason.UnresolvedPathProperty);
         }
 
         var boundPropertyNames = new HashSet<string>(StringComparer.Ordinal);
@@ -40,7 +40,7 @@ internal static partial class Parser
         // back so the query is never emitted partially.
         if (!TryBuildPathResidualQuery(parameter, context.UrlName, boundPropertyNames, context.FormattableSymbol, context.Generation, out var residualQuery))
         {
-            return new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+            return UnsupportedParameter(parameter, parameterType, context.Generation, InlineFallbackReason.UnsupportedPathObjectQuery);
         }
 
         var model = BuildPathObjectParameter(parameter, parameterType, bindings, context.Generation);

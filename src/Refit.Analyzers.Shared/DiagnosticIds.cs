@@ -32,4 +32,7 @@ internal static class DiagnosticIds
 
     /// <summary>Diagnostic reported when a multipart Refit method also declares a <c>[Body]</c> parameter.</summary>
     internal const string MultipartBodyParameter = "RF012";
+
+    /// <summary>Diagnostic reported when a route placeholder binds no method parameter.</summary>
+    internal const string UnboundRoutePlaceholder = "RF015";
 }

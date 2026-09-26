@@ -57,6 +57,8 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\EnumFormatMemberModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\FormFieldModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\HeaderModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\InlineFallback.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\InlineFallbackReason.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\InlineFormatKind.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\InlineValueFormatModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\InterfaceGenerationContext.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>

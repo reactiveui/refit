@@ -37,9 +37,9 @@ internal static class AnalyzerSample
         ImmutableArray<Diagnostic> diagnostics = await compilation.WithAnalyzers([analyzer]).GetAnalyzerDiagnosticsAsync();
         Console.WriteLine(Contains(diagnostics, routeDiagnostic)); // True
 
-        const int supportedCount = 9;
-        Check.Require(supported.Length == supportedCount, "Analyzer descriptor list must contain all nine supported IDs.");
-        HashSet<string> expectedIds = new(comparer: StringComparer.Ordinal) { "RF001", routeDiagnostic, "RF004", "RF005", "RF006", "RF008", "RF009", "RF011", "RF012" };
+        const int supportedCount = 10;
+        Check.Require(supported.Length == supportedCount, "Analyzer descriptor list must contain all ten supported IDs.");
+        HashSet<string> expectedIds = new(comparer: StringComparer.Ordinal) { "RF001", routeDiagnostic, "RF004", "RF005", "RF006", "RF008", "RF009", "RF011", "RF012", "RF015" };
         foreach (DiagnosticDescriptor descriptor in supported)
         {
             Check.Require(expectedIds.Remove(descriptor.Id), "Every supported descriptor has a distinct documented ID.");

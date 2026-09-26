@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -18,7 +19,8 @@ internal static partial class Parser
     /// <param name="allowImplicitBody">Whether an un-attributed complex parameter becomes the implicit request body.</param>
     /// <param name="isMultipart">Whether the method is multipart, so un-attributed parameters become form parts.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
-    /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
+    /// <param name="fallback">Receives the first parameter that is not supported and why, or
+    /// <see cref="InlineFallback.None"/> when every parameter is supported.</param>
     /// <returns>The parsed request parameter models.</returns>
     internal static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
         in ImmutableArray<IParameterSymbol> parameters,
@@ -27,11 +29,11 @@ internal static partial class Parser
         bool allowImplicitBody,
         bool isMultipart,
         in InterfaceGenerationContext context,
-        out bool canGenerateInline)
+        out InlineFallback fallback)
     {
+        fallback = InlineFallback.None;
         if (parameters.IsEmpty)
         {
-            canGenerateInline = true;
             return ImmutableEquatableArray<RequestParameterModel>.Empty;
         }
 
@@ -39,30 +41,14 @@ internal static partial class Parser
         var implicitBodyEligible = allowImplicitBody && !HasExplicitBodyParameter(parameters);
 
         var requestParameters = new RequestParameterModel[parameters.Length];
-        var bodyCount = 0;
-        var cancellationTokenCount = 0;
-        var headerCollectionCount = 0;
+        var counts = default(SingleBindingCounts);
         var implicitBodyAssigned = false;
-        canGenerateInline = true;
 
         for (var i = 0; i < parameters.Length; i++)
         {
             var parameter = parameters[i];
-            var name = ResolveUrlName(parameter);
-            ImmutableEquatableArray<Range>? location =
-                parameterLocations.TryGetDirectLocations(name, out var directLocations) ? directLocations : null;
-            ImmutableEquatableArray<Range>? roundTripLocation = null;
-            if (location is null
-                && parameterLocations.HasRoundTrip
-                && parameterLocations.TryGetRoundTripLocations(name, out var roundTripLocations))
-            {
-                roundTripLocation = roundTripLocations;
-            }
-
-            var classification = new LooseParameterContext(
-                name,
-                location,
-                roundTripLocation,
+            var classification = CreateLooseParameterContext(
+                parameter,
                 parameterLocations,
                 formattableSymbol,
                 implicitBodyEligible,
@@ -70,55 +56,128 @@ internal static partial class Parser
                 context);
             var parsedParameter = ParseRequestParameter(parameter, classification, ref implicitBodyAssigned);
             requestParameters[i] = parsedParameter.Parameter;
-            bodyCount += parsedParameter.BodyCount;
-            cancellationTokenCount += parsedParameter.CancellationTokenCount;
-            headerCollectionCount += parsedParameter.HeaderCollectionCount;
-            canGenerateInline &= parsedParameter.CanGenerateInline;
+            counts = counts.Add(parsedParameter);
+            if (fallback.IsNone)
+            {
+                fallback = ResolveParameterFallback(parsedParameter, counts, i);
+            }
         }
-
-        // More than one body, cancellation token, header collection, or [Authorize] parameter is an invalid
-        // definition the reflection builder rejects; fall back so its validation still throws.
-        canGenerateInline &= HasInlineableParameterCounts(
-            bodyCount,
-            cancellationTokenCount,
-            headerCollectionCount,
-            requestParameters);
 
         return ImmutableEquatableArrayFactory.FromArray(requestParameters);
     }
 
-    /// <summary>Determines whether the single-instance parameter counts allow inline generation.</summary>
-    /// <param name="bodyCount">The number of body parameters.</param>
-    /// <param name="cancellationTokenCount">The number of cancellation token parameters.</param>
-    /// <param name="headerCollectionCount">The number of header collection parameters.</param>
-    /// <param name="parameters">The parsed request parameters, scanned for <c>[Authorize]</c> parameters.</param>
-    /// <returns><see langword="true"/> when no single-instance binding appears more than once.</returns>
-    internal static bool HasInlineableParameterCounts(
-        int bodyCount,
-        int cancellationTokenCount,
-        int headerCollectionCount,
-        RequestParameterModel[] parameters) =>
-        bodyCount <= 1
-        && cancellationTokenCount <= 1
-        && headerCollectionCount <= 1
-        && CountAuthorizeParameters(parameters) <= 1;
-
-    /// <summary>Counts the <c>[Authorize]</c> parameters (Authorization headers carrying a scheme prefix).</summary>
-    /// <param name="parameters">The parsed request parameters.</param>
-    /// <returns>The number of <c>[Authorize]</c> parameters.</returns>
-    internal static int CountAuthorizeParameters(RequestParameterModel[] parameters)
+    /// <summary>Builds the lookup state used to classify one parameter, resolving its path placeholders.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterLocations">The placeholder names in the URL with their locations.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="implicitBodyEligible">Whether an un-attributed complex parameter becomes the implicit request body.</param>
+    /// <param name="isMultipart">Whether the method is multipart.</param>
+    /// <param name="context">The interface generation context.</param>
+    /// <returns>The classification context for the parameter.</returns>
+    internal static LooseParameterContext CreateLooseParameterContext(
+        IParameterSymbol parameter,
+        in PathParameterLocations parameterLocations,
+        INamedTypeSymbol? formattableSymbol,
+        bool implicitBodyEligible,
+        bool isMultipart,
+        in InterfaceGenerationContext context)
     {
-        var count = 0;
-        foreach (var parameter in parameters)
+        var name = ResolveUrlName(parameter);
+        ImmutableEquatableArray<Range>? location =
+            parameterLocations.TryGetDirectLocations(name, out var directLocations) ? directLocations : null;
+        ImmutableEquatableArray<Range>? roundTripLocation = null;
+        if (location is null
+            && parameterLocations.HasRoundTrip
+            && parameterLocations.TryGetRoundTripLocations(name, out var roundTripLocations))
         {
-            if (parameter is { Kind: RequestParameterKind.Header, HeaderValuePrefix: not null })
-            {
-                count++;
-            }
+            roundTripLocation = roundTripLocations;
         }
 
-        return count;
+        return new(
+            name,
+            location,
+            roundTripLocation,
+            parameterLocations,
+            formattableSymbol,
+            implicitBodyEligible,
+            isMultipart,
+            context);
     }
+
+    /// <summary>Resolves why a parameter stops inline generation, if it does.</summary>
+    /// <param name="parsedParameter">The parsed parameter.</param>
+    /// <param name="counts">The single-instance binding counts up to and including this parameter.</param>
+    /// <param name="ordinal">The parameter's ordinal.</param>
+    /// <returns>The parameter's fallback, or <see cref="InlineFallback.None"/> when it is supported.</returns>
+    /// <remarks>More than one body, cancellation token, header collection, or <c>[Authorize]</c> parameter is an invalid
+    /// definition the reflection builder rejects; the method falls back so its validation still throws, and the repeat
+    /// is reported at the parameter that exceeds the limit.</remarks>
+    internal static InlineFallback ResolveParameterFallback(
+        in ParsedRequestParameter parsedParameter,
+        in SingleBindingCounts counts,
+        int ordinal)
+    {
+        var reason = parsedParameter.CanGenerateInline ? counts.Problem : parsedParameter.FallbackReason;
+        return reason == InlineFallbackReason.None ? InlineFallback.None : new(reason, ordinal);
+    }
+
+    /// <summary>Determines whether a parsed parameter is an <c>[Authorize]</c> binding (an Authorization header carrying a scheme prefix).</summary>
+    /// <param name="parameter">The parsed request parameter.</param>
+    /// <returns><see langword="true"/> for an <c>[Authorize]</c> parameter.</returns>
+    internal static bool IsAuthorizeParameter(in RequestParameterModel parameter) =>
+        parameter is { Kind: RequestParameterKind.Header, HeaderValuePrefix: not null };
+
+    /// <summary>Builds the parse result for a parameter that cannot be emitted inline.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <param name="reason">Why the parameter cannot be emitted inline.</param>
+    /// <returns>The unsupported parameter and its fallback reason.</returns>
+    internal static ParsedRequestParameter UnsupportedParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in InterfaceGenerationContext context,
+        InlineFallbackReason reason) =>
+        new(UnsupportedRequestParameter(parameter, parameterType, context), false, 0, 0, 0) { FallbackReason = reason };
+
+    /// <summary>Builds the parse result for a query parameter whose value cannot be flattened inline.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The unsupported parameter, blamed on its <c>[QueryConverter]</c> when it has one.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ParsedRequestParameter UnsupportedQueryParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in InterfaceGenerationContext context) =>
+        UnsupportedParameter(
+            parameter,
+            parameterType,
+            context,
+            HasParameterAttribute(parameter, QueryConverterAttributeDisplayName)
+                ? InlineFallbackReason.UnreadableQueryConverter
+                : InlineFallbackReason.UnsupportedQueryType);
+
+    /// <summary>Builds the parse result for a <c>[Url]</c> parameter.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="urlParameter">The parsed <c>[Url]</c> model.</param>
+    /// <returns>The parsed parameter; only a <c>string</c> or <c>Uri</c> can be emitted inline, and any other type falls
+    /// back to the reflection builder, whose validation throws for an invalid value.</returns>
+    internal static ParsedRequestParameter UrlParameterResult(IParameterSymbol parameter, in RequestParameterModel urlParameter) =>
+        IsInlineUrlType(parameter.Type)
+            ? new(urlParameter, true, 0, 0, 0)
+            : new(urlParameter, false, 0, 0, 0) { FallbackReason = InlineFallbackReason.UrlParameterType };
+
+    /// <summary>Builds the parse result for an explicit <c>[Body]</c> parameter.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="bodyParameter">The parsed body model.</param>
+    /// <returns>The parsed parameter. A form-url-encoded body of a type that references a type parameter would emit
+    /// <c>CreateUrlEncodedBodyContent&lt;T&gt;</c>, whose <c>[DynamicallyAccessedMembers(PublicProperties)]</c> an open
+    /// type parameter cannot satisfy (IL2091), so it keeps using the reflection request builder.</returns>
+    internal static ParsedRequestParameter BodyParameterResult(IParameterSymbol parameter, in RequestParameterModel bodyParameter) =>
+        bodyParameter.BodySerializationMethod != "UrlEncoded" || !ReferencesTypeParameter(parameter.Type)
+            ? new(bodyParameter, true, 1, 0, 0)
+            : new(bodyParameter, false, 1, 0, 0) { FallbackReason = InlineFallbackReason.GenericUrlEncodedBody };
 
     /// <summary>Resolves a parameter's URL name, honoring an <c>[AliasAs]</c> attribute.</summary>
     /// <param name="parameter">The parameter symbol.</param>
@@ -161,21 +220,15 @@ internal static partial class Parser
             return infrastructureParameter;
         }
 
-        // A [Url] parameter supplies the absolute request URI. Only a string or Uri can be emitted inline; any other
-        // type falls back to the reflection builder (eligibility false), whose validation throws for an invalid value.
+        // A [Url] parameter supplies the absolute request URI.
         if (TryParseUrlParameter(parameter, parameterType, context.Generation, out var urlParameter))
         {
-            return new(urlParameter, IsInlineUrlType(parameter.Type), 0, 0, 0);
+            return UrlParameterResult(parameter, urlParameter);
         }
 
         if (TryParseBodyParameter(parameter, parameterType, context.Generation, out var bodyParameter))
         {
-            // A form-url-encoded body of a type that references a type parameter would emit
-            // CreateUrlEncodedBodyContent<T>, whose [DynamicallyAccessedMembers(PublicProperties)] an open type
-            // parameter cannot satisfy (IL2091), so it keeps using the reflection request builder.
-            var bodyEligible = bodyParameter.BodySerializationMethod != "UrlEncoded"
-                || !ReferencesTypeParameter(parameter.Type);
-            return new(bodyParameter, bodyEligible, 1, 0, 0);
+            return BodyParameterResult(parameter, bodyParameter);
         }
 
         if (TryGetHeaderName(parameter, out var headerName))
@@ -446,7 +499,7 @@ internal static partial class Parser
                 0,
                 0,
                 0)
-            : new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+            : UnsupportedParameter(parameter, parameterType, context.Generation, InlineFallbackReason.UnsupportedPathParameterType);
 
     /// <summary>Determines whether a plain <c>{name}</c> path parameter can be bound inline.</summary>
     /// <param name="type">The declared parameter type.</param>
@@ -487,7 +540,7 @@ internal static partial class Parser
         // value's string form on '/', formatting and escaping each segment while preserving the separators, exactly
         // as the reflection builder does — so any type is supported inline.
         return encoded && parameter.Type.SpecialType != SpecialType.System_String
-            ? new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0)
+            ? UnsupportedParameter(parameter, parameterType, context.Generation, InlineFallbackReason.EncodedRoundTripNotString)
             : new(
                 PathRequestParameter(parameter, parameterType, roundTripLocations, context.Generation) with
                 {
@@ -555,7 +608,7 @@ internal static partial class Parser
 
         return TryBuildQueryModel(parameter, context.UrlName, context.FormattableSymbol, context.Generation, out var query)
             ? new(QueryRequestParameter(parameter, parameterType, query!, context.Generation), true, 0, 0, 0)
-            : new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+            : UnsupportedQueryParameter(parameter, parameterType, context.Generation);
     }
 
     /// <summary>Determines whether a parameter matches the reflection builder's implicit body candidacy rules.</summary>
@@ -581,7 +634,7 @@ internal static partial class Parser
     {
         if (implicitBodyAssigned)
         {
-            return new(UnsupportedRequestParameter(parameter, parameterType, context), false, 0, 0, 0);
+            return UnsupportedParameter(parameter, parameterType, context, InlineFallbackReason.SecondImplicitBody);
         }
 
         implicitBodyAssigned = true;
@@ -612,7 +665,7 @@ internal static partial class Parser
         // A [Property] parameter that also carries [Query] feeds both the request options and the query string.
         return TryBuildQueryModel(parameter, urlName, formattableSymbol, context, out var propertyQuery)
             ? new(propertyParameter with { Query = propertyQuery }, true, 0, 0, 0)
-            : new(UnsupportedRequestParameter(parameter, parameterType, context), false, 0, 0, 0);
+            : UnsupportedQueryParameter(parameter, parameterType, context);
     }
 
     /// <summary>Builds a query request parameter model.</summary>
