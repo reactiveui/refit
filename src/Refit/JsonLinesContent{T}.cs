@@ -120,19 +120,22 @@ public sealed class JsonLinesContent<T> : HttpContent
             return await pending.ConfigureAwait(false);
         }
 
+        // Waiting on both means a failed flush still lets the producer's step finish before the exception propagates.
         var moveNext = pending.AsTask();
-        try
-        {
-            await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch
-        {
-            await moveNext.ContinueWith(static _ => { }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default).ConfigureAwait(false);
-            throw;
-        }
-
+        await Task.WhenAll(FlushAsync(stream, cancellationToken), moveNext).ConfigureAwait(false);
         return await moveNext.ConfigureAwait(false);
     }
+
+    /// <summary>Flushes the stream, reporting a synchronous failure through the returned task.</summary>
+    /// <param name="stream">The request body stream.</param>
+    /// <param name="cancellationToken">The send's cancellation token.</param>
+    /// <returns>A task that completes when the flush does.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Performance",
+        "PSH1311:Return the task directly instead of awaiting it",
+        Justification = "Awaiting turns a synchronous throw from FlushAsync into a faulted task, so Task.WhenAll still waits for the producer's step.")]
+    private static async Task FlushAsync(Stream stream, CancellationToken cancellationToken) =>
+        await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
 
     /// <summary>Writes the line-feed byte that separates or terminates lines.</summary>
     /// <param name="stream">The request body stream.</param>

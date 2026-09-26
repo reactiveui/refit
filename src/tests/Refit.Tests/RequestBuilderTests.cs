@@ -346,6 +346,24 @@ public partial class RequestBuilderTests
         }
     }
 
+    /// <summary>Verifies a class implementing <see cref="IAsyncEnumerable{T}"/> (rather than being that interface
+    /// itself) is recognized as an asynchronous JSON Lines body through its declared interfaces.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task FindAsyncJsonLinesElementTypeFindsTheElementTypeOfAnImplementingClass() =>
+        await Assert
+            .That(RequestBuilderImplementation.FindAsyncJsonLinesElementType(typeof(AsyncEnumerableClassBody)))
+            .IsEqualTo(typeof(JsonLineRecord));
+
+    /// <summary>Verifies a type implementing two distinct <see cref="IAsyncEnumerable{T}"/> interfaces is ambiguous
+    /// and is not treated as an asynchronous JSON Lines body.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task FindAsyncJsonLinesElementTypeReturnsNullForAnAmbiguousImplementer() =>
+        await Assert
+            .That(RequestBuilderImplementation.FindAsyncJsonLinesElementType(typeof(AmbiguousAsyncEnumerableBody)))
+            .IsNull();
+
     /// <summary>A stream response is wrapped in an ApiResponse.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -544,5 +562,37 @@ public partial class RequestBuilderTests
 
             await Assert.That(shouldDie).IsFalse();
         }
+    }
+
+    /// <summary>A class implementing <see cref="IAsyncEnumerable{T}"/> alongside an unrelated interface, used to
+    /// exercise the branch of <see cref="RequestBuilderImplementation.FindAsyncJsonLinesElementType"/> that finds the
+    /// element type through <see cref="Type.GetInterfaces"/> rather than the declared type itself.</summary>
+    private sealed class AsyncEnumerableClassBody : IAsyncEnumerable<JsonLineRecord>, IDisposable
+    {
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+        }
+
+        /// <inheritdoc/>
+        public async IAsyncEnumerator<JsonLineRecord> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            yield return new JsonLineRecord { Id = "1", Name = "a" };
+        }
+    }
+
+    /// <summary>A type implementing two distinct closed <see cref="IAsyncEnumerable{T}"/> interfaces, used to
+    /// exercise the ambiguous-implementer branch of
+    /// <see cref="RequestBuilderImplementation.FindAsyncJsonLinesElementType"/>.</summary>
+    private sealed class AmbiguousAsyncEnumerableBody : IAsyncEnumerable<JsonLineRecord>, IAsyncEnumerable<string>
+    {
+        /// <inheritdoc/>
+        IAsyncEnumerator<JsonLineRecord> IAsyncEnumerable<JsonLineRecord>.GetAsyncEnumerator(CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Not used: this type only exercises the ambiguous-implementer branch of FindAsyncJsonLinesElementType.");
+
+        /// <inheritdoc/>
+        IAsyncEnumerator<string> IAsyncEnumerable<string>.GetAsyncEnumerator(CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Not used: this type only exercises the ambiguous-implementer branch of FindAsyncJsonLinesElementType.");
     }
 }
