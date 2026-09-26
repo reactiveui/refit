@@ -206,6 +206,34 @@ public sealed class GeneratedRequestBuildingFallbackReasonTests
         }
     }
 
+    /// <summary>Verifies a method-level reason with no more precise declaration, and a method with no source declaration,
+    /// are both located on the method itself.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MethodLevelFallbackWithoutPreciseDeclarationIsLocatedOnTheMethod()
+    {
+        var compilation = Fixture.CreateLibrary(
+            CSharpSyntaxTree.ParseText(
+                """
+                using Refit;
+                using System.Threading.Tasks;
+
+                public interface IApi
+                {
+                    [Get("/x")]
+                    Task<string> Call(int value);
+                }
+                """));
+        var sourceMethod = compilation.GetTypeByMetadataName("IApi")!.GetMembers("Call").OfType<IMethodSymbol>().Single();
+        var metadataMethod = compilation.GetSpecialType(SpecialType.System_Object).GetMembers(nameof(ToString)).OfType<IMethodSymbol>().Single();
+
+        var paged = AnalyzerExplanation.Locate(sourceMethod, new(AnalyzerFallbackReason.InvalidPagedMethod, -1), null);
+        var noSource = AnalyzerExplanation.Locate(metadataMethod, new(AnalyzerFallbackReason.UnsupportedReturnType, -1), null);
+
+        await Assert.That(paged).IsEqualTo(sourceMethod.Locations[0]);
+        await Assert.That(noSource).IsEqualTo(metadataMethod.Locations.FirstOrDefault());
+    }
+
     /// <summary>Verifies a supported shape carries no fallback reason, so RF006 disappears without analyzer changes.</summary>
     /// <param name="body">The interface member body source.</param>
     /// <returns>A task representing the asynchronous test.</returns>

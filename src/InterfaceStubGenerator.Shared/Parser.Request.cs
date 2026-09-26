@@ -290,17 +290,6 @@ internal static partial class Parser
             : InlineFallback.None;
     }
 
-    /// <summary>Determines whether a method's <c>[Url]</c> binding, if any, can be emitted inline.</summary>
-    /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
-    /// <param name="parameters">The parsed request parameter models.</param>
-    /// <returns><see langword="true"/> when the method has no <c>[Url]</c> parameter, or has exactly one alongside an
-    /// empty path template and no path placeholders. Other shapes fall back to the reflection builder, whose
-    /// validation throws for the invalid combination.</returns>
-    internal static bool IsUrlBindingSupported(
-        in RequestPathForms path,
-        ImmutableEquatableArray<RequestParameterModel> parameters) =>
-        FindUnsupportedUrlBinding(path, parameters) < 0;
-
     /// <summary>Finds the <c>[Url]</c> parameter that cannot be emitted inline, if any.</summary>
     /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
     /// <param name="parameters">The parsed request parameter models.</param>

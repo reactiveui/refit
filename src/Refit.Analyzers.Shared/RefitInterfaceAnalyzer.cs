@@ -308,7 +308,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
             var text = request.Path[placeholder.Location];
             reportDiagnostic(Diagnostic.Create(
                 DiagnosticDescriptors.UnboundRoutePlaceholder,
-                LocatePlaceholder(httpMethod, text) ?? FirstLocation(method),
+                LocatePlaceholder(httpMethod!, text),
                 text[1..^1],
                 method.ContainingType.Name,
                 method.Name,
@@ -383,16 +383,12 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <param name="httpMethod">The method's HTTP method attribute.</param>
     /// <param name="placeholder">The placeholder text including its braces.</param>
     /// <returns>The placeholder's span within the literal when it can be found, else the path argument's location.</returns>
-    private static Location? LocatePlaceholder(AttributeData? httpMethod, string placeholder)
+    /// <remarks>A placeholder only exists when the path came from the first constructor argument of a source-declared
+    /// HTTP method attribute, so the attribute, its syntax and that argument are always present here.</remarks>
+    private static Location LocatePlaceholder(AttributeData httpMethod, string placeholder)
     {
-        if (httpMethod?.ApplicationSyntaxReference?.GetSyntax() is not Microsoft.CodeAnalysis.CSharp.Syntax.AttributeSyntax
-            {
-                ArgumentList.Arguments: [var pathArgument, ..],
-            })
-        {
-            return null;
-        }
-
+        var attribute = (Microsoft.CodeAnalysis.CSharp.Syntax.AttributeSyntax)httpMethod.ApplicationSyntaxReference!.GetSyntax();
+        var pathArgument = attribute.ArgumentList!.Arguments[0];
         var literal = pathArgument.Expression.GetFirstToken();
         var offset = literal.Text.IndexOf(placeholder, StringComparison.Ordinal);
         return offset < 0
