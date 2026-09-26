@@ -70,6 +70,24 @@ public class AnalyzerPackagingTests
             .IsEqualTo($"analyzers/dotnet/roslyn{ReadMinimumCompilerVersion()}/cs");
     }
 
+    /// <summary>
+    /// Verifies the opt-in generated-only profile promotes RF006 to an error only when requested. It must run as a target:
+    /// the consumer's project body, which sets the property, is evaluated after this .props file.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequireGeneratedRequestsProfileIsOptInAndPromotesOnlyRf006()
+    {
+        var target = XDocument
+            .Load(RefitPackageLayout.FindRepositoryFile("Refit/targets/refit.props"))
+            .Descendants("Target")
+            .Single(static element => (string?)element.Attribute("Name") == "RefitRequireGeneratedRequests");
+
+        await Assert.That((string?)target.Attribute("Condition")).IsEqualTo("'$(RefitRequireGeneratedRequests)' == 'true'");
+        await Assert.That((string?)target.Attribute("BeforeTargets")).IsEqualTo("CoreCompile");
+        await Assert.That(target.Descendants("WarningsAsErrors").Single().Value).IsEqualTo("$(WarningsAsErrors);RF006");
+    }
+
     /// <summary>Reads the Roslyn version of the shipped analyzer slot from refit.props.</summary>
     /// <returns>The declared version, such as <c>4.8</c>.</returns>
     internal static string ReadMinimumCompilerVersion() =>

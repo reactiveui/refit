@@ -17,6 +17,23 @@
     <CompilerVisibleProperty Include="DisableRefitSourceGenerator"/>
   </ItemGroup>
 
+  <!--
+  Opt-in generated-only build profile. Set RefitRequireGeneratedRequests to true in a project that publishes with
+  Native AOT or registers clients generated-only, and every RF006 reflection fallback fails the build instead of
+  surfacing as a runtime exception. It is off by default so compatibility builds that deliberately use
+  Refit.Reflection are unaffected; 'dotnet_diagnostic.RF006.severity = error' in .editorconfig is the per-folder
+  equivalent.
+
+  This has to be a target: the project body that sets the property is evaluated after this .props file.
+  -->
+  <Target Name="RefitRequireGeneratedRequests"
+          BeforeTargets="CoreCompile"
+          Condition="'$(RefitRequireGeneratedRequests)' == 'true'">
+    <PropertyGroup>
+      <WarningsAsErrors>$(WarningsAsErrors);RF006</WarningsAsErrors>
+    </PropertyGroup>
+  </Target>
+
   <PropertyGroup>
     <!-- The Roslyn version of the single analyzers\dotnet\roslyn<version>\cs slot in this package. -->
     <_RefitMinimumCompilerVersion>4.8</_RefitMinimumCompilerVersion>
