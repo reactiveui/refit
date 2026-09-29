@@ -1,0 +1,6 @@
+<Project>
+  <!-- Opts out of the repository's central package management; the project file states its own versions. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

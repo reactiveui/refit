@@ -34,5 +34,7 @@
     <Compile Include="../../Rationale/*.cs" Link="Rationale/%(Filename)%(Extension)" />
     <Compile Include="../../Aot/*.cs" Link="Aot/%(Filename)%(Extension)" />
     <Compile Include="../../JsonContexts/*.cs" Link="JsonContexts/%(Filename)%(Extension)" />
+    <Compile Include="../../Resilience/*.cs" Link="Resilience/%(Filename)%(Extension)" />
+    <Compile Include="../../Telemetry/*.cs" Link="Telemetry/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

@@ -43,6 +43,8 @@ and [AOT guidance](https://www.reactiveui.net/documentation/refit/aot/).
 | Lazy paging over cursors, offsets and `Link` headers with `PagedEnumerable<TPage, TItem>` | [Pagination](https://www.reactiveui.net/documentation/refit/results/pagination/) |
 | JSON contexts registered at client creation and per-method `JsonTypeInfo<T>` parameters | [JSON](https://www.reactiveui.net/documentation/refit/serialization/json/) |
 | HTTP, transport and deserialization failures | [Errors](https://www.reactiveui.net/documentation/refit/results/errors/) |
+| Retries, timeouts and a fresh token for each retry with Microsoft's resilience handler | [Resilience](https://www.reactiveui.net/documentation/refit/clients/resilience/) |
+| OpenTelemetry spans and request-duration metrics labelled by Refit method and route template | [Telemetry](https://www.reactiveui.net/documentation/refit/clients/telemetry/) |
 | Local replies, request verification and simulated faults | [Testing](https://www.reactiveui.net/documentation/refit/testing/) |
 | Deterministic tests of streamed replies, stalled or dropped bodies, streaming uploads and simulated time | [Testing streams, uploads and time](https://www.reactiveui.net/documentation/refit/testing/streaming/) |
 

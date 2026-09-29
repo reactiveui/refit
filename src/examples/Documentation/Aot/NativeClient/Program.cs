@@ -49,6 +49,10 @@ await Aot.RunAsync(host);
 
 await Refit.Documentation.JsonContexts.JsonContextSample.RunAsync();
 
+await Resilience.RunAsync();
+
+await Telemetry.RunAsync();
+
 Console.WriteLine("Native AOT documentation example passed.");
 
 /// <summary>The entry point for executable native documentation checks.</summary>
