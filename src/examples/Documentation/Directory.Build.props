@@ -5,5 +5,10 @@
   <ItemGroup>
     <!-- Every page project compiles the shared example sources, and the testing examples use FakeTimeProvider. -->
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <!-- The resilience and telemetry examples add these to generated clients. -->
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="OpenTelemetry" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
   </ItemGroup>
 </Project>

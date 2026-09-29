@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+  A Native AOT application that consumes Refit from locally packed NuGet packages rather than project references.
+  It proves what the project-reference smoke test cannot: the packages restore, the generator and analyzers arrive
+  through the analyzer slot, the buildTransitive props apply, and the published binary runs each scenario.
+  See README.md for the pack and publish commands.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TrimMode>full</TrimMode>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Any request Refit cannot generate fails the build (RF006), the setting a generated-only application uses. -->
+    <RefitRequireGeneratedRequests>true</RefitRequireGeneratedRequests>
+
+    <!-- Refit packages resolve only from obj/feed (see NuGet.config), so the floating version picks the newest pack. -->
+    <RefitPackageVersion Condition="'$(RefitPackageVersion)' == ''">*-*</RefitPackageVersion>
+
+    <!-- A private package folder, so a repack under the same version is never served from the machine-wide cache. -->
+    <RestorePackagesPath>$(MSBuildThisFileDirectory)obj/nuget-packages/</RestorePackagesPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Refit" Version="$(RefitPackageVersion)" />
+    <PackageReference Include="Refit.HttpClientFactory" Version="$(RefitPackageVersion)" />
+    <PackageReference Include="Refit.Testing" Version="$(RefitPackageVersion)" />
+  </ItemGroup>
+
+  <!-- Drops previously restored Refit packages so each restore extracts the ones just packed into obj/feed. -->
+  <Target Name="ForgetRestoredRefitPackages" BeforeTargets="Restore;_GenerateRestoreGraph">
+    <ItemGroup>
+      <_RestoredRefitPackage Include="$([System.IO.Directory]::GetDirectories('$(RestorePackagesPath)', 'refit*'))"
+                             Condition="Exists('$(RestorePackagesPath)')" />
+    </ItemGroup>
+    <RemoveDir Directories="@(_RestoredRefitPackage)" />
+  </Target>
+
+  <!-- Fails the build when the package's buildTransitive props did not apply, which a project reference cannot show. -->
+  <Target Name="VerifyRefitPackageProps" AfterTargets="RefitRequireGeneratedRequests" BeforeTargets="CoreCompile">
+    <Error Condition="'$(RefitGeneratedRequestBuilding)' != 'true'"
+           Code="SMOKE001"
+           Text="Refit's buildTransitive props were not imported from the package: RefitGeneratedRequestBuilding is '$(RefitGeneratedRequestBuilding)'." />
+    <Error Condition="!$(WarningsAsErrors.Contains('RF006'))"
+           Code="SMOKE002"
+           Text="RefitRequireGeneratedRequests did not promote RF006 to an error. WarningsAsErrors is '$(WarningsAsErrors)'." />
+  </Target>
+</Project>

@@ -59,6 +59,10 @@
   <ItemGroup Label="Examples">
     <PackageVersion Include="Serilog" Version="4.4.0"/>
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1"/>
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0"/>
+    <PackageVersion Include="OpenTelemetry" Version="1.19.1"/>
+    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.19.1"/>
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0"/>
   </ItemGroup>
 
   <!-- Legacy System.* compatibility packages, scoped to the net4*/netstandard targets.

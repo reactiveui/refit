@@ -1,0 +1,4 @@
+<Project>
+  <!-- Stops the repository's build settings from applying. This project consumes Refit the way an outside
+       application does: from packed NuGet packages, with no repository analyzers, props or project references. -->
+</Project>
