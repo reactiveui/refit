@@ -1791,7 +1791,8 @@ dotnet_diagnostic.PAS0004.severity = error # No public API baseline for this tar
 dotnet_diagnostic.PAS0005.severity = error # The public API baseline could not be read
 
 ###################
-# External scanner inspections
+# SonarCloud CI scanner overrides
+# The CI scanner supplies these analyzers. Keep these rules disabled.
 ###################
 dotnet_diagnostic.S100.severity = none # Methods and properties should be named in PascalCase — covered by SST1300
 dotnet_diagnostic.S101.severity = none # Types should be named in PascalCase — covered by SST1300

@@ -163,7 +163,6 @@
     <PackageReference Include="StyleSharp.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="PerformanceSharp.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="SecuritySharp.Analyzers" PrivateAssets="all"/>
-    <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all"/>
   </ItemGroup>
 
   <!-- Public API baselines live in <Project>/PublicAPI/<tfm>/PublicAPI.txt; shipped libraries only. -->
