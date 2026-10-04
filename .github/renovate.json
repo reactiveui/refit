@@ -75,10 +75,7 @@
             ],
             "groupName": "analyzers",
             "matchPackageNames": [
-                "/^Roslynator\\./",
-                "/^SonarAnalyzer\\./",
-                "/Sharp\\.Analyzers$/",
-                "/^Microsoft\\.VisualStudio\\.Threading\\.Analyzers$/"
+                "/Sharp\\.Analyzers$/"
             ]
         },
         {
