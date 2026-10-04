@@ -6,6 +6,19 @@
     "semanticCommits": "enabled",
     "packageRules": [
         {
+            "description": "The package smoke test uses locally packed Refit packages with a floating version.",
+            "matchManagers": [
+                "nuget"
+            ],
+            "matchFileNames": [
+                "src/Refit.NativeAotPackageSmoke/**"
+            ],
+            "matchPackageNames": [
+                "/^Refit(\\.|$)/"
+            ],
+            "enabled": false
+        },
+        {
             "description": "Use a lower-bound bump for bare or open-ended NuGet versions so Renovate preserves the permitted version range.",
             "matchManagers": [
                 "nuget"
