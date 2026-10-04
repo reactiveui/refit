@@ -19,7 +19,7 @@
     <RefitRequireGeneratedRequests>true</RefitRequireGeneratedRequests>
 
     <!-- Refit packages resolve only from obj/feed (see NuGet.config), so the floating version picks the newest pack. -->
-    <RefitPackageVersion Condition="'$(RefitPackageVersion)' == ''">*-*</RefitPackageVersion>
+    <RefitPackageVersion Condition="'$(RefitPackageVersion)' == ''">1*-*</RefitPackageVersion>
 
     <!-- A private package folder, so a repack under the same version is never served from the machine-wide cache. -->
     <RestorePackagesPath>$(MSBuildThisFileDirectory)obj/nuget-packages/</RestorePackagesPath>
