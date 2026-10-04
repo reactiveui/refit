@@ -28,7 +28,7 @@
     <PackageVersion Include="StyleSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="PerformanceSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="SecuritySharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.34.0.3385"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.35.0.4138"/>
     <PackageVersion Include="PublicApiSharp.Analyzers" Version="2.1.0"/>
   </ItemGroup>
 
