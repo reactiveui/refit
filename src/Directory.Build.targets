@@ -5,6 +5,8 @@
     <Product>$(AssemblyName) ($(TargetFramework))</Product>
     <AndroidUseIntermediateDesignerFile>False</AndroidUseIntermediateDesignerFile>
     <EnableVSTestReferences>false</EnableVSTestReferences>
+    <!-- .NET 11 RC2 UseOptimizedPublish skips CopyFilesToOutputDirectory for PublishAot, so @(FinalDocFile) is not copied to bin/. -->
+    <PublishDocumentationFile Condition="'$(PublishAot)' == 'true'">false</PublishDocumentationFile>
   </PropertyGroup>
 
   <!-- SourceLink drags in System.IO.Hashing, which floors System.Memory at assembly version 4.0.2.0.

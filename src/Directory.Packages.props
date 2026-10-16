@@ -6,7 +6,7 @@
 
   <PropertyGroup Label="Shared Version Variables">
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>5.1.2</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>5.1.4</SharpAnalyzersVersion>
     <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>
 
@@ -21,7 +21,7 @@
 
   <ItemGroup Label="Build And Versioning">
     <PackageVersion Include="MinVer" Version="8.0.0"/>
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401"/>
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.402"/>
   </ItemGroup>
 
   <ItemGroup Label="Analyzers">
@@ -46,9 +46,9 @@
   </ItemGroup>
 
   <ItemGroup Label="Test Stack">
-    <PackageVersion Include="TUnit" Version="1.72.10"/>
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2"/>
-    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0"/>
+    <PackageVersion Include="TUnit" Version="1.75.0"/>
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0"/>
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0"/>
   </ItemGroup>
 
   <ItemGroup Label="Benchmarks">
@@ -58,10 +58,10 @@
   <ItemGroup Label="Examples">
     <PackageVersion Include="Serilog" Version="4.4.0"/>
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1"/>
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0"/>
-    <PackageVersion Include="OpenTelemetry" Version="1.19.1"/>
-    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.19.1"/>
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0"/>
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0"/>
+    <PackageVersion Include="OpenTelemetry" Version="1.20.0"/>
+    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.20.0"/>
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0"/>
   </ItemGroup>
 
   <!-- Legacy System.* compatibility packages, scoped to the net4*/netstandard targets.
@@ -76,18 +76,18 @@
   <Choose>
     <When Condition="'$(TargetFramework)' == 'net11.0'">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.1.26425.128"/>
-        <PackageVersion Include="System.Net.Http.Json" Version="11.0.0-rc.1.26425.128"/>
-        <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0-rc.1.26425.128"/>
-        <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.1.26425.128"/>
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.2.26504.105"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="11.0.0-rc.2.26504.105"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0-rc.2.26504.105"/>
+        <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.2.26504.105"/>
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12"/>
-        <PackageVersion Include="System.Net.Http.Json" Version="10.0.12"/>
-        <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.12"/>
-        <PackageVersion Include="System.Text.Json" Version="10.0.12"/>
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.13"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="10.0.13"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.13"/>
+        <PackageVersion Include="System.Text.Json" Version="10.0.13"/>
       </ItemGroup>
     </Otherwise>
   </Choose>
@@ -95,30 +95,30 @@
   <Choose>
     <When Condition="'$(TargetFramework)' == 'net11.0'">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.1.26425.128"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="11.0.0-rc.1.26425.128"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="11.0.0-rc.1.26425.128"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.2.26504.105"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="11.0.0-rc.2.26504.105"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="11.0.0-rc.2.26504.105"/>
       </ItemGroup>
     </When>
     <When Condition="'$(TargetFramework)' == 'net10.0'">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.12"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.13"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.13"/>
       </ItemGroup>
     </When>
     <When Condition="'$(TargetFramework)' == 'net9.0'">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.20"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.20"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.20"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.21"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.21"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.21"/>
       </ItemGroup>
     </When>
     <When Condition="'$(TargetFramework)' == 'net8.0'">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.31"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.31"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.31"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.32"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.32"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.32"/>
       </ItemGroup>
     </When>
   </Choose>

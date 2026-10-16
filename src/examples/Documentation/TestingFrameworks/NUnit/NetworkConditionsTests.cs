@@ -40,7 +40,7 @@ public sealed class NetworkConditionsTests
 
     // Problem: what happens when the network just fails, not just returns an error status?
     [Test]
-    public void BrokenNetwork_ThrowsAConnectionError()
+    public async Task BrokenNetwork_ThrowsAConnectionError()
     {
         NetworkBehavior behavior = new()
         {
@@ -56,7 +56,7 @@ public sealed class NetworkConditionsTests
 
         // Refit never lets a transport failure escape as the raw HttpRequestException: it wraps it in an
         // ApiRequestException, copying the original exception's message across.
-        ApiRequestException? error = Assert.ThrowsAsync<ApiRequestException>(() => api.GetPersonAsync(1));
+        ApiRequestException? error = await Assert.ThrowsAsync<ApiRequestException>(() => api.GetPersonAsync(1));
 
         Assert.That(error?.Message, Is.EqualTo("Connection reset."));
     }
