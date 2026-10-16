@@ -192,6 +192,7 @@ public sealed class ApiResponse<T>(
             return;
         }
 
+        RequestExecutionHelpers.PreserveContentLengthHeader(response?.Content);
         response?.Dispose();
     }
 

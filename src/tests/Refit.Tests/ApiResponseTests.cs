@@ -585,6 +585,43 @@ public sealed class ApiResponseTests
         await Assert.That(((IApiResponse)response).StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
+    /// <summary>
+    /// Regression for #2357: accessing <c>ContentHeaders.ContentLength</c> after <see cref="ApiResponse{T}"/> or
+    /// <see cref="ApiException"/> disposes the underlying <see cref="HttpContent"/> must not throw
+    /// <see cref="ObjectDisposedException"/> when no <c>Content-Length</c> header was present on the response.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ContentHeadersContentLengthSurvivesDisposal()
+    {
+        const long explicitLength = 42L;
+
+        using var unknownLengthResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = new(HttpMethod.Get, ExampleUri), Content = new UnknownLengthContent(), };
+        var apiResponse = new ApiResponse<string>(unknownLengthResponse, "body", new());
+        apiResponse.Dispose();
+
+        await Assert.That(apiResponse.ContentHeaders).IsNotNull();
+        await Assert.That(apiResponse.ContentHeaders!.ContentLength).IsNull();
+
+        var explicitContent = new UnknownLengthContent { Headers = { ContentLength = explicitLength } };
+        using var explicitLengthResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = new(HttpMethod.Get, ExampleUri), Content = explicitContent, };
+        var explicitApiResponse = new ApiResponse<string>(explicitLengthResponse, "body", new());
+        explicitApiResponse.Dispose();
+
+        await Assert.That(explicitApiResponse.ContentHeaders).IsNotNull();
+        await Assert.That(explicitApiResponse.ContentHeaders!.ContentLength).IsEqualTo(explicitLength);
+
+        using var errorHttpResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = new(HttpMethod.Get, ExampleUri), Content = new UnknownLengthContent(), };
+        var apiException = await ApiException.Create(
+            errorHttpResponse.RequestMessage!,
+            HttpMethod.Get,
+            errorHttpResponse,
+            new());
+
+        await Assert.That(apiException.ContentHeaders).IsNotNull();
+        await Assert.That(apiException.ContentHeaders!.ContentLength).IsNull();
+    }
+
     /// <summary>Yields one constructed response per interesting state for exhaustive cross-checks.</summary>
     /// <returns>The constructed responses; each must be disposed by the caller.</returns>
     private static IEnumerable<ApiResponse<string>> EnumerateResponseStates()
@@ -614,4 +651,19 @@ public sealed class ApiResponseTests
     /// <returns>The response message.</returns>
     private static HttpResponseMessage CreateResponse(HttpStatusCode statusCode, string content) =>
         new(statusCode) { RequestMessage = new(HttpMethod.Get, ExampleUri), Content = new StringContent(content), };
+
+    /// <summary>HTTP content whose length cannot be computed on demand, matching unbuffered network stream content.</summary>
+    private sealed class UnknownLengthContent : HttpContent
+    {
+        /// <inheritdoc />
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.CompletedTask;
+
+        /// <inheritdoc />
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+    }
 }

@@ -588,6 +588,55 @@ public partial class GeneratedRequestRunnerTests
         }
     }
 
+    /// <summary>Simulates a single-read network response content (<c>HttpConnectionResponseContent</c>) that fails mid-stream
+    /// during <c>LoadIntoBufferAsync</c> and subsequently rejects a second read with "The stream was already consumed".</summary>
+    private sealed class SingleReadFailingBufferContent : HttpContent
+    {
+        /// <summary>The transport exception thrown on the initial buffering read.</summary>
+        private readonly Exception _transportException;
+
+        /// <summary>Tracks whether the underlying response stream was already consumed by buffering.</summary>
+        private bool _consumed;
+
+        /// <summary>Initializes a new instance of the <see cref="SingleReadFailingBufferContent"/> class.</summary>
+        /// <param name="transportException">The transport exception to throw when buffering reads the stream.</param>
+        public SingleReadFailingBufferContent(Exception transportException) =>
+            _transportException = transportException;
+
+        /// <inheritdoc />
+        protected override Task SerializeToStreamAsync(
+            Stream stream,
+            TransportContext? context)
+        {
+            if (_consumed)
+            {
+                throw new InvalidOperationException("The stream was already consumed. It cannot be read again.");
+            }
+
+            _consumed = true;
+            throw _transportException;
+        }
+
+        /// <inheritdoc />
+        protected override Task<Stream> CreateContentReadStreamAsync()
+        {
+            if (_consumed)
+            {
+                throw new InvalidOperationException("The stream was already consumed. It cannot be read again.");
+            }
+
+            _consumed = true;
+            throw _transportException;
+        }
+
+        /// <inheritdoc />
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+    }
+
     /// <summary>A reference type that renders itself through its format string, exercising the reference-type path of
     /// the invariant formatter.</summary>
     private sealed class FormattableReference : IFormattable

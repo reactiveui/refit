@@ -361,4 +361,64 @@ public partial class GeneratedRequestRunnerTests
 
         await Assert.That(exception!.Message).IsEqualTo("BaseAddress must be set on the HttpClient instance");
     }
+
+    /// <summary>Regression test for #2359: when response buffering fails on a single-read stream and the serializer
+    /// subsequently throws because the stream was already consumed, the original buffering transport exception is
+    /// surfaced rather than the secondary stream-consumed exception.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncPreservesBufferingExceptionWhenSerializerFailsOnConsumedContent()
+    {
+        var transportFailure = new IOException("The response ended prematurely.");
+        var handler = new CapturingHandler(
+            (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new SingleReadFailingBufferContent(transportFailure), }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var thrown = await Assert
+            .That(
+                () => GeneratedRequestRunner.SendAsync<GeneratedResult, GeneratedResult>(
+                    client,
+                    request,
+                    settings,
+                    isApiResponse: false,
+                    shouldDisposeResponse: true,
+                    bufferBody: false,
+                    CancellationToken.None))
+            .ThrowsExactly<ApiException>();
+
+        await Assert.That(thrown!.InnerException).IsTypeOf<HttpRequestException>();
+        await Assert.That(thrown.InnerException!.InnerException).IsSameReferenceAs(transportFailure);
+    }
+
+    /// <summary>Regression test for #2359: when response buffering fails on a single-read stream for an
+    /// <see cref="ApiResponse{T}"/> return shape, the captured <see cref="Exception.InnerException"/> preserves the
+    /// original buffering transport exception instead of the secondary stream-consumed exception.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncApiResponsePreservesBufferingExceptionWhenSerializerFailsOnConsumedContent()
+    {
+        var transportFailure = new IOException("The response ended prematurely.");
+        var handler = new CapturingHandler(
+            (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new SingleReadFailingBufferContent(transportFailure), }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        using var result = await GeneratedRequestRunner.SendAsync<ApiResponse<GeneratedResult>, GeneratedResult>(
+            client,
+            request,
+            settings,
+            isApiResponse: true,
+            shouldDisposeResponse: false,
+            bufferBody: false,
+            CancellationToken.None);
+
+        await Assert.That(result!.Error).IsNotNull();
+        await Assert.That(result.Error!.InnerException).IsTypeOf<HttpRequestException>();
+        await Assert.That(result.Error.InnerException!.InnerException).IsSameReferenceAs(transportFailure);
+    }
 }

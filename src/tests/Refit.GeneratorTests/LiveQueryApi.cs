@@ -245,5 +245,33 @@ public static partial class LiveQueryApi
         /// <returns>The response body.</returns>
         [Get("/indexedSimpleType")]
         Task<string> IndexedSimpleType([Query(CollectionFormat.Indexed)] Item item);
+
+        /// <summary>Sends a path parameter alongside a case-differing aliased query parameter (#2356).</summary>
+        /// <param name="id">The account identifier bound to the route.</param>
+        /// <param name="filterId">The optional filter identifier bound to the query string.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions")]
+        Task<string> CaseDifferingPathAndQuery(int id, [Query][AliasAs("ID")] int? filterId);
+
+        /// <summary>Sends a case-differing aliased query parameter declared before the path parameter (#2356).</summary>
+        /// <param name="filterId">The optional filter identifier bound to the query string.</param>
+        /// <param name="id">The account identifier bound to the route.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions")]
+        Task<string> CaseDifferingQueryThenPath([Query][AliasAs("ID")] int? filterId, int id);
+
+        /// <summary>Sends a case-differing aliased parameter without <c>[Query]</c> alongside an exact-case path parameter (#2356).</summary>
+        /// <param name="filterId">The optional filter identifier bound to the query string.</param>
+        /// <param name="id">The account identifier bound to the route.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions")]
+        Task<string> CaseDifferingWithoutQueryAttribute([AliasAs("ID")] int? filterId, int id);
+
+        /// <summary>Sends two case-differing route parameters bound to distinct case-differing placeholders (#2356).</summary>
+        /// <param name="id">The account identifier bound to <c>{id}</c>.</param>
+        /// <param name="positionId">The position identifier bound to <c>{ID}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions/{ID}")]
+        Task<string> CaseDifferingDualPathPlaceholders(int id, [AliasAs("ID")] int positionId);
     }
 }

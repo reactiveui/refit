@@ -360,4 +360,39 @@ public sealed partial class QueryRequestBuildingLiveTests
             ["9000/events/3bf@zoho.com"],
             "/base/cal/9000/events/3bf@zoho.com");
     }
+
+    /// <summary>Regression test for #2356: verifies case-differing path and query parameters bind to their respective
+    /// route placeholder and query string parameter in both generated and reflection request building.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task CaseDifferingPathAndQueryParametersMatchReflection()
+    {
+        const int accountId = 10;
+        const int filterId = 20;
+        const string expectedPositionsUri = "/base/accounts/10/positions?ID=20";
+        using var harness = LiveQueryHarness.Create();
+
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingPathAndQuery",
+            [accountId, filterId],
+            expectedPositionsUri);
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingPathAndQuery",
+            [accountId, null],
+            "/base/accounts/10/positions");
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingQueryThenPath",
+            [filterId, accountId],
+            expectedPositionsUri);
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingWithoutQueryAttribute",
+            [filterId, accountId],
+            expectedPositionsUri);
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingDualPathPlaceholders",
+            [accountId, filterId],
+            "/base/accounts/10/positions/20");
+    }
 }

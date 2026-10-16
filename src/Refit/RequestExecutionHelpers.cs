@@ -279,8 +279,36 @@ internal static partial class RequestExecutionHelpers
     /// <param name="response">The response whose content is read.</param>
     /// <returns>The response content, or empty content when none is present.</returns>
     [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Content is nullable in the BCL contract, but HttpClient always sets it, so the null-defensive fallback is unreachable.
-    internal static HttpContent EnsureResponseContent(HttpResponseMessage response) =>
-        response.Content ?? new StringContent(string.Empty);
+    internal static HttpContent EnsureResponseContent(HttpResponseMessage response)
+    {
+        var content = response.Content ?? new StringContent(string.Empty);
+        PreserveContentLengthHeader(content);
+        return content;
+    }
+
+    /// <summary>Materializes the <c>Content-Length</c> header before the content is buffered or disposed so reading
+    /// <see cref="System.Net.Http.Headers.HttpContentHeaders.ContentLength"/> after disposal returns the original header
+    /// value (or <see langword="null"/> when absent) instead of throwing <see cref="ObjectDisposedException"/> (#2357).</summary>
+    /// <param name="content">The response content whose headers should be preserved.</param>
+    internal static void PreserveContentLengthHeader(HttpContent? content)
+    {
+        if (content?.Headers is not { } headers)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!headers.ContentLength.HasValue)
+            {
+                headers.ContentLength = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            _ = ex;
+        }
+    }
 
     /// <summary>Buffers the request body and applies the authorization header when the options request it.</summary>
     /// <param name="request">The request message to prepare.</param>
@@ -636,47 +664,64 @@ internal static partial class RequestExecutionHelpers
             return default;
         }
 
-        await TryBufferContentAsync(content, cancellationToken).ConfigureAwait(false);
+        var bufferingException = await TryBufferContentAsync(content, cancellationToken).ConfigureAwait(false);
 
+        try
+        {
 #if NET8_0_OR_GREATER
-        return GeneratedRequestRunner.GetRequestJsonTypeInfo<T>(request) is { } typeInfo
-            ? await GeneratedRequestRunner.RequireJsonTypeInfoSerializer(settings)
-                .FromHttpContentAsync(content, typeInfo, cancellationToken)
-                .ConfigureAwait(false)
-            : await settings.ContentSerializer
+            return GeneratedRequestRunner.GetRequestJsonTypeInfo<T>(request) is { } typeInfo
+                ? await GeneratedRequestRunner.RequireJsonTypeInfoSerializer(settings)
+                    .FromHttpContentAsync(content, typeInfo, cancellationToken)
+                    .ConfigureAwait(false)
+                : await settings.ContentSerializer
+                    .FromHttpContentAsync<T>(content, cancellationToken)
+                    .ConfigureAwait(false);
+#else
+            _ = request;
+            return await settings.ContentSerializer
                 .FromHttpContentAsync<T>(content, cancellationToken)
                 .ConfigureAwait(false);
-#else
-        _ = request;
-        return await settings.ContentSerializer
-            .FromHttpContentAsync<T>(content, cancellationToken)
-            .ConfigureAwait(false);
 #endif
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception) when (bufferingException is not null)
+        {
+            throw Rethrow(bufferingException);
+        }
     }
 
-    /// <summary>Attempts to buffer content into memory, ignoring buffering failures but honouring cancellation.</summary>
+    /// <summary>Attempts to buffer content into memory, returning any non-cancellation failure so callers can surface it
+    /// if the subsequent serializer read fails.</summary>
     /// <param name="content">The content to buffer.</param>
     /// <param name="cancellationToken">A token to cancel buffering.</param>
-    /// <returns>A task that completes once buffering has been attempted.</returns>
+    /// <returns>The exception thrown while buffering, or <see langword="null"/> when buffering succeeded.</returns>
     /// <exception cref="OperationCanceledException">Thrown when the caller cancelled while buffering.</exception>
     /// <remarks>
-    /// Buffering is best-effort: a failure just means the serializer reads the live stream instead. Cancellation is
-    /// not, because continuing would hand the serializer partially consumed content. The check sits after the catch
-    /// rather than in a filter on it, so it also covers the targets whose <c>LoadIntoBufferAsync</c> polyfill drops
-    /// the token and therefore never throws.
+    /// Buffering is best-effort: if <c>LoadIntoBufferAsync</c> fails on a custom <see cref="HttpContent"/> whose stream
+    /// remains readable, the serializer can still succeed. When <c>LoadIntoBufferAsync</c> fails mid-stream on a
+    /// network response, however, the underlying stream is already consumed and <c>FromHttpContentAsync</c> throws a
+    /// secondary <see cref="InvalidOperationException"/>; returning <c>bufferingException</c> lets the caller rethrow
+    /// the original transport failure instead (#2359). The cancellation check sits after the catch rather than in a
+    /// filter on it, so it also covers the targets whose <c>LoadIntoBufferAsync</c> polyfill drops the token and
+    /// therefore never throws.
     /// </remarks>
-    internal static async Task TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
+    internal static async Task<Exception?> TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
     {
+        Exception? failure = null;
         try
         {
             await content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception bufferingException)
         {
-            _ = bufferingException;
+            failure = bufferingException;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+        return failure;
     }
 
     /// <summary>The outcome of attempting to send a request.</summary>

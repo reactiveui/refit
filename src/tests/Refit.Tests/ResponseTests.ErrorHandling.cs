@@ -201,4 +201,32 @@ public sealed partial class ResponseTests
 
         await Assert.That(ex!.Message).Contains("RequestMessage", StringComparison.Ordinal);
     }
+
+    /// <summary>Regression test for #2357: accessing <c>IApiResponse.ContentHeaders.ContentLength</c> after Refit disposes
+    /// a response whose content had no <c>Content-Length</c> header returns <see langword="null"/> rather than throwing
+    /// <see cref="ObjectDisposedException"/>.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ApiResponseWithUncomputedContentLength_DoesNotThrowObjectDisposedException()
+    {
+        await using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
+        var bytes = "{\"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\":\"World\"}"u8.ToArray();
+        await contentStream.WriteAsync(bytes);
+        contentStream.Position = 0;
+        contentStream.CanGetLength = false;
+
+        var httpContent = new StreamContent(contentStream);
+        httpContent.Headers.ContentType = new(JsonMediaType);
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
+
+        var handler = new StubHttp { { Route.Get(GetApiResponseTestObjectUrl), Reply.From(_ => expectedResponse) }, };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
+
+        using var response = await fixture.GetApiResponseTestObject();
+
+        await Assert.That(response).IsNotNull();
+        await Assert.That(response!.IsSuccessful).IsTrue();
+        await Assert.That(response.ContentHeaders).IsNotNull();
+        await Assert.That(response.ContentHeaders!.ContentLength).IsNull();
+    }
 }
