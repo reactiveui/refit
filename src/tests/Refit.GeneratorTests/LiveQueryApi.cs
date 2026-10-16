@@ -268,10 +268,19 @@ public static partial class LiveQueryApi
         Task<string> CaseDifferingWithoutQueryAttribute([AliasAs("ID")] int? filterId, int id);
 
         /// <summary>Sends two case-differing route parameters bound to distinct case-differing placeholders (#2356).</summary>
+        /// <param name="group">The account group segment.</param>
         /// <param name="id">The account identifier bound to <c>{id}</c>.</param>
         /// <param name="positionId">The position identifier bound to <c>{ID}</c>.</param>
         /// <returns>The response body.</returns>
-        [Get("/accounts/{id}/positions/{ID}")]
-        Task<string> CaseDifferingDualPathPlaceholders(int id, [AliasAs("ID")] int positionId);
+        [Get("/accounts/{group}/{id}/positions/{ID}/repeat/{id}")]
+        Task<string> CaseDifferingDualPathPlaceholders(string group, [Query(Format = "D")] int id, [AliasAs("ID")] int positionId);
+
+        /// <summary>Sends a round-trip path parameter alongside a case-differing aliased query parameter (#2356).</summary>
+        /// <param name="group">The file group segment.</param>
+        /// <param name="filterRest">The optional filter bound to the query string.</param>
+        /// <param name="rest">The catch-all route value.</param>
+        /// <returns>The response body.</returns>
+        [Get("/files/{group}/{**rest}")]
+        Task<string> CaseDifferingRoundTripPathAndQuery(string group, [Query][AliasAs("REST")] string? filterRest, string rest);
     }
 }

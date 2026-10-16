@@ -292,21 +292,9 @@ internal static partial class RequestExecutionHelpers
     /// <param name="content">The response content whose headers should be preserved.</param>
     internal static void PreserveContentLengthHeader(HttpContent? content)
     {
-        if (content?.Headers is not { } headers)
+        if (content is not null && !content.Headers.ContentLength.HasValue)
         {
-            return;
-        }
-
-        try
-        {
-            if (!headers.ContentLength.HasValue)
-            {
-                headers.ContentLength = null;
-            }
-        }
-        catch (Exception ex)
-        {
-            _ = ex;
+            content.Headers.ContentLength = null;
         }
     }
 
@@ -682,10 +670,6 @@ internal static partial class RequestExecutionHelpers
                 .FromHttpContentAsync<T>(content, cancellationToken)
                 .ConfigureAwait(false);
 #endif
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
         }
         catch (Exception) when (bufferingException is not null)
         {

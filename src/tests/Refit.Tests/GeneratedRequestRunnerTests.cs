@@ -618,18 +618,6 @@ public partial class GeneratedRequestRunnerTests
         }
 
         /// <inheritdoc />
-        protected override Task<Stream> CreateContentReadStreamAsync()
-        {
-            if (_consumed)
-            {
-                throw new InvalidOperationException("The stream was already consumed. It cannot be read again.");
-            }
-
-            _consumed = true;
-            throw _transportException;
-        }
-
-        /// <inheritdoc />
         protected override bool TryComputeLength(out long length)
         {
             length = 0;

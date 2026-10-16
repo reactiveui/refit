@@ -287,6 +287,21 @@ public sealed partial class QueryRequestBuildingLiveTests
 
                 [Get("/indexedSimpleType")]
                 Task<string> IndexedSimpleType([Query(CollectionFormat.Indexed)] Item item);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingPathAndQuery(int id, [Query][AliasAs("ID")] int? filterId);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingQueryThenPath([Query][AliasAs("ID")] int? filterId, int id);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingWithoutQueryAttribute([AliasAs("ID")] int? filterId, int id);
+
+                [Get("/accounts/{group}/{id}/positions/{ID}/repeat/{id}")]
+                Task<string> CaseDifferingDualPathPlaceholders(string group, [Query(Format = "D")] int id, [AliasAs("ID")] int positionId);
+
+                [Get("/files/{group}/{**rest}")]
+                Task<string> CaseDifferingRoundTripPathAndQuery(string group, [Query][AliasAs("REST")] string? filterRest, string rest);
             }
             """;
 

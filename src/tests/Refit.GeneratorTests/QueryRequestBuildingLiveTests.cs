@@ -392,7 +392,11 @@ public sealed partial class QueryRequestBuildingLiveTests
             expectedPositionsUri);
         _ = await harness.AssertParityAsync(
             "CaseDifferingDualPathPlaceholders",
-            [accountId, filterId],
-            "/base/accounts/10/positions/20");
+            ["core", accountId, filterId],
+            "/base/accounts/core/10/positions/20/repeat/10");
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingRoundTripPathAndQuery",
+            ["docs", "draft", "a/b"],
+            "/base/files/docs/a/b?REST=draft");
     }
 }
