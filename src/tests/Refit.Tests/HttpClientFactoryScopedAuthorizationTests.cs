@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Refit.Tests;
 
-/// <summary>Tests for the scope-aware authorization header value provider registered via <c>AddAuthorizationHeaderValueProvider</c> (#1679).</summary>
+/// <summary>Tests for the scope-aware authorization header value provider registered via <c>AddAuthorizationHeaderValueProvider</c>.</summary>
 public partial class HttpClientFactoryExtensionsTests
 {
     /// <summary>The number of concurrent requests driven through the scoped provider.</summary>
@@ -29,7 +29,7 @@ public partial class HttpClientFactoryExtensionsTests
     /// <summary>The upper bound on how long a request waits for its concurrent peer to arrive.</summary>
     private static readonly TimeSpan GateTimeout = TimeSpan.FromSeconds(30);
 
-    /// <summary>Verifies the scoped authorization provider resolves a fresh per-request token and disposes each request scope (#1679).</summary>
+    /// <summary>Verifies the scoped authorization provider resolves a fresh per-request token and disposes each request scope.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task AddAuthorizationHeaderValueProviderResolvesPerRequestTokenAndDisposesScopes()
@@ -81,7 +81,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(disposalTracker.DisposedCount).IsEqualTo(ConcurrentRequestCount);
     }
 
-    /// <summary>Verifies the scoped provider keeps the request's own authorization scheme rather than falling back to the default (#1679).</summary>
+    /// <summary>Verifies the scoped provider keeps the request's own authorization scheme rather than falling back to the default.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task AddAuthorizationHeaderValueProviderPreservesRequestAuthorizationScheme()
@@ -106,7 +106,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(capturingHandler.Parameter).IsEqualTo(FirstRequestToken);
     }
 
-    /// <summary>Verifies an empty resolved token drops the authorization header rather than sending a blank scheme (#1688).</summary>
+    /// <summary>Verifies an empty resolved token drops the authorization header rather than sending a blank scheme.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task AddAuthorizationHeaderValueProviderWithEmptyTokenRemovesAuthorizationHeader()

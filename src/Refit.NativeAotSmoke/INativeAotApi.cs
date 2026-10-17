@@ -64,7 +64,7 @@ public interface INativeAotApi
     Task<SmokeUnregistered> GetUnregisteredAsync();
 
     /// <summary>An intentionally reflection-backed method shape proving the generated fallback builds cleanly
-    /// under full trimming with IL2026/IL3050 promoted to errors (reactiveui/refit#2200). It is never invoked.</summary>
+    /// under full trimming with IL2026/IL3050 promoted to errors. It is never invoked.</summary>
     /// <param name="filters">A query object whose shape is only known at runtime, so the generator falls back.</param>
     /// <returns>The reply text.</returns>
     /// <remarks>The shape must stay one the generator cannot build (RF006 reason <c>UnsupportedQueryType</c>);

@@ -117,7 +117,7 @@ public class XmlContentSerializerTests
         await Assert.That(dto?.Identifier).IsEqualTo("123");
     }
 
-    /// <summary>Verifies the synchronous DeserializeFromString reads a DTO from XML (#1591).</summary>
+    /// <summary>Verifies the synchronous DeserializeFromString reads a DTO from XML.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task DeserializeFromStringReadsDto()

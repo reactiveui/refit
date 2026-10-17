@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Refit; // InterfaceStubGenerator looks for this
-using static System.Math; // This is here to verify https://github.com/reactiveui/refit/issues/283
+using static System.Math; // Exercises generation when a file contains a using static directive
 
 namespace Refit.Tests;
 

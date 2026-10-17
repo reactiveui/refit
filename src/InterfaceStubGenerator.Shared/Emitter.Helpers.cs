@@ -277,8 +277,8 @@ internal static partial class Emitter
     /// <remarks>
     /// The reflection fallback intentionally trades trim safety for coverage of method shapes the inline emitter does
     /// not support; RF006/RF007 report those shapes at compile time. When the interface member is unannotated the
-    /// generated call site suppresses the per-interface IL2026/IL3050 noise consumers cannot act on
-    /// (see reactiveui/refit#2200). When the interface member declares the matching <c>[RequiresUnreferencedCode]</c> or
+    /// generated call site suppresses the per-interface IL2026/IL3050 noise consumers cannot act on.
+    /// When the interface member declares the matching <c>[RequiresUnreferencedCode]</c> or
     /// <c>[RequiresDynamicCode]</c>, the implementation mirrors it instead: that both honours the caller-visible contract
     /// and satisfies the trim/AOT annotation-matching rule (IL2046/IL3051) between the interface and its implementation.
     /// </remarks>

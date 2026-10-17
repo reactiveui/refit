@@ -3,10 +3,10 @@
 // See the LICENSE file in the project root for full license information.
 using Refit;
 
-namespace BlazorWasmIssue2065;
+namespace BlazorWasmSample;
 
-/// <summary>Sample Refit API for the issue 2065 reproduction.</summary>
-public interface IIssue2065Api
+/// <summary>Sample Refit API for fetching a string weather payload in Blazor WebAssembly.</summary>
+public interface IWeatherApi
 {
     /// <summary>Gets the sample weather payload.</summary>
     /// <returns>The payload content.</returns>

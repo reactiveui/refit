@@ -2,7 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using BlazorWasmIssue2065;
+using BlazorWasmSample;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Refit;
@@ -16,7 +16,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 _ = builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new(builder.HostEnvironment.BaseAddress) });
 
 _ = builder.Services.AddScoped(static sp =>
-    RestService.ForGenerated<IIssue2065Api>(sp.GetRequiredService<HttpClient>()));
+    RestService.ForGenerated<IWeatherApi>(sp.GetRequiredService<HttpClient>()));
 
 _ = builder.Services.AddScoped(
     static sp =>
@@ -25,7 +25,7 @@ _ = builder.Services.AddScoped(
         fastOptions.TypeInfoResolver = JsonContext.Default;
         var fastSerializer = new SystemTextJsonContentSerializer(fastOptions);
 
-        return RestService.ForGenerated<IIssue2067Api>(
+        return RestService.ForGenerated<IStatusApi>(
             sp.GetRequiredService<HttpClient>(),
             new(fastSerializer));
     });

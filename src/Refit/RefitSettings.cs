@@ -179,7 +179,7 @@ public class RefitSettings
     /// </summary>
     /// <remarks>
     /// By default <see cref="HttpClient"/> disposes the request content once the request is sent, so the body cannot
-    /// be read back from the exception (see issue #1189). Enabling this buffers the body into memory before sending;
+    /// be read back from the exception. Enabling this buffers the body into memory before sending;
     /// avoid it for large or streamed uploads.
     /// <para>
     /// Security note: the captured body frequently contains credentials or PII (for example login, token-refresh, or

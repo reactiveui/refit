@@ -196,7 +196,7 @@ public partial class SerializedContentTests
 
 #if NET9_0_OR_GREATER
     /// <summary>Refit API used to verify JsonStringEnumMemberName handling on responses.</summary>
-    public interface IIssue2067StatusApi
+    public interface IEnumMemberNameStatusApi
     {
         /// <summary>Gets the current status.</summary>
         /// <returns>A task that resolves to the status envelope.</returns>
@@ -205,7 +205,7 @@ public partial class SerializedContentTests
     }
 
     /// <summary>Refit API used to verify JsonStringEnumMemberName handling on requests.</summary>
-    public interface IIssue2083ColorApi
+    public interface IEnumMemberNameColorApi
     {
         /// <summary>Posts a color envelope.</summary>
         /// <param name="body">The color envelope to serialize.</param>

@@ -1,15 +1,15 @@
-@page "/issue2067"
-@inject IIssue2067Api Api
+@page "/status"
+@inject IStatusApi Api
 
-<PageTitle>Issue 2067</PageTitle>
+<PageTitle>Enum Status Sample</PageTitle>
 
-<h1>Issue 2067</h1>
+<h1>Enum Status Sample</h1>
 
 <p>This sample proves Refit's default System.Text.Json enum converter supports JsonStringEnumMemberName.</p>
 
 <button @onclick="CallApi">Load status</button>
 
-<p id="issue2067-status">@status</p>
+<p id="sample-status">@status</p>
 
 @code {
     private string status = "Ready";

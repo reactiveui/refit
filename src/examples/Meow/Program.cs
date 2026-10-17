@@ -18,9 +18,9 @@ public static class Program
             .MinimumLevel.Verbose()
             .CreateLogger();
 
-        await Issue2056And2058Demo.RunAsync();
+        await ConcurrentRequestAndPayloadDemo.RunAsync();
 
-        Log.Information("Issue #2056 and #2058 demo checks passed.");
+        Log.Information("Concurrent request header and large payload demo checks passed.");
 
         using var service = new CatsService(new("https://api.thecatapi.com"));
         var results = await service.SearchAsync("bengal");

@@ -500,8 +500,8 @@ public sealed class ApiResponseTests
     }
 
     /// <summary>
-    /// Verifies the reviewer's existing guard `if (!IsSuccessStatusCode || Content is null)` still compiles
-    /// and narrows Content in the success-with-content branch (#2155 feedback: existing code is unaffected).
+    /// Verifies the guard `if (!IsSuccessStatusCode || Content is null)` compiles
+    /// and narrows Content in the success-with-content branch.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -524,8 +524,8 @@ public sealed class ApiResponseTests
     }
 
     /// <summary>
-    /// Verifies the reviewer's two-condition guard `if (!IsSuccessful || !HasContent)` works, and that the
-    /// new single-condition `IsSuccessfulWithContent` is exactly its negation (#2155 single-check request).
+    /// Verifies the two-condition guard `if (!IsSuccessful || !HasContent)` works, and that the
+    /// single-condition `IsSuccessfulWithContent` is its exact negation.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -553,7 +553,7 @@ public sealed class ApiResponseTests
     }
 
     /// <summary>
-    /// Verifies IsSuccessful and IsSuccessStatusCode are not duplicates (#2155 question): a 2xx with a
+    /// Verifies IsSuccessful and IsSuccessStatusCode are distinct: a 2xx with a
     /// captured deserialization error is IsSuccessStatusCode-true but IsSuccessful-false.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -570,7 +570,7 @@ public sealed class ApiResponseTests
     }
 
     /// <summary>
-    /// Regression for #1949: a captured error on a concrete <see cref="ApiResponse{T}"/> is visible after
+    /// Verifies a captured error on a concrete <see cref="ApiResponse{T}"/> is visible after
     /// casting to the non-generic <see cref="IApiResponse"/>, so a `Verify(IApiResponse r)` method sees it.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>

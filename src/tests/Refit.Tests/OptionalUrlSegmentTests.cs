@@ -7,7 +7,7 @@ using Refit.Testing;
 
 namespace Refit.Tests;
 
-/// <summary>Verifies optional <c>{name?}</c> URL path segments (issue #591) build identically on the reflection
+/// <summary>Verifies optional <c>{name?}</c> URL path segments build identically on the reflection
 /// request builder and the source-generated request path.</summary>
 public sealed class OptionalUrlSegmentTests
 {

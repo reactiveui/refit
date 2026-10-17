@@ -5,8 +5,8 @@ using Refit;
 
 namespace Meow;
 
-/// <summary>Refit API used by the issue demo.</summary>
-public interface IIssueDemoApi
+/// <summary>Refit API used by the concurrent request header and large payload demo.</summary>
+public interface IConcurrentRequestDemoApi
 {
     /// <summary>Echoes the customer id supplied as a request property.</summary>
     /// <param name="customerId">The customer id to echo.</param>

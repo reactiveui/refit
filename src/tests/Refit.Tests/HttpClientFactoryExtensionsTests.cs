@@ -372,7 +372,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(recordingHandler.AuthorizationParameter).IsEqualTo("keyed-token");
     }
 
-    /// <summary>Verifies the generated-only DI helper resolves a source-generated client and injects the supplied settings (#2170).</summary>
+    /// <summary>Verifies the generated-only DI helper resolves a source-generated client and injects the supplied settings.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task AddRefitGeneratedClientResolvesGeneratedImplementation()
@@ -396,7 +396,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(generated.Client.BaseAddress).IsEqualTo(new("http://generated/"));
     }
 
-    /// <summary>Verifies the settings-factory overload of the generated-only DI helper resolves settings from the provider (#2170).</summary>
+    /// <summary>Verifies the settings-factory overload of the generated-only DI helper resolves settings from the provider.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task AddRefitGeneratedClientUsesSettingsFactoryFromProvider()
@@ -417,7 +417,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(generated!.Settings.ContentSerializer).IsSameReferenceAs(serializer);
     }
 
-    /// <summary>Verifies the parameterless generated-only DI helper resolves a client with default settings and the default primary handler (#2170).</summary>
+    /// <summary>Verifies the parameterless generated-only DI helper resolves a client with default settings and the default primary handler.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task AddRefitGeneratedClientWithoutSettingsResolvesWithDefaults()
@@ -437,7 +437,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(generated!.Settings).IsNotNull();
     }
 
-    /// <summary>Verifies the settings-and-name overload honors the custom client name and builds the handler from the supplied settings (#2170).</summary>
+    /// <summary>Verifies the settings-and-name overload honors the custom client name and builds the handler from the supplied settings.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task AddRefitGeneratedClientWithSettingsAndNameUsesCustomNameAndHandler()
@@ -461,7 +461,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(generated!.Settings).IsSameReferenceAs(settings);
     }
 
-    /// <summary>Verifies the settings-factory-and-name overload honors the custom client name (#2170).</summary>
+    /// <summary>Verifies the settings-factory-and-name overload honors the custom client name.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task AddRefitGeneratedClientWithSettingsFactoryAndNameUsesCustomName()

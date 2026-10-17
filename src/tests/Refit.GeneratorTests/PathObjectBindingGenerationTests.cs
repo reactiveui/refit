@@ -282,7 +282,7 @@ public sealed class PathObjectBindingGenerationTests
     }
 
     /// <summary>Verifies a dotted placeholder on a constrained generic parameter binds against the constraint type and
-    /// is generated inline, without falling back to the reflection request builder (issue #2218).</summary>
+    /// is generated inline, without falling back to the reflection request builder.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task ConstrainedGenericDottedPathBindsInline()
@@ -356,7 +356,7 @@ public sealed class PathObjectBindingGenerationTests
     }
 
     /// <summary>Verifies an unconstrained generic parameter keeps falling back to the reflection request builder, because
-    /// the concrete argument type - and its bound properties - are unknown at compile time (issue #2218).</summary>
+    /// the concrete argument type - and its bound properties - are unknown at compile time.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task UnconstrainedGenericDottedPathFallsBack()

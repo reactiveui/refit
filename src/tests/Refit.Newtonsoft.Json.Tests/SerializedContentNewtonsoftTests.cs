@@ -119,7 +119,7 @@ public class SerializedContentNewtonsoftTests
         await Assert.That(result!.Name).IsEqualTo("Road Runner");
     }
 
-    /// <summary>Verifies the synchronous DeserializeFromString reads a value from a buffered string (#1591).</summary>
+    /// <summary>Verifies the synchronous DeserializeFromString reads a value from a buffered string.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task NewtonsoftJsonContentSerializer_DeserializeFromString_ReadsValue()

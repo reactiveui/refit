@@ -237,7 +237,7 @@ internal static partial class RequestExecutionHelpers
             .ConfigureAwait(false);
 
         // An empty token means "no credentials for this request": drop the header rather than
-        // sending a blank `Authorization: <scheme>` value (#1688).
+        // sending a blank `Authorization: <scheme>` value.
         request.Headers.Authorization = string.IsNullOrWhiteSpace(token)
             ? null
             : new(auth.Scheme, token);
@@ -245,7 +245,7 @@ internal static partial class RequestExecutionHelpers
 
     /// <summary>
     /// Buffers the request body into a string before sending and stashes it on the request options so a failed
-    /// request can expose it via <see cref="ApiExceptionBase.RequestContent"/> (#1189). No-op unless
+    /// request can expose it via <see cref="ApiExceptionBase.RequestContent"/>. No-op unless
     /// <see cref="RefitSettings.CaptureRequestContent"/> is enabled and the request has content.
     /// </summary>
     /// <param name="request">The request whose body should be captured.</param>

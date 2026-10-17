@@ -7,7 +7,7 @@ using System.Text;
 namespace Refit.Tests;
 
 /// <summary>Verifies both the reflection and generated request builders surface a custom return type through a
-/// registered or discovered <see cref="IReturnTypeAdapter{TReturn, TResult}"/> (issue #2165).</summary>
+/// registered or discovered <see cref="IReturnTypeAdapter{TReturn, TResult}"/>.</summary>
 public sealed class ReturnTypeAdapterTests
 {
     /// <summary>The id of the sample user returned by the stub handler.</summary>

@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace Meow;
 
-/// <summary>In-memory backend handler that serves responses for the issue demo endpoints.</summary>
+/// <summary>In-memory backend handler that serves responses for the concurrent request and large payload demo endpoints.</summary>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class DemoBackendHandler : HttpMessageHandler
 {

@@ -278,7 +278,7 @@ public sealed partial class ApiExceptionTests
             .ThrowsExactly<ArgumentNullException>();
     }
 
-    /// <summary>Verifies the problem+json media type is detected case-insensitively per RFC 7231 (#1702).</summary>
+    /// <summary>Verifies the problem+json media type is detected case-insensitively per RFC 7231.</summary>
     /// <param name="mediaType">The problem details media type with varied casing.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -300,7 +300,7 @@ public sealed partial class ApiExceptionTests
         await Assert.That(exception).IsTypeOf<ValidationApiException>();
     }
 
-    /// <summary>Verifies opt-in request content capture is surfaced on the exception (#1189).</summary>
+    /// <summary>Verifies opt-in request content capture is surfaced on the exception.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task RequestContentCapturedWhenOptionPresent()
@@ -321,7 +321,7 @@ public sealed partial class ApiExceptionTests
         await Assert.That(exception.RequestContent).IsEqualTo("{\"sent\":true}");
     }
 
-    /// <summary>Verifies request content is absent when capture was not requested (#1189).</summary>
+    /// <summary>Verifies request content is absent when capture was not requested.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task RequestContentAbsentWhenNotCaptured()
