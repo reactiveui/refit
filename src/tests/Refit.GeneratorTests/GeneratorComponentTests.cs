@@ -30,6 +30,9 @@ public static partial class GeneratorComponentTests
         /// <summary>The first generated collision suffix for <see cref = "ClientName"/>.</summary>
         private const string FirstClientCollisionName = "client0";
 
+        /// <summary>The suffix after the first reserved collision.</summary>
+        private const string SecondClientCollisionName = "client1";
+
         /// <summary>The generated local name used to test cross-builder name isolation.</summary>
         private const string GeneratedLocalName = "local";
 
@@ -50,7 +53,7 @@ public static partial class GeneratorComponentTests
             var builder = new UniqueNameBuilder();
             await Assert.That(builder.New(ClientName)).IsEqualTo(ClientName);
             await Assert.That(builder.New(ClientName)).IsEqualTo(FirstClientCollisionName);
-            await Assert.That(builder.New(ClientName)).IsEqualTo("client1");
+            await Assert.That(builder.New(ClientName)).IsEqualTo(SecondClientCollisionName);
         }
 
         /// <summary>Verifies that a reserved name is never handed out directly.</summary>
@@ -69,8 +72,9 @@ public static partial class GeneratorComponentTests
         public async Task Reserve_Enumerable_PreventsAllNames()
         {
             var builder = new UniqueNameBuilder();
-            builder.Reserve([ClientName, "requestBuilder"]);
-            await Assert.That(builder.New(ClientName)).IsEqualTo(FirstClientCollisionName);
+            IEnumerable<string> names = [ClientName, FirstClientCollisionName, "requestBuilder"];
+            builder.Reserve(names);
+            await Assert.That(builder.New(ClientName)).IsEqualTo(SecondClientCollisionName);
             await Assert.That(builder.New("requestBuilder")).IsEqualTo("requestBuilder0");
         }
 
@@ -82,6 +86,31 @@ public static partial class GeneratorComponentTests
             var builder = new UniqueNameBuilder();
             builder.Reserve((IEnumerable<string>)null!);
             await Assert.That(builder.New(ClientName)).IsEqualTo(ClientName);
+        }
+
+        /// <summary>Verifies empty enumerables do not reserve names.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task Reserve_EmptyEnumerable_LeavesNamesAvailable()
+        {
+            var builder = new UniqueNameBuilder();
+            IEnumerable<string> names = [];
+            builder.Reserve(names);
+
+            await Assert.That(builder.New(ClientName)).IsEqualTo(ClientName);
+        }
+
+        /// <summary>Verifies duplicate reservations are idempotent and case-sensitive.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task Reserve_DuplicateEnumerableNames_PreservesOrdinalComparison()
+        {
+            var builder = new UniqueNameBuilder();
+            IEnumerable<string> names = [ClientName, ClientName, FirstClientCollisionName];
+            builder.Reserve(names);
+
+            await Assert.That(builder.New("Client")).IsEqualTo("Client");
+            await Assert.That(builder.New(ClientName)).IsEqualTo(SecondClientCollisionName);
         }
 
         /// <summary>Verifies that independent builders do not share reservations.</summary>

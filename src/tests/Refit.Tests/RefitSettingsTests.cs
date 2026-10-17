@@ -7,6 +7,19 @@ namespace Refit.Tests;
 /// <summary>Tests for constructing <see cref="RefitSettings"/> through its various constructors.</summary>
 public class RefitSettingsTests
 {
+    /// <summary>Verifies flat HTTP version setters update the grouped transport settings.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task Version_SetThroughFlatSettings_UpdatesRequests()
+    {
+        var settings = new RefitSettings { Version = System.Net.HttpVersion.Version20, VersionPolicy = HttpVersionPolicy.RequestVersionExact };
+
+        await Assert.That(settings.Requests.Version).IsSameReferenceAs(System.Net.HttpVersion.Version20);
+        await Assert.That(settings.Version).IsSameReferenceAs(settings.Requests.Version);
+        await Assert.That(settings.Requests.VersionPolicy).IsEqualTo(HttpVersionPolicy.RequestVersionExact);
+        await Assert.That(settings.VersionPolicy).IsEqualTo(settings.Requests.VersionPolicy);
+    }
+
     /// <summary>Verifies every <see cref="RefitSettings"/> constructor overload can be created without throwing.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
