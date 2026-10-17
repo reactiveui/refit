@@ -76,7 +76,7 @@
   <Choose>
     <When Condition="'$(TargetFramework)' == 'net11.0'">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.1.26425.128"/>
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.2.26504.105"/>
         <PackageVersion Include="System.Net.Http.Json" Version="11.0.0-rc.1.26425.128"/>
         <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0-rc.1.26425.128"/>
         <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.1.26425.128"/>
@@ -84,7 +84,7 @@
     </When>
     <Otherwise>
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12"/>
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.13"/>
         <PackageVersion Include="System.Net.Http.Json" Version="10.0.12"/>
         <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.12"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.12"/>
