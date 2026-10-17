@@ -5,6 +5,7 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Refit.Generator;
 
 namespace Refit.GeneratorTests;
@@ -12,6 +13,111 @@ namespace Refit.GeneratorTests;
 /// <summary>Direct unit tests for interface-member classification during parsing.</summary>
 public static partial class GeneratorComponentTests
 {
+    /// <summary>Tests consumer options applied to parsed interface metadata.</summary>
+    public class InterfaceSemanticParsingTests
+    {
+        /// <summary>Verifies an inherited-only tree is parsed once and retains its inherited request bindings.</summary>
+        /// <param name="cancellationToken">The test cancellation token.</param>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task ParseInheritedInterface_FirstCandidate_CollectsAllDerivedInterfaces(CancellationToken cancellationToken)
+        {
+            const int DerivedInterfaceCount = 2;
+            var parentTree = CSharpSyntaxTree.ParseText(
+                """
+                using System.Threading.Tasks;
+                using Refit;
+                public interface IParent
+                {
+                    [Get("/items")]
+                    Task<string> Get();
+                }
+                """,
+                cancellationToken: cancellationToken);
+            var derivedTree = CSharpSyntaxTree.ParseText(
+                """
+                #nullable enable
+                public interface IUnrelated : System.IDisposable { }
+                public interface IFirst : IParent { }
+                public interface ISecond : IParent { }
+                """,
+                cancellationToken: cancellationToken);
+            var compilation = Fixture.CreateLibrary(parentTree, derivedTree);
+            var model = compilation.GetSemanticModel(derivedTree);
+            var declarations = (await derivedTree.GetRootAsync(cancellationToken)).DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToArray();
+            var first = declarations.Single(static declaration => declaration.Identifier.ValueText == "IFirst");
+            var second = declarations.Single(static declaration => declaration.Identifier.ValueText == "ISecond");
+
+            var result = InterfaceSemanticParsing.ParseInheritedInterface(model, first, cancellationToken);
+
+            await Assert.That(result.Length).IsEqualTo(DerivedInterfaceCount);
+            await Assert.That(result.Select(static item => item.FileName)).IsCollectionEqualTo(["IFirst.g.cs", "ISecond.g.cs"]);
+            await Assert.That(Array.TrueForAll(result, static item => item.Members.DerivedRefitMethods.Length == 1)).IsTrue();
+            await Assert.That(InterfaceSemanticParsing.ParseInheritedInterface(model, second, cancellationToken)).IsEmpty();
+
+            var reflection = InterfaceSemanticParsing.ApplyGeneratorOptions(result, new(null, false, false, false), "Consumer", cancellationToken);
+            await Assert.That(reflection.Interfaces.SelectMany(static item => item.Members.DerivedRefitMethods)
+                .All(static method => method.Request.Equals(RequestModel.Empty))).IsTrue();
+            await Assert.That(result.SelectMany(static item => item.Members.DerivedRefitMethods)
+                .All(static method => method.Request.Generation.CanGenerateInline)).IsTrue();
+        }
+
+        /// <summary>Verifies unrelated interface inheritance produces no generation candidates.</summary>
+        /// <param name="cancellationToken">The test cancellation token.</param>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task ParseInheritedInterface_NoRefitMethods_ReturnsEmpty(CancellationToken cancellationToken)
+        {
+            var tree = CSharpSyntaxTree.ParseText("public interface IUnrelated : System.IDisposable { }", cancellationToken: cancellationToken);
+            var compilation = Fixture.CreateLibrary(tree);
+            var declaration = (await tree.GetRootAsync(cancellationToken)).DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single();
+
+            var result = InterfaceSemanticParsing.ParseInheritedInterface(compilation.GetSemanticModel(tree), declaration, cancellationToken);
+
+            await Assert.That(result).IsEmpty();
+        }
+
+        /// <summary>Verifies directly inspecting an ordinary interface method produces no generation candidates.</summary>
+        /// <param name="cancellationToken">The test cancellation token.</param>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task ParseMethodInterface_NoHttpAttribute_ReturnsEmpty(CancellationToken cancellationToken)
+        {
+            var tree = CSharpSyntaxTree.ParseText("public interface IUnrelated { void Get(); }", cancellationToken: cancellationToken);
+            var compilation = Fixture.CreateLibrary(tree);
+            var declaration = (await tree.GetRootAsync(cancellationToken)).DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+
+            var result = InterfaceSemanticParsing.ParseMethodInterface(compilation.GetSemanticModel(tree), declaration, cancellationToken);
+
+            await Assert.That(result).IsEmpty();
+        }
+
+        /// <summary>Verifies an empty input retains consumer options without referring to a preserve attribute.</summary>
+        /// <param name="generatedRequests">Whether inline requests are enabled.</param>
+        /// <param name="emitMarkers">Whether generated-code markers are enabled.</param>
+        /// <param name="cancellationToken">The test cancellation token.</param>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        [Arguments(false, false)]
+        [Arguments(true, true)]
+        public async Task ApplyGeneratorOptions_EmptyInterfaces_PreservesOptions(bool generatedRequests, bool emitMarkers, CancellationToken cancellationToken)
+        {
+            const string AssemblyName = "EmptyConsumer";
+            var result = InterfaceSemanticParsing.ApplyGeneratorOptions(
+                [],
+                new(null, generatedRequests, emitMarkers, false),
+                AssemblyName,
+                cancellationToken);
+
+            await Assert.That(result.Interfaces).IsEmpty();
+            await Assert.That(result.PreserveAttributeDisplayName).IsEqualTo(string.Empty);
+            await Assert.That(result.RefitInternalNamespace).IsEqualTo(GeneratedTypeNaming.BuildRefitInternalNamespace(null, AssemblyName));
+            await Assert.That(result.GeneratedClassName).IsEqualTo(GeneratedTypeNaming.BuildGeneratedContainerName(AssemblyName));
+            await Assert.That(result.GeneratedRequestBuilding).IsEqualTo(generatedRequests);
+            await Assert.That(result.EmitGeneratedCodeMarkers).IsEqualTo(emitMarkers);
+        }
+    }
+
     /// <summary>Tests for the method return-type shape classifier.</summary>
     public class ReturnTypeClassificationTests
     {

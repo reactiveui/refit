@@ -108,6 +108,12 @@ internal static class InterfaceSemanticParsing
         }
 
         var internalNamespace = GeneratedTypeNaming.BuildRefitInternalNamespace(options.RefitInternalNamespace, assemblyName);
+        var generatedClassName = GeneratedTypeNaming.BuildGeneratedContainerName(assemblyName);
+        if (models.Length == 0)
+        {
+            return new(internalNamespace, string.Empty, generatedClassName, options.GeneratedRequestBuilding, options.EmitGeneratedCodeMarkers, []);
+        }
+
         var preserveAttribute = $"global::{internalNamespace}.PreserveAttribute";
         var interfaces = new InterfaceModel[models.Length];
         Dictionary<string, int> keyCount = [with(StringComparer.OrdinalIgnoreCase)];
@@ -143,8 +149,8 @@ internal static class InterfaceSemanticParsing
 
         return new(
             internalNamespace,
-            interfaces.Length == 0 ? string.Empty : preserveAttribute,
-            GeneratedTypeNaming.BuildGeneratedContainerName(assemblyName),
+            preserveAttribute,
+            generatedClassName,
             options.GeneratedRequestBuilding,
             options.EmitGeneratedCodeMarkers,
             interfaces);
