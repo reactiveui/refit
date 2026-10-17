@@ -55,7 +55,8 @@ public sealed class NetworkConditionsTests
         IPeopleApi api = http.CreateGeneratedClient<IPeopleApi>("https://api.example.com", TestSettings.Create());
 
         // Refit never lets a transport failure escape as the raw HttpRequestException: it wraps it in an
-        // ApiRequestException, copying the original exception's message across.
+        // ApiRequestException, copying the original exception's message across. In NUnit 5+, Assert.ThrowsAsync
+        // returns Task<TException?> and is awaited directly.
         ApiRequestException? error = await Assert.ThrowsAsync<ApiRequestException>(() => api.GetPersonAsync(1));
 
         Assert.That(error?.Message, Is.EqualTo("Connection reset."));

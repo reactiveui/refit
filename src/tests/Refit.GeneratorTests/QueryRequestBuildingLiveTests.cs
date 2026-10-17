@@ -361,7 +361,7 @@ public sealed partial class QueryRequestBuildingLiveTests
             "/base/cal/9000/events/3bf@zoho.com");
     }
 
-    /// <summary>Regression test for #2356: verifies case-differing path and query parameters bind to their respective
+    /// <summary>Verifies case-differing path and query parameters bind to their respective
     /// route placeholder and query string parameter in both generated and reflection request building.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

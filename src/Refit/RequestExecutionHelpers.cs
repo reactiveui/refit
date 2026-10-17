@@ -288,7 +288,7 @@ internal static partial class RequestExecutionHelpers
 
     /// <summary>Materializes the <c>Content-Length</c> header before the content is buffered or disposed so reading
     /// <see cref="System.Net.Http.Headers.HttpContentHeaders.ContentLength"/> after disposal returns the original header
-    /// value (or <see langword="null"/> when absent) instead of throwing <see cref="ObjectDisposedException"/> (#2357).</summary>
+    /// value (or <see langword="null"/> when absent) instead of throwing <see cref="ObjectDisposedException"/>.</summary>
     /// <param name="content">The response content whose headers should be preserved.</param>
     internal static void PreserveContentLengthHeader(HttpContent? content)
     {
@@ -677,18 +677,20 @@ internal static partial class RequestExecutionHelpers
         }
     }
 
-    /// <summary>Attempts to buffer content into memory, returning any non-cancellation failure so callers can surface it
-    /// if the subsequent serializer read fails.</summary>
+    /// <summary>Attempts to buffer content into memory, returning any exception thrown while buffering when
+    /// <paramref name="cancellationToken"/> has not been requested so callers can surface it if the subsequent
+    /// serializer read fails.</summary>
     /// <param name="content">The content to buffer.</param>
     /// <param name="cancellationToken">A token to cancel buffering.</param>
-    /// <returns>The exception thrown while buffering, or <see langword="null"/> when buffering succeeded.</returns>
-    /// <exception cref="OperationCanceledException">Thrown when the caller cancelled while buffering.</exception>
+    /// <returns>The exception thrown while buffering when <paramref name="cancellationToken"/> was not requested, or
+    /// <see langword="null"/> when buffering succeeded.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> has been requested.</exception>
     /// <remarks>
     /// Buffering is best-effort: if <c>LoadIntoBufferAsync</c> fails on a custom <see cref="HttpContent"/> whose stream
     /// remains readable, the serializer can still succeed. When <c>LoadIntoBufferAsync</c> fails mid-stream on a
     /// network response, however, the underlying stream is already consumed and <c>FromHttpContentAsync</c> throws a
-    /// secondary <see cref="InvalidOperationException"/>; returning <c>bufferingException</c> lets the caller rethrow
-    /// the original transport failure instead (#2359). The cancellation check sits after the catch rather than in a
+    /// secondary <see cref="InvalidOperationException"/>; returning the buffering exception lets the caller rethrow
+    /// the original transport failure instead. The cancellation check sits after the catch rather than in a
     /// filter on it, so it also covers the targets whose <c>LoadIntoBufferAsync</c> polyfill drops the token and
     /// therefore never throws.
     /// </remarks>

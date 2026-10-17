@@ -586,8 +586,8 @@ public sealed class ApiResponseTests
     }
 
     /// <summary>
-    /// Regression for #2357: accessing <c>ContentHeaders.ContentLength</c> after <see cref="ApiResponse{T}"/> or
-    /// <see cref="ApiException"/> disposes the underlying <see cref="HttpContent"/> must not throw
+    /// Verifies that accessing <c>ContentHeaders.ContentLength</c> after <see cref="ApiResponse{T}"/> or
+    /// <see cref="ApiException"/> disposes the underlying <see cref="HttpContent"/> does not throw
     /// <see cref="ObjectDisposedException"/> when no <c>Content-Length</c> header was present on the response.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>

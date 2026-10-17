@@ -21,6 +21,7 @@ public sealed class ErrorHandlingTests
         };
         IPeopleApi api = http.CreateGeneratedClient<IPeopleApi>("https://api.example.com", TestSettings.Create());
 
+        // In NUnit 5+, Assert.ThrowsAsync returns Task<TException?> and is awaited directly.
         ApiException? error = await Assert.ThrowsAsync<ApiException>(() => api.GetPersonAsync(99));
 
         Assert.That(error?.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));

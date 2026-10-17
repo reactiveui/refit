@@ -362,7 +362,7 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(exception!.Message).IsEqualTo("BaseAddress must be set on the HttpClient instance");
     }
 
-    /// <summary>Regression test for #2359: when response buffering fails on a single-read stream and the serializer
+    /// <summary>Verifies that when response buffering fails on a single-read stream and the serializer
     /// subsequently throws because the stream was already consumed, the original buffering transport exception is
     /// surfaced rather than the secondary stream-consumed exception.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -393,7 +393,7 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(thrown.InnerException!.InnerException).IsSameReferenceAs(transportFailure);
     }
 
-    /// <summary>Regression test for #2359: when response buffering fails on a single-read stream for an
+    /// <summary>Verifies that when response buffering fails on a single-read stream for an
     /// <see cref="ApiResponse{T}"/> return shape, the captured <see cref="Exception.InnerException"/> preserves the
     /// original buffering transport exception instead of the secondary stream-consumed exception.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>

@@ -202,7 +202,7 @@ public sealed partial class ResponseTests
         await Assert.That(ex!.Message).Contains("RequestMessage", StringComparison.Ordinal);
     }
 
-    /// <summary>Regression test for #2357: accessing <c>IApiResponse.ContentHeaders.ContentLength</c> after Refit disposes
+    /// <summary>Verifies that accessing <c>IApiResponse.ContentHeaders.ContentLength</c> after Refit disposes
     /// a response whose content had no <c>Content-Length</c> header returns <see langword="null"/> rather than throwing
     /// <see cref="ObjectDisposedException"/>.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
