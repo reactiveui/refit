@@ -372,6 +372,7 @@ public sealed partial class QueryRequestBuildingLiveTests
         const int accountId = 10;
         const int filterId = 20;
         const string expectedPositionsUri = "/base/accounts/10/positions?ID=20";
+        const string expectedDualPositionsUri = "/base/accounts/10/positions/20";
         using var harness = LiveQueryHarness.Create();
 
         _ = await harness.AssertParityAsync("CaseDifferingPathAndQuery", [accountId, filterId], expectedPositionsUri);
@@ -380,8 +381,10 @@ public sealed partial class QueryRequestBuildingLiveTests
         _ = await harness.AssertParityAsync("CaseDifferingWithoutQueryAttribute", [filterId, accountId], expectedPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingDualPathPlaceholders", ["core", accountId, filterId], "/base/accounts/core/10/positions/20/repeat/10");
         _ = await harness.AssertParityAsync("CaseDifferingRoundTripPathAndQuery", ["docs", "draft", "a/b"], "/base/files/docs/a/b?REST=draft");
-        _ = await harness.AssertParityAsync("CaseDifferingSiblingClaimedByOtherPlaceholder", [filterId, accountId], "/base/accounts/10/positions/20");
-        _ = await harness.AssertParityAsync("CaseDifferingBareQuerySiblingClaimedByOtherPlaceholder", [filterId, accountId], "/base/accounts/10/positions/20");
+        _ = await harness.AssertParityAsync("CaseDifferingSiblingClaimedByOtherPlaceholder", [filterId, accountId], expectedDualPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingBareQuerySiblingClaimedByOtherPlaceholder", [filterId, accountId], expectedDualPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingNonQueryAndBareQueryDualPlaceholders", [accountId, filterId], expectedDualPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingBareQueryAndNonQueryDualPlaceholders", [accountId, filterId], expectedDualPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingWhitespaceFormatQuery", [filterId, accountId], expectedPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingBothQuery", [filterId, accountId], expectedPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingBodyAndRoute", ["payload", accountId], "/base/items/10");

@@ -256,6 +256,10 @@ internal partial class RestMethodInfoInternal
         var caseRank = string.Equals(candidateName, placeholderName, StringComparison.Ordinal)
             ? exactCaseRank
             : fallbackRank;
+        if (caseRank == claimedByOtherPlaceholderRank)
+        {
+            return claimedByOtherPlaceholderRank;
+        }
 
         return HasBareQueryAttribute(candidate)
             ? caseRank

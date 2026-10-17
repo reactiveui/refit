@@ -297,6 +297,20 @@ public static partial class LiveQueryApi
         [Get("/accounts/{Id}/positions/{ID}")]
         Task<string> CaseDifferingBareQuerySiblingClaimedByOtherPlaceholder([Query][AliasAs("ID")] int secondId, [Query] int id);
 
+        /// <summary>Sends a non-query parameter and a bare <c>[Query]</c> parameter that each match their own exact-case placeholder.</summary>
+        /// <param name="id">The identifier bound to <c>{id}</c>.</param>
+        /// <param name="secondId">The identifier bound to <c>{ID}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions/{ID}")]
+        Task<string> CaseDifferingNonQueryAndBareQueryDualPlaceholders(int id, [Query][AliasAs("ID")] int secondId);
+
+        /// <summary>Sends a bare <c>[Query]</c> parameter and a non-query parameter that each match their own exact-case placeholder.</summary>
+        /// <param name="id">The identifier bound to <c>{id}</c>.</param>
+        /// <param name="secondId">The identifier bound to <c>{ID}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions/{ID}")]
+        Task<string> CaseDifferingBareQueryAndNonQueryDualPlaceholders([Query] int id, [AliasAs("ID")] int secondId);
+
         /// <summary>Sends a whitespace-formatted <c>[Query]</c> parameter alongside a case-differing route parameter.</summary>
         /// <param name="filterId">The optional query filter with whitespace format.</param>
         /// <param name="id">The account identifier bound to the route.</param>

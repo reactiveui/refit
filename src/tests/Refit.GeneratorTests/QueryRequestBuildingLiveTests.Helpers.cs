@@ -309,6 +309,12 @@ public sealed partial class QueryRequestBuildingLiveTests
                 [Get("/accounts/{Id}/positions/{ID}")]
                 Task<string> CaseDifferingBareQuerySiblingClaimedByOtherPlaceholder([Query][AliasAs("ID")] int secondId, [Query] int id);
 
+                [Get("/accounts/{id}/positions/{ID}")]
+                Task<string> CaseDifferingNonQueryAndBareQueryDualPlaceholders(int id, [Query][AliasAs("ID")] int secondId);
+
+                [Get("/accounts/{id}/positions/{ID}")]
+                Task<string> CaseDifferingBareQueryAndNonQueryDualPlaceholders([Query] int id, [AliasAs("ID")] int secondId);
+
                 [Get("/accounts/{id}/positions")]
                 Task<string> CaseDifferingWhitespaceFormatQuery([Query(Format = " ")][AliasAs("ID")] int? filterId, [AliasAs("Id")] int id);
 

@@ -242,6 +242,10 @@ internal static partial class Parser
         var caseRank = string.Equals(candidateName, placeholderName, StringComparison.Ordinal)
             ? exactCaseRank
             : fallbackRank;
+        if (caseRank == claimedByOtherPlaceholderRank)
+        {
+            return claimedByOtherPlaceholderRank;
+        }
 
         return HasBareQueryOnlyAttribute(candidate)
             ? caseRank
