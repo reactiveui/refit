@@ -53,7 +53,7 @@ internal sealed class ScopedAuthorizationHeaderHandler : DelegatingHandler
             var token = await _getToken(scope.ServiceProvider, request, cancellationToken).ConfigureAwait(false);
 
             // An empty token means "no credentials for this request": drop the header rather than
-            // sending a blank `Authorization: <scheme>` value (#1688).
+            // sending a blank `Authorization: <scheme>` value.
             request.Headers.Authorization = string.IsNullOrWhiteSpace(token)
                 ? null
                 : new AuthenticationHeaderValue(scheme, token);

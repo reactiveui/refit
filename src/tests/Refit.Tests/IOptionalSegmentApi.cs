@@ -4,7 +4,7 @@
 
 namespace Refit.Tests;
 
-/// <summary>A Refit API surface exercising optional <c>{name?}</c> URL path segments (issue #591).</summary>
+/// <summary>A Refit API surface exercising optional <c>{name?}</c> URL path segments.</summary>
 public interface IOptionalSegmentApi
 {
     /// <summary>Gets a value where the trailing segment is optional.</summary>

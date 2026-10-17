@@ -13,7 +13,7 @@ public sealed class ErrorHandlingTests
 {
     // Problem: my API can return 404 for a person who doesn't exist. Does my code notice?
     [Test]
-    public void GetMissingPerson_ReturnsNotFound()
+    public async Task GetMissingPerson_ReturnsNotFound()
     {
         using StubHttp http = new()
         {
@@ -21,7 +21,8 @@ public sealed class ErrorHandlingTests
         };
         IPeopleApi api = http.CreateGeneratedClient<IPeopleApi>("https://api.example.com", TestSettings.Create());
 
-        ApiException? error = Assert.ThrowsAsync<ApiException>(() => api.GetPersonAsync(99));
+        // In NUnit 5+, Assert.ThrowsAsync returns Task<TException?> and is awaited directly.
+        ApiException? error = await Assert.ThrowsAsync<ApiException>(() => api.GetPersonAsync(99));
 
         Assert.That(error?.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
     }

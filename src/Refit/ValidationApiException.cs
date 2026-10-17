@@ -69,7 +69,7 @@ public class ValidationApiException : ApiException
             apiException.Headers,
             apiException.RefitSettings) =>
         // Carry over the content headers from the originating ApiException so callers
-        // can inspect them on the validation exception too (#1945).
+        // can inspect them on the validation exception too.
         ContentHeaders = apiException.ContentHeaders;
 
     /// <summary>Gets the problem details of the RFC 7807 validation exception.</summary>
@@ -98,7 +98,7 @@ public class ValidationApiException : ApiException
 
         // Deserialize through the configured IHttpContentSerializer rather than a
         // hardcoded System.Text.Json instance, so problem details honor the user's
-        // serializer (e.g. Newtonsoft) and its settings (#1197).
+        // serializer (e.g. Newtonsoft) and its settings.
         using var content = new StringContent(
             exception.Content!,
             Encoding.UTF8,

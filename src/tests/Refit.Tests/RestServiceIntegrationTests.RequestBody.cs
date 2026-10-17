@@ -101,7 +101,7 @@ public partial class RestServiceIntegrationTests
         await handler.VerifyAllCalledAsync();
     }
 
-    /// <summary>Verifies a body parameter named like a generated local variable still works (issue #2161).</summary>
+    /// <summary>Verifies a body parameter named like a generated local variable still works.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task PostBodyNamedLikeGeneratedLocalToRequestBin()
@@ -547,7 +547,7 @@ public partial class RestServiceIntegrationTests
         await handler.VerifyAllCalledAsync();
     }
 
-    /// <summary>Verifies opt-in request content capture exposes the sent body on the thrown ApiException (#1189).</summary>
+    /// <summary>Verifies opt-in request content capture exposes the sent body on the thrown ApiException.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task CaptureRequestContentExposesSentBodyOnApiException()
@@ -565,7 +565,7 @@ public partial class RestServiceIntegrationTests
         await handler.VerifyAllCalledAsync();
     }
 
-    /// <summary>Verifies request content capture also works on the non-void response path (#1189).</summary>
+    /// <summary>Verifies request content capture also works on the non-void response path.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task CaptureRequestContentExposesSentBodyOnNonVoidResponse()
@@ -583,7 +583,7 @@ public partial class RestServiceIntegrationTests
         await handler.VerifyAllCalledAsync();
     }
 
-    /// <summary>Verifies request content is not captured when the opt-in setting is left disabled (#1189).</summary>
+    /// <summary>Verifies request content is not captured when the opt-in setting is left disabled.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task RequestContentNotCapturedByDefault()

@@ -361,4 +361,116 @@ public partial class GeneratedRequestRunnerTests
 
         await Assert.That(exception!.Message).IsEqualTo("BaseAddress must be set on the HttpClient instance");
     }
+
+    /// <summary>Verifies that when response buffering fails on a single-read stream and the serializer
+    /// subsequently throws because the stream was already consumed, the original buffering transport exception is
+    /// surfaced rather than the secondary stream-consumed exception.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncPreservesBufferingExceptionWhenSerializerFailsOnConsumedContent()
+    {
+        var transportFailure = new IOException("The response ended prematurely.");
+        var handler = new CapturingHandler(
+            (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new SingleReadFailingBufferContent(transportFailure), }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var thrown = await Assert
+            .That(
+                () => GeneratedRequestRunner.SendAsync<GeneratedResult, GeneratedResult>(
+                    client,
+                    request,
+                    settings,
+                    isApiResponse: false,
+                    shouldDisposeResponse: true,
+                    bufferBody: false,
+                    CancellationToken.None))
+            .ThrowsExactly<ApiException>();
+
+        await Assert.That(thrown!.InnerException).IsTypeOf<HttpRequestException>();
+        await Assert.That(thrown.InnerException!.InnerException).IsSameReferenceAs(transportFailure);
+    }
+
+    /// <summary>Verifies that when response buffering fails on a single-read stream for an
+    /// <see cref="ApiResponse{T}"/> return shape, the captured <see cref="Exception.InnerException"/> preserves the
+    /// original buffering transport exception instead of the secondary stream-consumed exception.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncApiResponsePreservesBufferingExceptionWhenSerializerFailsOnConsumedContent()
+    {
+        var transportFailure = new IOException("The response ended prematurely.");
+        var handler = new CapturingHandler(
+            (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new SingleReadFailingBufferContent(transportFailure), }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        using var result = await GeneratedRequestRunner.SendAsync<ApiResponse<GeneratedResult>, GeneratedResult>(
+            client,
+            request,
+            settings,
+            isApiResponse: true,
+            shouldDisposeResponse: false,
+            bufferBody: false,
+            CancellationToken.None);
+
+        await Assert.That(result!.Error).IsNotNull();
+        await Assert.That(result.Error!.InnerException).IsTypeOf<HttpRequestException>();
+        await Assert.That(result.Error.InnerException!.InnerException).IsSameReferenceAs(transportFailure);
+    }
+
+    /// <summary>Verifies that if best-effort buffering fails and caller cancellation then occurs during deserialization,
+    /// the <see cref="OperationCanceledException"/> propagates instead of being replaced by the buffering failure.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncPropagatesCancellationWhenBufferingFailsAndDeserializerCancels()
+    {
+        using var cts = new CancellationTokenSource();
+        var canceledException = new OperationCanceledException("Canceled during deserialization.");
+        var serializer = new RecordingContentSerializer { CancelOnDeserialize = cts, DeserializeException = canceledException };
+        var handler = new CapturingHandler(
+            static (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK) { Content = new ThrowingLoadContent(), }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+
+        var thrown = await Assert
+            .That(
+                () => GeneratedRequestRunner.SendAsync<GeneratedResult, GeneratedResult>(
+                    client,
+                    request,
+                    CreateSettings(serializer),
+                    isApiResponse: false,
+                    shouldDisposeResponse: true,
+                    bufferBody: false,
+                    cts.Token))
+            .ThrowsExactly<OperationCanceledException>();
+
+        await Assert.That(thrown).IsSameReferenceAs(canceledException);
+    }
+
+    /// <summary>Verifies <see cref="RestMethodInfoInternal.IsRouteCandidate"/> excludes non-route parameters and accepts route parameters.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task RestMethodInfoInternalIsRouteCandidateExcludesNonRouteParameters()
+    {
+        static void Sample(
+            int id,
+            [Url] string url,
+            [Body] string body,
+            [HeaderCollection] IDictionary<string, string> headers,
+            [Property] string prop,
+            CancellationToken ct) =>
+            _ = (id, url, body, headers, prop, ct);
+
+        var parameters = ((Delegate)Sample).Method.GetParameters();
+        await Assert.That(RestMethodInfoInternal.IsRouteCandidate(parameters[0])).IsTrue();
+        for (var i = 1; i < parameters.Length; i++)
+        {
+            await Assert.That(RestMethodInfoInternal.IsRouteCandidate(parameters[i])).IsFalse();
+        }
+    }
 }

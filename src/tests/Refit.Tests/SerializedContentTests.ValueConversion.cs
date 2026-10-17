@@ -484,7 +484,7 @@ public partial class SerializedContentTests
         await Assert.That(resolver.RequestedTypes).Contains(typeof(User));
     }
 
-    /// <summary>Verifies the synchronous DeserializeFromString uses source-generated metadata when provided (#1591).</summary>
+    /// <summary>Verifies the synchronous DeserializeFromString uses source-generated metadata when provided.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task SystemTextJsonContentSerializer_DeserializeFromString_UsesSourceGeneratedMetadata()
@@ -500,7 +500,7 @@ public partial class SerializedContentTests
         await Assert.That(resolver.RequestedTypes).Contains(typeof(User));
     }
 
-    /// <summary>Verifies the synchronous DeserializeFromString uses reflection metadata by default (#1591).</summary>
+    /// <summary>Verifies the synchronous DeserializeFromString uses reflection metadata by default.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task SystemTextJsonContentSerializer_DeserializeFromString_UsesReflectionByDefault()
@@ -589,7 +589,7 @@ public partial class SerializedContentTests
                     new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent("{\"status\":\"totally-ready\"}", Encoding.UTF8, JsonMediaType), })),
         };
 
-        var api = RestService.For<IIssue2067StatusApi>(BaseAddress, settings);
+        var api = RestService.For<IEnumMemberNameStatusApi>(BaseAddress, settings);
         var result = await api.GetStatusAsync();
 
         await Assert.That(result.Status).IsEqualTo(EnumMemberNameStatus.TotallyReady);
@@ -610,7 +610,7 @@ public partial class SerializedContentTests
             }),
         };
 
-        var api = RestService.For<IIssue2083ColorApi>(BaseAddress, settings);
+        var api = RestService.For<IEnumMemberNameColorApi>(BaseAddress, settings);
         await api.PostColorAsync(new() { Color = EnumMemberNameColor.Green });
 
         await Assert.That(serializedBody).IsEqualTo("""{"color":"GREEN"}""");

@@ -242,7 +242,7 @@ public partial class GeneratedRequestBuildingTests
         await Assert.That(errorMessages).IsEqualTo(string.Empty);
     }
 
-    /// <summary>Verifies a parameter named like a generated local does not collide (issue #2161).</summary>
+    /// <summary>Verifies a parameter named like a generated local does not collide.</summary>
     /// <param name="parameterName">A parameter name matching a generated local variable.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

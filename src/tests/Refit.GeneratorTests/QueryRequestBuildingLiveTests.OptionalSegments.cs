@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Refit.GeneratorTests;
 
-/// <summary>Live parity coverage for optional <c>{name?}</c> URL path segments (issue #591).</summary>
+/// <summary>Live parity coverage for optional <c>{name?}</c> URL path segments.</summary>
 public sealed partial class QueryRequestBuildingLiveTests
 {
     /// <summary>Verifies optional <c>{name?}</c> path segments generate inline and match the reflection builder: a

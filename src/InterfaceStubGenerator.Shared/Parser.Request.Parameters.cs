@@ -48,7 +48,8 @@ internal static partial class Parser
         {
             var parameter = parameters[i];
             var classification = CreateLooseParameterContext(
-                parameter,
+                parameters,
+                i,
                 parameterLocations,
                 formattableSymbol,
                 implicitBodyEligible,
@@ -66,8 +67,9 @@ internal static partial class Parser
         return ImmutableEquatableArrayFactory.FromArray(requestParameters);
     }
 
-    /// <summary>Builds the lookup state used to classify one parameter, resolving its path placeholders.</summary>
-    /// <param name="parameter">The parameter symbol.</param>
+    /// <summary>Builds the lookup state used to classify one parameter, resolving its path placeholders and disambiguating case-insensitive sibling parameter names.</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterIndex">The index of the parameter being classified.</param>
     /// <param name="parameterLocations">The placeholder names in the URL with their locations.</param>
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="implicitBodyEligible">Whether an un-attributed complex parameter becomes the implicit request body.</param>
@@ -75,22 +77,32 @@ internal static partial class Parser
     /// <param name="context">The interface generation context.</param>
     /// <returns>The classification context for the parameter.</returns>
     internal static LooseParameterContext CreateLooseParameterContext(
-        IParameterSymbol parameter,
+        in ImmutableArray<IParameterSymbol> parameters,
+        int parameterIndex,
         in PathParameterLocations parameterLocations,
         INamedTypeSymbol? formattableSymbol,
         bool implicitBodyEligible,
         bool isMultipart,
         in InterfaceGenerationContext context)
     {
+        var parameter = parameters[parameterIndex];
         var name = ResolveUrlName(parameter);
-        ImmutableEquatableArray<Range>? location =
-            parameterLocations.TryGetDirectLocations(name, out var directLocations) ? directLocations : null;
+        ImmutableEquatableArray<Range>? location = null;
+        if (parameterLocations.TryGetDirectLocations(name, out var directLocations))
+        {
+            location = HasCaseInsensitiveSibling(parameters, parameterIndex, name)
+                ? FilterWinningLocations(parameters, parameterIndex, name, parameterLocations.Occurrences, roundTrip: false)
+                : directLocations;
+        }
+
         ImmutableEquatableArray<Range>? roundTripLocation = null;
         if (location is null
             && parameterLocations.HasRoundTrip
             && parameterLocations.TryGetRoundTripLocations(name, out var roundTripLocations))
         {
-            roundTripLocation = roundTripLocations;
+            roundTripLocation = HasCaseInsensitiveSibling(parameters, parameterIndex, name)
+                ? FilterWinningLocations(parameters, parameterIndex, name, parameterLocations.Occurrences, roundTrip: true)
+                : roundTripLocations;
         }
 
         return new(
@@ -102,6 +114,185 @@ internal static partial class Parser
             implicitBodyEligible,
             isMultipart,
             context);
+    }
+
+    /// <summary>Determines whether another parameter on the method has the same resolved URL name (case-insensitively).</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterIndex">The index of the parameter being classified.</param>
+    /// <param name="name">The parameter's resolved URL name.</param>
+    /// <returns><see langword="true"/> when at least one sibling parameter shares the same case-insensitive URL name.</returns>
+    internal static bool HasCaseInsensitiveSibling(
+        in ImmutableArray<IParameterSymbol> parameters,
+        int parameterIndex,
+        string name)
+    {
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            if (i != parameterIndex
+                && string.Equals(ResolveUrlName(parameters[i]), name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Filters the placeholder occurrences matching <paramref name="name"/> to those won by the parameter at <paramref name="parameterIndex"/>.</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterIndex">The index of the parameter being classified.</param>
+    /// <param name="name">The parameter's resolved URL name.</param>
+    /// <param name="occurrences">The placeholder occurrences in the URL.</param>
+    /// <param name="roundTrip">Whether to match round-trip (<c>{**name}</c>) placeholders.</param>
+    /// <returns>The placeholder ranges won by the parameter, or <see langword="null"/> when another sibling wins all of them.</returns>
+    internal static ImmutableEquatableArray<Range>? FilterWinningLocations(
+        in ImmutableArray<IParameterSymbol> parameters,
+        int parameterIndex,
+        string name,
+        ReadOnlySpan<PathPlaceholderOccurrence> occurrences,
+        bool roundTrip)
+    {
+        const int roundTripPrefixLength = 2;
+
+        List<Range>? won = null;
+        for (var i = 0; i < occurrences.Length; i++)
+        {
+            var occurrence = occurrences[i];
+            if (occurrence.Name.StartsWith("**", StringComparison.Ordinal) != roundTrip)
+            {
+                continue;
+            }
+
+            var placeholderName = roundTrip
+                ? occurrence.Name[roundTripPrefixLength..]
+                : occurrence.Name;
+            if (!string.Equals(placeholderName, name, StringComparison.OrdinalIgnoreCase)
+                || !WinsPlaceholderOccurrence(parameters, parameterIndex, placeholderName, occurrences))
+            {
+                continue;
+            }
+
+            (won ??= []).Add(occurrence.Location);
+        }
+
+        return won is not null ? won.ToImmutableEquatableArray() : null;
+    }
+
+    /// <summary>Determines whether the parameter at <paramref name="parameterIndex"/> is the highest-ranked route candidate for a placeholder occurrence.</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterIndex">The index of the parameter being checked.</param>
+    /// <param name="placeholderName">The unprefixed placeholder name from the route template.</param>
+    /// <param name="occurrences">The placeholder occurrences in the URL.</param>
+    /// <returns><see langword="true"/> when the parameter at <paramref name="parameterIndex"/> wins the placeholder.</returns>
+    internal static bool WinsPlaceholderOccurrence(
+        in ImmutableArray<IParameterSymbol> parameters,
+        int parameterIndex,
+        string placeholderName,
+        ReadOnlySpan<PathPlaceholderOccurrence> occurrences)
+    {
+        var bestIndex = -1;
+        var bestRank = -1;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            var candidate = parameters[i];
+            if (!IsRouteCandidate(candidate))
+            {
+                continue;
+            }
+
+            var candidateName = ResolveUrlName(candidate);
+            if (!string.Equals(candidateName, placeholderName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var rank = GetRouteCandidateRank(candidate, candidateName, placeholderName, occurrences);
+            if (rank <= bestRank)
+            {
+                continue;
+            }
+
+            bestRank = rank;
+            bestIndex = i;
+        }
+
+        return bestIndex == parameterIndex;
+    }
+
+    /// <summary>Scores a route candidate parameter against a placeholder name so non-query and exact-case matches take precedence.</summary>
+    /// <param name="candidate">The candidate parameter symbol.</param>
+    /// <param name="candidateName">The candidate parameter's resolved URL name.</param>
+    /// <param name="placeholderName">The unprefixed placeholder name from the route template.</param>
+    /// <param name="occurrences">The placeholder occurrences in the URL.</param>
+    /// <returns>The priority rank (0 to 4, higher is preferred).</returns>
+    internal static int GetRouteCandidateRank(
+        IParameterSymbol candidate,
+        string candidateName,
+        string placeholderName,
+        ReadOnlySpan<PathPlaceholderOccurrence> occurrences)
+    {
+        const int nonQueryBonus = 1;
+        const int exactCaseRank = 3;
+        const int unclaimedFallbackRank = 1;
+        const int claimedByOtherPlaceholderRank = 0;
+
+        var fallbackRank = HasExactCasePlaceholder(occurrences, candidateName)
+            ? claimedByOtherPlaceholderRank
+            : unclaimedFallbackRank;
+        var caseRank = string.Equals(candidateName, placeholderName, StringComparison.Ordinal)
+            ? exactCaseRank
+            : fallbackRank;
+        if (caseRank == claimedByOtherPlaceholderRank)
+        {
+            return claimedByOtherPlaceholderRank;
+        }
+
+        return HasBareQueryOnlyAttribute(candidate)
+            ? caseRank
+            : caseRank + nonQueryBonus;
+    }
+
+    /// <summary>Determines whether a parameter can bind a route placeholder.</summary>
+    /// <param name="parameter">The parameter symbol to inspect.</param>
+    /// <returns><see langword="true"/> when the parameter is eligible to bind a route placeholder.</returns>
+    internal static bool IsRouteCandidate(IParameterSymbol parameter) =>
+        !IsCancellationToken(parameter.Type)
+        && !IsJsonTypeInfo(parameter.Type, out _)
+        && !HasParameterAttribute(parameter, UrlAttributeDisplayName)
+        && !HasParameterAttribute(parameter, BodyAttributeDisplayName)
+        && !HasParameterAttribute(parameter, HeaderCollectionAttributeDisplayName)
+        && !HasParameterAttribute(parameter, PropertyAttributeDisplayName);
+
+    /// <summary>Determines whether a parameter carries a <c>[Query]</c> attribute without a route <c>Format</c>.</summary>
+    /// <param name="parameter">The parameter symbol to inspect.</param>
+    /// <returns><see langword="true"/> when the parameter explicitly opts into query binding without a route format.</returns>
+    internal static bool HasBareQueryOnlyAttribute(IParameterSymbol parameter) =>
+        HasParameterAttribute(parameter, QueryAttributeDisplayName)
+        && NormalizeFormat(ParseParameterQueryData(parameter).Format) is null;
+
+    /// <summary>Determines whether the route template contains any placeholder matching <paramref name="urlName"/> with exact ordinal casing.</summary>
+    /// <param name="occurrences">The placeholder occurrences in the URL.</param>
+    /// <param name="urlName">The parameter's resolved URL name.</param>
+    /// <returns><see langword="true"/> when an exact-case placeholder exists in the template.</returns>
+    internal static bool HasExactCasePlaceholder(
+        ReadOnlySpan<PathPlaceholderOccurrence> occurrences,
+        string urlName)
+    {
+        const int roundTripPrefixLength = 2;
+
+        for (var i = 0; i < occurrences.Length; i++)
+        {
+            var occurrenceName = occurrences[i].Name;
+            var candidateName = occurrenceName.StartsWith("**", StringComparison.Ordinal)
+                ? occurrenceName[roundTripPrefixLength..]
+                : occurrenceName;
+            if (string.Equals(candidateName, urlName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Resolves why a parameter stops inline generation, if it does.</summary>

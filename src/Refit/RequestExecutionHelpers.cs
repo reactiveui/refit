@@ -237,7 +237,7 @@ internal static partial class RequestExecutionHelpers
             .ConfigureAwait(false);
 
         // An empty token means "no credentials for this request": drop the header rather than
-        // sending a blank `Authorization: <scheme>` value (#1688).
+        // sending a blank `Authorization: <scheme>` value.
         request.Headers.Authorization = string.IsNullOrWhiteSpace(token)
             ? null
             : new(auth.Scheme, token);
@@ -245,7 +245,7 @@ internal static partial class RequestExecutionHelpers
 
     /// <summary>
     /// Buffers the request body into a string before sending and stashes it on the request options so a failed
-    /// request can expose it via <see cref="ApiExceptionBase.RequestContent"/> (#1189). No-op unless
+    /// request can expose it via <see cref="ApiExceptionBase.RequestContent"/>. No-op unless
     /// <see cref="RefitSettings.CaptureRequestContent"/> is enabled and the request has content.
     /// </summary>
     /// <param name="request">The request whose body should be captured.</param>
@@ -278,9 +278,24 @@ internal static partial class RequestExecutionHelpers
     /// <summary>Returns the response content, substituting empty content when the response has none.</summary>
     /// <param name="response">The response whose content is read.</param>
     /// <returns>The response content, or empty content when none is present.</returns>
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Content is nullable in the BCL contract, but HttpClient always sets it, so the null-defensive fallback is unreachable.
-    internal static HttpContent EnsureResponseContent(HttpResponseMessage response) =>
-        response.Content ?? new StringContent(string.Empty);
+    internal static HttpContent EnsureResponseContent(HttpResponseMessage response)
+    {
+        var content = response.Content ?? new StringContent(string.Empty);
+        MaterializeContentLength(content);
+        return content;
+    }
+
+    /// <summary>Materializes the <c>Content-Length</c> header before the content is buffered or disposed so reading
+    /// <see cref="System.Net.Http.Headers.HttpContentHeaders.ContentLength"/> after disposal returns the original header
+    /// value (or <see langword="null"/> when absent) instead of throwing <see cref="ObjectDisposedException"/>.</summary>
+    /// <param name="content">The response content whose <c>Content-Length</c> header should be materialized.</param>
+    internal static void MaterializeContentLength(HttpContent? content)
+    {
+        if (content is not null && !content.Headers.ContentLength.HasValue)
+        {
+            content.Headers.ContentLength = null;
+        }
+    }
 
     /// <summary>Buffers the request body and applies the authorization header when the options request it.</summary>
     /// <param name="request">The request message to prepare.</param>
@@ -636,47 +651,62 @@ internal static partial class RequestExecutionHelpers
             return default;
         }
 
-        await TryBufferContentAsync(content, cancellationToken).ConfigureAwait(false);
+        var bufferingException = await TryBufferContentAsync(content, cancellationToken).ConfigureAwait(false);
 
+        try
+        {
 #if NET8_0_OR_GREATER
-        return GeneratedRequestRunner.GetRequestJsonTypeInfo<T>(request) is { } typeInfo
-            ? await GeneratedRequestRunner.RequireJsonTypeInfoSerializer(settings)
-                .FromHttpContentAsync(content, typeInfo, cancellationToken)
-                .ConfigureAwait(false)
-            : await settings.ContentSerializer
+            return GeneratedRequestRunner.GetRequestJsonTypeInfo<T>(request) is { } typeInfo
+                ? await GeneratedRequestRunner.RequireJsonTypeInfoSerializer(settings)
+                    .FromHttpContentAsync(content, typeInfo, cancellationToken)
+                    .ConfigureAwait(false)
+                : await settings.ContentSerializer
+                    .FromHttpContentAsync<T>(content, cancellationToken)
+                    .ConfigureAwait(false);
+#else
+            _ = request;
+            return await settings.ContentSerializer
                 .FromHttpContentAsync<T>(content, cancellationToken)
                 .ConfigureAwait(false);
-#else
-        _ = request;
-        return await settings.ContentSerializer
-            .FromHttpContentAsync<T>(content, cancellationToken)
-            .ConfigureAwait(false);
 #endif
+        }
+        catch (Exception) when (bufferingException is not null && !cancellationToken.IsCancellationRequested)
+        {
+            throw Rethrow(bufferingException);
+        }
     }
 
-    /// <summary>Attempts to buffer content into memory, ignoring buffering failures but honouring cancellation.</summary>
+    /// <summary>Attempts to buffer content into memory, returning any exception thrown while buffering when
+    /// <paramref name="cancellationToken"/> has not been requested so callers can surface it if the subsequent
+    /// serializer read fails.</summary>
     /// <param name="content">The content to buffer.</param>
     /// <param name="cancellationToken">A token to cancel buffering.</param>
-    /// <returns>A task that completes once buffering has been attempted.</returns>
-    /// <exception cref="OperationCanceledException">Thrown when the caller cancelled while buffering.</exception>
+    /// <returns>The exception thrown while buffering when <paramref name="cancellationToken"/> was not requested, or
+    /// <see langword="null"/> when buffering succeeded.</returns>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> has been requested.</exception>
     /// <remarks>
-    /// Buffering is best-effort: a failure just means the serializer reads the live stream instead. Cancellation is
-    /// not, because continuing would hand the serializer partially consumed content. The check sits after the catch
-    /// rather than in a filter on it, so it also covers the targets whose <c>LoadIntoBufferAsync</c> polyfill drops
-    /// the token and therefore never throws.
+    /// Buffering is best-effort: if <c>LoadIntoBufferAsync</c> fails on a custom <see cref="HttpContent"/> whose stream
+    /// remains readable, the serializer can still succeed. When <c>LoadIntoBufferAsync</c> fails mid-stream on a
+    /// network response, however, the underlying stream is already consumed and <c>FromHttpContentAsync</c> throws a
+    /// secondary <see cref="InvalidOperationException"/>; returning the buffering exception lets the caller rethrow
+    /// the original transport failure instead. The cancellation check sits after the catch rather than in a
+    /// filter on it, so it also covers the targets whose <c>LoadIntoBufferAsync</c> polyfill drops the token and
+    /// therefore never throws.
     /// </remarks>
-    internal static async Task TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
+    internal static async Task<Exception?> TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
     {
+        Exception? failure = null;
         try
         {
             await content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception bufferingException)
         {
-            _ = bufferingException;
+            failure = bufferingException;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+        return failure;
     }
 
     /// <summary>The outcome of attempting to send a request.</summary>

@@ -6,7 +6,7 @@ namespace Refit.GeneratorTests;
 
 /// <summary>Verifies how the generator annotates methods that fall back to the reflection request builder: it mirrors
 /// the interface member's <c>[RequiresUnreferencedCode]</c>/<c>[RequiresDynamicCode]</c> when present, and otherwise
-/// suppresses the unactionable IL2026/IL3050 (issue #2200).</summary>
+/// suppresses the unactionable IL2026/IL3050.</summary>
 public sealed class ReflectionFallbackAnnotationTests
 {
     /// <summary>A method with a dynamic query-map (<c>object</c>) parameter is not inline-eligible, so it falls back to reflection.</summary>

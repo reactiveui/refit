@@ -536,6 +536,9 @@ public partial class GeneratedRequestRunnerTests
         /// <summary>Gets the exception thrown from serialization.</summary>
         public Exception? SerializeException { get; init; }
 
+        /// <summary>Gets the cancellation token source to cancel when deserialization is invoked.</summary>
+        public CancellationTokenSource? CancelOnDeserialize { get; init; }
+
         /// <inheritdoc />
         public HttpContent ToHttpContent<T>(T item)
         {
@@ -553,11 +556,16 @@ public partial class GeneratedRequestRunnerTests
             "Design",
             "SST2307:Generic method type parameters should be inferable from the parameters",
             Justification = "The method implements Refit's published serializer interface.")]
+        [SuppressMessage(
+            "Usage",
+            "CA1849:Call async methods when in an async method",
+            Justification = "Synchronous test double needs immediate token transition before throwing.")]
         public Task<T?> FromHttpContentAsync<T>(
             HttpContent content,
             CancellationToken cancellationToken = default)
         {
             DeserializeCallCount++;
+            CancelOnDeserialize?.Cancel();
             if (DeserializeException is not null)
             {
                 throw DeserializeException;
@@ -585,6 +593,43 @@ public partial class GeneratedRequestRunnerTests
         {
             length = 1;
             return true;
+        }
+    }
+
+    /// <summary>Simulates a single-read network response content (<c>HttpConnectionResponseContent</c>) that fails mid-stream
+    /// during <c>LoadIntoBufferAsync</c> and subsequently rejects a second read with "The stream was already consumed".</summary>
+    private sealed class SingleReadFailingBufferContent : HttpContent
+    {
+        /// <summary>The transport exception thrown on the initial buffering read.</summary>
+        private readonly Exception _transportException;
+
+        /// <summary>Tracks whether the underlying response stream was already consumed by buffering.</summary>
+        private bool _consumed;
+
+        /// <summary>Initializes a new instance of the <see cref="SingleReadFailingBufferContent"/> class.</summary>
+        /// <param name="transportException">The transport exception to throw when buffering reads the stream.</param>
+        public SingleReadFailingBufferContent(Exception transportException) =>
+            _transportException = transportException;
+
+        /// <inheritdoc />
+        protected override Task SerializeToStreamAsync(
+            Stream stream,
+            TransportContext? context)
+        {
+            if (_consumed)
+            {
+                throw new InvalidOperationException("The stream was already consumed. It cannot be read again.");
+            }
+
+            _consumed = true;
+            throw _transportException;
+        }
+
+        /// <inheritdoc />
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
         }
     }
 

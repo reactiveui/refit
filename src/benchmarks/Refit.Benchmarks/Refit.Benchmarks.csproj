@@ -18,7 +18,7 @@
     <PackageReference Include="BenchmarkDotNet" />
     <!-- Kept on the same Roslyn version BenchmarkDotNet pulls in so the benchmark's
          Microsoft.CodeAnalysis.* assemblies stay on a single consistent version. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="5.6.0" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="newtonsoft-json-10-users.json" />

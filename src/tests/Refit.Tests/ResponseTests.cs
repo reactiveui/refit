@@ -152,7 +152,7 @@ public sealed partial class ResponseTests
     }
 
     /// <summary>
-    /// #1945: ValidationApiException should expose the ContentHeaders of the
+    /// Verifies ValidationApiException exposes the ContentHeaders of the
     /// originating ApiException rather than leaving them null.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -174,7 +174,7 @@ public sealed partial class ResponseTests
     }
 
     /// <summary>
-    /// #1197: ValidationApiException must deserialize ProblemDetails with the configured
+    /// Verifies ValidationApiException deserializes ProblemDetails with the configured
     /// IHttpContentSerializer instead of a hardcoded System.Text.Json instance. A
     /// case-sensitive serializer is used here, so the camelCase DetailValue key must not map
     /// to the PascalCase Detail property the way the old camelCase/case-insensitive
@@ -319,10 +319,10 @@ public sealed partial class ResponseTests
     [Test]
     public async Task DeserializationFailureWithNonSeekableStream_PopulatesApiExceptionContent()
     {
-        // Regression test for #2098: when deserialization fails, ApiException.Content
-        // must still expose the raw response body. With a non-seekable/non-buffered
-        // stream the serializer consumes the content, so ApiException.Create could no
-        // longer re-read it and Content ended up null.
+        // When deserialization fails, ApiException.Content must still expose the raw
+        // response body. With a non-seekable/non-buffered stream the serializer consumes
+        // the content, so buffering before deserialization is needed for ApiException.Create
+        // to read it.
         const string rawBody = "{ this is not valid json";
 
         await using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
@@ -352,11 +352,10 @@ public sealed partial class ResponseTests
     [Test]
     public async Task XmlDeserializationWithNonSeekableStream_DoesNotThrowStreamConsumed()
     {
-        // Regression test for #1729: the XML serializer reads the body via
-        // ReadAsStringAsync. The reverted #1705 probed/consumed the stream before
-        // deserializing, which threw "The stream was already consumed" for XML over a
-        // non-seekable network stream. Buffering via LoadIntoBufferAsync must keep this
-        // scenario working.
+        // The XML serializer reads the body via ReadAsStringAsync. Probing or consuming
+        // the stream before deserializing would throw "The stream was already consumed"
+        // for XML over a non-seekable network stream. Buffering via LoadIntoBufferAsync
+        // keeps the stream readable for the serializer.
         await using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
         var bytes = "<XmlResponse><Identifier>abc-123</Identifier></XmlResponse>"u8.ToArray();
         await contentStream.WriteAsync(bytes);

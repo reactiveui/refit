@@ -262,6 +262,7 @@ public class ApiException : ApiExceptionBase
         {
             try
             {
+                RequestExecutionHelpers.MaterializeContentLength(response.Content);
                 exception.ContentHeaders = response.Content.Headers;
                 exception.Content = await ReadContentCappedAsync(
                         response.Content,
@@ -310,7 +311,7 @@ public class ApiException : ApiExceptionBase
 
     /// <summary>
     /// Synchronously deserializes the buffered response content as <typeparamref name="T"/>. The content is already
-    /// a string, so this can run inside an exception filter where awaiting is not allowed by the CLR (#1591).
+    /// a string, so this can run inside an exception filter where awaiting is not allowed by the CLR.
     /// </summary>
     /// <typeparam name="T">Type to deserialize the content to.</typeparam>
     /// <returns>The deserialized content, or <see langword="default"/> when there is no content.</returns>
@@ -342,7 +343,7 @@ public class ApiException : ApiExceptionBase
     /// <summary>
     /// Attempts to synchronously deserialize the buffered response content as <typeparamref name="T"/> without
     /// throwing, making it usable from an exception filter:
-    /// <c>catch (ApiException ex) when (ex.TryGetContentAs&lt;Error&gt;(out var error))</c> (#1591).
+    /// <c>catch (ApiException ex) when (ex.TryGetContentAs&lt;Error&gt;(out var error))</c>.
     /// </summary>
     /// <typeparam name="T">Type to deserialize the content to.</typeparam>
     /// <param name="content">The deserialized content when this returns <see langword="true"/>; otherwise <see langword="default"/>.</param>

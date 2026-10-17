@@ -5,10 +5,10 @@
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
-namespace BlazorWasmIssue2065;
+namespace BlazorWasmSample;
 
-/// <summary>Possible status values for the sample data.</summary>
-[JsonSerializable(typeof(Issue2067Status))]
-[JsonSerializable(typeof(Issue2067Response))]
+/// <summary>Source-generated JSON serialization context for the Blazor WebAssembly sample models.</summary>
+[JsonSerializable(typeof(SampleStatus))]
+[JsonSerializable(typeof(SampleStatusResponse))]
 [DebuggerDisplay("JsonContext")]
 public partial class JsonContext : JsonSerializerContext;

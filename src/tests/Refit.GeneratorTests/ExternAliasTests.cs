@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Refit.GeneratorTests;
 
 /// <summary>Verifies the generator qualifies types reached through an <c>extern alias</c> and emits the directive,
-/// so the generated code compiles for types that are not reachable via <c>global::</c> (issue #1101).</summary>
+/// so the generated code compiles for types that are not reachable via <c>global::</c>.</summary>
 public sealed class ExternAliasTests
 {
     /// <summary>The alias-qualified <c>Widget</c> type name the generator must emit into the generated code.</summary>

@@ -59,7 +59,7 @@
             "allowedVersions": "<5.0.0"
         },
         {
-            "description": "Hold the Roslyn (Microsoft.CodeAnalysis.*) toolchain at its current versions for back-compatibility. The source generator builds against Roslyn 4.8 and ships in a single analyzer slot, which sets the minimum compiler version consumers need; the test/benchmark tooling tracks the 4.x line. These move together only as a deliberate toolchain bump, not via automated updates.",
+            "description": "Hold the Roslyn (Microsoft.CodeAnalysis.*) toolchain at its current versions for back-compatibility. The source generator builds against Roslyn 4.8 and ships in a single analyzer slot, which sets the minimum compiler version consumers need; the test tooling is deliberately clamped to 4.14.0 (while benchmark projects override Workspaces to match BenchmarkDotNet's transitive Roslyn dependency). These move together only as a deliberate toolchain bump, not via automated updates.",
             "matchManagers": [
                 "nuget"
             ],

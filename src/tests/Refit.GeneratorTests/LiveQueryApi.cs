@@ -245,5 +245,118 @@ public static partial class LiveQueryApi
         /// <returns>The response body.</returns>
         [Get("/indexedSimpleType")]
         Task<string> IndexedSimpleType([Query(CollectionFormat.Indexed)] Item item);
+
+        /// <summary>Sends a path parameter alongside a case-differing aliased query parameter.</summary>
+        /// <param name="id">The account identifier bound to the route.</param>
+        /// <param name="filterId">The optional filter identifier bound to the query string.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions")]
+        Task<string> CaseDifferingPathAndQuery(int id, [Query][AliasAs("ID")] int? filterId);
+
+        /// <summary>Sends a case-differing aliased query parameter declared before the path parameter.</summary>
+        /// <param name="filterId">The optional filter identifier bound to the query string.</param>
+        /// <param name="id">The account identifier bound to the route.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions")]
+        Task<string> CaseDifferingQueryThenPath([Query][AliasAs("ID")] int? filterId, int id);
+
+        /// <summary>Sends a case-differing aliased parameter without <c>[Query]</c> alongside an exact-case path parameter.</summary>
+        /// <param name="filterId">The optional filter identifier bound to the query string.</param>
+        /// <param name="id">The account identifier bound to the route.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions")]
+        Task<string> CaseDifferingWithoutQueryAttribute([AliasAs("ID")] int? filterId, int id);
+
+        /// <summary>Sends two case-differing route parameters bound to distinct case-differing placeholders.</summary>
+        /// <param name="group">The account group segment.</param>
+        /// <param name="id">The account identifier bound to <c>{id}</c>.</param>
+        /// <param name="positionId">The position identifier bound to <c>{ID}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{group}/{id}/positions/{ID}/repeat/{id}")]
+        Task<string> CaseDifferingDualPathPlaceholders(string group, [Query(Format = "D")] int id, [AliasAs("ID")] int positionId);
+
+        /// <summary>Sends a round-trip path parameter alongside a case-differing aliased query parameter.</summary>
+        /// <param name="group">The file group segment.</param>
+        /// <param name="filterRest">The optional filter bound to the query string.</param>
+        /// <param name="rest">The catch-all route value.</param>
+        /// <returns>The response body.</returns>
+        [Get("/files/{group}/{**rest}")]
+        Task<string> CaseDifferingRoundTripPathAndQuery(string group, [Query][AliasAs("REST")] string? filterRest, [AliasAs("Rest")] string rest);
+
+        /// <summary>Sends two non-query parameters where one matches another placeholder in exact case.</summary>
+        /// <param name="secondId">The identifier bound to <c>{ID}</c>.</param>
+        /// <param name="id">The identifier bound to <c>{Id}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{Id}/positions/{ID}")]
+        Task<string> CaseDifferingSiblingClaimedByOtherPlaceholder([AliasAs("ID")] int secondId, int id);
+
+        /// <summary>Sends two bare <c>[Query]</c> parameters where one matches another placeholder in exact case.</summary>
+        /// <param name="secondId">The identifier bound to <c>{ID}</c>.</param>
+        /// <param name="id">The identifier bound to <c>{Id}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{Id}/positions/{ID}")]
+        Task<string> CaseDifferingBareQuerySiblingClaimedByOtherPlaceholder([Query][AliasAs("ID")] int secondId, [Query] int id);
+
+        /// <summary>Sends a non-query parameter and a bare <c>[Query]</c> parameter that each match their own exact-case placeholder.</summary>
+        /// <param name="id">The identifier bound to <c>{id}</c>.</param>
+        /// <param name="secondId">The identifier bound to <c>{ID}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions/{ID}")]
+        Task<string> CaseDifferingNonQueryAndBareQueryDualPlaceholders(int id, [Query][AliasAs("ID")] int secondId);
+
+        /// <summary>Sends a bare <c>[Query]</c> parameter and a non-query parameter that each match their own exact-case placeholder.</summary>
+        /// <param name="id">The identifier bound to <c>{id}</c>.</param>
+        /// <param name="secondId">The identifier bound to <c>{ID}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions/{ID}")]
+        Task<string> CaseDifferingBareQueryAndNonQueryDualPlaceholders([Query] int id, [AliasAs("ID")] int secondId);
+
+        /// <summary>Sends a non-query fallback parameter for <c>{Id}</c> alongside an exact-case bare <c>[Query]</c> parameter for <c>{ID}</c>.</summary>
+        /// <param name="id">The identifier bound to <c>{Id}</c>.</param>
+        /// <param name="secondId">The identifier bound to <c>{ID}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{Id}/positions/{ID}")]
+        Task<string> CaseDifferingFallbackNonQueryAndExactBareQuery(int id, [Query][AliasAs("ID")] int secondId);
+
+        /// <summary>Sends a whitespace-formatted <c>[Query]</c> parameter alongside a case-differing route parameter.</summary>
+        /// <param name="filterId">The optional query filter with whitespace format.</param>
+        /// <param name="id">The account identifier bound to the route.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions")]
+        Task<string> CaseDifferingWhitespaceFormatQuery([Query(Format = " ")][AliasAs("ID")] int? filterId, [AliasAs("Id")] int id);
+
+        /// <summary>Sends two <c>[Query]</c> parameters where the exact-case parameter binds to the route.</summary>
+        /// <param name="filterId">The non-exact-case query parameter.</param>
+        /// <param name="id">The exact-case parameter bound to the route.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{id}/positions")]
+        Task<string> CaseDifferingBothQuery([Query][AliasAs("ID")] int? filterId, [Query] int id);
+
+        /// <summary>Sends a <c>[Body]</c> parameter whose name collides with a case-differing route parameter.</summary>
+        /// <param name="id">The request body.</param>
+        /// <param name="routeId">The route parameter.</param>
+        /// <returns>The response body.</returns>
+        [Post("/items/{id}")]
+        Task<string> CaseDifferingBodyAndRoute([Body] string id, [AliasAs("ID")] int routeId);
+
+        /// <summary>Sends a route parameter whose name collides case-insensitively with a <see cref="CancellationToken"/> parameter.</summary>
+        /// <param name="routeToken">The route token value.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns>The response body.</returns>
+        [Get("/tokens/{token}")]
+        Task<string> CaseDifferingRouteAndCancellationToken([AliasAs("Token")] string routeToken, CancellationToken token);
+
+        /// <summary>Sends a parameter bound to both a header and a route placeholder.</summary>
+        /// <param name="id">The identifier bound to both the header and route.</param>
+        /// <returns>The response body.</returns>
+        [Get("/tenant/{id}")]
+        Task<string> HeaderAndPath([Header("X-Tenant")] string id);
+
+        /// <summary>Sends mixed ordinary and round-trip placeholders whose names differ only by case.</summary>
+        /// <param name="catchAllId">The catch-all path value bound to <c>{**ID}</c>.</param>
+        /// <param name="id">The segment value bound to <c>{Id}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/files/{Id}/{**ID}")]
+        Task<string> CaseDifferingMixedOrdinaryAndRoundTrip([AliasAs("ID")] string catchAllId, string id);
     }
 }

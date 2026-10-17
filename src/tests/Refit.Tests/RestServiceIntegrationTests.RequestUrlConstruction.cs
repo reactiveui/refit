@@ -24,7 +24,7 @@ public partial class RestServiceIntegrationTests
     }
 
     /// <summary>Verifies a generic path-bound parameter binds dotted <c>{obj.Prop}</c> placeholders against the
-    /// runtime type instead of throwing at client creation (issue #1743).</summary>
+    /// runtime type instead of throwing at client creation.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task GetWithGenericPathBoundObject()
@@ -39,7 +39,7 @@ public partial class RestServiceIntegrationTests
     }
 
     /// <summary>Verifies a constrained generic path-bound parameter binds dotted <c>{obj.Prop}</c> placeholders against
-    /// the constraint type, producing the same URL as the reflection path while being generated inline (issue #2218).</summary>
+    /// the constraint type, producing the same URL as the reflection path while being generated inline.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task GetWithGenericConstrainedPathBoundObject()
@@ -144,8 +144,8 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithDerivedObjectAsBaseType()
     {
-        // see https://github.com/reactiveui/refit/issues/1882: a property bound to the path must not also be emitted
-        // as a query parameter. SomeProperty binds to the path and so is excluded from the query. The generated
+        // A property bound to the path must not also be emitted as a query parameter.
+        // SomeProperty binds to the path and so is excluded from the query. The generated
         // request builder flattens the declared (base) type's properties, so SomeProperty2 flattens into the query
         // while the derived-only SomeProperty3 does not contribute through a base-typed parameter — mirroring how the
         // System.Text.Json source generator treats a declared type.

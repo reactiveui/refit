@@ -93,6 +93,7 @@ Refit-Tests/test-results
 /InterfaceStubGenerator.Core/Properties/launchSettings.json
 *.svclog
 **/BenchmarkDotNet.Artifacts
+**/.bdn
 
 # Local agent worktrees, settings and scratch
 .claude/

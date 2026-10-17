@@ -60,7 +60,7 @@ public interface IRequestBin
     [Post("/big")]
     Task PostBig(BigObject big);
 
-    /// <summary>Posts a body whose parameter name collides with a generated local variable (issue #2161).</summary>
+    /// <summary>Posts a body whose parameter name collides with a generated local variable.</summary>
     /// <param name="refitSettings">A body parameter deliberately named like a generated local.</param>
     /// <returns>A task that completes when the request finishes.</returns>
     [Post("/foo")]

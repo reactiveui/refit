@@ -203,7 +203,7 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(result).IsEqualTo("Ok");
     }
 
-    /// <summary>Verifies an empty token from the getter drops the authorization header (#1688).</summary>
+    /// <summary>Verifies an empty token from the getter drops the authorization header.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task AuthenticatedHandlerWithEmptyTokenSkipsAuth()
@@ -224,7 +224,7 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(result).IsEqualTo("Ok");
     }
 
-    /// <summary>Verifies a whitespace token from the getter drops the authorization header (#1688).</summary>
+    /// <summary>Verifies a whitespace token from the getter drops the authorization header.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task AuthenticatedHandlerWithWhitespaceTokenSkipsAuth()
@@ -245,7 +245,7 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(result).IsEqualTo("Ok");
     }
 
-    /// <summary>Verifies the handler strips an already-present authorization header when the token getter yields an empty token (#1688).</summary>
+    /// <summary>Verifies the handler strips an already-present authorization header when the token getter yields an empty token.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task AuthenticatedHandlerRemovesPresentAuthorizationHeaderWhenTokenIsEmpty()
@@ -515,7 +515,7 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(result).IsEqualTo("Ok");
     }
 
-    /// <summary>Verifies an empty token from the getter drops the authorization header when supplying an explicit HTTP client (#1688).</summary>
+    /// <summary>Verifies an empty token from the getter drops the authorization header when supplying an explicit HTTP client.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task AuthorizationHeaderValueGetterWithEmptyTokenSkipsAuthWhenSupplyingHttpClient()
@@ -539,7 +539,7 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(result).IsEqualTo("Ok");
     }
 
-    /// <summary>Verifies a whitespace token from the getter drops the authorization header when supplying an explicit HTTP client (#1688).</summary>
+    /// <summary>Verifies a whitespace token from the getter drops the authorization header when supplying an explicit HTTP client.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task AuthorizationHeaderValueGetterWithWhitespaceTokenSkipsAuthWhenSupplyingHttpClient()

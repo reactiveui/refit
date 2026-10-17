@@ -10,7 +10,7 @@ namespace Refit.GeneratorTests;
 
 /// <summary>Verifies the generated helper types are named per assembly, so two assemblies linked by
 /// <c>[InternalsVisibleTo]</c> no longer emit identically named internal types that the second compilation
-/// sees twice and reports as conflicting (issue #2254), while the runtime reflection resolution still matches
+/// sees twice and reports as conflicting, while the runtime reflection resolution still matches
 /// the container name the generator emits.</summary>
 public sealed class InternalsVisibleToGenerationTests
 {

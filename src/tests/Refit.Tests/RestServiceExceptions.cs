@@ -60,7 +60,7 @@ public class RestServiceExceptions
     }
 
     /// <summary>Verifies that a non-string round-tripping parameter is formatted via <c>ToString</c>, preserving its
-    /// <c>/</c> separators as path structure (issue #2046).</summary>
+    /// <c>/</c> separators as path structure.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task RoundTripParameterNotStringFormatsAndPreservesSlashes()

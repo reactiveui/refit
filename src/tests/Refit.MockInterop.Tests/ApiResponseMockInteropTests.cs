@@ -13,7 +13,7 @@ namespace Refit.MockInterop.Tests;
 /// <summary>
 /// Interop tests for <see cref="IApiResponse{T}"/> driven by <see cref="StubApiResponse{T}"/>. These pin the
 /// proxy behaviour the concrete <see cref="ApiResponse{T}"/> cannot exercise: that the generic
-/// interface does not <c>new</c>-shadow base members (regression for #1933), and that the additive
+/// interface does not <c>new</c>-shadow base members, and that the additive
 /// <see cref="IApiResponse{T}.IsSuccessfulWithContent"/> narrows <see cref="IApiResponse{T}.Content"/>
 /// correctly through an explicit interface implementation.
 /// </summary>
@@ -33,7 +33,7 @@ public sealed class ApiResponseMockInteropTests
     /// <summary>
     /// Verifies a single assignment of <see cref="IApiResponse.IsSuccessful"/> on the generic stub is
     /// observed through the non-generic <see cref="IApiResponse"/> view. A <c>new</c> shadow would
-    /// split the member into two interface slots and return <c>default</c> through the base (#1933).
+    /// split the member into two interface slots and return <c>default</c> through the base.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -143,10 +143,10 @@ public sealed class ApiResponseMockInteropTests
     }
 
     /// <summary>
-    /// Regression for #1933: a method that takes the non-generic <see cref="IApiResponse"/> must observe
+    /// Verifies a method that takes the non-generic <see cref="IApiResponse"/> observes
     /// the <see cref="IApiResponse.StatusCode"/> / <see cref="IApiResponse.ContentHeaders"/> set on a
-    /// stub of the generic <see cref="IApiResponse{T}"/>. The original <c>new</c>-shadow split those into
-    /// separate slots, so the base view read <c>null</c> and the problem-details check wrongly returned false.
+    /// stub of the generic <see cref="IApiResponse{T}"/>. A <c>new</c>-shadow would split those into
+    /// separate slots, so the base view would read <c>null</c> and the problem-details check would wrongly return false.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -161,9 +161,9 @@ public sealed class ApiResponseMockInteropTests
     }
 
     /// <summary>
-    /// Regression for #1949: reading <see cref="IApiResponse.Error"/> through the non-generic interface must
-    /// return the error set on the generic stub. The <c>new</c>-shadow made <c>IApiResponse.Error</c> a
-    /// distinct, always-null slot, so a <c>Verify(IApiResponse r)</c> method never saw the captured error.
+    /// Verifies reading <see cref="IApiResponse.Error"/> through the non-generic interface
+    /// returns the error set on the generic stub. A <c>new</c>-shadow would make <c>IApiResponse.Error</c> a
+    /// distinct, always-null slot, so a <c>Verify(IApiResponse r)</c> method would never see the captured error.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

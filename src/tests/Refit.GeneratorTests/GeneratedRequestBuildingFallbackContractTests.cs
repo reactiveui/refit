@@ -51,7 +51,7 @@ public sealed class GeneratedRequestBuildingFallbackContractTests
         AssertGeneratorAndAnalyzerAgree(body, methodName, expectedFallback: true);
 
     /// <summary>Verifies a constrained generic path-bound method is generated inline and is not flagged by RF006, while an
-    /// otherwise-identical unconstrained method still falls back to reflection and is flagged (issue #2218).</summary>
+    /// otherwise-identical unconstrained method still falls back to reflection and is flagged.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task ConstrainedGenericPathBoundMethodIsNotFlaggedWhileUnconstrainedIs()

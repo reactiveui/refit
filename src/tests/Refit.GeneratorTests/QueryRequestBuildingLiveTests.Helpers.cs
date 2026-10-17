@@ -287,6 +287,54 @@ public sealed partial class QueryRequestBuildingLiveTests
 
                 [Get("/indexedSimpleType")]
                 Task<string> IndexedSimpleType([Query(CollectionFormat.Indexed)] Item item);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingPathAndQuery(int id, [Query][AliasAs("ID")] int? filterId);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingQueryThenPath([Query][AliasAs("ID")] int? filterId, int id);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingWithoutQueryAttribute([AliasAs("ID")] int? filterId, int id);
+
+                [Get("/accounts/{group}/{id}/positions/{ID}/repeat/{id}")]
+                Task<string> CaseDifferingDualPathPlaceholders(string group, [Query(Format = "D")] int id, [AliasAs("ID")] int positionId);
+
+                [Get("/files/{group}/{**rest}")]
+                Task<string> CaseDifferingRoundTripPathAndQuery(string group, [Query][AliasAs("REST")] string? filterRest, [AliasAs("Rest")] string rest);
+
+                [Get("/accounts/{Id}/positions/{ID}")]
+                Task<string> CaseDifferingSiblingClaimedByOtherPlaceholder([AliasAs("ID")] int secondId, int id);
+
+                [Get("/accounts/{Id}/positions/{ID}")]
+                Task<string> CaseDifferingBareQuerySiblingClaimedByOtherPlaceholder([Query][AliasAs("ID")] int secondId, [Query] int id);
+
+                [Get("/accounts/{id}/positions/{ID}")]
+                Task<string> CaseDifferingNonQueryAndBareQueryDualPlaceholders(int id, [Query][AliasAs("ID")] int secondId);
+
+                [Get("/accounts/{id}/positions/{ID}")]
+                Task<string> CaseDifferingBareQueryAndNonQueryDualPlaceholders([Query] int id, [AliasAs("ID")] int secondId);
+
+                [Get("/accounts/{Id}/positions/{ID}")]
+                Task<string> CaseDifferingFallbackNonQueryAndExactBareQuery(int id, [Query][AliasAs("ID")] int secondId);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingWhitespaceFormatQuery([Query(Format = " ")][AliasAs("ID")] int? filterId, [AliasAs("Id")] int id);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingBothQuery([Query][AliasAs("ID")] int? filterId, [Query] int id);
+
+                [Post("/items/{id}")]
+                Task<string> CaseDifferingBodyAndRoute([Body] string id, [AliasAs("ID")] int routeId);
+
+                [Get("/tokens/{token}")]
+                Task<string> CaseDifferingRouteAndCancellationToken([AliasAs("Token")] string routeToken, System.Threading.CancellationToken token);
+
+                [Get("/tenant/{id}")]
+                Task<string> HeaderAndPath([Header("X-Tenant")] string id);
+
+                [Get("/files/{Id}/{**ID}")]
+                Task<string> CaseDifferingMixedOrdinaryAndRoundTrip([AliasAs("ID")] string catchAllId, string id);
             }
             """;
 

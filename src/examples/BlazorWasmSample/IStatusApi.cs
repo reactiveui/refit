@@ -3,13 +3,13 @@
 // See the LICENSE file in the project root for full license information.
 using Refit;
 
-namespace BlazorWasmIssue2065;
+namespace BlazorWasmSample;
 
-/// <summary>Sample Refit API used to reproduce issue 2067.</summary>
-internal interface IIssue2067Api
+/// <summary>Sample Refit API for fetching a typed status payload in Blazor WebAssembly.</summary>
+internal interface IStatusApi
 {
     /// <summary>Gets the status from the sample data endpoint.</summary>
     /// <returns>The status response.</returns>
     [Get("/sample-data/status.json")]
-    Task<Issue2067Response> GetStatusAsync();
+    Task<SampleStatusResponse> GetStatusAsync();
 }

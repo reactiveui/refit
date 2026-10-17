@@ -9,7 +9,7 @@ namespace Refit.Tests;
 /// <summary>Content deserialization, truncation, and error-body reading tests for <see cref="ApiExceptionTests"/>.</summary>
 public sealed partial class ApiExceptionTests
 {
-    /// <summary>Verifies the synchronous GetContentAs deserializes the buffered error body (#1591).</summary>
+    /// <summary>Verifies the synchronous GetContentAs deserializes the buffered error body.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task SyncGetContentAsDeserializesContent()
@@ -26,7 +26,7 @@ public sealed partial class ApiExceptionTests
         await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
     }
 
-    /// <summary>Verifies the synchronous GetContentAs returns default when there is no body (#1591).</summary>
+    /// <summary>Verifies the synchronous GetContentAs returns default when there is no body.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task SyncGetContentAsReturnsDefaultWhenNoContent()
@@ -41,7 +41,7 @@ public sealed partial class ApiExceptionTests
         await Assert.That(ReadContentSynchronously(exception)).IsNull();
     }
 
-    /// <summary>Verifies TryGetContentAs returns the value inside an exception filter (#1591).</summary>
+    /// <summary>Verifies TryGetContentAs returns the value inside an exception filter.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task SyncTryGetContentAsReturnsTrueAndValue()
@@ -59,7 +59,7 @@ public sealed partial class ApiExceptionTests
         await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
     }
 
-    /// <summary>Verifies TryGetContentAs returns false for missing or malformed content (#1591).</summary>
+    /// <summary>Verifies TryGetContentAs returns false for missing or malformed content.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task SyncTryGetContentAsReturnsFalseForMissingOrInvalidContent()
@@ -75,7 +75,7 @@ public sealed partial class ApiExceptionTests
         await Assert.That(broken).IsNull();
     }
 
-    /// <summary>Verifies the synchronous helpers behave when the serializer lacks sync support (#1591).</summary>
+    /// <summary>Verifies the synchronous helpers behave when the serializer lacks sync support.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task SyncGetContentAsWithoutSyncSerializerSupport()

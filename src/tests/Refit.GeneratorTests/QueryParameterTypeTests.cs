@@ -480,7 +480,7 @@ public sealed class QueryParameterTypeTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
-    /// <summary>Verifies an implicit (un-attributed) complex body on a body-capable method generates inline (issue #2190).</summary>
+    /// <summary>Verifies an implicit (un-attributed) complex body on a body-capable method generates inline.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task ImplicitComplexBodyGeneratesInline()

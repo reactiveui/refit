@@ -3,10 +3,10 @@
 // See the LICENSE file in the project root for full license information.
 using System.Text.Json.Serialization;
 
-namespace BlazorWasmIssue2065;
+namespace BlazorWasmSample;
 
 /// <summary>Possible status values for the sample data.</summary>
-public enum Issue2067Status
+public enum SampleStatus
 {
     /// <summary>The item is fully ready.</summary>
     [JsonStringEnumMemberName("totally-ready")]

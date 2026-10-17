@@ -61,7 +61,7 @@
         <Project Path="examples/Documentation/TestingFrameworks/NUnit/NUnitTests.csproj" />
         <Project Path="examples/Documentation/TestingFrameworks/MSTest/MSTestTests.csproj" />
         <Project Path="examples/Documentation/TestingFrameworks/TUnit/TUnitTests.csproj" />
-        <Project Path="examples/BlazorWasmIssue2065/BlazorWasmIssue2065.csproj" />
+        <Project Path="examples/BlazorWasmSample/BlazorWasmSample.csproj" />
         <Project Path="examples/Meow.Common/Meow.Common.csproj" />
         <Project Path="examples/Meow/Meow.csproj" />
         <Project Path="examples/SampleUsingLocalApi/ConsoleApplication/ConsoleSampleUsingLocalApi.csproj" />
