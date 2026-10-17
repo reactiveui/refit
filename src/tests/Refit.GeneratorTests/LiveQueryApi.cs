@@ -311,6 +311,13 @@ public static partial class LiveQueryApi
         [Get("/accounts/{id}/positions/{ID}")]
         Task<string> CaseDifferingBareQueryAndNonQueryDualPlaceholders([Query] int id, [AliasAs("ID")] int secondId);
 
+        /// <summary>Sends a non-query fallback parameter for <c>{Id}</c> alongside an exact-case bare <c>[Query]</c> parameter for <c>{ID}</c>.</summary>
+        /// <param name="id">The identifier bound to <c>{Id}</c>.</param>
+        /// <param name="secondId">The identifier bound to <c>{ID}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/accounts/{Id}/positions/{ID}")]
+        Task<string> CaseDifferingFallbackNonQueryAndExactBareQuery(int id, [Query][AliasAs("ID")] int secondId);
+
         /// <summary>Sends a whitespace-formatted <c>[Query]</c> parameter alongside a case-differing route parameter.</summary>
         /// <param name="filterId">The optional query filter with whitespace format.</param>
         /// <param name="id">The account identifier bound to the route.</param>

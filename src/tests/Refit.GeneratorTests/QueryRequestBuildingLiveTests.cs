@@ -385,6 +385,7 @@ public sealed partial class QueryRequestBuildingLiveTests
         _ = await harness.AssertParityAsync("CaseDifferingBareQuerySiblingClaimedByOtherPlaceholder", [filterId, accountId], expectedDualPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingNonQueryAndBareQueryDualPlaceholders", [accountId, filterId], expectedDualPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingBareQueryAndNonQueryDualPlaceholders", [accountId, filterId], expectedDualPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingFallbackNonQueryAndExactBareQuery", [accountId, filterId], expectedDualPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingWhitespaceFormatQuery", [filterId, accountId], expectedPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingBothQuery", [filterId, accountId], expectedPositionsUri);
         _ = await harness.AssertParityAsync("CaseDifferingBodyAndRoute", ["payload", accountId], "/base/items/10");

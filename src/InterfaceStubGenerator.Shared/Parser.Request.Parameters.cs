@@ -224,15 +224,15 @@ internal static partial class Parser
     /// <param name="candidateName">The candidate parameter's resolved URL name.</param>
     /// <param name="placeholderName">The unprefixed placeholder name from the route template.</param>
     /// <param name="occurrences">The placeholder occurrences in the URL.</param>
-    /// <returns>The priority rank (0 to 5, higher is preferred).</returns>
+    /// <returns>The priority rank (0 to 4, higher is preferred).</returns>
     internal static int GetRouteCandidateRank(
         IParameterSymbol candidate,
         string candidateName,
         string placeholderName,
         ReadOnlySpan<PathPlaceholderOccurrence> occurrences)
     {
-        const int nonQueryBonus = 3;
-        const int exactCaseRank = 2;
+        const int nonQueryBonus = 1;
+        const int exactCaseRank = 3;
         const int unclaimedFallbackRank = 1;
         const int claimedByOtherPlaceholderRank = 0;
 
