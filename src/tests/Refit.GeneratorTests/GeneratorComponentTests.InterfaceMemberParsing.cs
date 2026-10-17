@@ -16,6 +16,40 @@ public static partial class GeneratorComponentTests
     /// <summary>Tests consumer options applied to parsed interface metadata.</summary>
     public class InterfaceSemanticParsingTests
     {
+        /// <summary>The generated file name of the first discovered interface.</summary>
+        private const string FirstHintName = "IFirst.g.cs";
+
+        /// <summary>The generated file name of the second discovered interface.</summary>
+        private const string SecondHintName = "ISecond.g.cs";
+
+        /// <summary>Verifies overlapping discovery providers retain only the first model for an interface.</summary>
+        /// <param name="cancellationToken">The test cancellation token.</param>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task CombineInterfaceModels_OverlappingCandidates_PreservesFirstModel(CancellationToken cancellationToken)
+        {
+            const int DistinctInterfaceCount = 2;
+            var first = new InterfaceModel(
+                FirstHintName,
+                new(string.Empty, string.Empty, string.Empty, string.Empty, "IFirst", string.Empty),
+                default,
+                new([], [], [], [], [], []),
+                Nullability.Enabled,
+                false,
+                []);
+            var duplicate = first with { FileName = "duplicate.g.cs" };
+            var second = first with { FileName = SecondHintName, Names = first.Names with { InterfaceDisplayName = "ISecond" } };
+
+            var result = InterfaceSemanticParsing.CombineInterfaceModels(
+                [first],
+                [[duplicate, second]],
+                cancellationToken,
+                [[first, second]]);
+
+            await Assert.That(result.Length).IsEqualTo(DistinctInterfaceCount);
+            await Assert.That(result.Select(static item => item.FileName)).IsCollectionEqualTo([FirstHintName, SecondHintName]);
+        }
+
         /// <summary>Verifies an inherited-only tree is parsed once and retains its inherited request bindings.</summary>
         /// <param name="cancellationToken">The test cancellation token.</param>
         /// <returns>A task representing the asynchronous test.</returns>
@@ -51,7 +85,7 @@ public static partial class GeneratorComponentTests
             var result = InterfaceSemanticParsing.ParseInheritedInterface(model, first, cancellationToken);
 
             await Assert.That(result.Length).IsEqualTo(DerivedInterfaceCount);
-            await Assert.That(result.Select(static item => item.FileName)).IsCollectionEqualTo(["IFirst.g.cs", "ISecond.g.cs"]);
+            await Assert.That(result.Select(static item => item.FileName)).IsCollectionEqualTo([FirstHintName, SecondHintName]);
             await Assert.That(Array.TrueForAll(result, static item => item.Members.DerivedRefitMethods.Length == 1)).IsTrue();
             await Assert.That(InterfaceSemanticParsing.ParseInheritedInterface(model, second, cancellationToken)).IsEmpty();
 

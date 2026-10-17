@@ -20,6 +20,48 @@ public sealed class UrlAttributeGenerationTests
     /// <summary>The runner call that validates a <c>[Url]</c> value as an absolute URI.</summary>
     private const string RequireAbsoluteUrlCall = "global::Refit.GeneratedRequestRunner.RequireAbsoluteUrl";
 
+    /// <summary>The URI kind emitted when relative URLs are disabled.</summary>
+    private const string AbsoluteUriKindExpression = "global::System.UriKind.Absolute";
+
+    /// <summary>Verifies opt-in relative URLs append query parameters before the fragment and compile inline.</summary>
+    /// <param name="parameterType">The declared URL parameter type.</param>
+    /// <param name="allowRelative">The explicit relative URL option.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("string", true)]
+    [Arguments("System.Uri", true)]
+    [Arguments("string", false)]
+    public async Task QueryParameterWithExplicitUrlOption_CompilesInline(string parameterType, bool allowRelative)
+    {
+        var result = Fixture.RunGeneratorForBody(
+            $$"""
+            [Get("")]
+            Task<System.Net.Http.HttpRequestMessage> Fetch(
+                [Url(AllowRelative = {{allowRelative.ToString().ToLowerInvariant()}})] {{parameterType}} url,
+                [Query] string token);
+            """,
+            generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.GeneratorDiagnostics).IsEmpty();
+        await Assert.That(result.OutputCompilation.GetDiagnostics().Where(static diagnostic =>
+            diagnostic.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)).IsEmpty();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        if (allowRelative)
+        {
+            await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.RequireRelativeOrAbsoluteUrl");
+            await Assert.That(generated).Contains(".IndexOf('#')");
+            await Assert.That(generated).Contains("refitQueryBuilder.Build() + refitFragment");
+            await Assert.That(generated).Contains("global::System.UriKind.RelativeOrAbsolute");
+        }
+        else
+        {
+            await Assert.That(generated).Contains(RequireAbsoluteUrlCall);
+            await Assert.That(generated).DoesNotContain(".IndexOf('#')");
+            await Assert.That(generated).Contains(AbsoluteUriKindExpression);
+        }
+    }
+
     /// <summary>Verifies a string <c>[Url]</c> parameter builds an absolute-URI request inline.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -28,7 +70,7 @@ public sealed class UrlAttributeGenerationTests
         var generated = Generate("[Get(\"\")] Task<string> Fetch([Url] string url);");
 
         await Assert.That(generated).Contains(RequireAbsoluteUrlCall);
-        await Assert.That(generated).Contains("global::System.UriKind.Absolute");
+        await Assert.That(generated).Contains(AbsoluteUriKindExpression);
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
@@ -40,7 +82,7 @@ public sealed class UrlAttributeGenerationTests
         var generated = Generate("[Get(\"\")] Task<string> Fetch([Url] System.Uri url);");
 
         await Assert.That(generated).Contains(RequireAbsoluteUrlCall);
-        await Assert.That(generated).Contains("global::System.UriKind.Absolute");
+        await Assert.That(generated).Contains(AbsoluteUriKindExpression);
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 

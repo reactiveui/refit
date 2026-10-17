@@ -450,6 +450,92 @@ public class GeneratorModelEqualityTests
         await VerifyEqualityAsync(default(TypeConstraint), default(TypeConstraint) with { Constraints = [] }, []);
     }
 
+    /// <summary>Verifies each interface member array contributes its contents to equality and hashing.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task InterfaceMembers_EqualsAndHashCode_CompareAllBindings()
+    {
+        var constraint = new TypeConstraint("T", "T", KnownTypeConstraint.Class, [DisposableTypeName]);
+        var property = new InterfacePropertyModel(ParameterName, StringTypeName, false, "IApi", string.Empty, true, false, false, false);
+        var method = new MethodModel("Get", "Task<T>", "IApi", "Get", ReturnTypeInfo.AsyncResult, RequestModel.Empty, [], [], default);
+        var left = new InterfaceMembersModel([constraint], [ParameterName], [property], [method], [method], [method]);
+        var right = new InterfaceMembersModel(
+            [constraint with { Constraints = [DisposableTypeName] }],
+            [ParameterName],
+            [property with { }],
+            [method with { Parameters = [], Constraints = [] }],
+            [method with { Parameters = [], Constraints = [] }],
+            [method with { Parameters = [], Constraints = [] }]);
+
+        await VerifyEqualityAsync(
+            left,
+            right,
+            [
+                left with { Constraints = [constraint with { KnownTypeConstraint = KnownTypeConstraint.Struct }] },
+                left with { MemberNames = [OtherParameterName] },
+                left with { Properties = [property with { Name = OtherParameterName }] },
+                left with { NonRefitMethods = [method with { Name = OtherMemberName }] },
+                left with { RefitMethods = [method with { Name = OtherMemberName }] },
+                left with { DerivedRefitMethods = [method with { Name = OtherMemberName }] }
+            ]);
+    }
+
+    /// <summary>Verifies interface metadata includes names, consumer capabilities, members and extern aliases.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task Interface_EqualsAndHashCode_CompareAllBindings()
+    {
+        var left = new InterfaceModel(
+            "IApi.g.cs",
+            new("Generated", "Api", "Consumer", "class Api", "global::Consumer.IApi", string.Empty),
+            new("global::Preserve", true, true, true, true, true),
+            new([], [ParameterName], [], [], [], []),
+            Nullability.Enabled,
+            false,
+            ["dependency"]);
+        var right = left with
+        {
+            Members = new([], [ParameterName], [], [], [], []),
+            ExternAliases = ["dependency"]
+        };
+
+        await VerifyEqualityAsync(
+            left,
+            right,
+            [
+                left with { FileName = "IOtherApi.g.cs" },
+                left with { Names = left.Names with { ClassName = OtherMemberName } },
+                left with { Options = left.Options with { GeneratedRequestBuilding = false } },
+                left with { Members = left.Members with { MemberNames = [OtherParameterName] } },
+                left with { Nullability = Nullability.Disabled },
+                left with { DisposeMethod = true },
+                left with { ExternAliases = ["otherDependency"] }
+            ]);
+    }
+
+    /// <summary>Verifies generation contexts compare nested interfaces and all consumer options.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ContextGeneration_EqualsAndHashCode_CompareAllBindings()
+    {
+        var model = new InterfaceModel("IApi.g.cs", default, default, new([], [], [], [], [], []), Nullability.Disabled, false, []);
+        var left = new ContextGenerationModel("Consumer", "global::Preserve", "Generated", true, true, [model]);
+        var right = left with { Interfaces = [model with { Members = new([], [], [], [], [], []), ExternAliases = [] }] };
+
+        await VerifyEqualityAsync(
+            left,
+            right,
+            [
+                left with { RefitInternalNamespace = "OtherConsumer" },
+                left with { PreserveAttributeDisplayName = "global::OtherPreserve" },
+                left with { GeneratedClassName = OtherMemberName },
+                left with { GeneratedRequestBuilding = false },
+                left with { EmitGeneratedCodeMarkers = false },
+                left with { Interfaces = [model with { DisposeMethod = true }] },
+                left with { Interfaces = [] }
+            ]);
+    }
+
     /// <summary>Checks symmetric equality, consistent hashes and distinct cache keys for changed metadata.</summary>
     /// <typeparam name="T">The metadata type.</typeparam>
     /// <param name="left">The original metadata.</param>
