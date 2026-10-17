@@ -79,6 +79,25 @@ public class AbsoluteUrlDispatchTests
         await Assert.That(reflected.RequestUri!.AbsoluteUri).IsEqualTo(AbsoluteUrl);
     }
 
+    /// <summary>Verifies a resolved redirect target keeps its encoded query in both request builders.</summary>
+    /// <param name="target">The relative Location value.</param>
+    /// <param name="cancellationToken">The test cancellation token.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("callback?code=a%2Fb%3D&state=x%20y")]
+    [Arguments("/callback?code=a%2Fb%3D&state=x%20y")]
+    public async Task ResolvedRedirectTargetPreservesEncodedQuery(string target, CancellationToken cancellationToken)
+    {
+        var destination = new Uri(new Uri(BaseAddress), target);
+        const string expected = "http://api/callback?code=a%2Fb%3D&state=x%20y";
+
+        var generated = await SendGeneratedAsync(api => api.GetAbsoluteFromUri(destination)).WaitAsync(cancellationToken);
+        var reflected = await ReflectAsync(nameof(IUrlDispatchApi.GetAbsoluteFromUri), destination).WaitAsync(cancellationToken);
+
+        await Assert.That(generated.RequestMessage!.RequestUri!.AbsoluteUri).IsEqualTo(expected);
+        await Assert.That(reflected.RequestUri!.AbsoluteUri).IsEqualTo(expected);
+    }
+
     /// <summary>Verifies a POST to a <see cref="Uri"/> <c>[Url]</c> still binds the remaining parameter as the body.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

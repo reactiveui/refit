@@ -382,6 +382,28 @@ public static class HttpRequestMessageOptions
     public static string RequestContent { get; }
     public static string RestMethodInfo { get; }
 }
+[System.Diagnostics.DebuggerDisplay("HTTP retry handler")]
+public sealed class HttpRetryHandler : System.Net.Http.DelegatingHandler
+{
+    public HttpRetryHandler() { }
+    public HttpRetryHandler(Refit.HttpRetryOptions options) { }
+    protected override System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken) { }
+}
+[System.Diagnostics.DebuggerDisplay("MaxRetries = {MaxRetries}, BaseDelay = {BaseDelay}")]
+public sealed class HttpRetryOptions
+{
+    public HttpRetryOptions() { }
+    public System.TimeSpan BaseDelay { get; set; }
+    public System.Func<System.Net.Http.HttpResponseMessage, System.DateTimeOffset, System.Threading.CancellationToken, System.TimeSpan?>? DelayProvider { get; set; }
+    public System.TimeSpan MaxDelay { get; set; }
+    public int MaxRequestContentBufferSize { get; set; }
+    public int MaxRetries { get; set; }
+    public bool RetryHttpRequestExceptions { get; set; }
+    public bool RetryUnsafeMethods { get; set; }
+    public System.Func<System.Net.Http.HttpResponseMessage, bool>? ShouldRetry { get; set; }
+    public System.TimeProvider TimeProvider { get; set; }
+    public bool UseJitter { get; set; }
+}
 public interface IApiResponse : System.IDisposable
 {
     System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
@@ -856,6 +878,23 @@ public static class RestService
     public static void RegisterGeneratedFactory<T>(System.Func<System.Net.Http.HttpClient, Refit.IRequestBuilder, T> factory) { }
     [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
     public static void RegisterGeneratedSettingsFactory<T>(System.Func<System.Net.Http.HttpClient, Refit.RefitSettings, T> factory) { }
+}
+public static class RetryDelayProviders
+{
+    public static System.TimeSpan? Aws(System.Net.Http.HttpResponseMessage response, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
+    public static System.TimeSpan? Azure(System.Net.Http.HttpResponseMessage response, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
+    public static System.TimeSpan? GitHub(System.Net.Http.HttpResponseMessage response, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
+    public static System.TimeSpan? Jira(System.Net.Http.HttpResponseMessage response, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
+    public static System.TimeSpan? ReadHeader(System.Net.Http.HttpResponseMessage response, string headerName, Refit.RetryHeaderFormat format, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
+    public static System.TimeSpan? RetryAfter(System.Net.Http.HttpResponseMessage response, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
+}
+public enum RetryHeaderFormat
+{
+    Seconds = 0,
+    Milliseconds = 1,
+    UnixTimeSeconds = 2,
+    RetryAfter = 3,
+    Iso8601Date = 4,
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class SnakeCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
