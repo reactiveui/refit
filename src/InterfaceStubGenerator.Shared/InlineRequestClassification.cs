@@ -1,0 +1,130 @@
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+
+using System.Runtime.CompilerServices;
+using Microsoft.CodeAnalysis;
+
+namespace Refit.Generator;
+
+/// <summary>Parses candidate interfaces and methods into the models used to generate Refit stubs.</summary>
+/// <content>
+/// The inline-eligibility entry point shared with the RF006 analyzer. The analyzer assemblies compile the request
+/// parsing sources directly, so the fallback diagnostic is always the generator's own <c>CanGenerateInline</c>
+/// decision rather than a hand-maintained mirror.
+/// </content>
+internal static class InlineRequestClassification
+{
+    /// <summary>The <c>System.Threading.Tasks</c> namespace name, matched structurally to identify task return shapes.</summary>
+    internal const string TasksNamespace = "System.Threading.Tasks";
+
+    /// <summary>Determines whether generated request building can construct a method's request inline.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The resolved <c>Refit.HttpMethodAttribute</c> symbol.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <returns><see langword="true"/> when the method's request is inline-eligible.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool CanBuildRequestInline(
+        IMethodSymbol methodSymbol,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        INamedTypeSymbol? formattableSymbol) =>
+        CanBuildRequestInline(methodSymbol, httpMethodBaseAttributeSymbol, formattableSymbol, null, []);
+
+    /// <summary>Determines whether generated request building can construct a method's request inline.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The resolved <c>Refit.HttpMethodAttribute</c> symbol.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="returnTypeAdapterInterface">The resolved <c>Refit.IReturnTypeAdapter`2</c> symbol, or null.</param>
+    /// <param name="returnTypeAdapters">The discovered <c>IReturnTypeAdapter</c> implementations, so the analyzer agrees
+    /// with the generator that an adapter-backed return type is inline-eligible.</param>
+    /// <param name="indexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c> resolved once from the
+    /// compilation, or <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
+    /// <returns><see langword="true"/> when the method's request is inline-eligible.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool CanBuildRequestInline(
+        IMethodSymbol methodSymbol,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        INamedTypeSymbol? formattableSymbol,
+        INamedTypeSymbol? returnTypeAdapterInterface,
+        INamedTypeSymbol[] returnTypeAdapters,
+        int? indexedCollectionFormatValue = null) =>
+        ClassifyRequest(
+            methodSymbol,
+            httpMethodBaseAttributeSymbol,
+            formattableSymbol,
+            returnTypeAdapterInterface,
+            returnTypeAdapters,
+            indexedCollectionFormatValue).Generation.CanGenerateInline;
+
+    /// <summary>Parses a method's request exactly as the generator does, so the analyzer can report why it falls back.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The resolved <c>Refit.HttpMethodAttribute</c> symbol.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="returnTypeAdapterInterface">The resolved <c>Refit.IReturnTypeAdapter`2</c> symbol, or null.</param>
+    /// <param name="returnTypeAdapters">The discovered <c>IReturnTypeAdapter</c> implementations.</param>
+    /// <param name="indexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c>, or
+    /// <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
+    /// <param name="analysisOptions">The analyzer's validation and reporting options, or null for classification only.</param>
+    /// <returns>The parsed request and any inline-generation limitation.</returns>
+    /// <remarks>The path excludes any interface-level route prefix, so placeholder checks see only the method's own template.</remarks>
+    internal static RequestModel ClassifyRequest(
+        IMethodSymbol methodSymbol,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        INamedTypeSymbol? formattableSymbol,
+        INamedTypeSymbol? returnTypeAdapterInterface,
+        INamedTypeSymbol[] returnTypeAdapters,
+        int? indexedCollectionFormatValue = null,
+        RequestAnalysisOptions? analysisOptions = null)
+    {
+        if (RequestParameterParsingHelpers.FindHttpMethodAttribute(methodSymbol, httpMethodBaseAttributeSymbol) is null)
+        {
+            return RequestModel.Empty with { Generation = RequestModel.Empty.Generation with { Fallback = InlineFallback.ForMethod(InlineFallbackReason.MissingHttpMethodAttribute) } };
+        }
+
+        analysisOptions?.CancellationToken.ThrowIfCancellationRequested();
+        var context = new InterfaceGenerationContext(
+            [],
+            new GenerationOptionsModel(string.Empty, string.Empty, analysisOptions?.GeneratedRequestBuilding ?? true, false),
+            new GenerationSymbolsModel(null, httpMethodBaseAttributeSymbol, formattableSymbol, null, null, returnTypeAdapterInterface, returnTypeAdapters, indexedCollectionFormatValue),
+            new GenerationCapabilitiesModel(false, false, false, false),
+            new GenerationCachesModel([], [with(SymbolEqualityComparer.Default)], [with(SymbolEqualityComparer.Default)], [with(SymbolEqualityComparer.Default)]));
+        var request = RequestParsing.ParseRequest(methodSymbol, ClassifyInlineReturnShape(methodSymbol.ReturnType), context);
+        if (analysisOptions is { } analysis)
+        {
+            foreach (var diagnostic in context.Diagnostics)
+            {
+                analysis.CancellationToken.ThrowIfCancellationRequested();
+                analysis.ReportDiagnostic(diagnostic);
+            }
+        }
+
+        return request;
+    }
+
+    /// <summary>Classifies a return type into the shape buckets inline eligibility distinguishes.</summary>
+    /// <param name="returnType">The declared return type.</param>
+    /// <returns>The return shape; unsupported shapes map to <see cref="ReturnTypeInfo.Return"/>.</returns>
+    internal static ReturnTypeInfo ClassifyInlineReturnShape(ITypeSymbol returnType) =>
+        returnType is not INamedTypeSymbol namedType
+            ? ReturnTypeInfo.Return
+            : namedType.MetadataName switch
+            {
+                "Task" when RequestParameterParsingHelpers.IsInNamespace(namedType, TasksNamespace) => ReturnTypeInfo.AsyncVoid,
+                "Task`1" when IsHttpRequestMessageType(namedType.TypeArguments[0]) => ReturnTypeInfo.RequestMessage,
+                "Task`1" or "ValueTask`1" when RequestParameterParsingHelpers.IsInNamespace(namedType, TasksNamespace) => ReturnTypeInfo.AsyncResult,
+                "IAsyncEnumerable`1" when RequestParameterParsingHelpers.IsInNamespace(namedType, "System.Collections.Generic") => ReturnTypeInfo.AsyncEnumerable,
+                "IObservable`1" when RequestParameterParsingHelpers.IsInNamespace(namedType, "System") => ReturnTypeInfo.Observable,
+                "PagedEnumerable`2" when RequestParameterParsingHelpers.IsInNamespace(namedType, "Refit") => ReturnTypeInfo.Paged,
+                _ => ReturnTypeInfo.Return
+            };
+
+    /// <summary>Determines whether a type is <c>System.Net.Http.HttpRequestMessage</c>, the type argument of the
+    /// build-and-return <c>Task&lt;HttpRequestMessage&gt;</c> shape.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns><see langword="true"/> when the type is <c>HttpRequestMessage</c>.</returns>
+    /// <remarks>Only the <c>Task</c> wrapper is supported: request building is asynchronous (body serialization and the
+    /// authorization token getter), so a synchronous <c>HttpRequestMessage</c> return would force a blocking build.</remarks>
+    internal static bool IsHttpRequestMessageType(ITypeSymbol type) =>
+        type is INamedTypeSymbol { Name: "HttpRequestMessage" } named
+        && RequestParameterParsingHelpers.IsInNamespace(named, "System.Net.Http");
+}

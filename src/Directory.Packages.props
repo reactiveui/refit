@@ -77,7 +77,8 @@
   </ItemGroup>
 
   <!-- Keep the literal framework-aligned versions visible to Renovate. Choose evaluates one
-       mutually exclusive item group for each inner target-framework build. -->
+       mutually exclusive item group for each inner target-framework build.
+       Roslyn test tooling needs a patched transitive PKCS version, with RCs only on net11.0. -->
   <Choose>
     <When Condition="'$(TargetFramework)' == 'net11.0'">
       <ItemGroup Label="Microsoft ASP.NET">
@@ -85,6 +86,7 @@
         <PackageVersion Include="System.Net.Http.Json" Version="11.0.0-rc.2.26504.105"/>
         <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0-rc.2.26504.105"/>
         <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.2.26504.105"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0-rc.2.26504.105" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
       </ItemGroup>
     </When>
     <Otherwise>
@@ -93,6 +95,7 @@
         <PackageVersion Include="System.Net.Http.Json" Version="10.0.13"/>
         <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.13"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.13"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
       </ItemGroup>
     </Otherwise>
   </Choose>

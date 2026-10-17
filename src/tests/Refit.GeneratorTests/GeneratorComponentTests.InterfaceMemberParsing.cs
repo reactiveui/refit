@@ -3,10 +3,8 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Linq;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-
 using Refit.Generator;
 
 namespace Refit.GeneratorTests;
@@ -22,8 +20,7 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task GetReturnTypeInfo_ClassifiesEveryShape()
         {
-            var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-                """
+            var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
                 using System;
                 using System.Collections.Generic;
                 using System.Net.Http;
@@ -62,29 +59,26 @@ public static partial class GeneratorComponentTests
                 }
                 """));
             var shapes = compilation.GetTypeByMetadataName("ReturnShapes.IShapes`1")!;
-
             IMethodSymbol Method(string name) => shapes.GetMembers(name).OfType<IMethodSymbol>().First();
-
-            await Assert.That(Parser.GetReturnTypeInfo(Method("SyncVoid"))).IsEqualTo(ReturnTypeInfo.SyncVoid);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("SyncVoid"))).IsEqualTo(ReturnTypeInfo.SyncVoid);
 
             // A bare type parameter and an array are not INamedTypeSymbol, so they fall to the plain return shape.
-            await Assert.That(Parser.GetReturnTypeInfo(Method("GenericReturn"))).IsEqualTo(ReturnTypeInfo.Return);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("ArrayReturn"))).IsEqualTo(ReturnTypeInfo.Return);
-
-            await Assert.That(Parser.GetReturnTypeInfo(Method("AsyncVoid"))).IsEqualTo(ReturnTypeInfo.AsyncVoid);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("AsyncResult"))).IsEqualTo(ReturnTypeInfo.AsyncResult);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("ValueResult"))).IsEqualTo(ReturnTypeInfo.AsyncResult);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("RequestMessage"))).IsEqualTo(ReturnTypeInfo.RequestMessage);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("AsyncEnumerableReturn"))).IsEqualTo(ReturnTypeInfo.AsyncEnumerable);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("Observable"))).IsEqualTo(ReturnTypeInfo.Observable);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("PlainNamed"))).IsEqualTo(ReturnTypeInfo.Return);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("GenericReturn"))).IsEqualTo(ReturnTypeInfo.Return);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("ArrayReturn"))).IsEqualTo(ReturnTypeInfo.Return);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("AsyncVoid"))).IsEqualTo(ReturnTypeInfo.AsyncVoid);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("AsyncResult"))).IsEqualTo(ReturnTypeInfo.AsyncResult);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("ValueResult"))).IsEqualTo(ReturnTypeInfo.AsyncResult);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("RequestMessage"))).IsEqualTo(ReturnTypeInfo.RequestMessage);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("AsyncEnumerableReturn"))).IsEqualTo(ReturnTypeInfo.AsyncEnumerable);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("Observable"))).IsEqualTo(ReturnTypeInfo.Observable);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("PlainNamed"))).IsEqualTo(ReturnTypeInfo.Return);
 
             // A wrapper simple-name at the wrong arity does not match its arm and falls to the plain return shape.
-            await Assert.That(Parser.GetReturnTypeInfo(Method("NonGenericValueTask"))).IsEqualTo(ReturnTypeInfo.Return);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("ObservableLookalike"))).IsEqualTo(ReturnTypeInfo.Return);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("AsyncEnumerableLookalike"))).IsEqualTo(ReturnTypeInfo.Return);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("TaskArityTwo"))).IsEqualTo(ReturnTypeInfo.Return);
-            await Assert.That(Parser.GetReturnTypeInfo(Method("VoidArityOne"))).IsEqualTo(ReturnTypeInfo.Return);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("NonGenericValueTask"))).IsEqualTo(ReturnTypeInfo.Return);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("ObservableLookalike"))).IsEqualTo(ReturnTypeInfo.Return);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("AsyncEnumerableLookalike"))).IsEqualTo(ReturnTypeInfo.Return);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("TaskArityTwo"))).IsEqualTo(ReturnTypeInfo.Return);
+            await Assert.That(InterfaceMemberParsing.GetReturnTypeInfo(Method("VoidArityOne"))).IsEqualTo(ReturnTypeInfo.Return);
         }
     }
 
@@ -97,8 +91,7 @@ public static partial class GeneratorComponentTests
         public async Task CollectMemberNames_DeduplicatesOverloadedMembers()
         {
             const int DistinctNameCount = 2;
-            var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-                """
+            var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
                 using System.Threading.Tasks;
 
                 namespace Members;
@@ -111,12 +104,11 @@ public static partial class GeneratorComponentTests
                 }
                 """));
             var overloads = compilation.GetTypeByMetadataName("Members.IOverloads")!;
-
-            var names = Parser.CollectMemberNames(overloads.GetMembers());
+            var names = InterfaceMemberParsing.CollectMemberNames(overloads.GetMembers());
 
             // The two "Do" overloads collapse to a single distinct name alongside "Other", in first-seen order.
             await Assert.That(names.Count).IsEqualTo(DistinctNameCount);
-            await Assert.That(names.AsArray()).IsCollectionEqualTo(["Do", "Other"]);
+            await Assert.That(names).IsCollectionEqualTo(["Do", "Other"]);
         }
     }
 }

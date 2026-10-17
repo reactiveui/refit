@@ -4,7 +4,6 @@
 
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 using Refit.Generator;
 
 namespace Refit.GeneratorTests;
@@ -51,10 +50,28 @@ public static partial class GeneratorComponentTests
         public async Task AppendEscapedCharacter_HandlesSpecialCharacters()
         {
             var builder = new PooledStringBuilder();
-
-            foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\u0085', '\u2028', '\u2029', '{', '}', 'x' })
+            foreach (var value in
+                     (char[]) [
+                         '\\',
+                         '"',
+                         '\0',
+                         '\a',
+                         '\b',
+                         '\f',
+                         '\n',
+                         '\r',
+                         '\t',
+                         '\v',
+                         '\u0085',
+                         '\u2028',
+                         '\u2029',
+                         '{',
+                         '}',
+                         'x'
+                     ]
+                    )
             {
-                Emitter.AppendEscapedCharacter(builder, value, false);
+                LiteralEmissionHelpers.AppendEscapedCharacter(builder, value, false);
             }
 
             await Assert.That(builder.ToString()).IsEqualTo("""\\\"\0\a\b\f\n\r\t\v\u0085\u2028\u2029{}x""");
@@ -66,41 +83,20 @@ public static partial class GeneratorComponentTests
         public async Task InlineEmitterHandlesNonNullableIndexedCollectionsAndAttributeFreeParameters()
         {
             var parameter = new RequestParameterModel(
-                "items",
-                "global::System.Collections.Generic.List<string>",
-                null,
-                ImmutableEquatableArray<ParameterAttributeModel>.Empty,
+                new RequestParameterIdentityModel("items", "global::System.Collections.Generic.List<string>", false),
+                new RequestParameterPathModel(null, default, default, default, default),
+                [],
                 RequestParameterKind.Query,
-                CanBeNull: false,
+                new RequestParameterHeaderModel(string.Empty, default),
                 string.Empty,
-                string.Empty,
-                string.Empty,
-                BodyBufferMode.None);
+                new RequestParameterBodyModel(string.Empty, BodyBufferMode.None, default, default, default, default, default, default));
             var valueFormat = new InlineValueFormatModel(InlineFormatKind.String, null, StringTypeName, false, null);
-            var query = new QueryParameterModel(
-                "items",
-                QueryParameterShape.IndexedCollection,
-                TreatAsString: false,
-                PreEncoded: false,
-                CollectionFormatValue: null,
-                ElementCanBeNull: false,
-                valueFormat,
-                ImmutableEquatableArray<QueryObjectPropertyModel>.Empty);
+            var query = new QueryParameterModel("items", QueryParameterShape.IndexedCollection, new QueryValueRenderingModel(false, false, null, false, valueFormat), []);
             var members = new PooledStringBuilder();
-            var emission = new Emitter.InlineValueEmission(
-                "query",
-                "item",
-                "settings",
-                "defaultFormat",
-                "defaultFormFormat",
-                new(new()),
-                members,
-                true);
+            var emission = new QueryParameterEmission.InlineValueEmission("query", "item", "settings", "defaultFormat", "defaultFormFormat", new(new()), members, true);
             var source = new PooledStringBuilder();
-
-            Emitter.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
-            Emitter.AppendIndexedCollectionQueryStatements(source, parameter, query, ParameterInfoFieldName, emission);
-
+            ParameterMetadataEmission.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
+            QueryObjectEmission.AppendIndexedCollectionQueryStatements(source, parameter, query, ParameterInfoFieldName, emission);
             var generated = source.ToString();
             await Assert.That(generated).Contains("GeneratedParameterAttributeProvider.Empty");
             await Assert.That(generated).Contains("foreach (var item in @items)");
@@ -113,32 +109,26 @@ public static partial class GeneratorComponentTests
         {
             const string QueryAttributeType = "global::Refit.QueryAttribute";
             const string AliasAttributeType = "global::Refit.AliasAsAttribute";
-            var emptyArguments = ImmutableEquatableArray<string>.Empty;
-            var emptyNamedArguments = ImmutableEquatableArray<NamedAttributeArgument>.Empty;
-            var attributes = ImmutableEquatableArrayFactory.FromArray(
-                [
-                    new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments),
-                    new ParameterAttributeModel(AliasAttributeType, emptyArguments, emptyNamedArguments),
-                    new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments),
-                ]);
+            string[] emptyArguments = [];
+            NamedAttributeArgument[] emptyNamedArguments = [];
+            ParameterAttributeModel[] attributes =
+            [
+                new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments), new ParameterAttributeModel(AliasAttributeType, emptyArguments, emptyNamedArguments),
+                new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments)
+            ];
             var parameter = new RequestParameterModel(
-                "id",
-                "int",
-                null,
+                new RequestParameterIdentityModel("id", "int", false),
+                new RequestParameterPathModel(null, default, default, default, default),
                 attributes,
                 RequestParameterKind.Path,
-                CanBeNull: false,
+                new RequestParameterHeaderModel(string.Empty, default),
                 string.Empty,
-                string.Empty,
-                string.Empty,
-                BodyBufferMode.None);
+                new RequestParameterBodyModel(string.Empty, BodyBufferMode.None, default, default, default, default, default, default));
             var source = new PooledStringBuilder();
-
-            Emitter.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
-
-            await Assert.That(source.ToString()).Contains(
-                "{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute()} }, "
-                + "{ typeof(global::Refit.AliasAsAttribute), new object[] { new global::Refit.AliasAsAttribute()} }");
+            ParameterMetadataEmission.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
+            await Assert.That(source.ToString())
+                .Contains("{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute()} }, "
+                          + "{ typeof(global::Refit.AliasAsAttribute), new object[] { new global::Refit.AliasAsAttribute()} }");
         }
 
         /// <summary>Verifies a parameter carrying attributes of one type is emitted without a keyed dictionary.</summary>
@@ -147,32 +137,24 @@ public static partial class GeneratorComponentTests
         public async Task BuildParameterInfoFieldEmitsSingleTypeProviderForOneAttributeType()
         {
             const string QueryAttributeType = "global::Refit.QueryAttribute";
-            var emptyArguments = ImmutableEquatableArray<string>.Empty;
-            var emptyNamedArguments = ImmutableEquatableArray<NamedAttributeArgument>.Empty;
-            var attributes = ImmutableEquatableArrayFactory.FromArray(
-                [
-                    new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments),
-                    new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments),
-                ]);
+            string[] emptyArguments = [];
+            NamedAttributeArgument[] emptyNamedArguments = [];
+            ParameterAttributeModel[] attributes =
+                [new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments), new ParameterAttributeModel(QueryAttributeType, emptyArguments, emptyNamedArguments)];
             var parameter = new RequestParameterModel(
-                "id",
-                "int",
-                null,
+                new RequestParameterIdentityModel("id", "int", false),
+                new RequestParameterPathModel(null, default, default, default, default),
                 attributes,
                 RequestParameterKind.Path,
-                CanBeNull: false,
+                new RequestParameterHeaderModel(string.Empty, default),
                 string.Empty,
-                string.Empty,
-                string.Empty,
-                BodyBufferMode.None);
+                new RequestParameterBodyModel(string.Empty, BodyBufferMode.None, default, default, default, default, default, default));
             var source = new PooledStringBuilder();
-
-            Emitter.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
-
+            ParameterMetadataEmission.BuildParameterInfoField(parameter, "Get", ParameterInfoFieldName, source);
             var generated = source.ToString();
-            await Assert.That(generated).Contains(
-                "new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(global::Refit.QueryAttribute), "
-                + "new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute() });");
+            await Assert.That(generated)
+                .Contains("new global::Refit.GeneratedSingleTypeParameterAttributeProvider(typeof(global::Refit.QueryAttribute), "
+                          + "new object[] { new global::Refit.QueryAttribute(), new global::Refit.QueryAttribute() });");
             await Assert.That(generated).DoesNotContain("Dictionary");
         }
 
@@ -181,20 +163,20 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task EscapeSequence_ReturnsEscapesForSpecialCharactersAndNullOtherwise()
         {
-            await Assert.That(Emitter.EscapeSequence('\\')).IsEqualTo(@"\\");
-            await Assert.That(Emitter.EscapeSequence('"')).IsEqualTo("\\\"");
-            await Assert.That(Emitter.EscapeSequence('\0')).IsEqualTo(@"\0");
-            await Assert.That(Emitter.EscapeSequence('\a')).IsEqualTo(@"\a");
-            await Assert.That(Emitter.EscapeSequence('\b')).IsEqualTo(@"\b");
-            await Assert.That(Emitter.EscapeSequence('\f')).IsEqualTo(@"\f");
-            await Assert.That(Emitter.EscapeSequence('\n')).IsEqualTo(@"\n");
-            await Assert.That(Emitter.EscapeSequence('\r')).IsEqualTo(@"\r");
-            await Assert.That(Emitter.EscapeSequence('\t')).IsEqualTo(@"\t");
-            await Assert.That(Emitter.EscapeSequence('\v')).IsEqualTo(@"\v");
-            await Assert.That(Emitter.EscapeSequence('\u0085')).IsEqualTo(@"\u0085");
-            await Assert.That(Emitter.EscapeSequence('\u2028')).IsEqualTo(@"\u2028");
-            await Assert.That(Emitter.EscapeSequence('\u2029')).IsEqualTo(@"\u2029");
-            await Assert.That(Emitter.EscapeSequence('x')).IsNull();
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\\')).IsEqualTo(@"\\");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('"')).IsEqualTo("\\\"");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\0')).IsEqualTo(@"\0");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\a')).IsEqualTo(@"\a");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\b')).IsEqualTo(@"\b");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\f')).IsEqualTo(@"\f");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\n')).IsEqualTo(@"\n");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\r')).IsEqualTo(@"\r");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\t')).IsEqualTo(@"\t");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\v')).IsEqualTo(@"\v");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\u0085')).IsEqualTo(@"\u0085");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\u2028')).IsEqualTo(@"\u2028");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('\u2029')).IsEqualTo(@"\u2029");
+            await Assert.That(LiteralEmissionHelpers.EscapeSequence('x')).IsNull();
         }
 
         /// <summary>Verifies the rendered length of a quoted literal accounts for escapes and the null keyword.</summary>
@@ -207,10 +189,9 @@ public static partial class GeneratorComponentTests
 
             // '"' wrapper (2) + 'a' (1) + '"' escape (2) + U+2028 escape (6) = 11.
             const int EscapedLength = 11;
-
-            await Assert.That(Emitter.LiteralOrNullLength(null)).IsEqualTo(NullLength);
-            await Assert.That(Emitter.LiteralOrNullLength("abc")).IsEqualTo(PlainQuotedLength);
-            await Assert.That(Emitter.LiteralOrNullLength("a\"\u2028")).IsEqualTo(EscapedLength);
+            await Assert.That(LiteralEmissionHelpers.LiteralOrNullLength(null)).IsEqualTo(NullLength);
+            await Assert.That(LiteralEmissionHelpers.LiteralOrNullLength("abc")).IsEqualTo(PlainQuotedLength);
+            await Assert.That(LiteralEmissionHelpers.LiteralOrNullLength("a\"\u2028")).IsEqualTo(EscapedLength);
         }
 
         /// <summary>Verifies the decimal length helper for zero, single-digit, and multi-digit values.</summary>
@@ -221,10 +202,9 @@ public static partial class GeneratorComponentTests
             const int SingleDigit = 1;
             const int ThreeDigits = 3;
             const int PositiveThreeDigitValue = 123;
-
-            await Assert.That(Emitter.Int32Length(0)).IsEqualTo(SingleDigit);
-            await Assert.That(Emitter.Int32Length(SingleDigit)).IsEqualTo(SingleDigit);
-            await Assert.That(Emitter.Int32Length(PositiveThreeDigitValue)).IsEqualTo(ThreeDigits);
+            await Assert.That(LiteralEmissionHelpers.Int32Length(0)).IsEqualTo(SingleDigit);
+            await Assert.That(LiteralEmissionHelpers.Int32Length(SingleDigit)).IsEqualTo(SingleDigit);
+            await Assert.That(LiteralEmissionHelpers.Int32Length(PositiveThreeDigitValue)).IsEqualTo(ThreeDigits);
         }
 
         /// <summary>Verifies body buffering and streaming expressions for all supported modes.</summary>
@@ -238,21 +218,20 @@ public static partial class GeneratorComponentTests
             var streamingBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Streaming);
             var noneBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.None);
             var urlEncodedBody = CreateBody(UrlEncodedSerializationMethod, BodyBufferMode.Streaming);
-
-            await Assert.That(Emitter.BuildBufferBodyExpression(null, settings)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody, settings)).IsEqualTo($"{settings}.Buffered");
-            await Assert.That(Emitter.BuildBufferBodyExpression(bufferedBody, settings)).IsEqualTo(TrueLiteral);
-            await Assert.That(Emitter.BuildBufferBodyExpression(streamingBody, settings)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildBufferBodyExpression(noneBody, settings)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(settingsBody, settings)).IsEqualTo($"!{settings}.Buffered");
-            await Assert.That(Emitter.BuildStreamBodyExpression(bufferedBody, settings)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(streamingBody, settings)).IsEqualTo(TrueLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(noneBody, settings)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(urlEncodedBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(LiteralEmissionHelpers.BuildBufferBodyExpression(null, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(LiteralEmissionHelpers.BuildBufferBodyExpression(settingsBody, settings)).IsEqualTo($"{settings}.Buffered");
+            await Assert.That(LiteralEmissionHelpers.BuildBufferBodyExpression(bufferedBody, settings)).IsEqualTo(TrueLiteral);
+            await Assert.That(LiteralEmissionHelpers.BuildBufferBodyExpression(streamingBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(LiteralEmissionHelpers.BuildBufferBodyExpression(noneBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(LiteralEmissionHelpers.BuildStreamBodyExpression(settingsBody, settings)).IsEqualTo($"!{settings}.Buffered");
+            await Assert.That(LiteralEmissionHelpers.BuildStreamBodyExpression(bufferedBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(LiteralEmissionHelpers.BuildStreamBodyExpression(streamingBody, settings)).IsEqualTo(TrueLiteral);
+            await Assert.That(LiteralEmissionHelpers.BuildStreamBodyExpression(noneBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(LiteralEmissionHelpers.BuildStreamBodyExpression(urlEncodedBody, settings)).IsEqualTo(FalseLiteral);
 
             // With a different settings local name, the expression follows it (collision-avoidance threading).
-            await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody, "renamed")).IsEqualTo("renamed.Buffered");
-            await Assert.That(Emitter.BuildStreamBodyExpression(settingsBody, "renamed")).IsEqualTo("!renamed.Buffered");
+            await Assert.That(LiteralEmissionHelpers.BuildBufferBodyExpression(settingsBody, "renamed")).IsEqualTo("renamed.Buffered");
+            await Assert.That(LiteralEmissionHelpers.BuildStreamBodyExpression(settingsBody, "renamed")).IsEqualTo("!renamed.Buffered");
         }
 
         /// <summary>Verifies property access and global-prefix helpers.</summary>
@@ -262,20 +241,16 @@ public static partial class GeneratorComponentTests
         {
             const string TenantInterface = "RefitGeneratorTest.ITenant";
             const string GlobalTenantInterface = "global::RefitGeneratorTest.ITenant";
-
             var generatedProperty = CreateProperty("Client", "global::System.Net.Http.HttpClient", "RefitGeneratorTest.IClient", true, false);
             var explicitProperty = CreateProperty(TenantPropertyName, "int", TenantInterface, false, true);
             var prefixedExplicitProperty = CreateProperty(TenantPropertyName, "int", GlobalTenantInterface, false, true);
             var publicProperty = CreateProperty(TenantPropertyName, "int", TenantInterface, false, false);
-
-            await Assert.That(Emitter.BuildPropertyAccessExpression(generatedProperty)).IsEqualTo("this.Client");
-            await Assert.That(Emitter.BuildPropertyAccessExpression(explicitProperty))
-                .IsEqualTo($"(({GlobalTenantInterface})this).Tenant");
-            await Assert.That(Emitter.BuildPropertyAccessExpression(prefixedExplicitProperty))
-                .IsEqualTo($"(({GlobalTenantInterface})this).Tenant");
-            await Assert.That(Emitter.BuildPropertyAccessExpression(publicProperty)).IsEqualTo("this.Tenant");
-            await Assert.That(Emitter.EnsureGlobalPrefix(TenantInterface)).IsEqualTo(GlobalTenantInterface);
-            await Assert.That(Emitter.EnsureGlobalPrefix(GlobalTenantInterface)).IsEqualTo(GlobalTenantInterface);
+            await Assert.That(LiteralEmissionHelpers.BuildPropertyAccessExpression(generatedProperty)).IsEqualTo("this.Client");
+            await Assert.That(LiteralEmissionHelpers.BuildPropertyAccessExpression(explicitProperty)).IsEqualTo($"(({GlobalTenantInterface})this).Tenant");
+            await Assert.That(LiteralEmissionHelpers.BuildPropertyAccessExpression(prefixedExplicitProperty)).IsEqualTo($"(({GlobalTenantInterface})this).Tenant");
+            await Assert.That(LiteralEmissionHelpers.BuildPropertyAccessExpression(publicProperty)).IsEqualTo("this.Tenant");
+            await Assert.That(LiteralEmissionHelpers.EnsureGlobalPrefix(TenantInterface)).IsEqualTo(GlobalTenantInterface);
+            await Assert.That(LiteralEmissionHelpers.EnsureGlobalPrefix(GlobalTenantInterface)).IsEqualTo(GlobalTenantInterface);
         }
 
         /// <summary>Verifies HTTP method, literal, and explicit-prefix formatting helpers.</summary>
@@ -283,21 +258,21 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task LiteralAndHttpMethodHelpers_HandleKnownAndInvalidValues()
         {
-            await Assert.That(Emitter.ToNullableCSharpStringLiteral(null)).IsEqualTo("null");
-            await Assert.That(Emitter.ToNullableCSharpStringLiteral("value")).IsEqualTo("\"value\"");
-            await Assert.That(Emitter.ToHttpMethodExpression("DELETE")).IsEqualTo("global::System.Net.Http.HttpMethod.Delete");
-            await Assert.That(Emitter.ToHttpMethodExpression("GET")).IsEqualTo("global::System.Net.Http.HttpMethod.Get");
-            await Assert.That(Emitter.ToHttpMethodExpression("HEAD")).IsEqualTo("global::System.Net.Http.HttpMethod.Head");
-            await Assert.That(Emitter.ToHttpMethodExpression("OPTIONS")).IsEqualTo("global::System.Net.Http.HttpMethod.Options");
-            await Assert.That(Emitter.ToHttpMethodExpression("POST")).IsEqualTo("global::System.Net.Http.HttpMethod.Post");
-            await Assert.That(Emitter.ToHttpMethodExpression("PUT")).IsEqualTo("global::System.Net.Http.HttpMethod.Put");
-            await Assert.That(Emitter.ToHttpMethodExpression("PATCH")).IsEqualTo("new global::System.Net.Http.HttpMethod(\"PATCH\")");
-            await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.Bar")).IsEqualTo("Bar");
-            await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.")).IsEqualTo("IFoo.");
-            await Assert.That(Emitter.StripExplicitInterfacePrefix("Bar")).IsEqualTo("Bar");
+            await Assert.That(LiteralEmissionHelpers.ToNullableCSharpStringLiteral(null)).IsEqualTo("null");
+            await Assert.That(LiteralEmissionHelpers.ToNullableCSharpStringLiteral("value")).IsEqualTo("\"value\"");
+            await Assert.That(LiteralEmissionHelpers.ToHttpMethodExpression("DELETE")).IsEqualTo("global::System.Net.Http.HttpMethod.Delete");
+            await Assert.That(LiteralEmissionHelpers.ToHttpMethodExpression("GET")).IsEqualTo("global::System.Net.Http.HttpMethod.Get");
+            await Assert.That(LiteralEmissionHelpers.ToHttpMethodExpression("HEAD")).IsEqualTo("global::System.Net.Http.HttpMethod.Head");
+            await Assert.That(LiteralEmissionHelpers.ToHttpMethodExpression("OPTIONS")).IsEqualTo("global::System.Net.Http.HttpMethod.Options");
+            await Assert.That(LiteralEmissionHelpers.ToHttpMethodExpression("POST")).IsEqualTo("global::System.Net.Http.HttpMethod.Post");
+            await Assert.That(LiteralEmissionHelpers.ToHttpMethodExpression("PUT")).IsEqualTo("global::System.Net.Http.HttpMethod.Put");
+            await Assert.That(LiteralEmissionHelpers.ToHttpMethodExpression("PATCH")).IsEqualTo("new global::System.Net.Http.HttpMethod(\"PATCH\")");
+            await Assert.That(LiteralEmissionHelpers.StripExplicitInterfacePrefix("IFoo.Bar")).IsEqualTo("Bar");
+            await Assert.That(LiteralEmissionHelpers.StripExplicitInterfacePrefix("IFoo.")).IsEqualTo("IFoo.");
+            await Assert.That(LiteralEmissionHelpers.StripExplicitInterfacePrefix("Bar")).IsEqualTo("Bar");
 
             // A verb outside the cached singletons (a custom HTTP method attribute's verb) constructs an HttpMethod.
-            await Assert.That(Emitter.ToHttpMethodExpression("TRACE")).IsEqualTo("new global::System.Net.Http.HttpMethod(\"TRACE\")");
+            await Assert.That(LiteralEmissionHelpers.ToHttpMethodExpression("TRACE")).IsEqualTo("new global::System.Net.Http.HttpMethod(\"TRACE\")");
         }
 
         /// <summary>Verifies the generated return statement prefix for every return type shape, including that an
@@ -306,15 +281,14 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task ReturnStatementPrefix_HandlesKnownAndInvalidValues()
         {
-            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.AsyncVoid)).IsEqualTo(ReturnPrefix);
-            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.AsyncResult)).IsEqualTo(ReturnPrefix);
-            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.AsyncEnumerable)).IsEqualTo(ReturnPrefix);
-            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.Observable)).IsEqualTo(ReturnPrefix);
-            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.RequestMessage)).IsEqualTo(ReturnPrefix);
-            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.Return)).IsEqualTo(ReturnPrefix);
-            await Assert.That(Emitter.GetReturnStatementPrefix(ReturnTypeInfo.SyncVoid)).IsEqualTo(string.Empty);
-            await Assert.That(static () => Emitter.GetReturnStatementPrefix((ReturnTypeInfo)int.MaxValue))
-                .ThrowsExactly<ArgumentOutOfRangeException>();
+            await Assert.That(LiteralEmissionHelpers.GetReturnStatementPrefix(ReturnTypeInfo.AsyncVoid)).IsEqualTo(ReturnPrefix);
+            await Assert.That(LiteralEmissionHelpers.GetReturnStatementPrefix(ReturnTypeInfo.AsyncResult)).IsEqualTo(ReturnPrefix);
+            await Assert.That(LiteralEmissionHelpers.GetReturnStatementPrefix(ReturnTypeInfo.AsyncEnumerable)).IsEqualTo(ReturnPrefix);
+            await Assert.That(LiteralEmissionHelpers.GetReturnStatementPrefix(ReturnTypeInfo.Observable)).IsEqualTo(ReturnPrefix);
+            await Assert.That(LiteralEmissionHelpers.GetReturnStatementPrefix(ReturnTypeInfo.RequestMessage)).IsEqualTo(ReturnPrefix);
+            await Assert.That(LiteralEmissionHelpers.GetReturnStatementPrefix(ReturnTypeInfo.Return)).IsEqualTo(ReturnPrefix);
+            await Assert.That(LiteralEmissionHelpers.GetReturnStatementPrefix(ReturnTypeInfo.SyncVoid)).IsEqualTo(string.Empty);
+            await Assert.That(static () => LiteralEmissionHelpers.GetReturnStatementPrefix((ReturnTypeInfo)int.MaxValue)).ThrowsExactly<ArgumentOutOfRangeException>();
         }
 
         /// <summary>Verifies explicit method openings receive a global interface qualifier.</summary>
@@ -329,16 +303,11 @@ public static partial class GeneratorComponentTests
                 "Ping",
                 ReturnTypeInfo.AsyncVoid,
                 RequestModel.Empty,
-                ImmutableEquatableArray<ParameterModel>.Empty,
-                ImmutableEquatableArray<TypeConstraint>.Empty,
-                false,
-                false,
-                false);
-
-            var source = Emitter.BuildMethodOpening(method, true, true, supportsNullable: true);
-
-            await Assert.That(source)
-                .Contains("global::System.Threading.Tasks.Task global::RefitGeneratorTest.IBase.Ping(");
+                [],
+                [],
+                new MethodAnnotationsModel(false, false, false));
+            var source = LiteralEmissionHelpers.BuildMethodOpening(method, true, true, supportsNullable: true);
+            await Assert.That(source).Contains("global::System.Threading.Tasks.Task global::RefitGeneratorTest.IBase.Ping(");
 
             // A task-returning method hands its task back, so no generated method is emitted async.
             await Assert.That(source).DoesNotContain("async ");
@@ -347,17 +316,15 @@ public static partial class GeneratorComponentTests
         /// <summary>Verifies emitted XML documentation text escapes special characters.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
-        public async Task ToXmlDocumentationText_EscapesSpecialCharacters() =>
-            await Assert.That(Emitter.ToXmlDocumentationTextForTesting("A&B<C>")).IsEqualTo("A&amp;B&lt;C&gt;");
+        public async Task ToXmlDocumentationText_EscapesSpecialCharacters() => await Assert.That(EmitterTesting.ToXmlDocumentationTextForTesting("A&B<C>")).IsEqualTo("A&amp;B&lt;C&gt;");
 
         /// <summary>Verifies generated file headers for analyzer-enabled generated code tests.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
         public async Task BuildGeneratedFileHeader_SupportsNonGeneratedMarkers()
         {
-            var noneHeader = Emitter.BuildGeneratedFileHeaderForTesting(Nullability.None, emitGeneratedCodeMarkers: false);
-            var nullableHeader = Emitter.BuildGeneratedFileHeaderForTesting(Nullability.Enabled, emitGeneratedCodeMarkers: false);
-
+            var noneHeader = EmitterTesting.BuildGeneratedFileHeaderForTesting(Nullability.None, emitGeneratedCodeMarkers: false);
+            var nullableHeader = EmitterTesting.BuildGeneratedFileHeaderForTesting(Nullability.Enabled, emitGeneratedCodeMarkers: false);
             await Assert.That(noneHeader).Contains("ReactiveUI and Contributors");
             await Assert.That(noneHeader).DoesNotContain("#nullable");
             await Assert.That(nullableHeader).Contains("#nullable enable annotations");
@@ -368,15 +335,10 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task CanUseGeneratedSettingsFactory_RejectsEmptyInterfaces()
         {
-            var emptyModel = CreateInterfaceModel(
-                ImmutableEquatableArray<MethodModel>.Empty,
-                ImmutableEquatableArray<MethodModel>.Empty);
-            var inlineModel = CreateInterfaceModel(
-                new([CreateRefitMethod(canGenerateInline: true)]),
-                ImmutableEquatableArray<MethodModel>.Empty);
-
-            await Assert.That(Emitter.CanUseGeneratedSettingsFactoryForTesting(emptyModel)).IsFalse();
-            await Assert.That(Emitter.CanUseGeneratedSettingsFactoryForTesting(inlineModel)).IsTrue();
+            var emptyModel = CreateInterfaceModel([], []);
+            var inlineModel = CreateInterfaceModel([CreateRefitMethod(canGenerateInline: true)], []);
+            await Assert.That(EmitterTesting.CanUseGeneratedSettingsFactoryForTesting(emptyModel)).IsFalse();
+            await Assert.That(EmitterTesting.CanUseGeneratedSettingsFactoryForTesting(inlineModel)).IsTrue();
         }
 
         /// <summary>Verifies parameter type-list helpers handle empty and populated parameter lists.</summary>
@@ -384,16 +346,9 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task BuildParameterTypeList_HandlesEmptyAndPopulatedParameters()
         {
-            var parameters = new ImmutableEquatableArray<ParameterModel>(
-                [
-                    new("first", StringTypeName, false, false),
-                    new("second", "global::System.Int32", false, false)
-                ]);
-
-            await Assert.That(Emitter.BuildParameterTypeListForTesting(ImmutableEquatableArray<ParameterModel>.Empty))
-                .IsEqualTo(string.Empty);
-            await Assert.That(Emitter.BuildParameterTypeListForTesting(parameters))
-                .IsEqualTo("typeof(string), typeof(global::System.Int32)");
+            var parameters = (ParameterModel[])[new("first", StringTypeName, false, false), new("second", "global::System.Int32", false, false)];
+            await Assert.That(EmitterTesting.BuildParameterTypeListForTesting([])).IsEqualTo(string.Empty);
+            await Assert.That(EmitterTesting.BuildParameterTypeListForTesting(parameters)).IsEqualTo("typeof(string), typeof(global::System.Int32)");
         }
 
         /// <summary>Verifies candidate method combining preserves standard and custom methods.</summary>
@@ -403,12 +358,8 @@ public static partial class GeneratorComponentTests
         {
             var standard = ParseMethod("Standard", "[Get(\"/standard\")]");
             var custom = ParseMethod(CustomMethodName, "[Custom(\"CUSTOM\", \"/custom\")]");
-
-            var result = InterfaceStubGeneratorV2.CombineCandidateMethodsForTesting(
-                ([standard], [custom]));
-
+            var result = InterfaceStubGeneratorV2.CombineCandidateMethodsForTesting(([standard], [custom]));
             var names = result.Select(static method => method.Identifier.ValueText).ToArray();
-
             await Assert.That(names.Length).IsEqualTo(PopulatedPartCount);
             await Assert.That(names[0]).IsEqualTo("Standard");
             await Assert.That(names[1]).IsEqualTo(CustomMethodName);
@@ -436,27 +387,17 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task BuildRefitMethod_EmitsExplicitInterfaceForExplicitMethod()
         {
-            var explicitReflective = CreateRefitMethod(canGenerateInline: false) with { IsExplicitInterface = true };
-            var explicitInline = CreateRefitMethod(canGenerateInline: true) with { IsExplicitInterface = true };
-            var model = CreateInterfaceModel(
-                new([explicitReflective]),
-                ImmutableEquatableArray<MethodModel>.Empty);
-
-            var reflective = Emitter.BuildRefitMethodForTesting(
-                explicitReflective,
-                isTopLevel: true,
-                model,
-                new(),
-                "_requestBuilder",
-                "_settings");
-            var inline = Emitter.BuildRefitMethodForTesting(
-                explicitInline,
-                isTopLevel: true,
-                model,
-                new(),
-                "_requestBuilder",
-                "_settings");
-
+            var explicitReflective = CreateRefitMethod(canGenerateInline: false) switch
+            {
+                var binding1 => binding1 with { Annotations = binding1.Annotations with { IsExplicitInterface = true } }
+            };
+            var explicitInline = CreateRefitMethod(canGenerateInline: true) switch
+            {
+                var binding2 => binding2 with { Annotations = binding2.Annotations with { IsExplicitInterface = true } }
+            };
+            var model = CreateInterfaceModel([explicitReflective], []);
+            var reflective = EmitterTesting.BuildRefitMethodForTesting(explicitReflective, isTopLevel: true, model, new(), "_requestBuilder", "_settings");
+            var inline = EmitterTesting.BuildRefitMethodForTesting(explicitInline, isTopLevel: true, model, new(), "_requestBuilder", "_settings");
             await Assert.That(reflective).Contains("global::RefitGeneratorTest.IGeneratedClient.Get");
             await Assert.That(inline).Contains("global::RefitGeneratorTest.IGeneratedClient.Get");
         }
@@ -467,131 +408,103 @@ public static partial class GeneratorComponentTests
         public async Task HasConstraintKeywords_HandlesOverrideAndNonOverridePaths()
         {
             // class/struct are always emitted; unmanaged/notnull/new/textual are suppressed on overrides/explicit impls.
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Class), true)).IsTrue();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Struct), true)).IsTrue();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Unmanaged), true)).IsFalse();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.NotNull), true)).IsFalse();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.New), true)).IsFalse();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None, "global::System.IDisposable"), true)).IsFalse();
-
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Unmanaged), false)).IsTrue();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.NotNull), false)).IsTrue();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.New), false)).IsTrue();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None, "global::System.IDisposable"), false)).IsTrue();
-            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None), false)).IsFalse();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Class), true)).IsTrue();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Struct), true)).IsTrue();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Unmanaged), true)).IsFalse();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.NotNull), true)).IsFalse();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.New), true)).IsFalse();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None, "global::System.IDisposable"), true)).IsFalse();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Unmanaged), false)).IsTrue();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.NotNull), false)).IsTrue();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.New), false)).IsTrue();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None, "global::System.IDisposable"), false)).IsTrue();
+            await Assert.That(EmitterTesting.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None), false)).IsFalse();
         }
 
         /// <summary>Creates a type-parameter constraint model.</summary>
-        /// <param name="known">The well-known constraint flags.</param>
-        /// <param name="extra">Additional textual constraints.</param>
+        /// <param name = "known">The well-known constraint flags.</param>
+        /// <param name = "extra">Additional textual constraints.</param>
         /// <returns>The type constraint.</returns>
         private static TypeConstraint Constraint(KnownTypeConstraint known, params string[] extra)
         {
-            var textual = extra.Length == 0
-                ? ImmutableEquatableArray<string>.Empty
-                : new(extra);
+            string[] textual = extra.Length == 0 ? [] : [.. extra];
             return new("T", "T", known, textual);
         }
 
         /// <summary>Creates a body request parameter model.</summary>
-        /// <param name="serializationMethod">The serialization method name.</param>
-        /// <param name="bufferMode">The body buffer mode.</param>
+        /// <param name = "serializationMethod">The serialization method name.</param>
+        /// <param name = "bufferMode">The body buffer mode.</param>
         /// <returns>The request parameter model.</returns>
-        private static RequestParameterModel CreateBody(string serializationMethod, BodyBufferMode bufferMode) =>
-            new("body", StringTypeName, null, ImmutableEquatableArray<ParameterAttributeModel>.Empty, RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, bufferMode);
+        private static RequestParameterModel CreateBody(string serializationMethod, BodyBufferMode bufferMode) => new(
+            new RequestParameterIdentityModel("body", StringTypeName, false),
+            new RequestParameterPathModel(null, default, default, default, default),
+            [],
+            RequestParameterKind.Body,
+            new RequestParameterHeaderModel(string.Empty, default),
+            string.Empty,
+            new RequestParameterBodyModel(serializationMethod, bufferMode, default, default, default, default, default, default),
+            false);
 
         /// <summary>Creates an interface property model.</summary>
-        /// <param name="name">The property name.</param>
-        /// <param name="type">The property type.</param>
-        /// <param name="containingType">The containing type display name.</param>
-        /// <param name="generated">Whether it is satisfied by a generated member.</param>
-        /// <param name="explicitInterface">Whether it is implemented explicitly.</param>
+        /// <param name = "name">The property name.</param>
+        /// <param name = "type">The property type.</param>
+        /// <param name = "containingType">The containing type display name.</param>
+        /// <param name = "generated">Whether it is satisfied by a generated member.</param>
+        /// <param name = "explicitInterface">Whether it is implemented explicitly.</param>
         /// <returns>The interface property model.</returns>
-        private static InterfacePropertyModel CreateProperty(
-            string name,
-            string type,
-            string containingType,
-            bool generated,
-            bool explicitInterface) =>
+        private static InterfacePropertyModel CreateProperty(string name, string type, string containingType, bool generated, bool explicitInterface) =>
             new(name, type, false, containingType, string.Empty, true, true, generated, explicitInterface);
 
         /// <summary>Creates an interface model for direct emitter helper tests.</summary>
-        /// <param name="refitMethods">The directly declared Refit methods.</param>
-        /// <param name="derivedRefitMethods">The inherited Refit methods.</param>
+        /// <param name = "refitMethods">The directly declared Refit methods.</param>
+        /// <param name = "derivedRefitMethods">The inherited Refit methods.</param>
         /// <returns>The interface model.</returns>
-        private static InterfaceModel CreateInterfaceModel(
-            ImmutableEquatableArray<MethodModel> refitMethods,
-            ImmutableEquatableArray<MethodModel> derivedRefitMethods) =>
-            new(
-                "RefitInternalGenerated.PreserveAttribute",
-                "Generated",
-                "IGeneratedClient.g.cs",
-                "IGeneratedClient",
-                "RefitGeneratorTest",
-                "public partial class IGeneratedClient",
-                "RefitGeneratorTest.IGeneratedClient",
-                string.Empty,
-                GeneratedRequestBuilding: true,
-                EmitGeneratedCodeMarkers: true,
-                SupportsNullable: true,
-                SupportsStaticLambdas: true,
-                SupportsCollectionExpressions: true,
-                ImmutableEquatableArray<TypeConstraint>.Empty,
-                ImmutableEquatableArray<string>.Empty,
-                ImmutableEquatableArray<InterfacePropertyModel>.Empty,
-                ImmutableEquatableArray<MethodModel>.Empty,
-                refitMethods,
-                derivedRefitMethods,
-                Nullability.Enabled,
-                false,
-                ImmutableEquatableArray<string>.Empty);
+        private static InterfaceModel CreateInterfaceModel(MethodModel[] refitMethods, MethodModel[] derivedRefitMethods) => new(
+            "IGeneratedClient.g.cs",
+            new InterfaceNamesModel("Generated", "IGeneratedClient", "RefitGeneratorTest", "public partial class IGeneratedClient", "RefitGeneratorTest.IGeneratedClient", string.Empty),
+            new InterfaceOptionsModel("RefitInternalGenerated.PreserveAttribute", true, true, true, true, true),
+            new InterfaceMembersModel([], [], [], [], refitMethods, derivedRefitMethods),
+            Nullability.Enabled,
+            false,
+            []);
 
         /// <summary>Creates a Refit method model for direct emitter helper tests.</summary>
-        /// <param name="canGenerateInline">Whether the request can be generated inline.</param>
+        /// <param name = "canGenerateInline">Whether the request can be generated inline.</param>
         /// <returns>The method model.</returns>
-        private static MethodModel CreateRefitMethod(bool canGenerateInline) =>
+        private static MethodModel CreateRefitMethod(bool canGenerateInline) => new(
+            "Get",
+            TaskTypeName,
+            "RefitGeneratorTest.IGeneratedClient",
+            "Get",
+            ReturnTypeInfo.AsyncVoid,
             new(
-                "Get",
-                TaskTypeName,
-                "RefitGeneratorTest.IGeneratedClient",
-                "Get",
-                ReturnTypeInfo.AsyncVoid,
-                new(
-                    "GET",
-                    "/",
-                    TaskTypeName,
-                    "global::System.Threading.Tasks.Task",
-                    false,
-                    true,
-                    canGenerateInline,
-                    null,
-                    ImmutableEquatableArray<HeaderModel>.Empty,
-                    ImmutableEquatableArray<RequestParameterModel>.Empty),
-                ImmutableEquatableArray<ParameterModel>.Empty,
-                ImmutableEquatableArray<TypeConstraint>.Empty,
-                false,
-                false,
-                false);
+                "GET",
+                "/",
+                new RequestReturnModel(TaskTypeName, "global::System.Threading.Tasks.Task", false, true),
+                new RequestGenerationModel(canGenerateInline, null, default),
+                new RequestBindingsModel([], []),
+                new RequestBodyModel(default, string.Empty)),
+            [],
+            [],
+            new MethodAnnotationsModel(false, false, false));
 
         /// <summary>Parses a method declaration for syntax helper tests.</summary>
-        /// <param name="name">The method name.</param>
-        /// <param name="attribute">The attribute source.</param>
+        /// <param name = "name">The method name.</param>
+        /// <param name = "attribute">The attribute source.</param>
         /// <returns>The method declaration syntax.</returns>
         private static MethodDeclarationSyntax ParseMethod(string name, string attribute)
         {
-            var compilationUnit = SyntaxFactory.ParseCompilationUnit(
-                $"public interface I {{ {attribute} void {name}(); }}");
+            var compilationUnit = SyntaxFactory.ParseCompilationUnit($"public interface I {{ {attribute} void {name}(); }}");
             return compilationUnit.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
         }
 
         /// <summary>Parses an attribute name for syntax helper tests.</summary>
-        /// <param name="name">The name source.</param>
+        /// <param name = "name">The name source.</param>
         /// <returns>The parsed name syntax.</returns>
-        private static NameSyntax ParseName(string name) =>
-            SyntaxFactory.ParseName(name);
+        private static NameSyntax ParseName(string name) => SyntaxFactory.ParseName(name);
     }
 
-    /// <summary>Tests for <see cref="PooledStringBuilder"/> buffer pooling.</summary>
+    /// <summary>Tests for <see cref = "PooledStringBuilder"/> buffer pooling.</summary>
     public class PooledStringBuilderTests
     {
         /// <summary>The number of builders returned in one batch; chosen above the per-thread free-list capacity so the
@@ -615,7 +528,7 @@ public static partial class GeneratorComponentTests
             {
                 try
                 {
-                    var builders = new List<PooledStringBuilder>(OverflowingBuilderCount);
+                    List<PooledStringBuilder> builders = [with(OverflowingBuilderCount)];
                     for (var i = 0; i < OverflowingBuilderCount; i++)
                     {
                         var builder = new PooledStringBuilder();
@@ -633,10 +546,8 @@ public static partial class GeneratorComponentTests
                     failure = ex;
                 }
             });
-
             thread.Start();
             thread.Join();
-
             await Assert.That(failure).IsNull();
             foreach (var result in results)
             {

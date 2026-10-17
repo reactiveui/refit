@@ -95,6 +95,7 @@ internal partial class RestMethodInfoInternal
         // A [Url] parameter supplies the complete absolute request URI, bypassing the base address. It provides the
         // full URL, so the method's path template must be empty; a non-empty template is an invalid combination.
         UrlParameterInfo = ResolveUrlParameter(ParameterInfoArray, parameterAttributeSets, RelativePath);
+        AllowRelativeUrl = UrlParameterInfo >= 0 && parameterAttributeSets[UrlParameterInfo].Url!.AllowRelative;
         (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray, RefitSettings.AllowUnmatchedRouteParameters || methodInfo.IsGenericMethodDefinition);
         BodyParameterInfo = FindBodyParameter(ParameterInfoArray, parameterAttributeSets, IsMultipart, hma.Method);
         (BodyCompression, BodyCompressionLevel) = FindBodyCompression(parameterAttributeSets);
@@ -177,6 +178,9 @@ internal partial class RestMethodInfoInternal
     /// <summary>Gets the index of the <c>[Url]</c> parameter that supplies the absolute request URI, or a negative
     /// value when the method dispatches relative to the client base address.</summary>
     internal int UrlParameterInfo { get; }
+
+    /// <summary>Gets a value indicating whether the URL parameter accepts relative URI references.</summary>
+    internal bool AllowRelativeUrl { get; }
 
     /// <summary>Gets the map of parameter indexes to query string names.</summary>
     internal Dictionary<int, string> QueryParameterMap { get; }
@@ -393,7 +397,8 @@ internal partial class RestMethodInfoInternal
     /// <param name="methodInfo">The reflected method information.</param>
     /// <returns>A map of header names to header values.</returns>
     internal static Dictionary<string, string?> ParseHeaders(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type targetInterface,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+        Type targetInterface,
         MethodInfo methodInfo)
     {
         Dictionary<string, string?>? ret = null;
@@ -483,7 +488,7 @@ internal partial class RestMethodInfoInternal
         // Allow synchronous return types only for methods that are implemented by generated stubs
         // (for example explicit/default interface implementations). Public top-level Refit methods must
         // still use async-compatible return shapes.
-#if NET8_0_OR_GREATER        
+#if NET8_0_OR_GREATER
         var isExplicitInterfaceMember = methodInfo.Name.Contains('.');
 #else
         var isExplicitInterfaceMember = methodInfo.Name.Contains(".");
@@ -595,7 +600,11 @@ internal partial class RestMethodInfoInternal
             }
 
             queryDict ??= [];
-            queryDict.Add(i, GetUrlNameForParameter(ParameterInfoArray[i]));
+            queryDict.Add(
+                i,
+                ParameterInfoArray[i].GetCustomAttribute<AliasAsAttribute>(true)?.Name
+                ?? ParameterQueryAttributes[i]?.Name
+                ?? ParameterInfoArray[i].Name!);
         }
 
         return queryDict ?? EmptyDictionary<int, string>.Get();
@@ -667,8 +676,8 @@ internal partial class RestMethodInfoInternal
 
         // Only post/put/patch carry an implicit body.
         return method.Equals(HttpMethod.Post)
-            || method.Equals(HttpMethod.Put)
-            || method.Equals(_patchMethod)
+               || method.Equals(HttpMethod.Put)
+               || method.Equals(_patchMethod)
             ? FindImplicitBodyParameter(parameterArray, sets)
             : null;
     }

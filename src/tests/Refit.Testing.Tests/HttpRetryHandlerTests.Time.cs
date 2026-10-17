@@ -11,6 +11,47 @@ namespace Refit.Testing.Tests;
 /// <summary>Checks retry intervals with explicitly advanced clocks.</summary>
 public partial class HttpRetryHandlerTests
 {
+    /// <summary>Verifies opt-in server jitter never shortens the server's floor.</summary>
+    /// <param name="cancellationToken">The test cancellation token.</param>
+    /// <returns>A task representing the test.</returns>
+    [Test]
+    public async Task SendAsync_ServerJitterStaysAboveFloor(CancellationToken cancellationToken)
+    {
+        var clock = new ObservedRetryTimeProvider();
+        var stub = new StubHttp { { Route.Get(Endpoint), RetryReply.After(RetryInterval) }, { Route.Get(Endpoint), Reply.Status(HttpStatusCode.OK) } };
+        var options = ImmediateOptions();
+        options.TimeProvider = clock;
+        options.ServerDelayJitterRatio = 1;
+        options.MaxDelay = RetryInterval + RetryInterval;
+        using var client = HttpClientTestFactory.Create(stub.CreateRetryHandler(options));
+        var send = client.GetAsync(new Uri(Endpoint), cancellationToken);
+        var interval = await clock.AdvanceNextAsync(cancellationToken);
+        using var response = await send;
+        await Assert.That(interval).IsGreaterThanOrEqualTo(RetryInterval);
+        await Assert.That(interval).IsLessThanOrEqualTo(options.MaxDelay);
+    }
+
+    /// <summary>Verifies a zero symmetric ratio retains the nominal backoff.</summary>
+    /// <param name="cancellationToken">The test cancellation token.</param>
+    /// <returns>A task representing the test.</returns>
+    [Test]
+    public async Task SendAsync_ZeroSymmetricRatioKeepsBackoff(CancellationToken cancellationToken)
+    {
+        var clock = new ObservedRetryTimeProvider();
+        var stub = new StubHttp { { Route.Get(Endpoint), Reply.Status(HttpStatusCode.ServiceUnavailable) }, { Route.Get(Endpoint), Reply.Status(HttpStatusCode.OK) } };
+        var options = ImmediateOptions();
+        options.TimeProvider = clock;
+        options.BaseDelay = RetryInterval;
+        options.UseJitter = true;
+        options.JitterMode = RetryJitterMode.Symmetric;
+        options.JitterRatio = 0;
+        using var client = HttpClientTestFactory.Create(stub.CreateRetryHandler(options));
+        var send = client.GetAsync(new Uri(Endpoint), cancellationToken);
+        var interval = await clock.AdvanceNextAsync(cancellationToken);
+        using var response = await send;
+        await Assert.That(interval).IsEqualTo(RetryInterval);
+    }
+
     /// <summary>Verifies exponential backoff is capped and has a deterministic clock.</summary>
     /// <param name="cancellationToken">The test cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -72,12 +113,12 @@ public partial class HttpRetryHandlerTests
         {
             {
                 Route.Get(Endpoint), Reply.From(static _ =>
-            {
-                var response = new HttpResponseMessage(HttpStatusCode.Forbidden);
-                response.Headers.Add("x-ratelimit-remaining", "0");
-                response.Headers.Add("x-ratelimit-reset", "5");
-                return response;
-            })
+                {
+                    var response = new HttpResponseMessage(HttpStatusCode.Forbidden);
+                    response.Headers.Add("x-ratelimit-remaining", "0");
+                    response.Headers.Add("x-ratelimit-reset", "5");
+                    return response;
+                })
             },
             { Route.Get(Endpoint), Reply.Status(HttpStatusCode.OK) },
         };

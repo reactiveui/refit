@@ -19,7 +19,7 @@ public static partial class GeneratorComponentTests
         {
             // The first '{' is terminated by '/' before any '}', so it is not a placeholder; the scanner must loop on
             // and pick up the well-formed '{b}' that follows.
-            var locations = Parser.ExtractPathParameterPlaceholderNames("{a/{b}");
+            var locations = RequestParsing.ExtractPathParameterPlaceholderNames("{a/{b}");
             var count = locations.Occurrences.Length;
             var firstName = count > 0 ? locations.Occurrences[0].Name : null;
 
@@ -32,10 +32,10 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task Equality_ComparesBackingOccurrenceIdentity()
         {
-            var first = Parser.ExtractPathParameterPlaceholderNames("/a/{id}");
+            var first = RequestParsing.ExtractPathParameterPlaceholderNames("/a/{id}");
             var alias = first;
-            var second = Parser.ExtractPathParameterPlaceholderNames("/a/{id}");
-            var empty = Parser.ExtractPathParameterPlaceholderNames("/a/b");
+            var second = RequestParsing.ExtractPathParameterPlaceholderNames("/a/{id}");
+            var empty = RequestParsing.ExtractPathParameterPlaceholderNames("/a/b");
 
             // A copy shares the backing array and compares equal; two independent parses of the same template do not.
             await Assert.That(first == alias).IsTrue();
@@ -44,7 +44,7 @@ public static partial class GeneratorComponentTests
             await Assert.That(first != second).IsTrue();
 
             // A template with no placeholder yields the shared empty (defaulted) value.
-            await Assert.That(empty == Parser.PathParameterLocations.Empty).IsTrue();
+            await Assert.That(empty == RequestParsing.PathParameterLocations.Empty).IsTrue();
 
             // The object-typed override matches an equal value and rejects unrelated objects and a distinct set.
             await Assert.That(first.Equals((object)first)).IsTrue();
@@ -63,16 +63,16 @@ public static partial class GeneratorComponentTests
         {
             // "**value" is the round-trip form of "value"; "xxvalue" (wrong prefix char), "*yvalue" (only one star), and
             // "**walue" (same length and prefix, different name) are each near-misses that must not match.
-            var locations = Parser.ExtractPathParameterPlaceholderNames("/x/{**value}/{xxvalue}/{*yvalue}/{**walue}");
+            var locations = RequestParsing.ExtractPathParameterPlaceholderNames("/x/{**value}/{xxvalue}/{*yvalue}/{**walue}");
 
             await Assert.That(locations.HasRoundTrip).IsTrue();
 
             var matched = locations.TryGetRoundTripLocations("value", out var matchedRanges);
-            var matchedCount = matchedRanges.Count;
+            var matchedCount = matchedRanges.Length;
 
             // A name whose round-trip form is a different length matches nothing, so the walk falls through to no result.
             var unmatched = locations.TryGetRoundTripLocations("missing", out var missingRanges);
-            var missingCount = missingRanges.Count;
+            var missingCount = missingRanges.Length;
 
             await Assert.That(matched).IsTrue();
             await Assert.That(matchedCount).IsEqualTo(1);
@@ -85,25 +85,25 @@ public static partial class GeneratorComponentTests
         [Test]
         public async Task DottedPlaceholderDetection_MatchesOnlyTheOwningParameterName()
         {
-            var dotted = Parser.ExtractPathParameterPlaceholderNames("/x/{obj.Id}");
+            var dotted = RequestParsing.ExtractPathParameterPlaceholderNames("/x/{obj.Id}");
 
             await Assert.That(dotted.HasDotted).IsTrue();
 
             // The owning name matches; every other shape falls through the loop and returns false.
-            await Assert.That(Parser.HasDottedPlaceholderFor(dotted, "obj")).IsTrue();
+            await Assert.That(QueryParameterParsing.HasDottedPlaceholderFor(dotted, "obj")).IsTrue();
 
             // Head is a prefix but the boundary character is not '.'.
-            await Assert.That(Parser.HasDottedPlaceholderFor(dotted, "ob")).IsFalse();
+            await Assert.That(QueryParameterParsing.HasDottedPlaceholderFor(dotted, "ob")).IsFalse();
 
             // The '.' boundary aligns but the head text differs.
-            await Assert.That(Parser.HasDottedPlaceholderFor(dotted, "abc")).IsFalse();
+            await Assert.That(QueryParameterParsing.HasDottedPlaceholderFor(dotted, "abc")).IsFalse();
 
             // The candidate name is longer than the placeholder, so it cannot be its head.
-            await Assert.That(Parser.HasDottedPlaceholderFor(dotted, "obj.Id.Extra")).IsFalse();
+            await Assert.That(QueryParameterParsing.HasDottedPlaceholderFor(dotted, "obj.Id.Extra")).IsFalse();
 
             // A template without a dotted placeholder short-circuits before scanning.
-            var plain = Parser.ExtractPathParameterPlaceholderNames("/x/{id}");
-            await Assert.That(Parser.HasDottedPlaceholderFor(plain, "id")).IsFalse();
+            var plain = RequestParsing.ExtractPathParameterPlaceholderNames("/x/{id}");
+            await Assert.That(QueryParameterParsing.HasDottedPlaceholderFor(plain, "id")).IsFalse();
         }
     }
 }

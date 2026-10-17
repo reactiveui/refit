@@ -49,6 +49,19 @@ public sealed class RequestCapture
     public static Refit.Testing.RequestCapture None { get; }
     public static Refit.Testing.RequestCapture Bounded(int maxBytes) { }
 }
+public static class RetryReply
+{
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.Testing.StubResponse After(System.DateTimeOffset date) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.Testing.StubResponse After(System.TimeSpan delay) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.Testing.StubResponse After(System.DateTimeOffset date, System.Net.HttpStatusCode status) { }
+    public static Refit.Testing.StubResponse After(System.TimeSpan delay, System.Net.HttpStatusCode status) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.Testing.StubResponse Header(string name, string value) { }
+    public static Refit.Testing.StubResponse Header(string name, string value, System.Net.HttpStatusCode status) { }
+}
 public static class Route
 {
     public static Refit.Testing.RouteMatcher Any(string template) { }
@@ -136,6 +149,9 @@ public sealed class StubHttp : System.Net.Http.HttpMessageHandler, System.Collec
     public T CreateGeneratedClient<T>(string hostUrl) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public T CreateGeneratedClient<T>(string hostUrl, Refit.RefitSettings baseSettings) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public Refit.HttpRetryHandler CreateRetryHandler() { }
+    public Refit.HttpRetryHandler CreateRetryHandler(Refit.HttpRetryOptions options) { }
     public System.Threading.Tasks.Task<T?> LastRequestBodyAsync<T>() { }
     public System.Threading.Tasks.Task<T?> RequestBodyAsync<T>(int index) { }
     protected override System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken) { }

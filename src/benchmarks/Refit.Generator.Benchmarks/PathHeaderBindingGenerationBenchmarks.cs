@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
@@ -21,8 +22,7 @@ namespace Refit.Generator.Benchmarks;
 public class PathHeaderBindingGenerationBenchmarks
 {
     /// <summary>The source containing a path-only parameter.</summary>
-    private const string PathOnlySource =
-        """
+    private const string PathOnlySource = """
         using System.Threading.Tasks;
         using Refit;
 
@@ -34,8 +34,7 @@ public class PathHeaderBindingGenerationBenchmarks
         """;
 
     /// <summary>The source containing one parameter bound to both the path and a header.</summary>
-    private const string PathAndHeaderSource =
-        """
+    private const string PathAndHeaderSource = """
         using System.Threading.Tasks;
         using Refit;
 
@@ -70,11 +69,10 @@ public class PathHeaderBindingGenerationBenchmarks
     {
         _pathOnlyCompilation = GeneratorHarness.BuildCompilation(PathOnlySource);
         _pathOnlyCandidates = GeneratorHarness.CollectCandidates(_pathOnlyCompilation);
-        _pathOnlyInterface = GeneratorHarness.Parse(_pathOnlyCompilation, _pathOnlyCandidates).Interfaces.AsArray()[0];
-
+        _pathOnlyInterface = GeneratorHarness.Parse(_pathOnlyCompilation, _pathOnlyCandidates).Interfaces[0];
         _pathAndHeaderCompilation = GeneratorHarness.BuildCompilation(PathAndHeaderSource);
         _pathAndHeaderCandidates = GeneratorHarness.CollectCandidates(_pathAndHeaderCompilation);
-        _pathAndHeaderInterface = GeneratorHarness.Parse(_pathAndHeaderCompilation, _pathAndHeaderCandidates).Interfaces.AsArray()[0];
+        _pathAndHeaderInterface = GeneratorHarness.Parse(_pathAndHeaderCompilation, _pathAndHeaderCandidates).Interfaces[0];
     }
 
     /// <summary>Parses a path-only method.</summary>
@@ -82,16 +80,14 @@ public class PathHeaderBindingGenerationBenchmarks
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Parser")]
-    public int ParsePathOnly() =>
-        GeneratorHarness.Parse(_pathOnlyCompilation, _pathOnlyCandidates).Interfaces.Count;
+    public int ParsePathOnly() => GeneratorHarness.Parse(_pathOnlyCompilation, _pathOnlyCandidates).Interfaces.Length;
 
     /// <summary>Parses a method whose path parameter also contributes a header.</summary>
     /// <returns>The parsed interface count.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Parser")]
-    public int ParsePathAndHeader() =>
-        GeneratorHarness.Parse(_pathAndHeaderCompilation, _pathAndHeaderCandidates).Interfaces.Count;
+    public int ParsePathAndHeader() => GeneratorHarness.Parse(_pathAndHeaderCompilation, _pathAndHeaderCandidates).Interfaces.Length;
 
     /// <summary>Emits a path-only method.</summary>
     /// <returns>The generated source length.</returns>

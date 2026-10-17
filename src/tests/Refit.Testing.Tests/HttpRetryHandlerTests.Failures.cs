@@ -95,15 +95,15 @@ public partial class HttpRetryHandlerTests
         {
             {
                 Route.Get(Endpoint), Reply.From(async (_, _) =>
-            {
-                if (kind == "cancelledTransport")
                 {
-                    await cancellation.CancelAsync();
-                    throw new HttpRequestException("cancelled");
-                }
+                    if (kind == "cancelledTransport")
+                    {
+                        await cancellation.CancelAsync();
+                        throw new HttpRequestException("cancelled");
+                    }
 
-                throw kind == "cancellation" ? new OperationCanceledException(cancellation.Token) : new InvalidOperationException("permanent");
-            })
+                    throw kind == "cancellation" ? new OperationCanceledException(cancellation.Token) : new InvalidOperationException("permanent");
+                })
             },
         };
         using var client = HttpClientTestFactory.Create(stub.CreateRetryHandler(ImmediateOptions()));
@@ -169,7 +169,9 @@ public partial class HttpRetryHandlerTests
         var stub = new StubHttp { { Route.Get(Endpoint), Reply.Status(HttpStatusCode.ServiceUnavailable) }, { Route.Get(Endpoint), Reply.Status(HttpStatusCode.OK) } };
         using var client = HttpClientTestFactory.Create(stub.CreateRetryHandler(options));
         options.MaxRetries = 0;
-        options.ShouldRetry = static _ => false;
+        options.Responses.ShouldRetry = static _ => false;
+        options.Backoff.BaseDelay = TimeSpan.FromDays(1);
+        options.Replay.RetryUnsafeMethods = true;
 
         using var response = await client.GetAsync(new Uri(Endpoint), cancellationToken);
 
@@ -195,4 +197,28 @@ public partial class HttpRetryHandlerTests
             await Assert.That(static () => new HttpRetryHandler(new() { TimeProvider = null! })).Throws<ArgumentNullException>();
         }
     }
+
+    /// <summary>Rejects invalid fractional jitter configuration.</summary>
+    /// <param name="ratio">The invalid jitter ratio.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments(-0.1)]
+    [Arguments(1.1)]
+    [Arguments(double.NaN)]
+    [Arguments(double.PositiveInfinity)]
+    [Arguments(double.NegativeInfinity)]
+    public async Task Constructor_RejectsInvalidJitterRatios(double ratio)
+    {
+        await Assert.That(() => new HttpRetryHandler(new() { JitterRatio = ratio })).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(() => new HttpRetryHandler(new() { ServerDelayJitterRatio = ratio })).Throws<ArgumentOutOfRangeException>();
+    }
+
+    /// <summary>Rejects jitter distributions outside the defined enum values.</summary>
+    /// <param name="mode">The invalid distribution.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments((RetryJitterMode)(-1))]
+    [Arguments((RetryJitterMode)2)]
+    public async Task Constructor_RejectsInvalidJitterMode(RetryJitterMode mode) =>
+        await Assert.That(() => new HttpRetryHandler(new() { JitterMode = mode })).Throws<ArgumentOutOfRangeException>();
 }

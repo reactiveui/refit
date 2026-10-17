@@ -27,23 +27,23 @@ public class NamespaceNormalizationBenchmarks
     /// <returns>The normalized internal namespace.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string BuildDefault() => Parser.BuildRefitInternalNamespace(null, _assemblyName);
+    public string BuildDefault() => GeneratedTypeNaming.BuildRefitInternalNamespace(null, _assemblyName);
 
     /// <summary>Builds the internal namespace from a multi-segment consumer prefix.</summary>
     /// <returns>The normalized internal namespace.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string BuildFromPrefix() => Parser.BuildRefitInternalNamespace(_consumerNamespace, _assemblyName);
+    public string BuildFromPrefix() => GeneratedTypeNaming.BuildRefitInternalNamespace(_consumerNamespace, _assemblyName);
 
     /// <summary>Builds the assembly-scoped generated implementation container name.</summary>
     /// <returns>The container name.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string BuildContainerName() => Parser.BuildGeneratedContainerName(_assemblyName);
+    public string BuildContainerName() => GeneratedTypeNaming.BuildGeneratedContainerName(_assemblyName);
 
     /// <summary>Reduces an assembly name to the identifier fragment folded into generated names.</summary>
     /// <returns>The sanitized assembly-scope fragment.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string SanitizeAssembly() => Parser.SanitizeAssemblyScope(_assemblyName);
+    public string SanitizeAssembly() => GeneratedTypeNaming.SanitizeAssemblyScope(_assemblyName);
 }

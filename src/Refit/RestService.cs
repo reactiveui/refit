@@ -403,12 +403,7 @@ public static class RestService
 #if NET8_0_OR_GREATER
         ArgumentException.ThrowIfNullOrWhiteSpace(hostUrl);
 #else
-        if (string.IsNullOrWhiteSpace(hostUrl))
-        {
-            throw new ArgumentException(
-                $"`{nameof(hostUrl)}` must not be null or whitespace.",
-                nameof(hostUrl));
-        }
+        ArgumentExceptionHelper.ThrowIfNullOrWhiteSpace(hostUrl);
 #endif
 
         // check to see if user provided custom auth token

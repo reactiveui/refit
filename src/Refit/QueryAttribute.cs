@@ -54,6 +54,9 @@ public sealed class QueryAttribute : Attribute
     /// </summary>
     public bool TreatAsString { get; set; }
 
+    /// <summary>Gets or sets the query parameter or form field name. AliasAs takes precedence; null keeps the existing name.</summary>
+    public string? Name { get; set; }
+
     /// <summary>
     /// Gets or sets a value indicating whether a <see langword="null"/> property value should still be
     /// serialized (as an empty value, e.g. <c>key=</c>) instead of being omitted. By default null

@@ -1,52 +1,26 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-#if NET8_0_OR_GREATER
+
 using System.Net;
-using System.Security.Cryptography;
 
 namespace Refit;
 
 /// <summary>Retries transient HTTP failures using fresh requests and bounded, replayable bodies. Works with any HttpClient.</summary>
+/// <param name="options">The retry configuration.</param>
 [System.Diagnostics.DebuggerDisplay("HTTP retry handler")]
-public sealed class HttpRetryHandler : DelegatingHandler
+public sealed class HttpRetryHandler(HttpRetryOptions options) : DelegatingHandler
 {
-    /// <summary>The immutable-to-callers configuration snapshot.</summary>
-    private readonly HttpRetryOptions _options;
+    /// <summary>Maps a unit sample onto the symmetric interval from negative one to one.</summary>
+    private const double SymmetricSampleRange = 2;
+
+    /// <summary>The validated immutable configuration.</summary>
+    private readonly RetryConfiguration _options = ValidateOptions(options);
 
     /// <summary>Initializes a new instance of the <see cref="HttpRetryHandler"/> class.</summary>
     public HttpRetryHandler()
         : this(new HttpRetryOptions())
     {
-    }
-
-    /// <summary>Initializes a new instance of the <see cref="HttpRetryHandler"/> class.</summary>
-    /// <param name="options">The retry configuration.</param>
-    /// <exception cref="ArgumentNullException">The options or clock is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">A count or delay is outside its permitted range.</exception>
-    public HttpRetryHandler(HttpRetryOptions options)
-    {
-        ArgumentNullException.ThrowIfNull(options);
-        ArgumentOutOfRangeException.ThrowIfNegative(options.MaxRetries);
-        ArgumentOutOfRangeException.ThrowIfLessThan(options.BaseDelay, TimeSpan.Zero);
-        ArgumentOutOfRangeException.ThrowIfLessThan(options.MaxDelay, TimeSpan.Zero);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(options.MaxDelay.TotalMilliseconds, uint.MaxValue - 1D);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(options.BaseDelay, options.MaxDelay);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.MaxRequestContentBufferSize);
-        ArgumentNullException.ThrowIfNull(options.TimeProvider);
-        _options = new()
-        {
-            MaxRetries = options.MaxRetries,
-            BaseDelay = options.BaseDelay,
-            MaxDelay = options.MaxDelay,
-            UseJitter = options.UseJitter,
-            RetryUnsafeMethods = options.RetryUnsafeMethods,
-            MaxRequestContentBufferSize = options.MaxRequestContentBufferSize,
-            RetryHttpRequestExceptions = options.RetryHttpRequestExceptions,
-            ShouldRetry = options.ShouldRetry,
-            DelayProvider = options.DelayProvider,
-            TimeProvider = options.TimeProvider,
-        };
     }
 
     /// <summary>Sends a request, disposing failed responses before waiting and preserving the final response for the caller.</summary>
@@ -55,8 +29,8 @@ public sealed class HttpRetryHandler : DelegatingHandler
     /// <returns>The final response.</returns>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
-        if (_options.MaxRetries == 0 || (!_options.RetryUnsafeMethods && !IsSafe(request.Method)))
+        ArgumentExceptionHelper.ThrowIfNull(request);
+        if (_options.MaxRetries == 0 || (!_options.Replay.RetryUnsafeMethods && !IsSafe(request.Method)))
         {
             return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
@@ -75,7 +49,7 @@ public sealed class HttpRetryHandler : DelegatingHandler
             }
             catch (HttpRequestException) when (CanRetryException(attempt, cancellationToken))
             {
-                await Task.Delay(GetBackoff(attempt), _options.TimeProvider, cancellationToken).ConfigureAwait(false);
+                await HttpRetryCompatibility.DelayAsync(GetBackoff(attempt), _options.TimeProvider, cancellationToken).ConfigureAwait(false);
                 continue;
             }
 
@@ -100,8 +74,47 @@ public sealed class HttpRetryHandler : DelegatingHandler
             }
 
             response.Dispose();
-            await Task.Delay(delay, _options.TimeProvider, cancellationToken).ConfigureAwait(false);
+            await HttpRetryCompatibility.DelayAsync(delay, _options.TimeProvider, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>Validates the immutable retry configuration.</summary>
+    /// <param name="options">The retry configuration.</param>
+    /// <returns>The validated configuration.</returns>
+    /// <exception cref="ArgumentNullException">The options or clock is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">A count or delay is outside its permitted range.</exception>
+    private static RetryConfiguration ValidateOptions(HttpRetryOptions options)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(options);
+        ArgumentOutOfRangeExceptionHelper.ThrowIfNegative(options.MaxRetries);
+        if (options.BaseDelay < TimeSpan.Zero || options.BaseDelay > options.MaxDelay)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options.BaseDelay));
+        }
+
+        if (options.MaxDelay < TimeSpan.Zero || options.MaxDelay.TotalMilliseconds > uint.MaxValue - 1D)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options.MaxDelay));
+        }
+
+        ArgumentOutOfRangeExceptionHelper.ThrowIfNegativeOrZero(options.MaxRequestContentBufferSize);
+        ArgumentExceptionHelper.ThrowIfNull(options.TimeProvider);
+        if (options.JitterMode is < RetryJitterMode.Full or > RetryJitterMode.Symmetric)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options.JitterMode));
+        }
+
+        ValidateJitterRatio(options.JitterRatio, nameof(options.JitterRatio));
+        ValidateJitterRatio(options.ServerDelayJitterRatio, nameof(options.ServerDelayJitterRatio));
+        return new(
+            options.MaxRetries,
+            new(
+                options.BaseDelay,
+                options.MaxDelay,
+                new(options.JitterRatio, options.ServerDelayJitterRatio, options.JitterMode, options.UseJitter)),
+            new(options.MaxRequestContentBufferSize, options.RetryUnsafeMethods, options.RetryHttpRequestExceptions),
+            new(options.ShouldRetry, options.DelayProvider),
+            options.TimeProvider);
     }
 
     /// <summary>Checks the HTTP methods that do not change server state.</summary>
@@ -114,9 +127,21 @@ public sealed class HttpRetryHandler : DelegatingHandler
     /// <param name="status">The response status.</param>
     /// <returns>Whether the status is normally retryable.</returns>
     private static bool IsTransient(HttpStatusCode status) =>
-        status is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests
+        status is HttpStatusCode.RequestTimeout or HttpRetryCompatibility.TooManyRequests
             or HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway
             or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout;
+
+    /// <summary>Validates a finite fractional jitter ratio.</summary>
+    /// <param name="ratio">The configured ratio.</param>
+    /// <param name="name">The option name.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The ratio is not between zero and one or is NaN.</exception>
+    private static void ValidateJitterRatio(double ratio, string name)
+    {
+        if (ratio is < 0 or > 1 || double.IsNaN(ratio))
+        {
+            throw new ArgumentOutOfRangeException(name);
+        }
+    }
 
     /// <summary>Copies request metadata and creates a separately owned content wrapper.</summary>
     /// <param name="request">The original request.</param>
@@ -124,16 +149,7 @@ public sealed class HttpRetryHandler : DelegatingHandler
     /// <returns>A request owned by the retry loop.</returns>
     private static HttpRequestMessage CloneRequest(HttpRequestMessage request, byte[]? body)
     {
-        var copy = new HttpRequestMessage(request.Method, request.RequestUri) { Version = request.Version, VersionPolicy = request.VersionPolicy };
-        foreach (var header in request.Headers)
-        {
-            _ = copy.Headers.TryAddWithoutValidation(header.Key, header.Value);
-        }
-
-        foreach (var option in request.Options)
-        {
-            copy.Options.Set(new(option.Key), option.Value);
-        }
+        var copy = HttpRetryCompatibility.CloneRequestMetadata(request);
 
         if (body is not null)
         {
@@ -160,8 +176,12 @@ public sealed class HttpRetryHandler : DelegatingHandler
             return null;
         }
 
-        await using var buffer = new RetryRequestContentBuffer(_options.MaxRequestContentBufferSize, cancellationToken);
-        await content.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+#if NET8_0_OR_GREATER
+        await using var buffer = new RetryRequestContentBuffer(_options.Replay.MaxRequestContentBufferSize, cancellationToken);
+#else
+        using var buffer = new RetryRequestContentBuffer(_options.Replay.MaxRequestContentBufferSize, cancellationToken);
+#endif
+        await HttpRetryCompatibility.CopyContentAsync(content, buffer, cancellationToken).ConfigureAwait(false);
         return buffer.ToArray();
     }
 
@@ -170,7 +190,7 @@ public sealed class HttpRetryHandler : DelegatingHandler
     /// <param name="cancellationToken">The operation token.</param>
     /// <returns>Whether another attempt is permitted.</returns>
     private bool CanRetryException(int attempt, CancellationToken cancellationToken) =>
-        _options.RetryHttpRequestExceptions && attempt < _options.MaxRetries && !cancellationToken.IsCancellationRequested;
+        _options.Replay.RetryHttpRequestExceptions && attempt < _options.MaxRetries && !cancellationToken.IsCancellationRequested;
 
     /// <summary>Computes the wait only for eligible responses.</summary>
     /// <param name="response">The failed response.</param>
@@ -180,9 +200,20 @@ public sealed class HttpRetryHandler : DelegatingHandler
     /// <returns>Whether another attempt is permitted.</returns>
     private bool TryGetDelay(HttpResponseMessage response, int attempt, CancellationToken cancellationToken, out TimeSpan delay)
     {
-        var hint = _options.DelayProvider?.Invoke(response, _options.TimeProvider.GetUtcNow(), cancellationToken);
+        var hint = _options.Responses.DelayProvider?.Invoke(response, _options.TimeProvider.GetUtcNow(), cancellationToken);
         delay = hint ?? GetBackoff(attempt);
-        return ShouldRetryResponse(response, hint) && delay >= TimeSpan.Zero && delay <= _options.MaxDelay;
+        if (!ShouldRetryResponse(response, hint) || delay < TimeSpan.Zero || delay > _options.Backoff.MaxDelay)
+        {
+            return false;
+        }
+
+        if (hint.HasValue && _options.Backoff.Jitter.ServerDelayRatio > 0)
+        {
+            var scale = 1 + (_options.Backoff.Jitter.ServerDelayRatio * HttpRetryCompatibility.NextJitterSample());
+            delay = TimeSpan.FromMilliseconds(Math.Min(_options.Backoff.MaxDelay.TotalMilliseconds, delay.TotalMilliseconds * scale));
+        }
+
+        return true;
     }
 
     /// <summary>Applies a response predicate or the default transient classification.</summary>
@@ -190,26 +221,29 @@ public sealed class HttpRetryHandler : DelegatingHandler
     /// <param name="hint">The parsed server interval.</param>
     /// <returns>Whether the response qualifies for retry.</returns>
     private bool ShouldRetryResponse(HttpResponseMessage response, TimeSpan? hint) =>
-        _options.ShouldRetry?.Invoke(response)
+        _options.Responses.ShouldRetry?.Invoke(response)
         ?? (IsTransient(response.StatusCode) || (response.StatusCode == HttpStatusCode.Forbidden && hint.HasValue));
 
-    /// <summary>Computes bounded exponential backoff, optionally with full jitter.</summary>
+    /// <summary>Computes bounded exponential backoff with the configured jitter distribution.</summary>
     /// <param name="attempt">The zero-based attempt.</param>
     /// <returns>The fallback interval.</returns>
     private TimeSpan GetBackoff(int attempt)
     {
-        if (_options.BaseDelay == TimeSpan.Zero)
+        if (_options.Backoff.BaseDelay == TimeSpan.Zero)
         {
             return TimeSpan.Zero;
         }
 
-        var milliseconds = Math.Min(_options.MaxDelay.TotalMilliseconds, Math.ScaleB(_options.BaseDelay.TotalMilliseconds, attempt));
-        if (_options.UseJitter)
+        var milliseconds = Math.Min(_options.Backoff.MaxDelay.TotalMilliseconds, HttpRetryCompatibility.ScaleBackoff(_options.Backoff.BaseDelay.TotalMilliseconds, attempt));
+        if (_options.Backoff.Jitter.Enabled)
         {
-            milliseconds *= RandomNumberGenerator.GetInt32(int.MaxValue) / (double)int.MaxValue;
+            var sample = HttpRetryCompatibility.NextJitterSample();
+            var scale = _options.Backoff.Jitter.Mode == RetryJitterMode.Symmetric
+                ? 1 + (((SymmetricSampleRange * sample) - 1) * _options.Backoff.Jitter.Ratio)
+                : sample;
+            milliseconds = Math.Min(_options.Backoff.MaxDelay.TotalMilliseconds, milliseconds * scale);
         }
 
         return TimeSpan.FromMilliseconds(milliseconds);
     }
 }
-#endif

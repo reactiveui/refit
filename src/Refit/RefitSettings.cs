@@ -5,6 +5,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Refit;
 
@@ -14,24 +15,10 @@ namespace Refit;
     "Reliability",
     "SST2403:'this' escapes from a constructor before the object is fully built",
     Justification = "The default exception-factory delegate captures the settings instance but is only invoked after construction completes.")]
-#if NET8_0_OR_GREATER
-public partial class RefitSettings
-#else
 public class RefitSettings
-#endif
 {
     /// <summary>Initializes a new instance of the <see cref="RefitSettings"/> class.</summary>
-#if NET8_0_OR_GREATER
-#endif
-    public RefitSettings()
-    {
-        ContentSerializer = new SystemTextJsonContentSerializer();
-        UrlParameterKeyFormatter = new DefaultUrlParameterKeyFormatter();
-        UrlParameterFormatter = new DefaultUrlParameterFormatter();
-        FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
-        ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
-        TransportExceptionFactory = DefaultTransportExceptionFactory();
-    }
+    public RefitSettings() => Exceptions = new(this);
 
     /// <summary>Initializes a new instance of the <see cref="RefitSettings"/> class.</summary>
     /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use.</param>
@@ -84,240 +71,236 @@ public class RefitSettings
             formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
         UrlParameterKeyFormatter =
             urlParameterKeyFormatter ?? new DefaultUrlParameterKeyFormatter();
-        ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
-        TransportExceptionFactory = DefaultTransportExceptionFactory();
+        Exceptions = new(this);
     }
 
-    /// <summary>Gets or sets the token getter for a declared Authorization header without a token.</summary>
-    /// <remarks>
-    /// Generated preparation fills only a missing token, including with a supplied HttpClient.
-    /// A handler installed from settings also invokes the getter for explicit tokens. An empty token removes the header.
-    /// </remarks>
+    /// <summary>Gets the request content serialization and compression settings.</summary>
+    public RefitSerializationSettings Serialization { get; } = new();
+
+    /// <summary>Gets the URL formatting and resolution settings.</summary>
+    public RefitUrlSettings Url { get; } = new();
+
+    /// <summary>Gets the exception creation, capture and redaction settings.</summary>
+    public RefitExceptionsSettings Exceptions { get; }
+
+    /// <summary>Gets the request metadata, headers and transport settings.</summary>
+    public RefitRequestsSettings Requests { get; } = new();
+
+    /// <summary>Gets or sets <see cref="RefitSerializationSettings.ContentSerializer"/>.</summary>
+    public IHttpContentSerializer ContentSerializer
+    {
+        get => Serialization.ContentSerializer;
+        set => Serialization.ContentSerializer = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitSerializationSettings.FormUrlEncodedParameterFormatter"/>.</summary>
+    public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter
+    {
+        get => Serialization.FormUrlEncodedParameterFormatter;
+        set => Serialization.FormUrlEncodedParameterFormatter = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitSerializationSettings.Buffered"/>.</summary>
+    public bool Buffered
+    {
+        get => Serialization.Buffered;
+        set => Serialization.Buffered = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitSerializationSettings.RequestBodySerialization"/>.</summary>
+    public RequestBodySerializationMode RequestBodySerialization
+    {
+        get => Serialization.RequestBodySerialization;
+        set => Serialization.RequestBodySerialization = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitSerializationSettings.RequestCompression"/>.</summary>
+    public RequestCompression RequestCompression
+    {
+        get => Serialization.RequestCompression;
+        set => Serialization.RequestCompression = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitSerializationSettings.RequestCompressionLevel"/>.</summary>
+    public System.IO.Compression.CompressionLevel RequestCompressionLevel
+    {
+        get => Serialization.RequestCompressionLevel;
+        set => Serialization.RequestCompressionLevel = value;
+    }
+
+#if NET9_0_OR_GREATER
+    /// <summary>Gets or sets <see cref="RefitSerializationSettings.RequestCompressionOptions"/>.</summary>
+    public RequestCompressionOptions? RequestCompressionOptions
+    {
+        get => Serialization.RequestCompressionOptions;
+        set => Serialization.RequestCompressionOptions = value;
+    }
+
+#endif
+
+    /// <summary>Gets or sets <see cref="RefitUrlSettings.UrlParameterKeyFormatter"/>.</summary>
+    public IUrlParameterKeyFormatter UrlParameterKeyFormatter
+    {
+        get => Url.UrlParameterKeyFormatter;
+        set => Url.UrlParameterKeyFormatter = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitUrlSettings.HonorContentSerializerPropertyNamesInQuery"/>.</summary>
+    public bool HonorContentSerializerPropertyNamesInQuery
+    {
+        get => Url.HonorContentSerializerPropertyNamesInQuery;
+        set => Url.HonorContentSerializerPropertyNamesInQuery = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitUrlSettings.UrlParameterFormatter"/>.</summary>
+    public IUrlParameterFormatter UrlParameterFormatter
+    {
+        get => Url.UrlParameterFormatter;
+        set => Url.UrlParameterFormatter = value;
+    }
+
+    /// <summary>Gets <see cref="RefitUrlSettings.UrlParameterFormatterMap"/>.</summary>
+    public IDictionary<Type, IUrlParameterFormatter> UrlParameterFormatterMap => Url.UrlParameterFormatterMap;
+
+    /// <summary>Gets or sets <see cref="RefitUrlSettings.CollectionFormat"/>.</summary>
+    public CollectionFormat CollectionFormat
+    {
+        get => Url.CollectionFormat;
+        set => Url.CollectionFormat = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitUrlSettings.AllowUnmatchedRouteParameters"/>.</summary>
+    public bool AllowUnmatchedRouteParameters
+    {
+        get => Url.AllowUnmatchedRouteParameters;
+        set => Url.AllowUnmatchedRouteParameters = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitUrlSettings.UrlResolution"/>.</summary>
+    public UrlResolutionMode UrlResolution
+    {
+        get => Url.UrlResolution;
+        set => Url.UrlResolution = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitExceptionsSettings.ExceptionFactory"/>.</summary>
+    public Func<HttpResponseMessage, ValueTask<Exception?>> ExceptionFactory
+    {
+        get => Exceptions.ExceptionFactory;
+        set => Exceptions.ExceptionFactory = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitExceptionsSettings.DeserializationExceptionFactory"/>.</summary>
+    public Func<HttpResponseMessage, Exception, ValueTask<Exception?>>? DeserializationExceptionFactory
+    {
+        get => Exceptions.DeserializationExceptionFactory;
+        set => Exceptions.DeserializationExceptionFactory = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitExceptionsSettings.CaptureRequestContent"/>.</summary>
+    public bool CaptureRequestContent
+    {
+        get => Exceptions.CaptureRequestContent;
+        set => Exceptions.CaptureRequestContent = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitExceptionsSettings.MaxExceptionContentLength"/>.</summary>
+    public int? MaxExceptionContentLength
+    {
+        get => Exceptions.MaxExceptionContentLength;
+        set => Exceptions.MaxExceptionContentLength = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitExceptionsSettings.ExceptionRedactor"/>.</summary>
+    public Action<ApiExceptionBase>? ExceptionRedactor
+    {
+        get => Exceptions.ExceptionRedactor;
+        set => Exceptions.ExceptionRedactor = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitExceptionsSettings.TransportExceptionFactory"/>.</summary>
+    public Func<HttpRequestMessage, Exception, CancellationToken, Exception> TransportExceptionFactory
+    {
+        get => Exceptions.TransportExceptionFactory;
+        set => Exceptions.TransportExceptionFactory = value;
+    }
+
+    /// <summary>Gets or sets <see cref="RefitRequestsSettings.AuthorizationHeaderValueGetter"/>.</summary>
     public Func<
         HttpRequestMessage,
         CancellationToken,
         ValueTask<string>
     >? AuthorizationHeaderValueGetter
-    { get; set; }
+    {
+        get => Requests.AuthorizationHeaderValueGetter;
+        set => Requests.AuthorizationHeaderValueGetter = value;
+    }
 
-    /// <summary>Gets or sets a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.</summary>
-    public Func<HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }
+    /// <summary>Gets or sets <see cref="RefitRequestsSettings.HttpMessageHandlerFactory"/>.</summary>
+    public Func<HttpMessageHandler>? HttpMessageHandlerFactory
+    {
+        get => Requests.HttpMessageHandlerFactory;
+        set => Requests.HttpMessageHandlerFactory = value;
+    }
 
-    /// <summary>Gets or sets a function to provide <see cref="Exception"/> based on <see cref="HttpResponseMessage"/>. If function returns null - no exception is thrown.</summary>
-    public Func<HttpResponseMessage, ValueTask<Exception?>> ExceptionFactory { get; set; }
+    /// <summary>Gets <see cref="RefitRequestsSettings.ReturnTypeAdapters"/>.</summary>
+    public IList<Type> ReturnTypeAdapters => Requests.ReturnTypeAdapters;
 
-    /// <summary>
-    /// Gets or sets a function to provide <see cref="Exception"/> when deserialization exception is encountered.
-    /// If function returns null - no exception is thrown.
-    /// </summary>
-    public Func<HttpResponseMessage, Exception, ValueTask<Exception?>>? DeserializationExceptionFactory { get; set; }
+    /// <summary>Gets or sets <see cref="RefitRequestsSettings.CaptureMethodArguments"/>.</summary>
+    public bool CaptureMethodArguments
+    {
+        get => Requests.CaptureMethodArguments;
+        set => Requests.CaptureMethodArguments = value;
+    }
 
-    /// <summary>Gets or sets how requests' content should be serialized. (defaults to <see cref="SystemTextJsonContentSerializer"/>).</summary>
-    public IHttpContentSerializer ContentSerializer { get; set; }
+    /// <summary>Gets or sets <see cref="RefitRequestsSettings.ValidateHeaders"/>.</summary>
+    public bool ValidateHeaders
+    {
+        get => Requests.ValidateHeaders;
+        set => Requests.ValidateHeaders = value;
+    }
 
-    /// <summary>Gets the return-type adapters the opt-in reflection request builder uses to surface custom return
-    /// shapes (for example <c>IObservable&lt;T&gt;</c> or <c>Result&lt;T&gt;</c>) from interface methods.</summary>
-    /// <remarks>
-    /// Each entry is a type implementing <see cref="IReturnTypeAdapter{TReturn, TResult}"/>: either a closed type,
-    /// or an open generic definition whose single type parameter is the wrapped result type. The source generator
-    /// does not consult this collection — it discovers adapters at compile time — so this only affects
-    /// <see cref="RestService.For{T}(HttpClient, RefitSettings)"/> and other reflection-based builds.
-    /// </remarks>
-    public IList<Type> ReturnTypeAdapters { get; } = [];
-
-    /// <summary>
-    /// Gets or sets the <see cref="IUrlParameterKeyFormatter"/> instance to use for formatting URL parameter keys
-    /// (defaults to <see cref="DefaultUrlParameterKeyFormatter" />). Allows customization of key naming conventions.
-    /// </summary>
-    public IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether a query object's flattened property keys honor the content serializer's
-    /// property name (for example <c>[JsonPropertyName]</c> with the default System.Text.Json serializer, or
-    /// <c>[JsonProperty]</c> with Refit.Newtonsoft.Json), matching how form-encoded field names are resolved
-    /// (defaults to <see langword="true"/>).
-    /// </summary>
-    /// <remarks>
-    /// When <see langword="false"/>, flattened query keys use only <c>[AliasAs]</c> and the
-    /// <see cref="UrlParameterKeyFormatter"/> over the CLR property name, as in Refit 13 and earlier. <c>[AliasAs]</c>
-    /// always takes precedence regardless of this setting.
-    /// </remarks>
-    public bool HonorContentSerializerPropertyNamesInQuery { get; set; } = true;
-
-    /// <summary>Gets or sets the <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>).</summary>
-    public IUrlParameterFormatter UrlParameterFormatter { get; set; }
-
-    /// <summary>Gets a registry of <see cref="IUrlParameterFormatter"/> instances keyed by the CLR type they format,
-    /// consulted before <see cref="UrlParameterFormatter"/> when rendering a value into a path or query string.</summary>
-    /// <remarks>
-    /// When a value is rendered into a URL (a path parameter, a round-trip path segment, or a query value), its runtime
-    /// type (<see cref="object.GetType"/>) is looked up here first; a registered formatter is used for that value, and
-    /// any other type falls back to <see cref="UrlParameterFormatter"/>. Matching is by exact runtime type only - no base
-    /// class or interface walking - so register the concrete type the value will have at runtime. Both the reflection and
-    /// source-generated request builders consult this registry identically. It does not affect header or body
-    /// serialization. Registering any entry opts a request out of the generator's inline formatting fast path.
-    /// </remarks>
-    public IDictionary<Type, IUrlParameterFormatter> UrlParameterFormatterMap { get; } =
-        new Dictionary<Type, IUrlParameterFormatter>();
-
-    /// <summary>Gets or sets the <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>).</summary>
-    public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
-
-    /// <summary>Gets or sets the default collection format to use. (defaults to <see cref="CollectionFormat.RefitParameterFormatter"/>).</summary>
-    public CollectionFormat CollectionFormat { get; set; } =
-        CollectionFormat.RefitParameterFormatter;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the request's body content is buffered before sending.
-    /// Defaults to false. When true, Refit loads the content into a buffer before sending it.
-    /// </summary>
-    public bool Buffered { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the request body is captured as a string before sending so it can be
-    /// read from <see cref="ApiExceptionBase.RequestContent"/> when a request fails (defaults to false).
-    /// </summary>
-    /// <remarks>
-    /// By default <see cref="HttpClient"/> disposes the request content once the request is sent, so the body cannot
-    /// be read back from the exception. Enabling this buffers the body into memory before sending;
-    /// avoid it for large or streamed uploads.
-    /// <para>
-    /// Security note: the captured body frequently contains credentials or PII (for example login, token-refresh, or
-    /// payment payloads) and is exposed as a public property on the thrown exception. Use
-    /// <see cref="ExceptionRedactor"/> to scrub it before the exception reaches a logging or telemetry pipeline that
-    /// serializes exception objects.
-    /// </para>
-    /// </remarks>
-    public bool CaptureRequestContent { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the current call's argument values are captured, in declared
-    /// parameter order, into the <see cref="HttpRequestMessageOptions.MethodArguments"/> request option so a
-    /// <see cref="DelegatingHandler"/> can inspect them (defaults to false).
-    /// </summary>
-    /// <remarks>
-    /// When enabled, every call boxes its arguments into an <c>object?[]</c> that is retained on the
-    /// <see cref="HttpRequestMessage"/> (and therefore on any resulting <see cref="ApiExceptionBase"/>) for the
-    /// lifetime of the request. Leave it off unless a handler needs the values: it adds a per-call allocation, keeps
-    /// otherwise-collectable arguments alive, and the captured values frequently contain credentials or PII. The array
-    /// includes any <see cref="CancellationToken"/> so it aligns 1:1 with the reflected parameter list.
-    /// </remarks>
-    public bool CaptureMethodArguments { get; set; }
-
-    /// <summary>
-    /// Gets or sets the maximum number of characters of an error response body that are read into
-    /// <see cref="ApiException.Content"/> (defaults to <see langword="null"/>, meaning unbounded).
-    /// </summary>
-    /// <remarks>
-    /// Error responses are read with <see cref="HttpCompletionOption.ResponseHeadersRead"/>, so
-    /// <see cref="HttpClient.MaxResponseContentBufferSize"/> does not apply. A hostile or oversized error body can
-    /// therefore drive unbounded memory allocation while constructing the <see cref="ApiException"/>. Set a limit to
-    /// bound that read; the body is truncated to the first <c>value</c> characters.
-    /// </remarks>
-    public int? MaxExceptionContentLength { get; set; }
-
-    /// <summary>
-    /// Gets or sets a hook invoked just before an <see cref="ApiExceptionBase"/> is returned, allowing sensitive data
-    /// to be scrubbed before the exception propagates (defaults to <see langword="null"/>).
-    /// </summary>
-    /// <remarks>
-    /// An <see cref="ApiException"/> retains the live request (including the <c>Authorization</c> header and any secret
-    /// <c>[Header]</c> values), the optionally captured request body, and the raw response headers (including
-    /// <c>Set-Cookie</c>) and body. Logging and telemetry libraries that serialize exceptions by walking properties
-    /// will capture all of it. Use this hook to remove or mask those values, for example:
-    /// <code>
-    /// settings.ExceptionRedactor = ex =>
-    /// {
-    ///     ex.RequestMessage.Headers.Authorization = null;
-    ///     if (ex is ApiException api) api.Content = null;
-    /// };
-    /// </code>
-    /// </remarks>
-    public Action<ApiExceptionBase>? ExceptionRedactor { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether a route placeholder with no matching method argument is allowed.
-    /// When false (the default) Refit throws while building the method; when true the unmatched <c>{token}</c> is
-    /// left in the URL verbatim so it can be rewritten later, for example inside a <see cref="DelegatingHandler"/>.
-    /// </summary>
-    public bool AllowUnmatchedRouteParameters { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether header values are validated against the framework's header parsers
-    /// when they are applied to a request (defaults to <see langword="false"/>).
-    /// </summary>
-    /// <remarks>
-    /// When <see langword="true"/>, header values are added with <see cref="System.Net.Http.Headers.HttpHeaders.Add(string, string?)"/>,
-    /// so a value the framework parser rejects (for example an invalid <c>User-Agent</c>, malformed date, or a
-    /// disallowed character) throws <see cref="FormatException"/> while the request is being built. When
-    /// <see langword="false"/> (the default) values are added verbatim with
-    /// <see cref="System.Net.Http.Headers.HttpHeaders.TryAddWithoutValidation(string, string?)"/>, preserving Refit's
-    /// long-standing behaviour of sending header values as supplied. Carriage-return and line-feed characters are
-    /// stripped from header names and values in both modes to guard against header injection.
-    /// </remarks>
-    public bool ValidateHeaders { get; set; }
-
-    /// <summary>
-    /// Gets or sets how the client's base address is combined with a method's relative URL
-    /// (defaults to <see cref="UrlResolutionMode.RefitLegacy"/>). Set to <see cref="UrlResolutionMode.Rfc3986"/>
-    /// to opt in to RFC 3986 / <see cref="System.Net.Http.HttpClient"/> style resolution.
-    /// </summary>
-    public UrlResolutionMode UrlResolution { get; set; } = UrlResolutionMode.RefitLegacy;
-
-    /// <summary>
-    /// Gets or sets how JSON request bodies are serialized (defaults to <see cref="RequestBodySerializationMode.Default"/>).
-    /// <see cref="RequestBodySerializationMode.Buffered"/> and <see cref="RequestBodySerializationMode.Streamed"/> use
-    /// the synchronous serialization path so the System.Text.Json source-generated fast-path can engage; both require
-    /// the configured <see cref="ContentSerializer"/> to implement <see cref="ISynchronousContentSerializer"/>.
-    /// </summary>
-    public RequestBodySerializationMode RequestBodySerialization { get; set; } = RequestBodySerializationMode.Default;
-
-    /// <summary>
-    /// Gets or sets the content coding applied to every request body (defaults to <see cref="RequestCompression.None"/>).
-    /// A <c>[Body]</c> parameter naming its own coding overrides this, and <see cref="RequestCompression.None"/> on the
-    /// parameter opts that one method out.
-    /// </summary>
-    /// <remarks>Only turn this on against a server that accepts a compressed request body; there is no negotiation for it.</remarks>
-    public RequestCompression RequestCompression { get; set; } = RequestCompression.None;
-
-    /// <summary>Gets or sets how hard <see cref="RequestCompression"/> compresses (defaults to <see cref="System.IO.Compression.CompressionLevel.Optimal"/>).</summary>
-    public System.IO.Compression.CompressionLevel RequestCompressionLevel { get; set; } =
-        System.IO.Compression.CompressionLevel.Optimal;
-
-#if NET9_0_OR_GREATER
-    /// <summary>Gets or sets the per-coding compressor settings, or null to compress by level alone.</summary>
-    /// <remarks>Options set for a coding override the level for that coding, including where a <c>[Body]</c> parameter
-    /// named the coding and its own level.</remarks>
-    public RequestCompressionOptions? RequestCompressionOptions { get; set; }
-#endif
-
-    /// <summary>Gets or initializes local values copied into every request's options on modern .NET, or properties on .NET Framework.</summary>
-    public Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
-
-    /// <summary>
-    /// Gets or sets a factory invoked when <see cref="HttpClient.SendAsync(HttpRequestMessage)"/> throws a
-    /// transport-level exception, giving callers full control over the exception that is ultimately surfaced.
-    /// </summary>
-    /// <remarks>
-    /// The factory receives the <see cref="HttpRequestMessage"/>, the raw transport exception, and the
-    /// <see cref="CancellationToken"/> that was passed to the call, and returns the exception to surface.
-    /// <para>
-    /// By default, an <see cref="OperationCanceledException"/> is returned unchanged when
-    /// <see cref="CancellationToken.IsCancellationRequested"/> is <see langword="true"/> (so a cancelled
-    /// <see cref="ApiResponse{T}"/> call throws instead of populating <c>Error</c>); every other exception
-    /// is wrapped in an <see cref="ApiRequestException"/> that carries the full request context.
-    /// </para>
-    /// </remarks>
-    public Func<HttpRequestMessage, Exception, CancellationToken, Exception> TransportExceptionFactory { get; set; }
+    /// <summary>Gets or initializes <see cref="RefitRequestsSettings.HttpRequestMessageOptions"/>.</summary>
+    public Dictionary<string, object>? HttpRequestMessageOptions
+    {
+        get => Requests.HttpRequestMessageOptions;
+        init => Requests.InitializeRequestOptions(value);
+    }
 
 #if NET6_0_OR_GREATER
+    /// <summary>Gets or sets <see cref="RefitRequestsSettings.Version"/>.</summary>
+    public Version Version
+    {
+        get => Requests.Version;
+        set => Requests.Version = value;
+    }
 
-    /// <summary>Gets or sets the HTTP version requested by outgoing calls; defaults to HTTP/1.1.</summary>
-    public Version Version { get; set; } = System.Net.HttpVersion.Version11;
+#endif
+#if NET6_0_OR_GREATER
+    /// <summary>Gets or sets <see cref="RefitRequestsSettings.VersionPolicy"/>.</summary>
+    public HttpVersionPolicy VersionPolicy
+    {
+        get => Requests.VersionPolicy;
+        set => Requests.VersionPolicy = value;
+    }
 
-    /// <summary>Gets or sets HTTP version negotiation; defaults to accepting the requested version or a lower version.</summary>
-    public HttpVersionPolicy VersionPolicy { get; set; } =
-        HttpVersionPolicy.RequestVersionOrLower;
+#endif
+
+#if NET8_0_OR_GREATER
+
+    /// <summary>Creates settings that run on the options of a source-generated context, with reflection-based JSON disabled.</summary>
+    /// <param name="context">The generated context. Its own options supply the naming, converters and number handling.</param>
+    /// <returns>New settings whose content serializer is <see cref="SystemTextJsonContentSerializer.ForContext(JsonSerializerContext)"/>.</returns>
+    public static RefitSettings ForJsonContext(JsonSerializerContext context) =>
+        new(SystemTextJsonContentSerializer.ForContext(context));
+
+    /// <summary>Creates settings that run on the options of a source-generated context, optionally with a reflection fallback.</summary>
+    /// <param name="context">The generated context. Its own options supply the naming, converters and number handling.</param>
+    /// <param name="allowReflectionFallback"><see langword="true"/> to let a type the context does not describe use reflection-based JSON. Reflection is not trim or Native AOT safe.</param>
+    /// <returns>New settings whose content serializer is <see cref="SystemTextJsonContentSerializer.ForContext(JsonSerializerContext, bool)"/>.</returns>
+    public static RefitSettings ForJsonContext(JsonSerializerContext context, bool allowReflectionFallback) =>
+        new(SystemTextJsonContentSerializer.ForContext(context, allowReflectionFallback));
+
 #endif
 
     /// <summary>Creates settings whose query keys, form-url-encoded keys, and JSON body property names are all formatted in camelCase.</summary>
@@ -337,6 +320,37 @@ public class RefitSettings
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static RefitSettings KebabCase() =>
         ForNamingConvention(SeparatedCaseJsonNamingPolicy.Kebab, new KebabCaseUrlParameterKeyFormatter());
+
+#if NET8_0_OR_GREATER
+    /// <summary>Adds a source-generated context to these settings' System.Text.Json serializer, with reflection-based JSON disabled.</summary>
+    /// <param name="context">The generated context that supplies metadata for the types it describes.</param>
+    /// <returns>These settings.</returns>
+    /// <exception cref="InvalidOperationException"><see cref="ContentSerializer"/> is not a <see cref="SystemTextJsonContentSerializer"/>.</exception>
+    /// <remarks>
+    /// The serializer's naming policy, converters and resolvers stay in place. Only <see cref="ContentSerializer"/> changes,
+    /// to a serializer built on a copy of the current options.
+    /// </remarks>
+    public RefitSettings UseJsonContext(JsonSerializerContext context) =>
+        UseJsonContext(context, false);
+
+    /// <summary>Adds a source-generated context to these settings' System.Text.Json serializer, optionally with a reflection fallback.</summary>
+    /// <param name="context">The generated context that supplies metadata for the types it describes.</param>
+    /// <param name="allowReflectionFallback"><see langword="true"/> to let a type no resolver describes use reflection-based JSON. Reflection is not trim or Native AOT safe.</param>
+    /// <returns>These settings.</returns>
+    /// <exception cref="InvalidOperationException"><see cref="ContentSerializer"/> is not a <see cref="SystemTextJsonContentSerializer"/>.</exception>
+    public RefitSettings UseJsonContext(JsonSerializerContext context, bool allowReflectionFallback)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(context);
+
+        ContentSerializer = ContentSerializer is SystemTextJsonContentSerializer serializer
+            ? serializer.WithContext(context, allowReflectionFallback)
+            : throw new InvalidOperationException(
+                "A JSON serializer context can only be added to settings that use SystemTextJsonContentSerializer.");
+
+        return this;
+    }
+
+#endif
 
     /// <summary>Builds settings that apply the given JSON naming policy and URL parameter key formatter consistently.</summary>
     /// <param name="jsonNamingPolicy">The naming policy applied to JSON body property names.</param>
@@ -359,5 +373,5 @@ public class RefitSettings
     /// </returns>
     internal Func<HttpRequestMessage, Exception, CancellationToken, Exception> DefaultTransportExceptionFactory() =>
         (req, ex, ct) =>
-             ex is OperationCanceledException && ct.IsCancellationRequested ? ex : new ApiRequestException(req, req.Method, this, ex);
+            ex is OperationCanceledException && ct.IsCancellationRequested ? ex : new ApiRequestException(req, req.Method, this, ex);
 }

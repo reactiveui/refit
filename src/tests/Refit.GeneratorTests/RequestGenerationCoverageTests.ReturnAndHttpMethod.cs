@@ -201,8 +201,8 @@ public sealed partial class RequestGenerationCoverageTests
         var tagged = api.GetMembers("Tagged").OfType<IMethodSymbol>().First();
         var bare = api.GetMembers("Bare").OfType<IMethodSymbol>().First();
 
-        await Assert.That(Parser.FindHttpMethodAttribute(tagged, httpMethodBase)).IsNull();
-        await Assert.That(Parser.FindHttpMethodAttribute(bare, httpMethodBase)).IsNull();
+        await Assert.That(RequestParameterParsingHelpers.FindHttpMethodAttribute(tagged, httpMethodBase)).IsNull();
+        await Assert.That(RequestParameterParsingHelpers.FindHttpMethodAttribute(bare, httpMethodBase)).IsNull();
     }
 
     /// <summary>Verifies an unbalanced brace segment makes a path template unsupported for inline generation.</summary>
@@ -210,8 +210,8 @@ public sealed partial class RequestGenerationCoverageTests
     [Test]
     public async Task IsPathSupportedRejectsUnbalancedBraceSegment()
     {
-        await Assert.That(Parser.IsPathSupported("/root/{open/leaf}")).IsFalse();
-        await Assert.That(Parser.IsPathSupported("/root/{closed}/leaf")).IsTrue();
+        await Assert.That(RequestParameterParsingHelpers.IsPathSupported("/root/{open/leaf}")).IsFalse();
+        await Assert.That(RequestParameterParsingHelpers.IsPathSupported("/root/{closed}/leaf")).IsTrue();
     }
 
     /// <summary>Verifies custom HTTP method attributes whose <c>Method</c> getter is statically readable resolve their

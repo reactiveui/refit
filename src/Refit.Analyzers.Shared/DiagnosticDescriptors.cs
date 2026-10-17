@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Analyzers;
@@ -8,6 +9,17 @@ namespace Refit.Analyzers;
 /// <summary>Diagnostic descriptors reported by Refit analyzers.</summary>
 internal static class DiagnosticDescriptors
 {
+    /// <summary>An opt-in warning that does not add warnings to existing builds.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    internal static readonly DiagnosticDescriptor QueryDelimiterAsAlias =
+        new(
+            DiagnosticIds.QueryDelimiterAsAlias,
+            "Query delimiter may have been mistaken for an alias",
+            "Query(\"{0}\") sets a delimiter, not a name. Use Query(Name = \"{0}\") or AliasAs(\"{0}\") to rename parameter '{1}'.",
+            Category,
+            DiagnosticSeverity.Warning,
+            false);
+
     /// <summary>Diagnostic for a Refit member missing a valid HTTP method attribute.</summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
     internal static readonly DiagnosticDescriptor InvalidRefitMember =

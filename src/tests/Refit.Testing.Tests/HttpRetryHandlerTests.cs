@@ -106,18 +106,18 @@ public partial class HttpRetryHandlerTests
     [Test]
     public async Task SendAsync_ReplaysBodyAndMetadata(CancellationToken cancellationToken)
     {
-        var bodies = new List<string>();
-        var metadata = new List<bool>();
+        List<string> bodies = [];
+        List<bool> metadata = [];
         var optionKey = new HttpRequestOptionsKey<string>("Refit.Testing.Retry");
         var stub = new StubHttp { RequestCapture = RequestCapture.None };
         var reply = Reply.From(async (request, token) =>
         {
             bodies.Add(await request.Content!.ReadAsStringAsync(token));
             metadata.Add(request.Version == HttpVersion.Version20
-                && request.VersionPolicy == HttpVersionPolicy.RequestVersionOrLower
-                && request.Headers.Contains("X-Request")
-                && request.Content.Headers.Contains("X-Content")
-                && request.Options.TryGetValue(optionKey, out var value) && value == "metadata");
+                         && request.VersionPolicy == HttpVersionPolicy.RequestVersionOrLower
+                         && request.Headers.Contains("X-Request")
+                         && request.Content.Headers.Contains("X-Content")
+                         && request.Options.TryGetValue(optionKey, out var value) && value == "metadata");
             return new HttpResponseMessage(bodies.Count == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
         });
         stub.Add(Route.Post(Endpoint), reply);
@@ -127,9 +127,7 @@ public partial class HttpRetryHandlerTests
         using var client = HttpClientTestFactory.Create(stub.CreateRetryHandler(options));
         using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint)
         {
-            Version = HttpVersion.Version20,
-            VersionPolicy = HttpVersionPolicy.RequestVersionOrLower,
-            Content = new StringContent(Payload),
+            Version = HttpVersion.Version20, VersionPolicy = HttpVersionPolicy.RequestVersionOrLower, Content = new StringContent(Payload),
         };
         request.Headers.Add("X-Request", "yes");
         request.Content.Headers.Add("X-Content", "yes");
@@ -137,7 +135,7 @@ public partial class HttpRetryHandlerTests
 
         using var response = await client.SendAsync(request, cancellationToken);
 
-        await Assert.That(bodies).IsEquivalentTo(new List<string> { Payload, Payload });
+        await Assert.That(bodies).IsEquivalentTo((string[])[Payload, Payload]);
         await Assert.That(metadata.TrueForAll(static value => value)).IsTrue();
         await Assert.That(stub.Requests[0]).IsNotSameReferenceAs(stub.Requests[1]);
         await Assert.That(stub.Requests[0]).IsNotSameReferenceAs(request);

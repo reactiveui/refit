@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -441,41 +442,41 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         switch (collectionFormat)
         {
             case CollectionFormat.Multi:
-            {
-                foreach (var item in enumerable)
                 {
-                    Add(
-                        fieldName,
-                        settings.FormUrlEncodedParameterFormatter.Format(
-                            item,
-                            format));
-                }
+                    foreach (var item in enumerable)
+                    {
+                        Add(
+                            fieldName,
+                            settings.FormUrlEncodedParameterFormatter.Format(
+                                item,
+                                format));
+                    }
 
-                break;
-            }
+                    break;
+                }
 
             case CollectionFormat.RefitParameterFormatter
                 or CollectionFormat.Csv
                 or CollectionFormat.Ssv
                 or CollectionFormat.Tsv
                 or CollectionFormat.Pipes:
-            {
-                var delimiter = GetDelimiter(collectionFormat);
+                {
+                    var delimiter = GetDelimiter(collectionFormat);
 
-                Add(fieldName, JoinFormattedValues(enumerable, delimiter, format, settings));
-                break;
-            }
+                    Add(fieldName, JoinFormattedValues(enumerable, delimiter, format, settings));
+                    break;
+                }
 
             default:
-            {
-                // A genuinely out-of-range CollectionFormat value falls back to formatting the collection object itself.
-                Add(
-                    fieldName,
-                    settings.FormUrlEncodedParameterFormatter.Format(
-                        value,
-                        format));
-                break;
-            }
+                {
+                    // A genuinely out-of-range CollectionFormat value falls back to formatting the collection object itself.
+                    Add(
+                        fieldName,
+                        settings.FormUrlEncodedParameterFormatter.Format(
+                            value,
+                            format));
+                    break;
+                }
         }
     }
 
@@ -503,6 +504,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     internal string GetFieldNameForProperty(in FormPropertyMetadata metadata)
     {
         var name = metadata.AliasName
+                   ?? metadata.Query?.Name
                    ?? _contentSerializer.GetFieldNameForProperty(metadata.Property)
                    ?? _urlParameterKeyFormatter.Format(metadata.Property.Name);
 

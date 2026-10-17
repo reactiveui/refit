@@ -1,0 +1,1007 @@
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
+using Microsoft.CodeAnalysis;
+
+namespace Refit.Generator;
+
+/// <summary>Parses candidate interfaces and methods into the models used to generate Refit stubs.</summary>
+/// <content>Classifies each method parameter into its request binding for the generated inline path.</content>
+internal static class RequestParameterParsing
+{
+    /// <summary>Parses request parameter bindings for the generated inline path.</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterLocations">The placeholder names in the URL with their locations.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol used to classify inline-eligible path parameter types, or null when unavailable.</param>
+    /// <param name="allowImplicitBody">Whether an un-attributed complex parameter becomes the implicit request body.</param>
+    /// <param name="isMultipart">Whether the method is multipart, so un-attributed parameters become form parts.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <param name="fallback">Receives the first parameter that is not supported and why, or
+    /// <see cref="InlineFallback.None"/> when every parameter is supported.</param>
+    /// <returns>The parsed request parameter models.</returns>
+    internal static RequestParameterModel[] ParseRequestParameters(
+        in ImmutableArray<IParameterSymbol> parameters,
+        in RequestParsing.PathParameterLocations parameterLocations,
+        INamedTypeSymbol? formattableSymbol,
+        bool allowImplicitBody,
+        bool isMultipart,
+        in InterfaceGenerationContext context,
+        out InlineFallback fallback)
+    {
+        fallback = InlineFallback.None;
+        if (parameters.IsEmpty)
+        {
+            return [];
+        }
+
+        // An explicit [Body] anywhere suppresses implicit body detection, matching the reflection builder.
+        var implicitBodyEligible = allowImplicitBody && !HasExplicitBodyParameter(parameters);
+
+        var requestParameters = new RequestParameterModel[parameters.Length];
+        var counts = default(RequestParsing.SingleBindingCounts);
+        var implicitBodyAssigned = false;
+
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            var parameter = parameters[i];
+            var classification = CreateLooseParameterContext(
+                parameters,
+                i,
+                parameterLocations,
+                formattableSymbol,
+                implicitBodyEligible,
+                isMultipart,
+                context);
+            var parsedParameter = ParseRequestParameter(parameter, classification, ref implicitBodyAssigned);
+            requestParameters[i] = parsedParameter.Parameter;
+            counts = counts.Add(parsedParameter);
+            if (fallback.IsNone)
+            {
+                fallback = ResolveParameterFallback(parsedParameter, counts, i);
+            }
+        }
+
+        return requestParameters;
+    }
+
+    /// <summary>Builds the lookup state used to classify one parameter, resolving its path placeholders and disambiguating case-insensitive sibling parameter names.</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterIndex">The index of the parameter being classified.</param>
+    /// <param name="parameterLocations">The placeholder names in the URL with their locations.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="implicitBodyEligible">Whether an un-attributed complex parameter becomes the implicit request body.</param>
+    /// <param name="isMultipart">Whether the method is multipart.</param>
+    /// <param name="context">The interface generation context.</param>
+    /// <returns>The classification context for the parameter.</returns>
+    internal static RequestParsing.LooseParameterContext CreateLooseParameterContext(
+        in ImmutableArray<IParameterSymbol> parameters,
+        int parameterIndex,
+        in RequestParsing.PathParameterLocations parameterLocations,
+        INamedTypeSymbol? formattableSymbol,
+        bool implicitBodyEligible,
+        bool isMultipart,
+        in InterfaceGenerationContext context)
+    {
+        var parameter = parameters[parameterIndex];
+        var name = ResolveUrlName(parameter);
+        Range[]? location = null;
+        if (parameterLocations.TryGetDirectLocations(name, out var directLocations))
+        {
+            location = HasCaseInsensitiveSibling(
+                parameters,
+                parameterIndex,
+                name)
+                ? FilterWinningLocations(
+                    parameters,
+                    parameterIndex,
+                    name,
+                    parameterLocations.Occurrences,
+                    roundTrip: false)
+                : directLocations;
+        }
+
+        Range[]? roundTripLocation = null;
+        if (location is null
+            && parameterLocations.HasRoundTrip
+            && parameterLocations.TryGetRoundTripLocations(name, out var roundTripLocations))
+        {
+            roundTripLocation = HasCaseInsensitiveSibling(
+                parameters,
+                parameterIndex,
+                name)
+                ? FilterWinningLocations(
+                    parameters,
+                    parameterIndex,
+                    name,
+                    parameterLocations.Occurrences,
+                    roundTrip: true)
+                : roundTripLocations;
+        }
+
+        return new(
+            name,
+            location,
+            roundTripLocation,
+            parameterLocations,
+            formattableSymbol,
+            implicitBodyEligible,
+            isMultipart,
+            context);
+    }
+
+    /// <summary>Determines whether another parameter on the method has the same resolved URL name (case-insensitively).</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterIndex">The index of the parameter being classified.</param>
+    /// <param name="name">The parameter's resolved URL name.</param>
+    /// <returns><see langword="true"/> when at least one sibling parameter shares the same case-insensitive URL name.</returns>
+    internal static bool HasCaseInsensitiveSibling(
+        in ImmutableArray<IParameterSymbol> parameters,
+        int parameterIndex,
+        string name)
+    {
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            if (i != parameterIndex
+                && string.Equals(ResolveUrlName(parameters[i]), name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Filters the placeholder occurrences matching <paramref name="name"/> to those won by the parameter at <paramref name="parameterIndex"/>.</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterIndex">The index of the parameter being classified.</param>
+    /// <param name="name">The parameter's resolved URL name.</param>
+    /// <param name="occurrences">The placeholder occurrences in the URL.</param>
+    /// <param name="roundTrip">Whether to match round-trip (<c>{**name}</c>) placeholders.</param>
+    /// <returns>The placeholder ranges won by the parameter, or <see langword="null"/> when another sibling wins all of them.</returns>
+    internal static Range[]? FilterWinningLocations(
+        in ImmutableArray<IParameterSymbol> parameters,
+        int parameterIndex,
+        string name,
+        ReadOnlySpan<RequestParsing.PathPlaceholderOccurrence> occurrences,
+        bool roundTrip)
+    {
+        const int roundTripPrefixLength = 2;
+
+        List<Range>? won = null;
+        for (var i = 0; i < occurrences.Length; i++)
+        {
+            var occurrence = occurrences[i];
+            if (occurrence.Name.StartsWith("**", StringComparison.Ordinal) != roundTrip)
+            {
+                continue;
+            }
+
+            var placeholderName = roundTrip
+                ? occurrence.Name[roundTripPrefixLength..]
+                : occurrence.Name;
+            if (!string.Equals(
+                    placeholderName,
+                    name,
+                    StringComparison.OrdinalIgnoreCase)
+                || !WinsPlaceholderOccurrence(parameters, parameterIndex, placeholderName, occurrences))
+            {
+                continue;
+            }
+
+            (won ??= []).Add(occurrence.Location);
+        }
+
+        return won is null ? null : [.. won];
+    }
+
+    /// <summary>Determines whether the parameter at <paramref name="parameterIndex"/> is the highest-ranked route candidate for a placeholder occurrence.</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterIndex">The index of the parameter being checked.</param>
+    /// <param name="placeholderName">The unprefixed placeholder name from the route template.</param>
+    /// <param name="occurrences">The placeholder occurrences in the URL.</param>
+    /// <returns><see langword="true"/> when the parameter at <paramref name="parameterIndex"/> wins the placeholder.</returns>
+    internal static bool WinsPlaceholderOccurrence(
+        in ImmutableArray<IParameterSymbol> parameters,
+        int parameterIndex,
+        string placeholderName,
+        ReadOnlySpan<RequestParsing.PathPlaceholderOccurrence> occurrences)
+    {
+        var bestIndex = -1;
+        var bestRank = -1;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            var candidate = parameters[i];
+            if (!IsRouteCandidate(candidate))
+            {
+                continue;
+            }
+
+            var candidateName = ResolveUrlName(candidate);
+            if (!string.Equals(candidateName, placeholderName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var rank = GetRouteCandidateRank(candidate, candidateName, placeholderName, occurrences);
+            if (rank <= bestRank)
+            {
+                continue;
+            }
+
+            bestRank = rank;
+            bestIndex = i;
+        }
+
+        return bestIndex == parameterIndex;
+    }
+
+    /// <summary>Scores a route candidate parameter against a placeholder name so non-query and exact-case matches take precedence.</summary>
+    /// <param name="candidate">The candidate parameter symbol.</param>
+    /// <param name="candidateName">The candidate parameter's resolved URL name.</param>
+    /// <param name="placeholderName">The unprefixed placeholder name from the route template.</param>
+    /// <param name="occurrences">The placeholder occurrences in the URL.</param>
+    /// <returns>The priority rank (0 to 4, higher is preferred).</returns>
+    internal static int GetRouteCandidateRank(
+        IParameterSymbol candidate,
+        string candidateName,
+        string placeholderName,
+        ReadOnlySpan<RequestParsing.PathPlaceholderOccurrence> occurrences)
+    {
+        const int nonQueryBonus = 1;
+        const int exactCaseRank = 3;
+        const int unclaimedFallbackRank = 1;
+        const int claimedByOtherPlaceholderRank = 0;
+
+        var fallbackRank = HasExactCasePlaceholder(
+            occurrences,
+            candidateName)
+            ? claimedByOtherPlaceholderRank
+            : unclaimedFallbackRank;
+        var caseRank = string.Equals(
+            candidateName,
+            placeholderName,
+            StringComparison.Ordinal)
+            ? exactCaseRank
+            : fallbackRank;
+        if (caseRank == claimedByOtherPlaceholderRank)
+        {
+            return claimedByOtherPlaceholderRank;
+        }
+
+        return HasBareQueryOnlyAttribute(candidate)
+            ? caseRank
+            : caseRank + nonQueryBonus;
+    }
+
+    /// <summary>Determines whether a parameter can bind a route placeholder.</summary>
+    /// <param name="parameter">The parameter symbol to inspect.</param>
+    /// <returns><see langword="true"/> when the parameter is eligible to bind a route placeholder.</returns>
+    internal static bool IsRouteCandidate(IParameterSymbol parameter) =>
+        !RequestParameterKindParsing.IsCancellationToken(parameter.Type)
+        && !RequestParameterKindParsing.IsJsonTypeInfo(
+            parameter.Type,
+            out _)
+        && !QueryParameterParsing.HasParameterAttribute(
+            parameter,
+            QueryParameterParsing.UrlAttributeDisplayName)
+        && !QueryParameterParsing.HasParameterAttribute(
+            parameter,
+            QueryParameterParsing.BodyAttributeDisplayName)
+        && !QueryParameterParsing.HasParameterAttribute(
+            parameter,
+            QueryParameterParsing.HeaderCollectionAttributeDisplayName)
+        && !QueryParameterParsing.HasParameterAttribute(parameter, QueryParameterParsing.PropertyAttributeDisplayName);
+
+    /// <summary>Determines whether a parameter carries a <c>[Query]</c> attribute without a route <c>Format</c>.</summary>
+    /// <param name="parameter">The parameter symbol to inspect.</param>
+    /// <returns><see langword="true"/> when the parameter explicitly opts into query binding without a route format.</returns>
+    internal static bool HasBareQueryOnlyAttribute(IParameterSymbol parameter) =>
+        QueryParameterParsing.HasParameterAttribute(
+            parameter,
+            QueryParameterParsing.QueryAttributeDisplayName)
+        && QueryParameterParsing.NormalizeFormat(QueryParameterParsing.ParseParameterQueryData(parameter).Format) is null;
+
+    /// <summary>Determines whether the route template contains any placeholder matching <paramref name="urlName"/> with exact ordinal casing.</summary>
+    /// <param name="occurrences">The placeholder occurrences in the URL.</param>
+    /// <param name="urlName">The parameter's resolved URL name.</param>
+    /// <returns><see langword="true"/> when an exact-case placeholder exists in the template.</returns>
+    internal static bool HasExactCasePlaceholder(
+        ReadOnlySpan<RequestParsing.PathPlaceholderOccurrence> occurrences,
+        string urlName)
+    {
+        const int roundTripPrefixLength = 2;
+
+        for (var i = 0; i < occurrences.Length; i++)
+        {
+            var occurrenceName = occurrences[i].Name;
+            var candidateName = occurrenceName.StartsWith(
+                "**",
+                StringComparison.Ordinal)
+                ? occurrenceName[roundTripPrefixLength..]
+                : occurrenceName;
+            if (string.Equals(candidateName, urlName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Resolves why a parameter stops inline generation, if it does.</summary>
+    /// <param name="parsedParameter">The parsed parameter.</param>
+    /// <param name="counts">The single-instance binding counts up to and including this parameter.</param>
+    /// <param name="ordinal">The parameter's ordinal.</param>
+    /// <returns>The parameter's fallback, or <see cref="InlineFallback.None"/> when it is supported.</returns>
+    /// <remarks>More than one body, cancellation token, header collection, or <c>[Authorize]</c> parameter is an invalid
+    /// definition the reflection builder rejects; the method falls back so its validation still throws, and the repeat
+    /// is reported at the parameter that exceeds the limit.</remarks>
+    internal static InlineFallback ResolveParameterFallback(
+        in RequestParsing.ParsedRequestParameter parsedParameter,
+        in RequestParsing.SingleBindingCounts counts,
+        int ordinal)
+    {
+        var reason = parsedParameter.CanGenerateInline ? counts.Problem : parsedParameter.FallbackReason;
+        return reason == InlineFallbackReason.None ? InlineFallback.None : new(reason, ordinal);
+    }
+
+    /// <summary>Determines whether a parsed parameter is an <c>[Authorize]</c> binding (an Authorization header carrying a scheme prefix).</summary>
+    /// <param name="parameter">The parsed request parameter.</param>
+    /// <returns><see langword="true"/> for an <c>[Authorize]</c> parameter.</returns>
+    internal static bool IsAuthorizeParameter(in RequestParameterModel parameter) =>
+        parameter is { Kind: RequestParameterKind.Header, Header.HeaderValuePrefix: not null };
+
+    /// <summary>Builds the parse result for a parameter that cannot be emitted inline.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <param name="reason">Why the parameter cannot be emitted inline.</param>
+    /// <returns>The unsupported parameter and its fallback reason.</returns>
+    internal static RequestParsing.ParsedRequestParameter UnsupportedParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in InterfaceGenerationContext context,
+        InlineFallbackReason reason) =>
+        new(RequestParameterKindParsing.UnsupportedRequestParameter(parameter, parameterType, context), false, 0, 0, 0) { FallbackReason = reason };
+
+    /// <summary>Builds the parse result for a query parameter whose value cannot be flattened inline.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The unsupported parameter, blamed on its <c>[QueryConverter]</c> when it has one.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static RequestParsing.ParsedRequestParameter UnsupportedQueryParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in InterfaceGenerationContext context) =>
+        UnsupportedParameter(
+            parameter,
+            parameterType,
+            context,
+            QueryParameterParsing.HasParameterAttribute(
+                parameter,
+                QueryParameterParsing.QueryConverterAttributeDisplayName)
+                ? InlineFallbackReason.UnreadableQueryConverter
+                : InlineFallbackReason.UnsupportedQueryType);
+
+    /// <summary>Builds the parse result for a <c>[Url]</c> parameter.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="urlParameter">The parsed <c>[Url]</c> model.</param>
+    /// <returns>The parsed parameter; only a <c>string</c> or <c>Uri</c> can be emitted inline, and any other type falls
+    /// back to the reflection builder, whose validation throws for an invalid value.</returns>
+    internal static RequestParsing.ParsedRequestParameter UrlParameterResult(IParameterSymbol parameter, in RequestParameterModel urlParameter) =>
+        RequestParameterKindParsing.IsInlineUrlType(parameter.Type)
+            ? new(
+                urlParameter,
+                true,
+                0,
+                0,
+                0)
+            : new(urlParameter, false, 0, 0, 0) { FallbackReason = InlineFallbackReason.UrlParameterType };
+
+    /// <summary>Builds the parse result for an explicit <c>[Body]</c> parameter.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="bodyParameter">The parsed body model.</param>
+    /// <returns>The parsed parameter. A form-url-encoded body of a type that references a type parameter would emit
+    /// <c>CreateUrlEncodedBodyContent&lt;T&gt;</c>, whose <c>[DynamicallyAccessedMembers(PublicProperties)]</c> an open
+    /// type parameter cannot satisfy (IL2091), so it keeps using the reflection request builder.</returns>
+    internal static RequestParsing.ParsedRequestParameter BodyParameterResult(IParameterSymbol parameter, in RequestParameterModel bodyParameter) =>
+        bodyParameter.Body.BodySerializationMethod != "UrlEncoded" || !RequestParameterKindParsing.ReferencesTypeParameter(parameter.Type)
+            ? new(
+                bodyParameter,
+                true,
+                1,
+                0,
+                0)
+            : new(bodyParameter, false, 1, 0, 0) { FallbackReason = InlineFallbackReason.GenericUrlEncodedBody };
+
+    /// <summary>Resolves a parameter's URL name, honoring an <c>[AliasAs]</c> attribute.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <returns>The alias name or the declared parameter name.</returns>
+    internal static string ResolveUrlName(
+        IParameterSymbol parameter)
+    {
+        var aliasAttr = QueryParameterParsing.FindParameterAttribute(parameter, QueryParameterParsing.AliasAsAttributeDisplayName);
+        return aliasAttr is not null ? RequestBodyParsing.GetFirstStringArgument(aliasAttr) ?? parameter.Name : parameter.Name;
+    }
+
+    /// <summary>Determines whether any parameter carries an explicit <c>[Body]</c> attribute.</summary>
+    /// <param name="parameters">The method parameters.</param>
+    /// <returns><see langword="true"/> when an explicit body parameter exists.</returns>
+    internal static bool HasExplicitBodyParameter(
+        in ImmutableArray<IParameterSymbol> parameters)
+    {
+        foreach (var parameter in parameters)
+        {
+            if (QueryParameterParsing.HasParameterAttribute(parameter, QueryParameterParsing.BodyAttributeDisplayName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Parses one request parameter binding.</summary>
+    /// <param name="parameter">The parameter to parse.</param>
+    /// <param name="context">The lookup state used to classify the parameter.</param>
+    /// <param name="implicitBodyAssigned">Tracks whether an earlier parameter already claimed the implicit body.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    internal static RequestParsing.ParsedRequestParameter ParseRequestParameter(
+        IParameterSymbol parameter,
+        in RequestParsing.LooseParameterContext context,
+        ref bool implicitBodyAssigned)
+    {
+        var parameterType = AssemblyAliasQualification.QualifyType(parameter.Type, context.Generation);
+        if (TryParseCallInfrastructureParameter(parameter, parameterType, context, out var infrastructureParameter))
+        {
+            return infrastructureParameter;
+        }
+
+        // A [Url] parameter supplies the absolute request URI.
+        if (RequestParameterKindParsing.TryParseUrlParameter(parameter, parameterType, context.Generation, out var urlParameter))
+        {
+            return UrlParameterResult(parameter, urlParameter);
+        }
+
+        if (RequestParameterKindParsing.TryParseBodyParameter(parameter, parameterType, context.Generation, out var bodyParameter))
+        {
+            return BodyParameterResult(parameter, bodyParameter);
+        }
+
+        if (RequestParameterKindParsing.TryGetHeaderName(parameter, out var headerName))
+        {
+            return ParseBoundPathParameter(parameter, parameterType, context) is { } pathParameter
+                ? pathParameter with { Parameter = pathParameter.Parameter with { Header = pathParameter.Parameter.Header with { HeaderName = headerName } }, }
+                : new(
+                    RequestParameterKindParsing.BuildHeaderParameter(parameter, parameterType, headerName, context.Generation),
+                    true,
+                    0,
+                    0,
+                    0);
+        }
+
+        if (RequestParameterKindParsing.TryParseHeaderCollectionParameter(parameter, parameterType, context.Generation, out var headerCollectionParameter))
+        {
+            return new(
+                headerCollectionParameter,
+                headerCollectionParameter.Kind == RequestParameterKind.HeaderCollection,
+                0,
+                0,
+                1);
+        }
+
+        return RequestParameterKindParsing.TryParsePropertyParameter(
+            parameter,
+            parameterType,
+            context.Generation,
+            out var propertyParameter)
+            ? ParsePropertyQueryBinding(
+                parameter,
+                parameterType,
+                context.UrlName,
+                context.FormattableSymbol,
+                context.Generation,
+                propertyParameter)
+            : ParseBoundPathParameter(
+                  parameter,
+                  parameterType,
+                  context)
+              ?? ClassifyLooseParameter(parameter, parameterType, context, ref implicitBodyAssigned);
+    }
+
+    /// <summary>Tries to parse a parameter that steers the call rather than supplying request data: a cancellation token
+    /// or <c>JsonTypeInfo&lt;T&gt;</c> metadata. Neither becomes a route, query, header or body value.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The lookup state used to classify the parameter.</param>
+    /// <param name="parsed">Receives the parsed parameter and eligibility counters.</param>
+    /// <returns><see langword="true"/> when the parameter is a cancellation token or JSON type metadata.</returns>
+    internal static bool TryParseCallInfrastructureParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in RequestParsing.LooseParameterContext context,
+        out RequestParsing.ParsedRequestParameter parsed)
+    {
+        if (RequestParameterKindParsing.IsCancellationToken(parameter.Type))
+        {
+            parsed = CancellationTokenParameter(parameter, parameterType, context.Locations, context.Generation);
+            return true;
+        }
+
+        if (RequestParameterKindParsing.IsJsonTypeInfo(parameter.Type, out var target))
+        {
+            parsed = JsonTypeInfoParameter(parameter, parameterType, AssemblyAliasQualification.QualifyType(target, context.Generation), context.Generation);
+            return true;
+        }
+
+        parsed = default;
+        return false;
+    }
+
+    /// <summary>Builds the cancellation token parameter binding.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="locations">The parameter's placeholder locations, if any.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    internal static RequestParsing.ParsedRequestParameter CancellationTokenParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        Range[]? locations,
+        in InterfaceGenerationContext context) =>
+        new(
+            new(
+                new RequestParameterIdentityModel(parameter.MetadataName, parameterType, RequestParameterKindParsing.CanBeNull(parameter.Type, parameter.NullableAnnotation)),
+                new RequestParameterPathModel(locations, default, default, default, default),
+                RequestParameterKindParsing.BuildParameterAttributes(parameter, context),
+                RequestParameterKind.CancellationToken,
+                new RequestParameterHeaderModel(string.Empty, default),
+                string.Empty,
+                new RequestParameterBodyModel(string.Empty, BodyBufferMode.None, default, default, default, default, default, default),
+                false),
+            true,
+            0,
+            1,
+            0);
+
+    /// <summary>Builds the binding for a <c>JsonTypeInfo&lt;T&gt;</c> parameter.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="target">The fully-qualified type the metadata describes.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    internal static RequestParsing.ParsedRequestParameter JsonTypeInfoParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        string target,
+        in InterfaceGenerationContext context) =>
+        new(
+            new(
+                new RequestParameterIdentityModel(parameter.MetadataName, parameterType, RequestParameterKindParsing.CanBeNull(parameter.Type, parameter.NullableAnnotation)),
+                new RequestParameterPathModel(null, default, default, default, default),
+                RequestParameterKindParsing.BuildParameterAttributes(parameter, context),
+                RequestParameterKind.JsonTypeInfo,
+                new RequestParameterHeaderModel(string.Empty, default),
+                string.Empty,
+                new RequestParameterBodyModel(string.Empty, BodyBufferMode.None, default, default, default, default, default, default),
+                false) { JsonTypeInfoTarget = target },
+            true,
+            0,
+            0,
+            0);
+
+    /// <summary>Checks that each <c>JsonTypeInfo&lt;T&gt;</c> parameter describes the JSON body or the reply, and reports RF014 when one does not.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="parameters">The parsed request parameters.</param>
+    /// <param name="deserializedResultType">The fully-qualified type the reply is read as.</param>
+    /// <param name="canGenerateInline">Whether the rest of the request can be generated inline.</param>
+    /// <param name="context">The shared generation context that collects diagnostics.</param>
+    /// <returns><see langword="true"/> when the parameters are usable, or the method has none.</returns>
+    internal static bool ValidateJsonTypeInfoParameters(
+        IMethodSymbol methodSymbol,
+        RequestParameterModel[] parameters,
+        string deserializedResultType,
+        bool canGenerateInline,
+        in InterfaceGenerationContext context)
+    {
+        string? bodyType = null;
+        HashSet<string>? seen = null;
+        var valid = true;
+        foreach (var parameter in parameters)
+        {
+            if (parameter.Kind != RequestParameterKind.JsonTypeInfo)
+            {
+                continue;
+            }
+
+            bodyType ??= FindJsonBodyType(parameters) ?? string.Empty;
+            seen ??= [with(StringComparer.Ordinal)];
+            var target = parameter.JsonTypeInfoTarget!;
+            var problem = DescribeJsonTypeInfoProblem(target, seen.Add(target), bodyType, deserializedResultType, canGenerateInline);
+            if (problem is null)
+            {
+                continue;
+            }
+
+            context.Diagnostics.Add(Diagnostic.Create(
+                DiagnosticDescriptors.InvalidJsonTypeInfoParameter,
+                methodSymbol.Locations[0],
+                methodSymbol.Name,
+                problem));
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    /// <summary>Reports RF014 for a <c>JsonTypeInfo&lt;T&gt;</c> parameter when generated request building is switched off,
+    /// because only generated requests pass the metadata on.</summary>
+    /// <param name="methodSymbol">The Refit method symbol.</param>
+    /// <param name="context">The shared generation context that collects diagnostics.</param>
+    internal static void ReportJsonTypeInfoParameterWithoutGeneratedRequests(
+        IMethodSymbol methodSymbol,
+        in InterfaceGenerationContext context)
+    {
+        foreach (var parameter in methodSymbol.Parameters)
+        {
+            if (!RequestParameterKindParsing.IsJsonTypeInfo(parameter.Type, out _))
+            {
+                continue;
+            }
+
+            context.Diagnostics.Add(Diagnostic.Create(
+                DiagnosticDescriptors.InvalidJsonTypeInfoParameter,
+                methodSymbol.Locations[0],
+                methodSymbol.Name,
+                "generated request building is switched off"));
+            return;
+        }
+    }
+
+    /// <summary>Describes why a <c>JsonTypeInfo&lt;T&gt;</c> parameter cannot be used, or reports that it can.</summary>
+    /// <param name="target">The fully-qualified type the metadata describes.</param>
+    /// <param name="firstOfTarget">Whether this is the first parameter that describes <paramref name="target"/>.</param>
+    /// <param name="bodyType">The JSON body type, or an empty string when there is none.</param>
+    /// <param name="deserializedResultType">The fully-qualified type the reply is read as.</param>
+    /// <param name="canGenerateInline">Whether the request can be generated inline.</param>
+    /// <returns>The problem text, or <see langword="null"/> when the parameter is usable.</returns>
+    internal static string? DescribeJsonTypeInfoProblem(
+        string target,
+        bool firstOfTarget,
+        string bodyType,
+        string deserializedResultType,
+        bool canGenerateInline)
+    {
+        if (!canGenerateInline)
+        {
+            return "its request cannot be generated inline";
+        }
+
+        if (!firstOfTarget)
+        {
+            return $"it declares more than one JsonTypeInfo<{target}> parameter";
+        }
+
+        return target == bodyType || target == deserializedResultType
+            ? null
+            : $"JsonTypeInfo<{target}> matches neither the JSON body type nor the type the reply is read as";
+    }
+
+    /// <summary>Finds the type of the body parameter when it is serialized as JSON.</summary>
+    /// <param name="parameters">The parsed request parameters.</param>
+    /// <returns>The fully-qualified body type, or <see langword="null"/> when there is no JSON body.</returns>
+    internal static string? FindJsonBodyType(
+        RequestParameterModel[] parameters)
+    {
+        foreach (var parameter in parameters)
+        {
+            if (parameter.Kind == RequestParameterKind.Body
+                && parameter.Body.BodySerializationMethod is not ("UrlEncoded" or "JsonLines"))
+            {
+                return parameter.Identity.Type;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Parses a parameter bound to a path placeholder, when one exists.</summary>
+    /// <param name="parameter">The parameter to parse.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The lookup state used to classify the parameter.</param>
+    /// <returns>The parsed path binding, or <see langword="null"/> when the parameter has no placeholder.</returns>
+    internal static RequestParsing.ParsedRequestParameter? ParseBoundPathParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in RequestParsing.LooseParameterContext context) =>
+        context switch
+        {
+            { Locations: { } locations } => ParseDirectPathParameter(parameter, parameterType, locations, context),
+            { RoundTripLocations: { } roundTripLocations } => ParseRoundTripPathParameter(parameter, parameterType, roundTripLocations, context),
+            _ => null,
+        };
+
+    /// <summary>Parses a parameter bound to a plain <c>{name}</c> placeholder.</summary>
+    /// <param name="parameter">The parameter to parse.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="locations">The placeholder locations.</param>
+    /// <param name="context">The lookup state used to classify the parameter.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    internal static RequestParsing.ParsedRequestParameter ParseDirectPathParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        Range[] locations,
+        in RequestParsing.LooseParameterContext context) =>
+        CanInlinePathParameterType(
+            parameter.Type,
+            context.FormattableSymbol)
+            ? new(
+                RequestParameterKindParsing.PathRequestParameter(parameter, parameterType, locations, context.Generation) switch
+                {
+                    var binding2 => binding2 with
+                    {
+                        Path = binding2.Path with
+                        {
+                            ValueFormat = QueryParameterParsing.BuildValueFormat(
+                                parameter.Type,
+                                QueryParameterParsing.NormalizeFormat(QueryParameterParsing.ParseParameterQueryData(parameter)
+                                    .Format),
+                                context.FormattableSymbol,
+                                context.Generation),
+                            PreEncoded = QueryParameterParsing.HasParameterAttribute(
+                                parameter,
+                                QueryParameterParsing.EncodedAttributeDisplayName)
+                        }
+                    }
+                },
+                true,
+                0,
+                0,
+                0)
+            : UnsupportedParameter(parameter, parameterType, context.Generation, InlineFallbackReason.UnsupportedPathParameterType);
+
+    /// <summary>Determines whether a plain <c>{name}</c> path parameter can be bound inline.</summary>
+    /// <param name="type">The declared parameter type.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <returns><see langword="true"/> when the value stringifies with the same result as the reflection builder.</returns>
+    /// <remarks>
+    /// A simple type formats through the fast path. Any concrete class, struct, or array (including a collection like
+    /// <c>List&lt;int&gt;</c> or <c>byte[]</c>) also binds inline: the reflection builder renders a route value with
+    /// <c>UrlParameterFormatter.Format(value, ...)</c>, which for a non-<c>IFormattable</c> value is <c>value.ToString()</c>
+    /// - a virtual call that dispatches to the runtime type in the generated code exactly as it does in the reflection
+    /// builder, so a runtime subtype (and a collection's <c>System.Collections…</c> text) renders identically. (The only
+    /// divergence is the vanishing case of a subtype whose <c>IFormattable.ToString(null, invariant)</c> differs from its
+    /// parameterless <c>ToString()</c>.) An <c>object</c>, interface, or open generic type stays on the reflection path -
+    /// it has no usable declared shape.
+    /// </remarks>
+    internal static bool CanInlinePathParameterType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol) =>
+        RequestParameterKindParsing.IsSimpleType(
+            type,
+            formattableSymbol)
+        || (type.SpecialType != SpecialType.System_Object
+            && type.TypeKind is TypeKind.Class or TypeKind.Struct or TypeKind.Array);
+
+    /// <summary>Parses a parameter bound to a round-tripping <c>{**name}</c> placeholder.</summary>
+    /// <param name="parameter">The parameter to parse.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="roundTripLocations">The placeholder locations.</param>
+    /// <param name="context">The lookup state used to classify the parameter.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    /// <remarks>Round-tripping normally needs the reflection builder's per-segment escaping, but an
+    /// <c>[Encoded]</c> string value passes through verbatim, so it becomes a plain inline substitution.</remarks>
+    internal static RequestParsing.ParsedRequestParameter ParseRoundTripPathParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        Range[] roundTripLocations,
+        in RequestParsing.LooseParameterContext context)
+    {
+        var encoded = QueryParameterParsing.HasParameterAttribute(parameter, QueryParameterParsing.EncodedAttributeDisplayName);
+
+        // [Encoded] keeps the caller-encoded string verbatim (string only). A non-[Encoded] catch-all splits the
+        // value's string form on '/', formatting and escaping each segment while preserving the separators, exactly
+        // as the reflection builder does — so any type is supported inline.
+        return encoded && parameter.Type.SpecialType != SpecialType.System_String
+            ? UnsupportedParameter(
+                parameter,
+                parameterType,
+                context.Generation,
+                InlineFallbackReason.EncodedRoundTripNotString)
+            : new(
+                RequestParameterKindParsing.PathRequestParameter(parameter, parameterType, roundTripLocations, context.Generation) switch
+                {
+                    var binding3 => binding3 with
+                    {
+                        Path = binding3.Path with
+                        {
+                            ValueFormat = QueryParameterParsing.BuildValueFormat(parameter.Type, null, context.FormattableSymbol, context.Generation),
+                            PreEncoded = true,
+                            IsRoundTrip = !encoded
+                        }
+                    }
+                },
+                true,
+                0,
+                0,
+                0);
+    }
+
+    /// <summary>Classifies a parameter with no path binding as a flag, implicit body, query value, or fallback.</summary>
+    /// <param name="parameter">The parameter to classify.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The lookup state used to classify the parameter.</param>
+    /// <param name="implicitBodyAssigned">Tracks whether an earlier parameter already claimed the implicit body.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    internal static RequestParsing.ParsedRequestParameter ClassifyLooseParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in RequestParsing.LooseParameterContext context,
+        ref bool implicitBodyAssigned)
+    {
+        // Dotted {param.Prop} placeholders bind declared properties into the path; each property is formatted and
+        // escaped just like a scalar path parameter, and any property left unbound flattens into the query string.
+        // An unresolvable or non-simple placeholder property, or an unsupported residual property, falls back.
+        if (QueryParameterParsing.HasDottedPlaceholderFor(context.ParameterLocations, context.UrlName))
+        {
+            return PathObjectParameterParsing.BuildPathObjectBinding(parameter, parameterType, context);
+        }
+
+        // [Authorize] emits an Authorization header of "{scheme} {value}"; the scheme is a compile-time constant.
+        if (QueryParameterParsing.FindParameterAttribute(parameter, QueryParameterParsing.AuthorizeAttributeDisplayName) is { } authorizeAttribute)
+        {
+            var scheme = RequestBodyParsing.GetFirstStringArgument(authorizeAttribute) ?? QueryParameterParsing.DefaultAuthorizeScheme;
+            return new(
+                RequestParameterKindParsing.BuildAuthorizeHeaderParameter(parameter, parameterType, scheme, context.Generation),
+                true,
+                0,
+                0,
+                0);
+        }
+
+        // In a multipart method every remaining parameter is a form part unless it carries [Query]; this replaces
+        // the implicit-body and auto-query classification the non-multipart path applies below.
+        if (context.IsMultipart)
+        {
+            return MultipartParameterParsing.ClassifyMultipartParameter(parameter, parameterType, context);
+        }
+
+        if (QueryParameterParsing.HasParameterAttribute(parameter, QueryParameterParsing.QueryNameAttributeDisplayName))
+        {
+            var flagModel = QueryParameterParsing.BuildFlagModel(parameter, context.FormattableSymbol, context.Generation);
+            return new(QueryRequestParameter(parameter, parameterType, flagModel, context.Generation), true, 0, 0, 0);
+        }
+
+        // Body resolution precedes query mapping in the reflection builder: on POST/PUT/PATCH the first
+        // un-attributed complex parameter is the implicit body; a second one throws there, so fall back.
+        if (context.ImplicitBodyEligible && IsImplicitBodyCandidate(parameter))
+        {
+            return ClaimImplicitBody(parameter, parameterType, context.Generation, ref implicitBodyAssigned);
+        }
+
+        return QueryParameterParsing.TryBuildQueryModel(
+            parameter,
+            context.UrlName,
+            context.FormattableSymbol,
+            context.Generation,
+            out var query)
+            ? new(
+                QueryRequestParameter(parameter, parameterType, query!, context.Generation),
+                true,
+                0,
+                0,
+                0)
+            : UnsupportedQueryParameter(parameter, parameterType, context.Generation);
+    }
+
+    /// <summary>Determines whether a parameter matches the reflection builder's implicit body candidacy rules.</summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <returns><see langword="true"/> for un-attributed non-string reference-type parameters.</returns>
+    internal static bool IsImplicitBodyCandidate(IParameterSymbol parameter) =>
+        !parameter.Type.IsValueType
+        && parameter.Type.SpecialType != SpecialType.System_String
+        && !QueryParameterParsing.HasParameterAttribute(
+            parameter,
+            QueryParameterParsing.QueryAttributeDisplayName)
+        && !QueryParameterParsing.HasParameterAttribute(parameter, QueryParameterParsing.QueryConverterAttributeDisplayName);
+
+    /// <summary>Claims the implicit body slot, falling back when an earlier parameter already claimed it.</summary>
+    /// <param name="parameter">The parameter to bind.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <param name="implicitBodyAssigned">Tracks whether an earlier parameter already claimed the implicit body.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    internal static RequestParsing.ParsedRequestParameter ClaimImplicitBody(
+        IParameterSymbol parameter,
+        string parameterType,
+        in InterfaceGenerationContext context,
+        ref bool implicitBodyAssigned)
+    {
+        if (implicitBodyAssigned)
+        {
+            return UnsupportedParameter(parameter, parameterType, context, InlineFallbackReason.SecondImplicitBody);
+        }
+
+        implicitBodyAssigned = true;
+        return new(ImplicitBodyRequestParameter(parameter, parameterType, context), true, 1, 0, 0);
+    }
+
+    /// <summary>Attaches query-binding metadata to a property parameter that also carries <c>[Query]</c>.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="urlName">The resolved URL name.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <param name="propertyParameter">The parsed property parameter model.</param>
+    /// <returns>The parsed parameter and eligibility counters.</returns>
+    internal static RequestParsing.ParsedRequestParameter ParsePropertyQueryBinding(
+        IParameterSymbol parameter,
+        string parameterType,
+        string urlName,
+        INamedTypeSymbol? formattableSymbol,
+        in InterfaceGenerationContext context,
+        in RequestParameterModel propertyParameter)
+    {
+        if (!QueryParameterParsing.HasParameterAttribute(parameter, QueryParameterParsing.QueryAttributeDisplayName))
+        {
+            return new(propertyParameter, true, 0, 0, 0);
+        }
+
+        // A [Property] parameter that also carries [Query] feeds both the request options and the query string.
+        return QueryParameterParsing.TryBuildQueryModel(
+            parameter,
+            urlName,
+            formattableSymbol,
+            context,
+            out var propertyQuery)
+            ? new(
+                propertyParameter with { Query = propertyQuery },
+                true,
+                0,
+                0,
+                0)
+            : UnsupportedQueryParameter(parameter, parameterType, context);
+    }
+
+    /// <summary>Builds a query request parameter model.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="query">The query-binding metadata.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The query request parameter model.</returns>
+    internal static RequestParameterModel QueryRequestParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        QueryParameterModel query,
+        in InterfaceGenerationContext context) =>
+        new(
+            new RequestParameterIdentityModel(parameter.MetadataName, parameterType, RequestParameterKindParsing.CanBeNull(parameter.Type, parameter.NullableAnnotation)),
+            new RequestParameterPathModel(null, default, default, default, default),
+            RequestParameterKindParsing.BuildParameterAttributes(parameter, context),
+            RequestParameterKind.Query,
+            new RequestParameterHeaderModel(string.Empty, default),
+            string.Empty,
+            new RequestParameterBodyModel(string.Empty, BodyBufferMode.None, default, default, default, default, default, default),
+            false) { Query = query };
+
+    /// <summary>Builds the implicit body parameter model for POST/PUT/PATCH methods.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The implicit body parameter model.</returns>
+    internal static RequestParameterModel ImplicitBodyRequestParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        in InterfaceGenerationContext context) =>
+        new(
+            new RequestParameterIdentityModel(parameter.MetadataName, parameterType, RequestParameterKindParsing.CanBeNull(parameter.Type, parameter.NullableAnnotation)),
+            new RequestParameterPathModel(null, default, default, default, default),
+            RequestParameterKindParsing.BuildParameterAttributes(parameter, context),
+            RequestParameterKind.Body,
+            new RequestParameterHeaderModel(string.Empty, default),
+            string.Empty,
+            new RequestParameterBodyModel("Serialized", BodyBufferMode.Settings, default, default, default, default, default, default),
+            false);
+}

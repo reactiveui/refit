@@ -90,16 +90,19 @@ public class JsonTypeInfoParameterGenerationTests
 
     /// <summary>Verifies every method with a usable metadata parameter generates output that compiles and raises no RF014.</summary>
     /// <param name="method">The method declaration or declarations to place on the interface.</param>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     [MethodDataSource(nameof(ValidMethods))]
-    public async Task ValidMethod_GeneratesCompilableOutput(string method)
+    public async Task ValidMethod_GeneratesCompilableOutput(string method, CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(BuildSource(method), generatedRequestBuilding: true);
 
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
         using (Assert.Multiple())
         {
-            await Assert.That(result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidJsonTypeInfoId);
+            await Assert.That(analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidJsonTypeInfoId);
             await Assert.That(result.CompilationErrors.Select(static error => error.ToString()).ToArray()).IsEmpty();
         }
     }
@@ -107,14 +110,17 @@ public class JsonTypeInfoParameterGenerationTests
     /// <summary>Verifies every unusable metadata parameter is reported once with its reason.</summary>
     /// <param name="method">The method declaration to place on the interface.</param>
     /// <param name="reason">Text the diagnostic message must contain.</param>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     [MethodDataSource(nameof(InvalidMethods))]
-    public async Task InvalidMethod_IsReportedWithItsReason(string method, string reason)
+    public async Task InvalidMethod_IsReportedWithItsReason(string method, string reason, CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(BuildSource(method), generatedRequestBuilding: true);
 
-        var messages = result.GeneratorDiagnostics
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
+        var messages = analyzerDiagnostics
             .Where(static diagnostic => diagnostic.Id == InvalidJsonTypeInfoId)
             .Select(static diagnostic => diagnostic.GetMessage())
             .ToArray();
@@ -126,15 +132,18 @@ public class JsonTypeInfoParameterGenerationTests
     }
 
     /// <summary>Verifies a metadata parameter is reported when generated request building is switched off.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task GeneratedRequestBuildingOff_ReportsTheMetadataParameter()
+    public async Task GeneratedRequestBuildingOff_ReportsTheMetadataParameter(CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(
             BuildSource("""[Get("/a")] Task<Order> A(JsonTypeInfo<Order> info);"""),
             generatedRequestBuilding: false);
 
-        var messages = result.GeneratorDiagnostics
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, false, false, cancellationToken);
+
+        var messages = analyzerDiagnostics
             .Where(static diagnostic => diagnostic.Id == InvalidJsonTypeInfoId)
             .Select(static diagnostic => diagnostic.GetMessage())
             .ToArray();
@@ -146,21 +155,25 @@ public class JsonTypeInfoParameterGenerationTests
     }
 
     /// <summary>Verifies switching generated request building off reports nothing for a method without a metadata parameter.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task GeneratedRequestBuildingOff_ReportsNothingWithoutAMetadataParameter()
+    public async Task GeneratedRequestBuildingOff_ReportsNothingWithoutAMetadataParameter(CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(
             BuildSource("""[Get("/a")] Task<Order> A(int id);"""),
             generatedRequestBuilding: false);
 
-        await Assert.That(result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidJsonTypeInfoId);
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, false, false, cancellationToken);
+
+        await Assert.That(analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidJsonTypeInfoId);
     }
 
     /// <summary>Verifies a type that only shares the name of the metadata type is an ordinary parameter.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task ForeignJsonTypeInfo_IsNotTreatedAsMetadata()
+    public async Task ForeignJsonTypeInfo_IsNotTreatedAsMetadata(CancellationToken cancellationToken)
     {
         const string source =
             """
@@ -188,9 +201,11 @@ public class JsonTypeInfoParameterGenerationTests
 
         var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
 
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
         using (Assert.Multiple())
         {
-            await Assert.That(result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidJsonTypeInfoId);
+            await Assert.That(analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidJsonTypeInfoId);
             await Assert.That(result.GeneratedSources.Values.Any(static generated => generated.Contains("SetRequestJsonTypeInfo", StringComparison.Ordinal))).IsFalse();
         }
     }

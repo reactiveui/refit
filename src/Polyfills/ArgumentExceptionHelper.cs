@@ -14,6 +14,24 @@ namespace Refit.Internal;
 [ExcludeFromCodeCoverage]
 internal static class ArgumentExceptionHelper
 {
+    /// <summary>Throws when a string argument is null, empty or whitespace.</summary>
+    /// <param name="argument">The string to validate.</param>
+    /// <param name="paramName">The parameter name.</param>
+    /// <exception cref="ArgumentNullException">The argument is null.</exception>
+    /// <exception cref="ArgumentException">The argument is empty or whitespace.</exception>
+    internal static void ThrowIfNullOrWhiteSpace(
+        [NotNull] string? argument,
+        [CallerArgumentExpression(nameof(argument))] string? paramName = null)
+    {
+        ThrowIfNull(argument, paramName);
+        if (!string.IsNullOrWhiteSpace(argument))
+        {
+            return;
+        }
+
+        throw new ArgumentException("The value cannot be empty or whitespace.", paramName);
+    }
+
     /// <summary>Throws an <see cref="ArgumentNullException"/> if <paramref name="argument"/> is <see langword="null"/>.</summary>
     /// <param name="argument">The reference type argument to validate as non-null.</param>
     /// <param name="paramName">The parameter name.</param>

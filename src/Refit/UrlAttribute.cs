@@ -27,4 +27,8 @@ namespace Refit;
 /// </example>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class UrlAttribute : Attribute;
+public sealed class UrlAttribute : Attribute
+{
+    /// <summary>Gets or sets a value indicating whether relative URLs are resolved against the client's base address using standard URI rules. Defaults to false.</summary>
+    public bool AllowRelative { get; set; }
+}

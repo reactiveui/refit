@@ -32,23 +32,23 @@ public class IdentifierEmissionBenchmarks
     /// <returns>The prefixed type name.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string EnsureGlobalPrefixUnprefixed() => Emitter.EnsureGlobalPrefix(_unprefixedTypeName);
+    public string EnsureGlobalPrefixUnprefixed() => LiteralEmissionHelpers.EnsureGlobalPrefix(_unprefixedTypeName);
 
     /// <summary>Returns an already-prefixed type name unchanged (fast path).</summary>
     /// <returns>The type name.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string EnsureGlobalPrefixPrefixed() => Emitter.EnsureGlobalPrefix(_prefixedTypeName);
+    public string EnsureGlobalPrefixPrefixed() => LiteralEmissionHelpers.EnsureGlobalPrefix(_prefixedTypeName);
 
     /// <summary>Maps an HTTP verb to its generated <c>HttpMethod</c> expression.</summary>
     /// <returns>The generated expression.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string HttpMethodExpression() => Emitter.ToHttpMethodExpression(_httpVerb);
+    public string HttpMethodExpression() => LiteralEmissionHelpers.ToHttpMethodExpression(_httpVerb);
 
     /// <summary>Strips the explicit-interface prefix from a member name.</summary>
     /// <returns>The bare member name.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string StripExplicitPrefix() => Emitter.StripExplicitInterfacePrefix(_explicitMemberName);
+    public string StripExplicitPrefix() => LiteralEmissionHelpers.StripExplicitInterfacePrefix(_explicitMemberName);
 }

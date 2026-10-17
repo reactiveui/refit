@@ -11,6 +11,26 @@ namespace Refit.Internal;
 [ExcludeFromCodeCoverage]
 internal static class ArgumentOutOfRangeExceptionHelper
 {
+    /// <summary>Throws when a value is below its permitted minimum.</summary>
+    /// <typeparam name="T">The comparable value type.</typeparam>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="other">The minimum permitted value.</param>
+    /// <param name="paramName">The parameter name.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The value is below the minimum.</exception>
+    internal static void ThrowIfLessThan<T>(
+        T value,
+        T other,
+        [CallerArgumentExpression(nameof(value))] string? paramName = null)
+        where T : IComparable<T>
+    {
+        if (value.CompareTo(other) >= 0)
+        {
+            return;
+        }
+
+        throw new ArgumentOutOfRangeException(paramName, value, null);
+    }
+
     /// <summary>Throws when <paramref name="value"/> is negative.</summary>
     /// <param name="value">The value to validate.</param>
     /// <param name="paramName">The parameter name.</param>

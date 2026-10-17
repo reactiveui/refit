@@ -1,10 +1,11 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-#if NET8_0_OR_GREATER
+
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 
 namespace Refit;
 
@@ -25,6 +26,7 @@ public static class RetryDelayProviders
     /// <param name="now">The current UTC time used for absolute dates.</param>
     /// <param name="cancellationToken">The operation cancellation token.</param>
     /// <returns>The server interval, or null if no valid hint exists.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TimeSpan? RetryAfter(HttpResponseMessage response, DateTimeOffset now, CancellationToken cancellationToken) =>
         ReadHeader(response, "Retry-After", RetryHeaderFormat.RetryAfter, now, cancellationToken);
 
@@ -60,8 +62,8 @@ public static class RetryDelayProviders
             return delay;
         }
 
-        return response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests
-            && HasZeroRemaining(response)
+        return response.StatusCode is HttpStatusCode.Forbidden or HttpRetryCompatibility.TooManyRequests
+               && HasZeroRemaining(response)
             ? ReadHeader(response, "x-ratelimit-reset", RetryHeaderFormat.UnixTimeSeconds, now, cancellationToken)
             : null;
     }
@@ -73,7 +75,7 @@ public static class RetryDelayProviders
     /// <returns>The first valid server interval, or null.</returns>
     public static TimeSpan? Jira(HttpResponseMessage response, DateTimeOffset now, CancellationToken cancellationToken) =>
         RetryAfter(response, now, cancellationToken)
-        ?? (response.StatusCode == HttpStatusCode.TooManyRequests
+        ?? (response.StatusCode == HttpRetryCompatibility.TooManyRequests
             ? ReadHeader(response, "X-RateLimit-Reset", RetryHeaderFormat.Iso8601Date, now, cancellationToken)
             : null);
 
@@ -94,9 +96,14 @@ public static class RetryDelayProviders
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(response);
-        ArgumentException.ThrowIfNullOrWhiteSpace(headerName);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan((uint)format, (uint)RetryHeaderFormat.Iso8601Date);
+        ArgumentExceptionHelper.ThrowIfNull(response);
+        ArgumentExceptionHelper.ThrowIfNullOrWhiteSpace(headerName);
+
+        if (format is < RetryHeaderFormat.Seconds or > RetryHeaderFormat.Iso8601Date)
+        {
+            throw new ArgumentOutOfRangeException(nameof(format));
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
         var value = GetSingleHeader(response, headerName);
         return value is null ? null : ParseValue(value, format, now);
@@ -118,7 +125,7 @@ public static class RetryDelayProviders
 
         if (format == RetryHeaderFormat.Iso8601Date)
         {
-            var utc = value.EndsWith('Z');
+            var utc = value.Length > 0 && value[^1] == 'Z';
             return DateTimeOffset.TryParseExact(
                 value,
                 utc ? IsoUtcTimestampFormat : IsoOffsetTimestampFormat,
@@ -157,15 +164,9 @@ public static class RetryDelayProviders
     /// <param name="response">The response.</param>
     /// <param name="name">The header name.</param>
     /// <returns>The trimmed single value, or null.</returns>
-    private static string? GetSingleHeader(HttpResponseMessage response, string name)
-    {
-        if (!response.Headers.NonValidated.TryGetValues(name, out var values))
-        {
-            return null;
-        }
-
-        return values.Count == 1 ? values.ToString().Trim() : null;
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static string? GetSingleHeader(HttpResponseMessage response, string name) =>
+        HttpRetryCompatibility.GetSingleHeader(response, name);
 
     /// <summary>Checks GitHub's primary quota marker.</summary>
     /// <param name="response">The response.</param>
@@ -180,4 +181,3 @@ public static class RetryDelayProviders
     private static TimeSpan Until(DateTimeOffset date, DateTimeOffset now) =>
         date > now ? date - now : TimeSpan.Zero;
 }
-#endif

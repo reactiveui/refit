@@ -30,17 +30,9 @@ public sealed class ParserCoverageTests
     /// <summary>Verifies parser argument validation.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task GenerateInterfaceStubsRejectsNullCompilation() =>
-        await Assert.That(
-                static () => Parser.GenerateInterfaceStubs(
-                    null!,
-                    null,
-                    generatedRequestBuilding: true,
-                    emitGeneratedCodeMarkers: true,
-                    [],
-                    [],
-                    CancellationToken.None))
-            .ThrowsExactly<ArgumentNullException>();
+    public async Task GenerateInterfaceStubsRejectsNullCompilation() => await Assert.That(static () =>
+            Parser.GenerateInterfaceStubs(null!, null, generatedRequestBuilding: true, emitGeneratedCodeMarkers: true, [], [], CancellationToken.None))
+        .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies parser diagnostics and namespace normalization when Refit is not referenced.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -49,16 +41,7 @@ public sealed class ParserCoverageTests
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(UnusedInterfaceSource);
         var compilation = CSharpCompilation.Create("no-refit", [syntaxTree]);
-
-        var (diagnostics, model) = Parser.GenerateInterfaceStubs(
-            compilation,
-            "bad-name@thing-",
-            generatedRequestBuilding: true,
-            emitGeneratedCodeMarkers: true,
-            [],
-            [],
-            CancellationToken.None);
-
+        var (diagnostics, model) = Parser.GenerateInterfaceStubs(compilation, "bad-name@thing-", generatedRequestBuilding: true, emitGeneratedCodeMarkers: true, [], [], CancellationToken.None);
         await Assert.That(diagnostics.Count).IsEqualTo(1);
         await Assert.That(model.RefitInternalNamespace).IsEqualTo("bad_name_thing_RefitInternalGenerated.no_refit");
         await Assert.That(model.Interfaces).IsEmpty();
@@ -71,39 +54,10 @@ public sealed class ParserCoverageTests
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(UnusedInterfaceSource);
         var compilation = CSharpCompilation.Create("no-refit", [syntaxTree]);
-
-        var (_, leadingDotModel) = Parser.GenerateInterfaceStubs(
-            compilation,
-            ".Application",
-            generatedRequestBuilding: true,
-            emitGeneratedCodeMarkers: true,
-            [],
-            [],
-            CancellationToken.None);
-        var (_, digitModel) = Parser.GenerateInterfaceStubs(
-            compilation,
-            "123-App",
-            generatedRequestBuilding: true,
-            emitGeneratedCodeMarkers: true,
-            [],
-            [],
-            CancellationToken.None);
-        var (_, dottedModel) = Parser.GenerateInterfaceStubs(
-            compilation,
-            "One.Two",
-            generatedRequestBuilding: true,
-            emitGeneratedCodeMarkers: true,
-            [],
-            [],
-            CancellationToken.None);
-        var (_, invalidStartModel) = Parser.GenerateInterfaceStubs(
-            compilation,
-            "!.Application",
-            generatedRequestBuilding: true,
-            emitGeneratedCodeMarkers: true,
-            [],
-            [],
-            CancellationToken.None);
+        var (_, leadingDotModel) = Parser.GenerateInterfaceStubs(compilation, ".Application", generatedRequestBuilding: true, emitGeneratedCodeMarkers: true, [], [], CancellationToken.None);
+        var (_, digitModel) = Parser.GenerateInterfaceStubs(compilation, "123-App", generatedRequestBuilding: true, emitGeneratedCodeMarkers: true, [], [], CancellationToken.None);
+        var (_, dottedModel) = Parser.GenerateInterfaceStubs(compilation, "One.Two", generatedRequestBuilding: true, emitGeneratedCodeMarkers: true, [], [], CancellationToken.None);
+        var (_, invalidStartModel) = Parser.GenerateInterfaceStubs(compilation, "!.Application", generatedRequestBuilding: true, emitGeneratedCodeMarkers: true, [], [], CancellationToken.None);
 
         // The compilation assembly name ("no-refit") is folded in as a trailing, identifier-sanitized segment so each
         // assembly's PreserveAttribute namespace is distinct; the user-provided prefix normalization is unchanged.
@@ -120,13 +74,11 @@ public sealed class ParserCoverageTests
     {
         var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("namespace Test { public sealed class Sample { } }"));
         var wellKnownTypes = new WellKnownTypes(compilation);
-
         var first = wellKnownTypes.Get(typeof(string));
         var second = wellKnownTypes.TryGet("System.String");
         var missingFirst = wellKnownTypes.TryGet("Missing.Type");
         var missingSecond = wellKnownTypes.TryGet("Missing.Type");
         var openGenericParameter = typeof(List<>).GetGenericArguments()[0];
-
         await Assert.That(second).IsSameReferenceAs(first);
         await Assert.That(missingFirst).IsNull();
         await Assert.That(missingSecond).IsNull();
@@ -143,12 +95,9 @@ public sealed class ParserCoverageTests
     public async Task InternalHelpersHandleFallbackPaths()
     {
         var emptyOptions = new DictionaryAnalyzerConfigOptions(new Dictionary<string, string>());
-        var buildOptions = new DictionaryAnalyzerConfigOptions(
-            new Dictionary<string, string> { ["build_property.RefitOption"] = "build", ["AnalyzerOption"] = "analyzer", });
-
+        var buildOptions = new DictionaryAnalyzerConfigOptions(new Dictionary<string, string> { ["build_property.RefitOption"] = "build", ["AnalyzerOption"] = "analyzer", });
         var defaultConstant = default(TypedConstant);
-
-        await Assert.That(Parser.TryGetBodyBufferedValue(in defaultConstant, out var buffered)).IsFalse();
+        await Assert.That(RequestParameterParsingHelpers.TryGetBodyBufferedValue(in defaultConstant, out var buffered)).IsFalse();
         await Assert.That(buffered).IsFalse();
         await Assert.That(InterfaceStubGeneratorV2.TryGetGlobalOption(emptyOptions, "Missing", out var missingValue)).IsFalse();
         await Assert.That(missingValue).IsNull();
@@ -163,8 +112,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task TypeSymbolInheritanceHelpersHandleBaseClassesAndInterfaces()
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText(
-            """
+        var syntaxTree = CSharpSyntaxTree.ParseText("""
             namespace Symbols;
             public interface IMarker { }
             public class Base { }
@@ -176,7 +124,6 @@ public sealed class ParserCoverageTests
         var @base = compilation.GetTypeByMetadataName("Symbols.Base")!;
         var marker = compilation.GetTypeByMetadataName("Symbols.IMarker")!;
         var other = compilation.GetTypeByMetadataName("Symbols.Other")!;
-
         await Assert.That(derived.InheritsFromOrEquals(@base)).IsTrue();
         await Assert.That(derived.InheritsFromOrEquals(derived, includeInterfaces: true)).IsTrue();
         await Assert.That(derived.InheritsFromOrEquals(marker, includeInterfaces: true)).IsTrue();
@@ -193,9 +140,7 @@ public sealed class ParserCoverageTests
         const int GenericApiResponseMethodIndex = 2;
         const int BodyMethodIndex = 3;
         const int GenericMethodIndex = 4;
-
-        var syntaxTree = CSharpSyntaxTree.ParseText(
-            """
+        var syntaxTree = CSharpSyntaxTree.ParseText("""
             using System.Threading.Tasks;
             using Refit;
 
@@ -225,7 +170,6 @@ public sealed class ParserCoverageTests
         var candidateMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToImmutableArray();
         var candidateInterfaces = root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToImmutableArray();
         var compilation = Fixture.CreateLibrary(syntaxTree);
-
         var (_, model) = Parser.GenerateInterfaceStubs(
             compilation,
             "mixed",
@@ -234,15 +178,12 @@ public sealed class ParserCoverageTests
             candidateMethods,
             candidateInterfaces,
             CancellationToken.None);
-
-        var methods = model.Interfaces.AsArray()[0].RefitMethods.AsArray();
-
+        var methods = model.Interfaces[0].Members.RefitMethods;
         await Assert.That(methods.Length).IsEqualTo(ExpectedMethodCount);
         await Assert.That(methods[0].Name).IsEqualTo("GetString");
-        await Assert.That(methods[1].Request.IsApiResponse).IsTrue();
-        await Assert.That(methods[GenericApiResponseMethodIndex].Request.DeserializedResultType).IsEqualTo("int");
-        await Assert.That(methods[BodyMethodIndex].Request.Parameters.AsArray()[0].BodyBufferMode)
-            .IsEqualTo(BodyBufferMode.Streaming);
+        await Assert.That(methods[1].Request.Return.IsApiResponse).IsTrue();
+        await Assert.That(methods[GenericApiResponseMethodIndex].Request.Return.DeserializedResultType).IsEqualTo("int");
+        await Assert.That(methods[BodyMethodIndex].Request.Bindings.Parameters[0].Body.BodyBufferMode).IsEqualTo(BodyBufferMode.Streaming);
         await Assert.That(methods[GenericMethodIndex].DeclaredMethod).IsEqualTo("Generic<TOne, TTwo>");
     }
 
@@ -268,7 +209,6 @@ public sealed class ParserCoverageTests
         var candidateMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToImmutableArray();
         var candidateInterfaces = root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToImmutableArray();
         var compilation = Fixture.CreateLibrary(syntaxTree);
-
         var (_, model) = Parser.GenerateInterfaceStubs(
             compilation,
             "legacy",
@@ -277,8 +217,7 @@ public sealed class ParserCoverageTests
             candidateMethods,
             candidateInterfaces,
             CancellationToken.None);
-
-        await Assert.That(model.Interfaces.AsArray()[0].Nullability).IsEqualTo(Nullability.None);
+        await Assert.That(model.Interfaces[0].Nullability).IsEqualTo(Nullability.None);
     }
 
     /// <summary>Verifies inline eligibility is denied for a method with no HTTP method attribute.</summary>
@@ -286,8 +225,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task CanBuildRequestInlineRejectsMethodWithoutHttpAttribute()
     {
-        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-            """
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
             using System.Threading.Tasks;
             using Refit;
             namespace RefitGeneratorTest;
@@ -295,10 +233,8 @@ public sealed class ParserCoverageTests
             """));
         var httpBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
         var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
-        var method = compilation.GetTypeByMetadataName(SampleApiMetadataName)!
-            .GetMembers("Plain").OfType<IMethodSymbol>().First();
-
-        await Assert.That(Parser.CanBuildRequestInline(method, httpBase, formattable)).IsFalse();
+        var method = compilation.GetTypeByMetadataName(SampleApiMetadataName)!.GetMembers("Plain").OfType<IMethodSymbol>().First();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(method, httpBase, formattable)).IsFalse();
     }
 
     /// <summary>Verifies inline return-shape classification for non-named and plain named return types.</summary>
@@ -306,8 +242,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task CanBuildRequestInlineClassifiesNonNamedAndNamedReturnShapes()
     {
-        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-            """
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
             using Refit;
             namespace RefitGeneratorTest;
             public interface IApi
@@ -324,8 +259,8 @@ public sealed class ParserCoverageTests
 
         // Neither is inline-eligible; the point is that classifying the non-named (array) and the plain named
         // (string) declared result type both run here.
-        await Assert.That(Parser.CanBuildRequestInline(arrayReturn, httpBase, formattable)).IsFalse();
-        await Assert.That(Parser.CanBuildRequestInline(stringReturn, httpBase, formattable)).IsFalse();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(arrayReturn, httpBase, formattable)).IsFalse();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(stringReturn, httpBase, formattable)).IsFalse();
     }
 
     /// <summary>Verifies adapter discovery returns nothing when the adapter interface is unresolved.</summary>
@@ -334,9 +269,7 @@ public sealed class ParserCoverageTests
     public async Task DiscoverReturnTypeAdaptersReturnsEmptyWhenInterfaceUnresolved()
     {
         var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(UnusedInterfaceSource));
-
-        var adapters = Parser.DiscoverReturnTypeAdapters(compilation, null, CancellationToken.None);
-
+        var adapters = ReturnTypeAdapterParsing.DiscoverReturnTypeAdapters(compilation, null, CancellationToken.None);
         await Assert.That(adapters).IsEmpty();
     }
 
@@ -345,8 +278,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task BuildDeclaredBaseNameStripsExplicitInterfaceQualifier()
     {
-        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-            """
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
             namespace Explicit;
             public interface IFoo { System.Threading.Tasks.Task Bar(); }
             public class Impl : IFoo
@@ -354,11 +286,7 @@ public sealed class ParserCoverageTests
                 System.Threading.Tasks.Task IFoo.Bar() => System.Threading.Tasks.Task.CompletedTask;
             }
             """));
-        var explicitImplementation = compilation.GetTypeByMetadataName("Explicit.Impl")!
-            .GetMembers()
-            .OfType<IMethodSymbol>()
-            .First(static method => method.Name.Contains('.'));
-
+        var explicitImplementation = compilation.GetTypeByMetadataName("Explicit.Impl")!.GetMembers().OfType<IMethodSymbol>().First(static method => method.Name.Contains('.'));
         await Assert.That(Parser.BuildDeclaredBaseName(explicitImplementation)).IsEqualTo("Bar");
     }
 
@@ -369,7 +297,6 @@ public sealed class ParserCoverageTests
     {
         var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(UnusedInterfaceSource));
         var httpMethodBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
-
         await Assert.That(Parser.IsRefitMethod(null, httpMethodBase)).IsFalse();
     }
 
@@ -378,8 +305,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task CanBuildRequestInlineClassifiesAsyncEnumerableReturnShape()
     {
-        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-            """
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
             using System.Collections.Generic;
             using Refit;
             namespace RefitGeneratorTest;
@@ -387,10 +313,8 @@ public sealed class ParserCoverageTests
             """));
         var httpBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
         var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
-        var enumerate = compilation.GetTypeByMetadataName(SampleApiMetadataName)!
-            .GetMembers("Enumerate").OfType<IMethodSymbol>().First();
-
-        await Assert.That(Parser.CanBuildRequestInline(enumerate, httpBase, formattable)).IsTrue();
+        var enumerate = compilation.GetTypeByMetadataName(SampleApiMetadataName)!.GetMembers("Enumerate").OfType<IMethodSymbol>().First();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(enumerate, httpBase, formattable)).IsTrue();
     }
 
     /// <summary>Verifies interface collection captures a child that only inherits Refit methods and skips a candidate
@@ -400,8 +324,7 @@ public sealed class ParserCoverageTests
     public async Task CollectRefitInterfacesHandlesInheritedAndEmptyCandidates()
     {
         const int ExpectedInterfaceCount = 2;
-        var syntaxTree = CSharpSyntaxTree.ParseText(
-            """
+        var syntaxTree = CSharpSyntaxTree.ParseText("""
             using System.Threading.Tasks;
             using Refit;
 
@@ -429,7 +352,6 @@ public sealed class ParserCoverageTests
         var candidateMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToImmutableArray();
         var candidateInterfaces = root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToImmutableArray();
         var compilation = Fixture.CreateLibrary(syntaxTree);
-
         var (_, model) = Parser.GenerateInterfaceStubs(
             compilation,
             "inherited",
@@ -438,11 +360,10 @@ public sealed class ParserCoverageTests
             candidateMethods,
             candidateInterfaces,
             CancellationToken.None);
-
-        var interfaceNames = model.Interfaces.AsArray().Select(static i => i.InterfaceDisplayName).ToArray();
+        var interfaceNames = model.Interfaces.Select(static i => i.Names.InterfaceDisplayName).ToArray();
 
         // IParent (declares a Refit method) and IChild (inherits one); IEmpty has none and is dropped.
-        await Assert.That(model.Interfaces.AsArray().Length).IsEqualTo(ExpectedInterfaceCount);
+        await Assert.That(model.Interfaces.Length).IsEqualTo(ExpectedInterfaceCount);
         await Assert.That(interfaceNames).Contains(static name => name.Contains("IChild", StringComparison.Ordinal));
         await Assert.That(interfaceNames).DoesNotContain(static name => name.Contains("IEmpty", StringComparison.Ordinal));
     }
@@ -453,8 +374,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task CanBuildRequestInlineClassifiesAsyncReturnShapesAndForeignLookalikes()
     {
-        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-            """
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
             using System;
             using System.Collections.Generic;
             using System.Threading.Tasks;
@@ -485,17 +405,14 @@ public sealed class ParserCoverageTests
         var httpBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
         var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
         var api = compilation.GetTypeByMetadataName(SampleApiMetadataName)!;
-
-        static IMethodSymbol Method(INamedTypeSymbol type, string name) =>
-            type.GetMembers(name).OfType<IMethodSymbol>().First();
-
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "AsyncVoid"), httpBase, formattable)).IsTrue();
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ValueResult"), httpBase, formattable)).IsTrue();
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "Observe"), httpBase, formattable)).IsTrue();
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignTask"), httpBase, formattable)).IsFalse();
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignValueTask"), httpBase, formattable)).IsFalse();
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignAsyncEnumerable"), httpBase, formattable)).IsFalse();
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "ForeignObservable"), httpBase, formattable)).IsFalse();
+        static IMethodSymbol Method(INamedTypeSymbol type, string name) => type.GetMembers(name).OfType<IMethodSymbol>().First();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "AsyncVoid"), httpBase, formattable)).IsTrue();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "ValueResult"), httpBase, formattable)).IsTrue();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "Observe"), httpBase, formattable)).IsTrue();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "ForeignTask"), httpBase, formattable)).IsFalse();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "ForeignValueTask"), httpBase, formattable)).IsFalse();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "ForeignAsyncEnumerable"), httpBase, formattable)).IsFalse();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "ForeignObservable"), httpBase, formattable)).IsFalse();
     }
 
     /// <summary>Verifies the inline return-shape classifier resolves a <c>Task&lt;HttpRequestMessage&gt;</c> method to the
@@ -504,8 +421,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task CanBuildRequestInlineClassifiesTaskOfHttpRequestMessage()
     {
-        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-            """
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
             using System.Net.Http;
             using System.Threading.Tasks;
             using Refit;
@@ -522,13 +438,12 @@ public sealed class ParserCoverageTests
         var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
         var api = compilation.GetTypeByMetadataName(SampleApiMetadataName)!;
 
-        static IMethodSymbol Method(INamedTypeSymbol type, string name) =>
-            type.GetMembers(name).OfType<IMethodSymbol>().First();
+        static IMethodSymbol Method(INamedTypeSymbol type, string name) => type.GetMembers(name).OfType<IMethodSymbol>().First();
 
         // Both shapes are inline-eligible; the classifier arm is exercised both when the result type is
         // HttpRequestMessage (the build-and-return shape) and when it is any other type (a plain async result).
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "BuildRequest"), httpBase, formattable)).IsTrue();
-        await Assert.That(Parser.CanBuildRequestInline(Method(api, "GetResult"), httpBase, formattable)).IsTrue();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "BuildRequest"), httpBase, formattable)).IsTrue();
+        await Assert.That(InlineRequestClassification.CanBuildRequestInline(Method(api, "GetResult"), httpBase, formattable)).IsTrue();
     }
 
     /// <summary>Verifies the interface nullable-context flag is set from the compilation-level nullable option even when
@@ -537,8 +452,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task GenerateInterfaceStubsHonorsCompilationLevelNullableContext()
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText(
-            """
+        var syntaxTree = CSharpSyntaxTree.ParseText("""
             using System.Threading.Tasks;
             using Refit;
 
@@ -553,11 +467,7 @@ public sealed class ParserCoverageTests
         var root = await syntaxTree.GetRootAsync();
         var candidateMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToImmutableArray();
         var candidateInterfaces = root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToImmutableArray();
-        var compilation = Fixture.CreateLibrary(syntaxTree)
-            .WithOptions(new(
-                OutputKind.DynamicallyLinkedLibrary,
-                nullableContextOptions: NullableContextOptions.Enable));
-
+        var compilation = Fixture.CreateLibrary(syntaxTree).WithOptions(new(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
         var (_, model) = Parser.GenerateInterfaceStubs(
             compilation,
             "nullable",
@@ -566,18 +476,16 @@ public sealed class ParserCoverageTests
             candidateMethods,
             candidateInterfaces,
             CancellationToken.None);
-
-        await Assert.That(model.Interfaces.AsArray()[0].Nullability).IsNotEqualTo(Nullability.None);
+        await Assert.That(model.Interfaces[0].Nullability).IsNotEqualTo(Nullability.None);
     }
 
-    /// <summary>Verifies <see cref="Parser.IsRouteCandidate"/> excludes call-infrastructure, URL, body,
+    /// <summary>Verifies <see cref = "RequestParameterParsing.IsRouteCandidate"/> excludes call-infrastructure, URL, body,
     /// header-collection, and property parameters while accepting route parameters.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task IsRouteCandidateExcludesNonRouteParameters()
     {
-        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
-            """
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText("""
             using System.Collections.Generic;
             using System.Text.Json.Serialization.Metadata;
             using System.Threading;
@@ -599,19 +507,17 @@ public sealed class ParserCoverageTests
                     [Property] string prop);
             }
             """));
-        var methodSymbol = compilation.GetTypeByMetadataName(SampleApiMetadataName)!
-            .GetMembers("Send").OfType<IMethodSymbol>().First();
+        var methodSymbol = compilation.GetTypeByMetadataName(SampleApiMetadataName)!.GetMembers("Send").OfType<IMethodSymbol>().First();
         var symbolParams = methodSymbol.Parameters;
-
-        await Assert.That(Parser.IsRouteCandidate(symbolParams[0])).IsTrue();
+        await Assert.That(RequestParameterParsing.IsRouteCandidate(symbolParams[0])).IsTrue();
         for (var i = 1; i < symbolParams.Length; i++)
         {
-            await Assert.That(Parser.IsRouteCandidate(symbolParams[i])).IsFalse();
+            await Assert.That(RequestParameterParsing.IsRouteCandidate(symbolParams[i])).IsFalse();
         }
     }
 
     /// <summary>Analyzer config options backed by a dictionary for direct helper tests.</summary>
-    /// <param name="values">The option values.</param>
+    /// <param name = "values">The option values.</param>
     private sealed class DictionaryAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions
     {
         /// <inheritdoc/>

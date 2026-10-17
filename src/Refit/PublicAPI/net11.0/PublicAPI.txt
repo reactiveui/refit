@@ -307,6 +307,7 @@ public static class GeneratedRequestRunner
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static string? FormatUrlParameter(Refit.RefitSettings settings, object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
     public static string RequireAbsoluteUrl(object? url) { }
+    public static string RequireRelativeOrAbsoluteUrl(object? url) { }
     public static string RoundTripEscapePath(string? value, Refit.RefitSettings settings, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
     public static System.Threading.Tasks.Task<T?> SendAsync<T, TBody>(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -382,6 +383,17 @@ public static class HttpRequestMessageOptions
     public static string RequestContent { get; }
     public static string RestMethodInfo { get; }
 }
+[System.Diagnostics.DebuggerDisplay("HttpRetryBackoffOptions")]
+public sealed class HttpRetryBackoffOptions
+{
+    public HttpRetryBackoffOptions() { }
+    public System.TimeSpan BaseDelay { get; set; }
+    public Refit.RetryJitterMode JitterMode { get; set; }
+    public double JitterRatio { get; set; }
+    public System.TimeSpan MaxDelay { get; set; }
+    public double ServerDelayJitterRatio { get; set; }
+    public bool UseJitter { get; set; }
+}
 [System.Diagnostics.DebuggerDisplay("HTTP retry handler")]
 public sealed class HttpRetryHandler : System.Net.Http.DelegatingHandler
 {
@@ -389,20 +401,41 @@ public sealed class HttpRetryHandler : System.Net.Http.DelegatingHandler
     public HttpRetryHandler(Refit.HttpRetryOptions options) { }
     protected override System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken) { }
 }
-[System.Diagnostics.DebuggerDisplay("MaxRetries = {MaxRetries}, BaseDelay = {BaseDelay}")]
+[System.Diagnostics.DebuggerDisplay("MaxRetries = {MaxRetries}")]
 public sealed class HttpRetryOptions
 {
     public HttpRetryOptions() { }
+    public Refit.HttpRetryBackoffOptions Backoff { get; }
     public System.TimeSpan BaseDelay { get; set; }
     public System.Func<System.Net.Http.HttpResponseMessage, System.DateTimeOffset, System.Threading.CancellationToken, System.TimeSpan?>? DelayProvider { get; set; }
+    public Refit.RetryJitterMode JitterMode { get; set; }
+    public double JitterRatio { get; set; }
     public System.TimeSpan MaxDelay { get; set; }
     public int MaxRequestContentBufferSize { get; set; }
     public int MaxRetries { get; set; }
+    public Refit.HttpRetryReplayOptions Replay { get; }
+    public Refit.HttpRetryResponsesOptions Responses { get; }
     public bool RetryHttpRequestExceptions { get; set; }
     public bool RetryUnsafeMethods { get; set; }
+    public double ServerDelayJitterRatio { get; set; }
     public System.Func<System.Net.Http.HttpResponseMessage, bool>? ShouldRetry { get; set; }
     public System.TimeProvider TimeProvider { get; set; }
     public bool UseJitter { get; set; }
+}
+[System.Diagnostics.DebuggerDisplay("HttpRetryReplayOptions")]
+public sealed class HttpRetryReplayOptions
+{
+    public HttpRetryReplayOptions() { }
+    public int MaxRequestContentBufferSize { get; set; }
+    public bool RetryHttpRequestExceptions { get; set; }
+    public bool RetryUnsafeMethods { get; set; }
+}
+[System.Diagnostics.DebuggerDisplay("HttpRetryResponsesOptions")]
+public sealed class HttpRetryResponsesOptions
+{
+    public HttpRetryResponsesOptions() { }
+    public System.Func<System.Net.Http.HttpResponseMessage, System.DateTimeOffset, System.Threading.CancellationToken, System.TimeSpan?>? DelayProvider { get; set; }
+    public System.Func<System.Net.Http.HttpResponseMessage, bool>? ShouldRetry { get; set; }
 }
 public interface IApiResponse : System.IDisposable
 {
@@ -690,6 +723,7 @@ public sealed class QueryAttribute : System.Attribute
     public string Delimiter { get; }
     public string? Format { get; set; }
     public bool IsCollectionFormatSpecified { get; }
+    public string? Name { get; set; }
     public string? Prefix { get; }
     public bool SerializeNull { get; set; }
     public bool TreatAsString { get; set; }
@@ -714,6 +748,41 @@ public sealed class QueryUriFormatAttribute : System.Attribute
     public QueryUriFormatAttribute(System.UriFormat uriFormat) { }
     public System.UriFormat UriFormat { get; }
 }
+[System.Diagnostics.DebuggerDisplay("RefitExceptionsSettings")]
+public sealed class RefitExceptionsSettings
+{
+    public bool CaptureRequestContent { get; set; }
+    public System.Func<System.Net.Http.HttpResponseMessage, System.Exception, System.Threading.Tasks.ValueTask<System.Exception?>>? DeserializationExceptionFactory { get; set; }
+    public System.Func<System.Net.Http.HttpResponseMessage, System.Threading.Tasks.ValueTask<System.Exception?>> ExceptionFactory { get; set; }
+    public System.Action<Refit.ApiExceptionBase>? ExceptionRedactor { get; set; }
+    public int? MaxExceptionContentLength { get; set; }
+    public System.Func<System.Net.Http.HttpRequestMessage, System.Exception, System.Threading.CancellationToken, System.Exception> TransportExceptionFactory { get; set; }
+}
+[System.Diagnostics.DebuggerDisplay("RefitRequestsSettings")]
+public sealed class RefitRequestsSettings
+{
+    public RefitRequestsSettings() { }
+    public System.Func<System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<string>>? AuthorizationHeaderValueGetter { get; set; }
+    public bool CaptureMethodArguments { get; set; }
+    public System.Func<System.Net.Http.HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }
+    public System.Collections.Generic.Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
+    public System.Collections.Generic.List<System.Type> ReturnTypeAdapters { get; }
+    public bool ValidateHeaders { get; set; }
+    public System.Version Version { get; set; }
+    public System.Net.Http.HttpVersionPolicy VersionPolicy { get; set; }
+}
+[System.Diagnostics.DebuggerDisplay("RefitSerializationSettings")]
+public sealed class RefitSerializationSettings
+{
+    public RefitSerializationSettings() { }
+    public bool Buffered { get; set; }
+    public Refit.IHttpContentSerializer ContentSerializer { get; set; }
+    public Refit.IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
+    public Refit.RequestBodySerializationMode RequestBodySerialization { get; set; }
+    public Refit.RequestCompression RequestCompression { get; set; }
+    public System.IO.Compression.CompressionLevel RequestCompressionLevel { get; set; }
+    public Refit.RequestCompressionOptions? RequestCompressionOptions { get; set; }
+}
 [System.Diagnostics.DebuggerDisplay("RefitSettings: AuthorizationHeaderValueGetter = {AuthorizationHeaderValueGetter}")]
 public class RefitSettings
 {
@@ -732,6 +801,7 @@ public class RefitSettings
     public System.Func<System.Net.Http.HttpResponseMessage, System.Exception, System.Threading.Tasks.ValueTask<System.Exception?>>? DeserializationExceptionFactory { get; set; }
     public System.Func<System.Net.Http.HttpResponseMessage, System.Threading.Tasks.ValueTask<System.Exception?>> ExceptionFactory { get; set; }
     public System.Action<Refit.ApiExceptionBase>? ExceptionRedactor { get; set; }
+    public Refit.RefitExceptionsSettings Exceptions { get; }
     public Refit.IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
     public bool HonorContentSerializerPropertyNamesInQuery { get; set; }
     public System.Func<System.Net.Http.HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }
@@ -741,8 +811,11 @@ public class RefitSettings
     public Refit.RequestCompression RequestCompression { get; set; }
     public System.IO.Compression.CompressionLevel RequestCompressionLevel { get; set; }
     public Refit.RequestCompressionOptions? RequestCompressionOptions { get; set; }
+    public Refit.RefitRequestsSettings Requests { get; }
     public System.Collections.Generic.IList<System.Type> ReturnTypeAdapters { get; }
+    public Refit.RefitSerializationSettings Serialization { get; }
     public System.Func<System.Net.Http.HttpRequestMessage, System.Exception, System.Threading.CancellationToken, System.Exception> TransportExceptionFactory { get; set; }
+    public Refit.RefitUrlSettings Url { get; }
     public Refit.IUrlParameterFormatter UrlParameterFormatter { get; set; }
     public System.Collections.Generic.IDictionary<System.Type, Refit.IUrlParameterFormatter> UrlParameterFormatterMap { get; }
     public Refit.IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
@@ -760,6 +833,18 @@ public class RefitSettings
     public static Refit.RefitSettings KebabCase() { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static Refit.RefitSettings SnakeCase() { }
+}
+[System.Diagnostics.DebuggerDisplay("RefitUrlSettings")]
+public sealed class RefitUrlSettings
+{
+    public RefitUrlSettings() { }
+    public bool AllowUnmatchedRouteParameters { get; set; }
+    public Refit.CollectionFormat CollectionFormat { get; set; }
+    public bool HonorContentSerializerPropertyNamesInQuery { get; set; }
+    public Refit.IUrlParameterFormatter UrlParameterFormatter { get; set; }
+    public System.Collections.Generic.Dictionary<System.Type, Refit.IUrlParameterFormatter> UrlParameterFormatterMap { get; }
+    public Refit.IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
+    public Refit.UrlResolutionMode UrlResolution { get; set; }
 }
 public enum RequestBodySerializationMode
 {
@@ -887,6 +972,7 @@ public static class RetryDelayProviders
     public static System.TimeSpan? GitHub(System.Net.Http.HttpResponseMessage response, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
     public static System.TimeSpan? Jira(System.Net.Http.HttpResponseMessage response, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
     public static System.TimeSpan? ReadHeader(System.Net.Http.HttpResponseMessage response, string headerName, Refit.RetryHeaderFormat format, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static System.TimeSpan? RetryAfter(System.Net.Http.HttpResponseMessage response, System.DateTimeOffset now, System.Threading.CancellationToken cancellationToken) { }
 }
 public enum RetryHeaderFormat
@@ -896,6 +982,11 @@ public enum RetryHeaderFormat
     UnixTimeSeconds = 2,
     RetryAfter = 3,
     Iso8601Date = 4,
+}
+public enum RetryJitterMode
+{
+    Full = 0,
+    Symmetric = 1,
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class SnakeCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
@@ -972,6 +1063,7 @@ public static class UniqueName
 public sealed class UrlAttribute : System.Attribute
 {
     public UrlAttribute() { }
+    public bool AllowRelative { get; set; }
 }
 public enum UrlResolutionMode
 {

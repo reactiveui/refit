@@ -22,6 +22,71 @@ public class AbsoluteUrlDispatchTests
     /// <summary>A relative value rejected by both builders because <c>[Url]</c> requires an absolute URI.</summary>
     private const string RelativePath = "relative/path";
 
+    /// <summary>Checks opt-in relative URI resolution and query aliases in both builders.</summary>
+    /// <param name="target">The redirect target.</param>
+    /// <param name="expected">The resolved URL.</param>
+    /// <param name="token">The additional query value.</param>
+    /// <returns>A task representing the test.</returns>
+    [Test]
+    [Arguments("callback?code=a%2Fb%3D&state=x%20y", "http://api/callback?code=a%2Fb%3D&state=x%20y&access_token=abc", "abc")]
+    [Arguments("/callback?code=a%2Fb%3D", "http://api/callback?code=a%2Fb%3D&access_token=abc", "abc")]
+    [Arguments("https://cdn.example/callback?code=a%2Fb", "https://cdn.example/callback?code=a%2Fb&access_token=abc", "abc")]
+    [Arguments("/callback?code=a%2Fb#section", "http://api/callback?code=a%2Fb&access_token=abc#section", "abc")]
+    public async Task RelativeRedirectTargetPreservesEncodedQuery(string target, string expected, string token)
+    {
+        var generated = await SendGeneratedAsync(api => api.GetRelative(target, token));
+        using var reflected = await ReflectAsync(nameof(IUrlDispatchApi.GetRelative), target, token);
+        await Assert.That(generated.RequestMessage!.RequestUri!.AbsoluteUri).IsEqualTo(expected);
+        await Assert.That(new Uri(new Uri(BaseAddress), reflected.RequestUri!).AbsoluteUri).IsEqualTo(expected);
+    }
+
+    /// <summary>Preserves relative URI objects when returning a request without sending it.</summary>
+    /// <param name="target">The URI reference.</param>
+    /// <param name="cancellationToken">The test cancellation token.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("callback?code=a%2Fb#section")]
+    [Arguments("/callback?code=a%2Fb")]
+    [Arguments("https://cdn.example/callback?code=a%2Fb")]
+    public async Task RelativeUriRequestPreservesOriginalText(string target, CancellationToken cancellationToken)
+    {
+        using var client = HttpClientTestFactory.Create(new TestHttpMessageHandler(), new(BaseAddress));
+        var api = RestService.ForGenerated<IUrlDispatchApi>(client, new());
+        var uri = new Uri(target, UriKind.RelativeOrAbsolute);
+        using var generated = await api.BuildRelative(uri).WaitAsync(cancellationToken);
+        using var reflected = await ReflectAsync(nameof(IUrlDispatchApi.BuildRelative), uri).WaitAsync(cancellationToken);
+        await Assert.That(generated.RequestUri!.OriginalString).IsEqualTo(target);
+        await Assert.That(reflected.RequestUri!.OriginalString).IsEqualTo(target);
+    }
+
+    /// <summary>Appends converter queries before fragments without double-escaping keys.</summary>
+    /// <param name="cancellationToken">The test cancellation token.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RelativeUriConverterPreservesEncodedKeys(CancellationToken cancellationToken)
+    {
+        using var client = HttpClientTestFactory.Create(new TestHttpMessageHandler(), new(BaseAddress));
+        var api = RestService.ForGenerated<IUrlDispatchApi>(client, new());
+        var uri = new Uri("callback?code=a%2Fb#section", UriKind.Relative);
+        Dictionary<string, object> filter = new() { ["filter key"] = "value /" };
+        using var generated = await api.BuildRelativeWithConverter(uri, filter).WaitAsync(cancellationToken);
+        using var reflected = await ReflectAsync(nameof(IUrlDispatchApi.BuildRelativeWithConverter), uri, filter).WaitAsync(cancellationToken);
+        const string expected = "callback?code=a%2Fb&filter%20key=value%20%2F#section";
+        await Assert.That(generated.RequestUri!.OriginalString).IsEqualTo(expected);
+        await Assert.That(reflected.RequestUri!.OriginalString).IsEqualTo(expected);
+    }
+
+    /// <summary>Rejects values that cannot supply a non-empty URI reference.</summary>
+    /// <param name="target">The invalid URL value.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("http://[invalid")]
+    [Arguments(1)]
+    public async Task RelativeUrlValidationRejectsInvalidValues(object? target) =>
+        await Assert.That(() => GeneratedRequestRunner.RequireRelativeOrAbsoluteUrl(target)).Throws<ArgumentException>();
+
     /// <summary>Verifies a string <c>[Url]</c> value is dispatched verbatim, ignoring the base address, in both builders.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

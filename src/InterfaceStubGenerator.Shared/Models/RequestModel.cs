@@ -1,54 +1,32 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 namespace Refit.Generator;
 
-/// <summary>Parsed request metadata for one generated Refit method.</summary>
+/// <summary>Describes an HTTP operation and its request bindings.</summary>
 /// <param name="HttpMethod">The HTTP method name.</param>
-/// <param name="Path">The relative URL path template.</param>
-/// <param name="ResultType">The method result type, unwrapped from Task or ValueTask when applicable.</param>
-/// <param name="DeserializedResultType">The response body type used by API response wrappers.</param>
-/// <param name="IsApiResponse">Whether the method result is an API response wrapper.</param>
-/// <param name="ShouldDisposeResponse">Whether the response should be disposed by the shared runner.</param>
-/// <param name="CanGenerateInline">Whether this method is eligible for generated request construction.</param>
-/// <param name="AdapterTypeExpression">The closed <c>IReturnTypeAdapter</c> type expression when the return type is
-/// surfaced by an adapter, so the generated method emits an <c>Adapt</c> call; otherwise <see langword="null"/>. The
-/// result-type fields already carry the adapter's wrapped result type.</param>
-/// <param name="StaticHeaders">The static headers parsed from inherited interfaces, the declaring interface, and the method.</param>
-/// <param name="Parameters">The parsed request parameter bindings.</param>
+/// <param name="Path">The route template.</param>
+/// <param name="Return">The response type and disposal policy.</param>
+/// <param name="Generation">The inline generation strategy and fallback.</param>
+/// <param name="Bindings">The static headers and parameter bindings.</param>
+/// <param name="Body">The multipart body configuration.</param>
 internal readonly record struct RequestModel(
     string HttpMethod,
     string Path,
-    string ResultType,
-    string DeserializedResultType,
-    bool IsApiResponse,
-    bool ShouldDisposeResponse,
-    bool CanGenerateInline,
-    string? AdapterTypeExpression,
-    ImmutableEquatableArray<HeaderModel> StaticHeaders,
-    ImmutableEquatableArray<RequestParameterModel> Parameters)
+    RequestReturnModel Return,
+    RequestGenerationModel Generation,
+    RequestBindingsModel Bindings,
+    RequestBodyModel Body)
 {
     /// <summary>Gets an empty model used for non-Refit method placeholders.</summary>
     internal static RequestModel Empty { get; } = new(
         string.Empty,
         string.Empty,
-        string.Empty,
-        string.Empty,
-        false,
-        true,
-        false,
-        null,
-        ImmutableEquatableArray<HeaderModel>.Empty,
-        ImmutableEquatableArray<RequestParameterModel>.Empty);
-
-    /// <summary>Gets a value indicating whether the method is a <c>[Multipart]</c> request whose form parts are
-    /// constructed inline. When set, the generated method builds a <c>MultipartFormDataContent</c> as the request body
-    /// instead of following the normal single-body path.</summary>
-    internal bool IsMultipart { get; init; }
-
-    /// <summary>Gets the multipart boundary text, used only when <see cref="IsMultipart"/> is set. Mirrors the
-    /// reflection builder's boundary selection: the <c>[Multipart(boundary)]</c> argument, or the attribute default.</summary>
-    internal string MultipartBoundary { get; init; } = string.Empty;
+        new RequestReturnModel(string.Empty, string.Empty, false, true),
+        new RequestGenerationModel(false, null, default),
+        new RequestBindingsModel([], []),
+        new RequestBodyModel(default, string.Empty));
 
     /// <summary>Gets the <c>System.UriFormat</c> value from the method's <c>[QueryUriFormat]</c> attribute, or null when
     /// absent. When set, the built path and query are re-encoded with this mode, matching the reflection builder's final
@@ -63,8 +41,49 @@ internal readonly record struct RequestModel(
     /// mirroring the reflection builder's <c>RestMethodInfoInternal.TimeoutMilliseconds</c>.</summary>
     internal int TimeoutMilliseconds { get; init; }
 
-    /// <summary>Gets why the request is not generated inline, and which parameter caused it; <see cref="InlineFallback.None"/>
-    /// when <see cref="CanGenerateInline"/> is set. The generator only reads <see cref="CanGenerateInline"/>; the RF006
-    /// analyzer turns this into its explanation, so both always come from the same classification.</summary>
-    internal InlineFallback Fallback { get; init; }
+    /// <summary>Compares the parsed metadata, including array contents.</summary>
+    /// <param name="other">The metadata to compare.</param>
+    /// <returns>Whether the metadata is equal.</returns>
+    public bool Equals(RequestModel other) =>
+        EqualityComparer<string>.Default.Equals(
+            HttpMethod,
+            other.HttpMethod)
+        && EqualityComparer<string>.Default.Equals(
+            Path,
+            other.Path)
+        && EqualityComparer<RequestReturnModel>.Default.Equals(
+            Return,
+            other.Return)
+        && EqualityComparer<RequestGenerationModel>.Default.Equals(
+            Generation,
+            other.Generation)
+        && EqualityComparer<RequestBindingsModel>.Default.Equals(
+            Bindings,
+            other.Bindings)
+        && EqualityComparer<RequestBodyModel>.Default.Equals(
+            Body,
+            other.Body)
+        && EqualityComparer<int?>.Default.Equals(
+            QueryUriFormat,
+            other.QueryUriFormat)
+        && EqualityComparer<PagingModel?>.Default.Equals(
+            Paging,
+            other.Paging)
+        && EqualityComparer<int>.Default.Equals(TimeoutMilliseconds, other.TimeoutMilliseconds);
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        var hash = 0;
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(HttpMethod));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Path));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Return));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Generation));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Bindings));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Body));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(QueryUriFormat));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Paging));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(TimeoutMilliseconds));
+        return hash;
+    }
 }

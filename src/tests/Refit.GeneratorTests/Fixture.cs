@@ -223,6 +223,22 @@ public static class Fixture
         return new(driver, outputCompilation, generatorDiagnostics);
     }
 
+    /// <summary>Runs contract validation independently of source generation.</summary>
+    /// <param name="result">The compilation containing the generated client.</param>
+    /// <param name="generatedRequestBuilding">The consumer's inline request option.</param>
+    /// <param name="disableSourceGenerator">Whether source generation is disabled.</param>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
+    /// <returns>The diagnostics produced by the analyzer.</returns>
+    public static Task<ImmutableArray<Diagnostic>> AnalyzeAsync(
+        GeneratorTestResult result,
+        bool? generatedRequestBuilding,
+        bool disableSourceGenerator,
+        CancellationToken cancellationToken) =>
+        result.OutputCompilation.WithAnalyzers(
+            [new RefitAnalyzers::Refit.Analyzers.RefitInterfaceAnalyzer()],
+            new AnalyzerOptions([], new TestAnalyzerConfigOptionsProvider(generatedRequestBuilding, disableSourceGenerator)))
+            .GetAnalyzerDiagnosticsAsync(cancellationToken);
+
     /// <summary>Verifies generator output for type declarations within a namespace.</summary>
     /// <param name="declarations">The type declarations source.</param>
     /// <param name="memberName">The calling test member name used to derive the snapshot name.</param>
@@ -359,19 +375,19 @@ public static class Fixture
             ?? throw new InvalidOperationException("The test compilation does not reference Refit.HttpMethodAttribute.");
         var formattable = compilation.GetTypeByMetadataName("System.IFormattable");
 
-        var generatorAdapterInterface = Parser.ResolveReturnTypeAdapterInterface(compilation);
-        var generatorAdapters = Parser.DiscoverReturnTypeAdapters(
+        var generatorAdapterInterface = ReturnTypeAdapterParsing.ResolveReturnTypeAdapterInterface(compilation);
+        var generatorAdapters = ReturnTypeAdapterParsing.DiscoverReturnTypeAdapters(
             compilation,
             generatorAdapterInterface,
             CancellationToken.None);
-        var generatorIndexedFormat = Parser.ResolveIndexedCollectionFormatValue(compilation);
+        var generatorIndexedFormat = QueryParameterParsing.ResolveIndexedCollectionFormatValue(compilation);
 
-        var analyzerAdapterInterface = RefitAnalyzers::Refit.Generator.Parser.ResolveReturnTypeAdapterInterface(compilation);
-        var analyzerAdapters = RefitAnalyzers::Refit.Generator.Parser.DiscoverReturnTypeAdapters(
+        var analyzerAdapterInterface = ReturnTypeAdapterParsing.ResolveReturnTypeAdapterInterface(compilation);
+        var analyzerAdapters = ReturnTypeAdapterParsing.DiscoverReturnTypeAdapters(
             compilation,
             analyzerAdapterInterface,
             CancellationToken.None);
-        var analyzerIndexedFormat = RefitAnalyzers::Refit.Generator.Parser.ResolveIndexedCollectionFormatValue(compilation);
+        var analyzerIndexedFormat = QueryParameterParsing.ResolveIndexedCollectionFormatValue(compilation);
 
         foreach (var syntaxTree in compilation.SyntaxTrees)
         {
@@ -383,14 +399,14 @@ public static class Fixture
                     continue;
                 }
 
-                var generatorResult = Parser.CanBuildRequestInline(
+                var generatorResult = InlineRequestClassification.CanBuildRequestInline(
                     method,
                     httpMethodAttribute,
                     formattable,
                     generatorAdapterInterface,
                     generatorAdapters,
                     generatorIndexedFormat);
-                var analyzerResult = RefitAnalyzers::Refit.Generator.Parser.CanBuildRequestInline(
+                var analyzerResult = InlineRequestClassification.CanBuildRequestInline(
                     method,
                     httpMethodAttribute,
                     formattable,
