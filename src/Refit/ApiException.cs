@@ -262,7 +262,7 @@ public class ApiException : ApiExceptionBase
         {
             try
             {
-                RequestExecutionHelpers.PreserveContentLengthHeader(response.Content);
+                RequestExecutionHelpers.MaterializeContentLength(response.Content);
                 exception.ContentHeaders = response.Content.Headers;
                 exception.Content = await ReadContentCappedAsync(
                         response.Content,

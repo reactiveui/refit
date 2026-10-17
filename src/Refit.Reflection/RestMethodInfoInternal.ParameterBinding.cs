@@ -238,31 +238,28 @@ internal partial class RestMethodInfoInternal
     /// <param name="candidateName">The candidate parameter's resolved URL name.</param>
     /// <param name="placeholderName">The original-case placeholder name from the route template.</param>
     /// <param name="relativePath">The relative URL path template.</param>
-    /// <returns>The priority rank (0 to 4, higher is preferred).</returns>
+    /// <returns>The priority rank (0 to 5, higher is preferred).</returns>
     internal static int GetRouteCandidateRank(
         ParameterInfo candidate,
         string candidateName,
         string placeholderName,
         string relativePath)
     {
-        const int exactNonQueryRank = 4;
-        const int nonQueryFallbackRank = 3;
-        const int nonQueryClaimedByOtherPlaceholderRank = 2;
+        const int nonQueryBonus = 3;
+        const int exactCaseRank = 2;
+        const int unclaimedFallbackRank = 1;
+        const int claimedByOtherPlaceholderRank = 0;
 
-        var isExactCase = string.Equals(candidateName, placeholderName, StringComparison.Ordinal);
-        if (HasBareQueryAttribute(candidate))
-        {
-            return isExactCase ? 1 : 0;
-        }
+        var fallbackRank = HasExactCasePlaceholderInPath(relativePath, candidateName)
+            ? claimedByOtherPlaceholderRank
+            : unclaimedFallbackRank;
+        var caseRank = string.Equals(candidateName, placeholderName, StringComparison.Ordinal)
+            ? exactCaseRank
+            : fallbackRank;
 
-        if (isExactCase)
-        {
-            return exactNonQueryRank;
-        }
-
-        return HasExactCasePlaceholderInPath(relativePath, candidateName)
-            ? nonQueryClaimedByOtherPlaceholderRank
-            : nonQueryFallbackRank;
+        return HasBareQueryAttribute(candidate)
+            ? caseRank
+            : caseRank + nonQueryBonus;
     }
 
     /// <summary>Determines whether a parameter can bind a route placeholder.</summary>

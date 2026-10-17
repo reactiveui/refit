@@ -224,31 +224,28 @@ internal static partial class Parser
     /// <param name="candidateName">The candidate parameter's resolved URL name.</param>
     /// <param name="placeholderName">The unprefixed placeholder name from the route template.</param>
     /// <param name="occurrences">The placeholder occurrences in the URL.</param>
-    /// <returns>The priority rank (0 to 4, higher is preferred).</returns>
+    /// <returns>The priority rank (0 to 5, higher is preferred).</returns>
     internal static int GetRouteCandidateRank(
         IParameterSymbol candidate,
         string candidateName,
         string placeholderName,
         ReadOnlySpan<PathPlaceholderOccurrence> occurrences)
     {
-        const int exactNonQueryRank = 4;
-        const int nonQueryFallbackRank = 3;
-        const int nonQueryClaimedByOtherPlaceholderRank = 2;
+        const int nonQueryBonus = 3;
+        const int exactCaseRank = 2;
+        const int unclaimedFallbackRank = 1;
+        const int claimedByOtherPlaceholderRank = 0;
 
-        var isExactCase = string.Equals(candidateName, placeholderName, StringComparison.Ordinal);
-        if (HasBareQueryOnlyAttribute(candidate))
-        {
-            return isExactCase ? 1 : 0;
-        }
+        var fallbackRank = HasExactCasePlaceholder(occurrences, candidateName)
+            ? claimedByOtherPlaceholderRank
+            : unclaimedFallbackRank;
+        var caseRank = string.Equals(candidateName, placeholderName, StringComparison.Ordinal)
+            ? exactCaseRank
+            : fallbackRank;
 
-        if (isExactCase)
-        {
-            return exactNonQueryRank;
-        }
-
-        return HasExactCasePlaceholder(occurrences, candidateName)
-            ? nonQueryClaimedByOtherPlaceholderRank
-            : nonQueryFallbackRank;
+        return HasBareQueryOnlyAttribute(candidate)
+            ? caseRank
+            : caseRank + nonQueryBonus;
     }
 
     /// <summary>Determines whether a parameter can bind a route placeholder.</summary>

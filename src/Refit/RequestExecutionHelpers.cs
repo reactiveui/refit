@@ -278,19 +278,18 @@ internal static partial class RequestExecutionHelpers
     /// <summary>Returns the response content, substituting empty content when the response has none.</summary>
     /// <param name="response">The response whose content is read.</param>
     /// <returns>The response content, or empty content when none is present.</returns>
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Content is nullable in the BCL contract, but HttpClient always sets it, so the null-defensive fallback is unreachable.
     internal static HttpContent EnsureResponseContent(HttpResponseMessage response)
     {
         var content = response.Content ?? new StringContent(string.Empty);
-        PreserveContentLengthHeader(content);
+        MaterializeContentLength(content);
         return content;
     }
 
     /// <summary>Materializes the <c>Content-Length</c> header before the content is buffered or disposed so reading
     /// <see cref="System.Net.Http.Headers.HttpContentHeaders.ContentLength"/> after disposal returns the original header
     /// value (or <see langword="null"/> when absent) instead of throwing <see cref="ObjectDisposedException"/>.</summary>
-    /// <param name="content">The response content whose headers should be preserved.</param>
-    internal static void PreserveContentLengthHeader(HttpContent? content)
+    /// <param name="content">The response content whose <c>Content-Length</c> header should be materialized.</param>
+    internal static void MaterializeContentLength(HttpContent? content)
     {
         if (content is not null && !content.Headers.ContentLength.HasValue)
         {
