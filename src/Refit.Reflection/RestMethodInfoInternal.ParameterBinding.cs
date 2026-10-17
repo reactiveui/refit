@@ -157,7 +157,7 @@ internal partial class RestMethodInfoInternal
             if (validation.Param.Count < parameterInfo.Length)
             {
                 var originalName = isRoundTripping ? rawOriginalName[roundTripPrefix.Length..] : rawOriginalName;
-                value = ResolveSiblingRouteParameter(parameterInfo, value, originalName);
+                value = ResolveSiblingRouteParameter(parameterInfo, value, originalName, relativePath, isRoundTripping);
             }
 
             AddStandardParameter(
@@ -196,27 +196,33 @@ internal partial class RestMethodInfoInternal
     /// <param name="parameterInfo">The array of method parameters.</param>
     /// <param name="fallback">The parameter selected from the lower-cased validation dictionary.</param>
     /// <param name="placeholderName">The original-case placeholder name from the route template.</param>
+    /// <param name="relativePath">The relative URL path template.</param>
+    /// <param name="isRoundTripping">Whether the placeholder is a round-trip (<c>{**name}</c>) placeholder.</param>
     /// <returns>The winning method parameter for the placeholder.</returns>
     internal static ParameterInfo ResolveSiblingRouteParameter(
         ParameterInfo[] parameterInfo,
         ParameterInfo fallback,
-        string placeholderName)
+        string placeholderName,
+        string relativePath,
+        bool isRoundTripping)
     {
-        const int nonQueryRankWeight = 2;
-
         var best = fallback;
         var bestRank = -1;
         for (var i = 0; i < parameterInfo.Length; i++)
         {
             var candidate = parameterInfo[i];
+            if (!IsRouteCandidate(candidate))
+            {
+                continue;
+            }
+
             var candidateName = GetUrlNameForParameter(candidate);
             if (!string.Equals(candidateName, placeholderName, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            var rank = (candidate.GetCustomAttribute<QueryAttribute>(true) is { Format: null or "" } ? 0 : nonQueryRankWeight)
-                + (string.Equals(candidateName, placeholderName, StringComparison.Ordinal) ? 1 : 0);
+            var rank = GetRouteCandidateRank(candidate, candidateName, placeholderName, relativePath, isRoundTripping);
             if (rank <= bestRank)
             {
                 continue;
@@ -227,6 +233,85 @@ internal partial class RestMethodInfoInternal
         }
 
         return best;
+    }
+
+    /// <summary>Scores a route candidate parameter against a placeholder name so non-query and exact-case matches take precedence.</summary>
+    /// <param name="candidate">The candidate method parameter.</param>
+    /// <param name="candidateName">The candidate parameter's resolved URL name.</param>
+    /// <param name="placeholderName">The original-case placeholder name from the route template.</param>
+    /// <param name="relativePath">The relative URL path template.</param>
+    /// <param name="isRoundTripping">Whether the placeholder is a round-trip (<c>{**name}</c>) placeholder.</param>
+    /// <returns>The priority rank (0 to 4, higher is preferred).</returns>
+    internal static int GetRouteCandidateRank(
+        ParameterInfo candidate,
+        string candidateName,
+        string placeholderName,
+        string relativePath,
+        bool isRoundTripping)
+    {
+        const int exactNonQueryRank = 4;
+        const int nonQueryFallbackRank = 3;
+        const int nonQueryClaimedByOtherPlaceholderRank = 2;
+
+        var isExactCase = string.Equals(candidateName, placeholderName, StringComparison.Ordinal);
+        if (HasBareQueryAttribute(candidate))
+        {
+            return isExactCase ? 1 : 0;
+        }
+
+        if (isExactCase)
+        {
+            return exactNonQueryRank;
+        }
+
+        return HasExactCasePlaceholderInPath(relativePath, candidateName, isRoundTripping)
+            ? nonQueryClaimedByOtherPlaceholderRank
+            : nonQueryFallbackRank;
+    }
+
+    /// <summary>Determines whether a parameter can bind a route placeholder.</summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <returns><see langword="true"/> when the parameter is eligible to bind a route placeholder.</returns>
+    internal static bool IsRouteCandidate(ParameterInfo parameter) =>
+        parameter.ParameterType != typeof(CancellationToken)
+        && parameter.GetCustomAttribute<UrlAttribute>(true) is null
+        && parameter.GetCustomAttribute<BodyAttribute>(true) is null
+        && parameter.GetCustomAttribute<HeaderCollectionAttribute>(true) is null
+        && parameter.GetCustomAttribute<PropertyAttribute>(true) is null;
+
+    /// <summary>Determines whether a parameter carries a <see cref="QueryAttribute"/> without a route <c>Format</c>.</summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <returns><see langword="true"/> when the parameter carries a bare <c>[Query]</c> attribute.</returns>
+    internal static bool HasBareQueryAttribute(ParameterInfo parameter) =>
+        parameter.GetCustomAttribute<QueryAttribute>(true) is { } query
+        && string.IsNullOrWhiteSpace(query.Format);
+
+    /// <summary>Determines whether the route template contains a placeholder matching <paramref name="urlName"/> with exact ordinal casing.</summary>
+    /// <param name="relativePath">The relative URL path template.</param>
+    /// <param name="urlName">The parameter's resolved URL name.</param>
+    /// <param name="isRoundTripping">Whether to inspect round-trip (<c>{**name}</c>) placeholders.</param>
+    /// <returns><see langword="true"/> when an exact-case placeholder exists in the template.</returns>
+    internal static bool HasExactCasePlaceholderInPath(
+        string relativePath,
+        string urlName,
+        bool isRoundTripping)
+    {
+        const string roundTripPrefix = "**";
+
+        var matches = ParameterRegex().Matches(relativePath);
+        for (var i = 0; i < matches.Count; i++)
+        {
+            var raw = matches[i].Groups[1].Value;
+            var matchName = isRoundTripping && raw.StartsWith(roundTripPrefix, StringComparison.Ordinal)
+                ? raw[roundTripPrefix.Length..]
+                : raw;
+            if (string.Equals(matchName, urlName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Adds a standard (directly matched) route parameter to the parameter map and fragment list.</summary>

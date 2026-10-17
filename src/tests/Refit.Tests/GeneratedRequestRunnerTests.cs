@@ -536,6 +536,9 @@ public partial class GeneratedRequestRunnerTests
         /// <summary>Gets the exception thrown from serialization.</summary>
         public Exception? SerializeException { get; init; }
 
+        /// <summary>Gets the cancellation token source to cancel when deserialization is invoked.</summary>
+        public CancellationTokenSource? CancelOnDeserialize { get; init; }
+
         /// <inheritdoc />
         public HttpContent ToHttpContent<T>(T item)
         {
@@ -553,11 +556,16 @@ public partial class GeneratedRequestRunnerTests
             "Design",
             "SST2307:Generic method type parameters should be inferable from the parameters",
             Justification = "The method implements Refit's published serializer interface.")]
+        [SuppressMessage(
+            "Usage",
+            "CA1849:Call async methods when in an async method",
+            Justification = "Synchronous test double needs immediate token transition before throwing.")]
         public Task<T?> FromHttpContentAsync<T>(
             HttpContent content,
             CancellationToken cancellationToken = default)
         {
             DeserializeCallCount++;
+            CancelOnDeserialize?.Cancel();
             if (DeserializeException is not null)
             {
                 throw DeserializeException;

@@ -301,7 +301,25 @@ public sealed partial class QueryRequestBuildingLiveTests
                 Task<string> CaseDifferingDualPathPlaceholders(string group, [Query(Format = "D")] int id, [AliasAs("ID")] int positionId);
 
                 [Get("/files/{group}/{**rest}")]
-                Task<string> CaseDifferingRoundTripPathAndQuery(string group, [Query][AliasAs("REST")] string? filterRest, string rest);
+                Task<string> CaseDifferingRoundTripPathAndQuery(string group, [Query][AliasAs("REST")] string? filterRest, [AliasAs("Rest")] string rest);
+
+                [Get("/accounts/{Id}/positions/{ID}")]
+                Task<string> CaseDifferingSiblingClaimedByOtherPlaceholder([AliasAs("ID")] int secondId, int id);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingWhitespaceFormatQuery([Query(Format = " ")][AliasAs("ID")] int? filterId, [AliasAs("Id")] int id);
+
+                [Get("/accounts/{id}/positions")]
+                Task<string> CaseDifferingBothQuery([Query][AliasAs("ID")] int? filterId, [Query] int id);
+
+                [Post("/items/{id}")]
+                Task<string> CaseDifferingBodyAndRoute([Body] string id, [AliasAs("ID")] int routeId);
+
+                [Get("/tokens/{token}")]
+                Task<string> CaseDifferingRouteAndCancellationToken([AliasAs("Token")] string routeToken, System.Threading.CancellationToken token);
+
+                [Get("/tenant/{id}")]
+                Task<string> HeaderAndPath([Header("X-Tenant")] string id);
             }
             """;
 

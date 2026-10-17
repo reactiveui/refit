@@ -570,6 +570,46 @@ public sealed class ParserCoverageTests
         await Assert.That(model.Interfaces.AsArray()[0].Nullability).IsNotEqualTo(Nullability.None);
     }
 
+    /// <summary>Verifies <see cref="Parser.IsRouteCandidate"/> excludes call-infrastructure, URL, body,
+    /// header-collection, and property parameters while accepting route parameters.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task IsRouteCandidateExcludesNonRouteParameters()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+            """
+            using System.Collections.Generic;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IApi
+            {
+                [Post("/{id}")]
+                Task<string> Send(
+                    int id,
+                    CancellationToken ct,
+                    JsonTypeInfo<string> typeInfo,
+                    [Url] string url,
+                    [Body] string body,
+                    [HeaderCollection] IDictionary<string, string> headers,
+                    [Property] string prop);
+            }
+            """));
+        var methodSymbol = compilation.GetTypeByMetadataName(SampleApiMetadataName)!
+            .GetMembers("Send").OfType<IMethodSymbol>().First();
+        var symbolParams = methodSymbol.Parameters;
+
+        await Assert.That(Parser.IsRouteCandidate(symbolParams[0])).IsTrue();
+        for (var i = 1; i < symbolParams.Length; i++)
+        {
+            await Assert.That(Parser.IsRouteCandidate(symbolParams[i])).IsFalse();
+        }
+    }
+
     /// <summary>Analyzer config options backed by a dictionary for direct helper tests.</summary>
     /// <param name="values">The option values.</param>
     private sealed class DictionaryAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions

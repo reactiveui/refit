@@ -671,7 +671,7 @@ internal static partial class RequestExecutionHelpers
                 .ConfigureAwait(false);
 #endif
         }
-        catch (Exception) when (bufferingException is not null)
+        catch (Exception) when (bufferingException is not null && !cancellationToken.IsCancellationRequested)
         {
             throw Rethrow(bufferingException);
         }

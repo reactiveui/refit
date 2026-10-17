@@ -398,5 +398,29 @@ public sealed partial class QueryRequestBuildingLiveTests
             "CaseDifferingRoundTripPathAndQuery",
             ["docs", "draft", "a/b"],
             "/base/files/docs/a/b?REST=draft");
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingSiblingClaimedByOtherPlaceholder",
+            [filterId, accountId],
+            "/base/accounts/10/positions/20");
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingWhitespaceFormatQuery",
+            [filterId, accountId],
+            expectedPositionsUri);
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingBothQuery",
+            [filterId, accountId],
+            expectedPositionsUri);
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingBodyAndRoute",
+            ["payload", accountId],
+            "/base/items/10");
+        _ = await harness.AssertParityAsync(
+            "CaseDifferingRouteAndCancellationToken",
+            ["abc", CancellationToken.None],
+            "/base/tokens/abc");
+        _ = await harness.AssertParityAsync(
+            "HeaderAndPath",
+            ["acme"],
+            "/base/tenant/acme");
     }
 }
