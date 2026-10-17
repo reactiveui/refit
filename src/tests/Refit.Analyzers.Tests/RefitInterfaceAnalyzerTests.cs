@@ -10,6 +10,9 @@ public sealed class RefitInterfaceAnalyzerTests
     /// <summary>The diagnostic identifier for non-Refit interface members.</summary>
     private const string NonRefitMemberDiagnosticId = "RF001";
 
+    /// <summary>The diagnostic identifier for routes containing a backslash.</summary>
+    private const string InvalidRouteBackslashDiagnosticId = "RF003";
+
     /// <summary>The diagnostic identifier for methods that fall back to the reflection request builder.</summary>
     private const string GeneratedRequestBuildingFallbackDiagnosticId = "RF006";
 
@@ -90,7 +93,7 @@ public sealed class RefitInterfaceAnalyzerTests
 
         var diagnosticIds = diagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
 
-        await Assert.That(diagnosticIds).Contains("RF003");
+        await Assert.That(diagnosticIds).Contains(InvalidRouteBackslashDiagnosticId);
         await Assert.That(diagnosticIds).Contains("RF004");
         await Assert.That(diagnosticIds).Contains("RF005");
     }
@@ -331,6 +334,31 @@ public sealed class RefitInterfaceAnalyzerTests
             .DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
     }
 
+    /// <summary>Verifies disabling generation suppresses generation diagnostics but keeps request validation.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DisabledSourceGenerator_KeepsRequestShapeDiagnostics()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBodyWithAnalyzerConfigOption(
+            """
+            [Get("/query-map")]
+            Task<string> Search(object filters);
+
+            [Get("/bad\\route")]
+            Task<string> BadRoute();
+
+            [Get("/users/{id}")]
+            Task<string> Get(string userId);
+            """,
+            "build_property.DisableRefitSourceGenerator",
+            "true");
+
+        var diagnosticIds = diagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+        await Assert.That(diagnosticIds).Contains(InvalidRouteBackslashDiagnosticId);
+        await Assert.That(diagnosticIds).DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
+        await Assert.That(diagnosticIds).DoesNotContain(UnboundRoutePlaceholderDiagnosticId);
+    }
+
     /// <summary>Verifies an unparsable bare <c>.editorconfig</c> toggle is ignored and the default (fallback reported) behavior applies.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -405,7 +433,7 @@ public sealed class RefitInterfaceAnalyzerTests
             """);
 
         await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
-            .DoesNotContain("RF003");
+            .DoesNotContain(InvalidRouteBackslashDiagnosticId);
     }
 
     /// <summary>Verifies properties and their accessors on a Refit interface are ignored.</summary>
@@ -566,6 +594,9 @@ public sealed class RefitInterfaceAnalyzerTests
     [Arguments("[Get(\"/users/{id}\")] Task<string> Get([Header(\"X-Id\")] string id);")]
     [Arguments("[Get(\"/search?q={q}\")] Task<string> Search(string q);")]
     [Arguments("[Get(\"/pairs/{pair.Key}\")] Task<string> Get(System.Collections.Generic.KeyValuePair<string, int> pair);")]
+    [Arguments("[Get(\"/users/{id}/posts/{postId}\")] Task<string> Get(string id, string postId);")]
+    [Arguments("[Get(\"/pairs/{pair.Key}/{pair.Value}\")] Task<string> Get(System.Collections.Generic.KeyValuePair<string, int> pair);")]
+    [Arguments("[Get(\"/pairs/{pair.Key}/users/{id}\")] Task<string> Get(System.Collections.Generic.KeyValuePair<string, int> pair, string id);")]
     public async Task DoesNotReportBoundRoutePlaceholders(string body)
     {
         var diagnostics = await AnalyzerFixture.RunForBody(body);

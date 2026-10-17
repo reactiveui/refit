@@ -26,11 +26,11 @@ public class LayoutEmissionBenchmarks
     /// <returns>The indentation string.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string IndentCached() => Emitter.Indent(_cachedLevel);
+    public string IndentCached() => SpanBufferEmission.Indent(_cachedLevel);
 
     /// <summary>Builds an indentation string beyond the cache (allocation path).</summary>
     /// <returns>The indentation string.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string IndentUncached() => Emitter.Indent(_uncachedLevel);
+    public string IndentUncached() => SpanBufferEmission.Indent(_uncachedLevel);
 }

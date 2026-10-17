@@ -6,9 +6,6 @@ namespace Refit.Generator;
 /// <summary>Holds the tracking names used for the incremental generator pipeline steps.</summary>
 internal static class RefitGeneratorStepName
 {
-    /// <summary>The tracking name for the diagnostics reporting step.</summary>
-    internal const string ReportDiagnostics = "ReportDiagnostics";
-
     /// <summary>The tracking name for the Refit stub building step.</summary>
     internal const string BuildRefit = "BuildRefit";
 }

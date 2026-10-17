@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -63,6 +64,19 @@ internal static class AnalyzerFixture
             BuildBodySource(body),
             new([], new TestAnalyzerConfigOptionsProvider(optionKey, optionValue)));
 
+    /// <summary>Runs an opt-in diagnostic against a Refit interface body.</summary>
+    /// <param name="body">The interface members.</param>
+    /// <param name="diagnosticId">The rule to enable.</param>
+    /// <param name="cancellationToken">The test cancellation token.</param>
+    /// <returns>The reported diagnostics.</returns>
+    internal static Task<ImmutableArray<Diagnostic>> RunForBodyWithDiagnostic(string body, string diagnosticId, CancellationToken cancellationToken)
+    {
+        var compilation = CreateLibrary(BuildBodySource(body), includeRefitReference: true);
+        compilation = compilation.WithOptions(compilation.Options.WithSpecificDiagnosticOptions(
+            compilation.Options.SpecificDiagnosticOptions.SetItem(diagnosticId, ReportDiagnostic.Warn)));
+        return compilation.WithAnalyzers([new RefitInterfaceAnalyzer()]).GetAnalyzerDiagnosticsAsync(cancellationToken);
+    }
+
     /// <summary>Runs the Refit interface analyzer over source without referencing Refit.</summary>
     /// <param name="source">The source to analyze.</param>
     /// <returns>The diagnostics produced by the analyzer.</returns>
@@ -92,7 +106,7 @@ internal static class AnalyzerFixture
     /// <returns>The created compilation.</returns>
     private static CSharpCompilation CreateLibrary(string source, bool includeRefitReference)
     {
-        var referencePaths = new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> referencePaths = [with(StringComparer.Ordinal)];
         AddTrustedPlatformAssemblies(referencePaths, includeRefitReference);
 
         foreach (var assembly in GetAssemblyReferences(includeRefitReference))
@@ -103,7 +117,7 @@ internal static class AnalyzerFixture
             }
         }
 
-        var references = new List<MetadataReference>(referencePaths.Count);
+        List<MetadataReference> references = [with(referencePaths.Count)];
         foreach (var referencePath in referencePaths)
         {
             references.Add(MetadataReference.CreateFromFile(referencePath));

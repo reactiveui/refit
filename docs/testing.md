@@ -266,6 +266,10 @@ test is deterministic. Set `FailureFactory` to control the exception a simulated
 
 ## Testing retries and timeouts
 
+Use `StubHttp.CreateRetryHandler()` with `RetryReply.After` or `RetryReply.Header` to exercise
+Refit's HTTP retry handler with the stub's clock. See [HTTP retries](retries.md) for provider
+adapters, configuration and a fake-time example.
+
 Sequenced one-shot routes are matched in declared order, so a transient fault followed by a success exercises a
 retry policy — a Polly handler, or any `DelegatingHandler` — stacked above the stub:
 

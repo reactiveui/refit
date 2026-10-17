@@ -711,28 +711,14 @@ internal static partial class RequestExecutionHelpers
 
     /// <summary>The outcome of attempting to send a request.</summary>
     /// <typeparam name="T">The result type returned to the caller.</typeparam>
-    internal readonly record struct SendResult<T>
+    /// <param name="HasResponse">Whether the send produced a response.</param>
+    /// <param name="Response">The response, or null when the send failed.</param>
+    /// <param name="FailureResult">The captured failure value when the send failed.</param>
+    internal readonly record struct SendResult<T>(
+        bool HasResponse,
+        HttpResponseMessage? Response,
+        T? FailureResult)
     {
-        /// <summary>Initializes a new instance of the <see cref="SendResult{T}"/> struct.</summary>
-        /// <param name="hasResponse">Whether the send produced a response.</param>
-        /// <param name="response">The response, or null when the send failed.</param>
-        /// <param name="failureResult">The captured failure result, valid only when <paramref name="hasResponse"/> is false.</param>
-        internal SendResult(bool hasResponse, HttpResponseMessage? response, T? failureResult)
-        {
-            HasResponse = hasResponse;
-            Response = response;
-            FailureResult = failureResult;
-        }
-
-        /// <summary>Gets a value indicating whether the send produced a response.</summary>
-        internal bool HasResponse { get; }
-
-        /// <summary>Gets the response, or null when the send failed.</summary>
-        internal HttpResponseMessage? Response { get; }
-
-        /// <summary>Gets the captured failure result, valid only when <see cref="HasResponse"/> is false.</summary>
-        internal T? FailureResult { get; }
-
         /// <summary>Creates a successful result wrapping the given response.</summary>
         /// <param name="response">The response produced by the send.</param>
         /// <returns>A result indicating a response is present.</returns>

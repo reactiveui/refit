@@ -196,14 +196,17 @@ public class PagedReturnGenerationTests
 
     /// <summary>Verifies every valid paged method generates output that compiles and raises no paging diagnostic.</summary>
     /// <param name="method">The method declaration or declarations to place on the interface.</param>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     [MethodDataSource(nameof(ValidMethods))]
-    public async Task ValidMethod_GeneratesCompilableOutput(string method)
+    public async Task ValidMethod_GeneratesCompilableOutput(string method, CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(BuildSource(method), generatedRequestBuilding: true);
 
-        var ids = result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
+        var ids = analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
         using (Assert.Multiple())
         {
             await Assert.That(ids).DoesNotContain(InvalidPagedMethodId);
@@ -215,14 +218,17 @@ public class PagedReturnGenerationTests
     /// <summary>Verifies every misconfigured paged method is reported with the reason it cannot be generated.</summary>
     /// <param name="method">The method declaration to place on the interface.</param>
     /// <param name="reason">Text the diagnostic message must contain.</param>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     [MethodDataSource(nameof(InvalidMethods))]
-    public async Task InvalidMethod_IsReportedWithItsReason(string method, string reason)
+    public async Task InvalidMethod_IsReportedWithItsReason(string method, string reason, CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(BuildSource(method), generatedRequestBuilding: true);
 
-        var messages = result.GeneratorDiagnostics
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
+        var messages = analyzerDiagnostics
             .Where(static diagnostic => diagnostic.Id == InvalidPagedMethodId)
             .Select(static diagnostic => diagnostic.GetMessage())
             .ToArray();
@@ -230,20 +236,23 @@ public class PagedReturnGenerationTests
         {
             await Assert.That(messages.Length).IsEqualTo(1);
             await Assert.That(messages[0]).Contains(reason);
-            await Assert.That(result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(SourceGenOnlyAttributeId);
+            await Assert.That(analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(SourceGenOnlyAttributeId);
         }
     }
 
     /// <summary>Verifies a paged method is reported when generated request building is switched off.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task GeneratedRequestBuildingOff_ReportsThePagedAttribute()
+    public async Task GeneratedRequestBuildingOff_ReportsThePagedAttribute(CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(
             BuildSource("""[Get("/a")] [Paged(Next = "Next")] PagedEnumerable<Page, Item> A([PageToken] string? token);"""),
             generatedRequestBuilding: false);
 
-        var messages = result.GeneratorDiagnostics
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, false, false, cancellationToken);
+
+        var messages = analyzerDiagnostics
             .Where(static diagnostic => diagnostic.Id == SourceGenOnlyAttributeId)
             .Select(static diagnostic => diagnostic.GetMessage())
             .ToArray();
@@ -252,15 +261,18 @@ public class PagedReturnGenerationTests
     }
 
     /// <summary>Verifies a valid paged method whose request cannot be generated inline is reported through the attribute, not as misconfigured.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task RequestThatCannotBeGeneratedInline_ReportsThePagedAttribute()
+    public async Task RequestThatCannotBeGeneratedInline_ReportsThePagedAttribute(CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(
             BuildSource("""[Get("/a\\b")] [Paged(Next = "Next")] PagedEnumerable<Page, Item> A([PageToken] string? token);"""),
             generatedRequestBuilding: true);
 
-        var ids = result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
+        var ids = analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
         using (Assert.Multiple())
         {
             await Assert.That(ids).Contains(SourceGenOnlyAttributeId);
@@ -269,9 +281,10 @@ public class PagedReturnGenerationTests
     }
 
     /// <summary>Verifies a return type that merely shares the name of the paged sequence is not treated as one.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task ForeignPagedEnumerable_IsNotTreatedAsAPagedReturn()
+    public async Task ForeignPagedEnumerable_IsNotTreatedAsAPagedReturn(CancellationToken cancellationToken)
     {
         const string source =
             """
@@ -291,7 +304,9 @@ public class PagedReturnGenerationTests
 
         var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
 
-        await Assert.That(result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidPagedMethodId);
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
+        await Assert.That(analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidPagedMethodId);
     }
 
     /// <summary>Verifies a paged method inherited from a base interface is implemented explicitly and compiles.</summary>
@@ -327,9 +342,10 @@ public class PagedReturnGenerationTests
     }
 
     /// <summary>Verifies a paged method on a generic interface generates output that compiles.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task GenericInterface_GeneratesCompilableOutput()
+    public async Task GenericInterface_GeneratesCompilableOutput(CancellationToken cancellationToken)
     {
         const string source =
             """
@@ -355,17 +371,20 @@ public class PagedReturnGenerationTests
 
         var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
 
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
         using (Assert.Multiple())
         {
             await Assert.That(result.CompilationErrors.Select(static error => error.ToString()).ToArray()).IsEmpty();
-            await Assert.That(result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidPagedMethodId);
+            await Assert.That(analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidPagedMethodId);
         }
     }
 
     /// <summary>Verifies a paged method generates output that compiles at the C# 7.3 language version.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task CSharp73Baseline_GeneratesCompilableOutput()
+    public async Task CSharp73Baseline_GeneratesCompilableOutput(CancellationToken cancellationToken)
     {
         const string source =
             """
@@ -415,8 +434,10 @@ public class PagedReturnGenerationTests
 
         var result = Fixture.RunGenerator(source, generatedRequestBuilding: true, LanguageVersion.CSharp7_3);
 
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
         await Assert.That(result.CompilationErrors.Select(static error => error.ToString()).ToArray()).IsEmpty();
-        await Assert.That(result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidPagedMethodId);
+        await Assert.That(analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray()).DoesNotContain(InvalidPagedMethodId);
     }
 
     /// <summary>Wraps method declarations in a compilable source with the scenario types.</summary>

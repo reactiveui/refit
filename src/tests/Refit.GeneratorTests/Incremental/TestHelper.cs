@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -114,11 +115,7 @@ internal static class TestHelper
     {
         var runResult = driver.GetRunResult().Results[0];
 
-        await AssertRunReason(
-            runResult,
-            RefitGeneratorStepName.ReportDiagnostics,
-            reasons.ReportDiagnosticsStep,
-            outputIndex);
+        await Assert.That(runResult.Diagnostics).IsEmpty();
         await AssertRunReason(runResult, RefitGeneratorStepName.BuildRefit, reasons.BuildRefitStep, outputIndex);
     }
 
@@ -144,7 +141,7 @@ internal static class TestHelper
             .TrackedSteps[RefitGeneratorStepName.BuildRefit]
             .SelectMany(static step => step.Outputs)
             .Single(output => output.Value is InterfaceModel model
-                && model.InterfaceDisplayName.EndsWith(qualifiedSuffix, StringComparison.Ordinal));
+                              && model.Names.InterfaceDisplayName.EndsWith(qualifiedSuffix, StringComparison.Ordinal));
 
         await Assert.That(interfaceOutput.Reason).IsEqualTo(expectedReason);
     }

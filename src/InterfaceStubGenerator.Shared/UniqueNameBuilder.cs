@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 using System.Runtime.CompilerServices;
 
 namespace Refit.Generator;
@@ -10,11 +11,12 @@ namespace Refit.Generator;
 public class UniqueNameBuilder
 {
     /// <summary>The set of names already used in this scope.</summary>
-    private readonly HashSet<string> _usedNames = new(comparer: StringComparer.Ordinal);
+    private readonly HashSet<string> _usedNames = [with(comparer: StringComparer.Ordinal)];
 
     /// <summary>Reserve names.</summary>
     /// <param name="names">The name.</param>
-    public void Reserve(IEnumerable<string> names)
+    public void Reserve(
+        IEnumerable<string> names)
     {
         if (names is null)
         {
@@ -35,7 +37,8 @@ public class UniqueNameBuilder
     /// <summary>Generate a unique name.</summary>
     /// <param name="name">The desired base name.</param>
     /// <returns>The reserved base name, or the first unused name with a numeric suffix starting at zero.</returns>
-    public string New(string name)
+    public string New(
+        string name)
     {
         var i = 0;
         var uniqueName = name;
@@ -50,13 +53,11 @@ public class UniqueNameBuilder
         return uniqueName;
     }
 
-    /// <summary>Reserves each name in a value-array, iterating its allocation-free struct enumerator.</summary>
+    /// <summary>Reserves each name in a raw model array.</summary>
     /// <param name="names">The names to reserve.</param>
-    /// <remarks>Prefer this over the <see cref="IEnumerable{T}"/> overload for an <see cref="ImmutableEquatableArray{T}"/>:
-    /// passing one as <see cref="IEnumerable{T}"/> boxes its struct enumerator, which this overload avoids.</remarks>
-    internal void Reserve(ImmutableEquatableArray<string> names)
+    internal void Reserve(
+        string[] names)
     {
-        // A defaulted value-array enumerates as empty, so no null guard is needed.
         foreach (var name in names)
         {
             _ = _usedNames.Add(name);

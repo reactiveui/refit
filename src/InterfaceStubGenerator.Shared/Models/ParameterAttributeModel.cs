@@ -13,5 +13,28 @@ namespace Refit.Generator;
 /// <param name="NamedArguments">The attribute's named argument assignments.</param>
 internal readonly record struct ParameterAttributeModel(
     string TypeExpression,
-    ImmutableEquatableArray<string> ConstructorArguments,
-    ImmutableEquatableArray<NamedAttributeArgument> NamedArguments);
+    string[] ConstructorArguments,
+    NamedAttributeArgument[] NamedArguments)
+{
+    /// <summary>Compares all parsed values, including array contents.</summary>
+    /// <param name = "other">The model to compare.</param>
+    /// <returns>Whether the models describe the same input.</returns>
+    public bool Equals(ParameterAttributeModel other) =>
+        EqualityComparer<string>.Default.Equals(
+            TypeExpression,
+            other.TypeExpression)
+        && GeneratorModelEquality.SequenceEquals(
+            ConstructorArguments,
+            other.ConstructorArguments)
+        && GeneratorModelEquality.SequenceEquals(NamedArguments, other.NamedArguments);
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        var hash = 0;
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(TypeExpression));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetSequenceHashCode(ConstructorArguments));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetSequenceHashCode(NamedArguments));
+        return hash;
+    }
+}

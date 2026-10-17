@@ -275,9 +275,10 @@ public sealed class QueryParameterTypeTests
     }
 
     /// <summary>Verifies <c>[QueryConverter]</c> on a method that cannot generate inline for another reason reports RF007.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task QueryConverterOnFallbackMethodReportsError()
+    public async Task QueryConverterOnFallbackMethodReportsError(CancellationToken cancellationToken)
     {
         const string source =
             """
@@ -303,7 +304,9 @@ public sealed class QueryParameterTypeTests
 
         var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
 
-        var ids = result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
+        var ids = analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
         await Assert.That(ids).Contains(SourceGenOnlyDiagnosticId);
     }
 
@@ -525,42 +528,51 @@ public sealed class QueryParameterTypeTests
 
     /// <summary>Verifies a source-generation-only attribute on a fallback method reports RF007.</summary>
     /// <param name="body">The interface member body source.</param>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     [Arguments("[Get(\"/i\")] Task<string> Get([QueryName] string flag, object other);")]
     [Arguments("[Get(\"/i/{**rest}\")] Task<string> Get([Encoded] int rest);")]
     [Arguments("[Multipart][Post(\"/i\")] Task<string> Post([QueryName] string flag, object payload);")]
-    public async Task SourceGenOnlyAttributeOnFallbackMethodReportsError(string body)
+    public async Task SourceGenOnlyAttributeOnFallbackMethodReportsError(string body, CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(BuildSource(body), generatedRequestBuilding: true);
 
-        var ids = result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
+        var ids = analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
         await Assert.That(ids).Contains(SourceGenOnlyDiagnosticId);
     }
 
     /// <summary>Verifies RF007 also fires when generated request building is disabled entirely.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task SourceGenOnlyAttributeWithBuildingDisabledReportsError()
+    public async Task SourceGenOnlyAttributeWithBuildingDisabledReportsError(CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(
             BuildSource("[Get(\"/i\")] Task<string> Get([QueryName] string flag);"),
             generatedRequestBuilding: false);
 
-        var ids = result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, false, false, cancellationToken);
+
+        var ids = analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
         await Assert.That(ids).Contains(SourceGenOnlyDiagnosticId);
     }
 
     /// <summary>Verifies RF007 does not fire for inline-eligible methods using the new attributes.</summary>
+    /// <param name="cancellationToken">The analysis cancellation token.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task SourceGenOnlyAttributeOnInlineMethodReportsNothing()
+    public async Task SourceGenOnlyAttributeOnInlineMethodReportsNothing(CancellationToken cancellationToken)
     {
         var result = Fixture.RunGenerator(
             BuildSource("[Get(\"/i\")] Task<string> Get([QueryName] string flag, [Encoded] string v);"),
             generatedRequestBuilding: true);
 
-        var ids = result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
+        var analyzerDiagnostics = await Fixture.AnalyzeAsync(result, true, false, cancellationToken);
+
+        var ids = analyzerDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
         await Assert.That(ids).DoesNotContain(SourceGenOnlyDiagnosticId);
     }
 

@@ -4,36 +4,25 @@
 
 namespace Refit.Generator;
 
-/// <summary>Parsed request-binding metadata for one method parameter.</summary>
-/// <param name="Name">The parameter metadata name.</param>
-/// <param name="Type">The fully-qualified parameter type.</param>
-/// <param name="Locations">The parameter's location in the URL template string, when this is a path parameter.</param>
-/// <param name="Attributes">The parameter's attributes.</param>
-/// <param name="Kind">The primary generated request binding kind.</param>
-/// <param name="CanBeNull">Whether generated code must null-check the parameter before dereferencing.</param>
-/// <param name="HeaderName">The request header name when the parameter contributes a dynamic header, independently
-/// of its primary binding kind.</param>
-/// <param name="PropertyKey">The request property key, when this is a property parameter.</param>
-/// <param name="BodySerializationMethod">The Refit body serialization method name, when this is a body parameter.</param>
-/// <param name="BodyBufferMode">The body buffering mode, when this is a body parameter.</param>
+/// <summary>Describes how a method parameter contributes to a request.</summary>
+/// <param name="Identity">The parameter name, type and nullability.</param>
+/// <param name="Path">The route placeholder bindings.</param>
+/// <param name="Attributes">The attributes available to formatters.</param>
+/// <param name="Kind">The primary request binding kind.</param>
+/// <param name="Header">The dynamic header binding.</param>
+/// <param name="PropertyKey">The request option key.</param>
+/// <param name="Body">The body serialization and compression strategy.</param>
+/// <param name="AllowRelativeUrl">Whether a URL parameter accepts relative URI references.</param>
 internal readonly record struct RequestParameterModel(
-    string Name,
-    string Type,
-    ImmutableEquatableArray<Range>? Locations,
-    ImmutableEquatableArray<ParameterAttributeModel> Attributes,
+    RequestParameterIdentityModel Identity,
+    RequestParameterPathModel Path,
+    ParameterAttributeModel[] Attributes,
     RequestParameterKind Kind,
-    bool CanBeNull,
-    string HeaderName,
+    RequestParameterHeaderModel Header,
     string PropertyKey,
-    string BodySerializationMethod,
-    BodyBufferMode BodyBufferMode)
+    RequestParameterBodyModel Body,
+    bool AllowRelativeUrl = false)
 {
-    /// <summary>
-    /// Gets the reflection-free form field descriptors for a URL-encoded body, or <see langword="null"/> when the
-    /// body type is not eligible and the reflection-based form path must be used.
-    /// </summary>
-    internal ImmutableEquatableArray<FormFieldModel>? FormFields { get; init; }
-
     /// <summary>
     /// Gets the query-binding metadata when this parameter feeds the query string — set for
     /// <see cref="RequestParameterKind.Query"/> parameters and for <see cref="RequestParameterKind.Property"/>
@@ -41,45 +30,57 @@ internal readonly record struct RequestParameterModel(
     /// </summary>
     internal QueryParameterModel? Query { get; init; }
 
-    /// <summary>Gets the reflection-free rendering strategy for a path parameter value, or <see langword="null"/> for non-path parameters.</summary>
-    internal InlineValueFormatModel? ValueFormat { get; init; }
-
-    /// <summary>Gets a value indicating whether a path parameter value passes through verbatim because the parameter carries <c>[Encoded]</c>.</summary>
-    internal bool PreEncoded { get; init; }
-
-    /// <summary>Gets the literal prefix prepended to a header value, or <see langword="null"/>. Set for an
-    /// <c>[Authorize]</c> parameter, whose <c>Authorization</c> header value is <c>"{scheme} " + value</c>.</summary>
-    internal string? HeaderValuePrefix { get; init; }
-
-    /// <summary>Gets a value indicating whether a path parameter binds a round-trip <c>{**param}</c> catch-all whose
-    /// value is split on <c>/</c> with each segment formatted and escaped, preserving the separators.</summary>
-    internal bool IsRoundTrip { get; init; }
-
-    /// <summary>Gets the dotted <c>{param.Prop}</c> path placeholder bindings for an object path parameter, or
-    /// <see langword="null"/>. When set, the parameter contributes no direct path value; each binding fills its own
-    /// placeholder with a formatted property value.</summary>
-    internal ImmutableEquatableArray<PathObjectBindingModel>? PathObjectBindings { get; init; }
-
-    /// <summary>Gets the <c>Refit.RequestCompression</c> member name the body declared, or <see langword="null"/> for a
-    /// parameter that is not a body. <c>Default</c> means the request takes its coding from the settings.</summary>
-    internal string? Compression { get; init; }
-
-    /// <summary>Gets the <c>System.IO.Compression.CompressionLevel</c> member name the body declared, or
-    /// <see langword="null"/> for a parameter that is not a body.</summary>
-    internal string? CompressionLevel { get; init; }
-
-    /// <summary>Gets the multipart part descriptor when this parameter contributes a <c>[Multipart]</c> form part —
-    /// set for <see cref="RequestParameterKind.MultipartPart"/> parameters and <see langword="null"/> otherwise.</summary>
-    internal MultipartPartModel? MultipartPart { get; init; }
-
     /// <summary>Gets the fully-qualified type argument of a <see cref="RequestParameterKind.JsonTypeInfo"/> parameter,
     /// the type its metadata describes, or <see langword="null"/> for every other parameter.</summary>
     internal string? JsonTypeInfoTarget { get; init; }
 
-    /// <summary>Gets the fully-qualified element type a JSON Lines body is written with, or <see langword="null"/>
-    /// when the body keeps the untyped path that serializes every element as <see cref="object"/>.</summary>
-    internal string? JsonLinesElementType { get; init; }
+    /// <summary>Compares the parsed metadata, including array contents.</summary>
+    /// <param name="other">The metadata to compare.</param>
+    /// <returns>Whether the metadata is equal.</returns>
+    public bool Equals(RequestParameterModel other) =>
+        EqualityComparer<RequestParameterIdentityModel>.Default.Equals(
+            Identity,
+            other.Identity)
+        && EqualityComparer<RequestParameterPathModel>.Default.Equals(
+            Path,
+            other.Path)
+        && GeneratorModelEquality.SequenceEquals(
+            Attributes,
+            other.Attributes)
+        && EqualityComparer<RequestParameterKind>.Default.Equals(
+            Kind,
+            other.Kind)
+        && EqualityComparer<RequestParameterHeaderModel>.Default.Equals(
+            Header,
+            other.Header)
+        && EqualityComparer<string>.Default.Equals(
+            PropertyKey,
+            other.PropertyKey)
+        && EqualityComparer<RequestParameterBodyModel>.Default.Equals(
+            Body,
+            other.Body)
+        && EqualityComparer<bool>.Default.Equals(
+            AllowRelativeUrl,
+            other.AllowRelativeUrl)
+        && EqualityComparer<QueryParameterModel?>.Default.Equals(
+            Query,
+            other.Query)
+        && EqualityComparer<string?>.Default.Equals(JsonTypeInfoTarget, other.JsonTypeInfoTarget);
 
-    /// <summary>Gets a value indicating whether a typed JSON Lines body is an <c>IAsyncEnumerable&lt;T&gt;</c>.</summary>
-    internal bool IsAsyncJsonLines { get; init; }
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        var hash = 0;
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Identity));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Path));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetSequenceHashCode(Attributes));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Kind));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Header));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(PropertyKey));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Body));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(AllowRelativeUrl));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(Query));
+        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(JsonTypeInfoTarget));
+        return hash;
+    }
 }

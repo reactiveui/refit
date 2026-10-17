@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
@@ -20,8 +21,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     internal const string FallbackParameterProperty = "ParameterOrdinal";
 
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        CreateSupportedDiagnostics();
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = CreateSupportedDiagnostics();
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -32,7 +32,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Gets the literal path from a Refit HTTP method attribute.</summary>
-    /// <param name="attributeData">The attribute data.</param>
+    /// <param name = "attributeData">The attribute data.</param>
     /// <returns>The path literal.</returns>
     internal static string GetHttpPath(AttributeData? attributeData)
     {
@@ -42,20 +42,18 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         }
 
         var arguments = attributeData.ConstructorArguments;
-        return !arguments.IsEmpty && arguments[0].Value is string path
-            ? path
-            : string.Empty;
+        return !arguments.IsEmpty && arguments[0].Value is string path ? path : string.Empty;
     }
 
     /// <summary>
     /// Creates the immutable descriptor set. A collection expression cannot be used: the analyzer
     /// compiles against System.Collections.Immutable 7.0.0, which predates [CollectionBuilder] on
-    /// <see cref="ImmutableArray{T}"/>.
+    /// <see cref = "ImmutableArray{T}"/>.
     /// </summary>
     /// <returns>The supported diagnostics.</returns>
     private static ImmutableArray<DiagnosticDescriptor> CreateSupportedDiagnostics()
     {
-        const int supportedDiagnosticCount = 10;
+        const int supportedDiagnosticCount = 14;
         var builder = ImmutableArray.CreateBuilder<DiagnosticDescriptor>(supportedDiagnosticCount);
         builder.Add(DiagnosticDescriptors.InvalidRefitMember);
         builder.Add(DiagnosticDescriptors.InvalidRouteBackslash);
@@ -67,11 +65,15 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         builder.Add(DiagnosticDescriptors.MultipleBodyParameters);
         builder.Add(DiagnosticDescriptors.MultipartBodyParameter);
         builder.Add(DiagnosticDescriptors.UnboundRoutePlaceholder);
+        builder.Add(DiagnosticDescriptors.QueryDelimiterAsAlias);
+        builder.Add(Refit.Generator.DiagnosticDescriptors.SourceGenOnlyAttributeRequiresInlineRequest);
+        builder.Add(Refit.Generator.DiagnosticDescriptors.InvalidPagedMethod);
+        builder.Add(Refit.Generator.DiagnosticDescriptors.InvalidJsonTypeInfoParameter);
         return builder.MoveToImmutable();
     }
 
     /// <summary>Registers symbol actions after resolving the Refit HTTP method base attribute.</summary>
-    /// <param name="context">The compilation-start context.</param>
+    /// <param name = "context">The compilation-start context.</param>
     private static void RegisterCompilationAnalysis(CompilationStartAnalysisContext context)
     {
         var httpMethodAttribute = context.Compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute");
@@ -85,21 +87,17 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         // generated request building or the generator entirely, in which case every method uses
         // reflection by design and the fallback diagnostic would be pure noise.
         var globalOptions = context.Options.AnalyzerConfigOptionsProvider.GlobalOptions;
-        var reportGeneratedRequestBuildingFallback =
-            GetBooleanOption(globalOptions, "RefitGeneratedRequestBuilding", defaultValue: true)
-            && !GetBooleanOption(globalOptions, "DisableRefitSourceGenerator", defaultValue: false);
-
+        var generationOptions = new RequestGenerationOptions(
+            GetBooleanOption(globalOptions, "RefitGeneratedRequestBuilding", defaultValue: true),
+            !GetBooleanOption(globalOptions, "DisableRefitSourceGenerator", defaultValue: false),
+            Generator.QueryParameterParsing.ResolveIndexedCollectionFormatValue(context.Compilation));
         var disposableInterface = context.Compilation.GetSpecialType(SpecialType.System_IDisposable);
         var formattableInterface = context.Compilation.GetTypeByMetadataName("System.IFormattable");
 
         // Discover return-type adapters the same way the generator does, so RF006 agrees an adapter-backed method is
         // built inline instead of falling back to reflection.
-        var returnTypeAdapterInterface = Refit.Generator.Parser.ResolveReturnTypeAdapterInterface(context.Compilation);
-        var returnTypeAdapters = Refit.Generator.Parser.DiscoverReturnTypeAdapters(
-            context.Compilation,
-            returnTypeAdapterInterface,
-            context.CancellationToken);
-
+        var returnTypeAdapterInterface = Generator.ReturnTypeAdapterParsing.ResolveReturnTypeAdapterInterface(context.Compilation);
+        var returnTypeAdapters = Generator.ReturnTypeAdapterParsing.DiscoverReturnTypeAdapters(context.Compilation, returnTypeAdapterInterface, context.CancellationToken);
         context.RegisterSymbolAction(
             symbolContext => AnalyzeInterface(
                 (INamedTypeSymbol)symbolContext.Symbol,
@@ -109,41 +107,33 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
                     formattableInterface,
                     returnTypeAdapterInterface,
                     returnTypeAdapters,
-                    reportGeneratedRequestBuildingFallback,
-                    Refit.Generator.Parser.ResolveIndexedCollectionFormatValue(context.Compilation)),
+                    generationOptions),
                 symbolContext.ReportDiagnostic,
                 symbolContext.CancellationToken),
             SymbolKind.NamedType);
     }
 
     /// <summary>Reads a boolean analyzer-config option by bare name or MSBuild build-property name.</summary>
-    /// <param name="options">The analyzer-config options.</param>
-    /// <param name="name">The option name without the build-property prefix.</param>
-    /// <param name="defaultValue">The value to use when the option is absent or unparsable.</param>
+    /// <param name = "options">The analyzer-config options.</param>
+    /// <param name = "name">The option name without the build-property prefix.</param>
+    /// <param name = "defaultValue">The value to use when the option is absent or unparsable.</param>
     /// <returns>The parsed option value.</returns>
     private static bool GetBooleanOption(AnalyzerConfigOptions options, string name, bool defaultValue)
     {
-        if (options.TryGetValue($"build_property.{name}", out var buildPropertyValue)
-            && bool.TryParse(buildPropertyValue, out var buildPropertyParsed))
+        if (options.TryGetValue($"build_property.{name}", out var buildPropertyValue) && bool.TryParse(buildPropertyValue, out var buildPropertyParsed))
         {
             return buildPropertyParsed;
         }
 
-        return options.TryGetValue(name, out var analyzerConfigValue) && bool.TryParse(analyzerConfigValue, out var analyzerConfigParsed)
-            ? analyzerConfigParsed
-            : defaultValue;
+        return options.TryGetValue(name, out var analyzerConfigValue) && bool.TryParse(analyzerConfigValue, out var analyzerConfigParsed) ? analyzerConfigParsed : defaultValue;
     }
 
     /// <summary>Analyzes a single interface and reports Refit contract diagnostics.</summary>
-    /// <param name="interfaceSymbol">The interface symbol.</param>
-    /// <param name="analysis">The resolved symbols and options shared by the compilation.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    private static void AnalyzeInterface(
-        INamedTypeSymbol interfaceSymbol,
-        in CompilationAnalysisState analysis,
-        Action<Diagnostic> reportDiagnostic,
-        CancellationToken cancellationToken)
+    /// <param name = "interfaceSymbol">The interface symbol.</param>
+    /// <param name = "analysis">The resolved symbols and options shared by the compilation.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name = "cancellationToken">The cancellation token.</param>
+    private static void AnalyzeInterface(INamedTypeSymbol interfaceSymbol, in CompilationAnalysisState analysis, Action<Diagnostic> reportDiagnostic, CancellationToken cancellationToken)
     {
         var httpMethodAttribute = analysis.HttpMethodAttribute;
         var disposableInterface = analysis.DisposableInterface;
@@ -154,11 +144,9 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
 
         var members = interfaceSymbol.GetMembers();
         var hasRefitMethods = false;
-
         foreach (var member in members)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
             if (member is not IMethodSymbol method)
             {
                 continue;
@@ -170,7 +158,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
             }
 
             hasRefitMethods = true;
-            AnalyzeRefitMethod(method, analysis, reportDiagnostic);
+            AnalyzeRefitMethod(method, analysis, reportDiagnostic, cancellationToken);
         }
 
         var hasInheritedRefitMethods = HasInheritedRefitMethods(interfaceSymbol, httpMethodAttribute);
@@ -179,28 +167,16 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        AnalyzeNonRefitMethods(
-            members,
-            httpMethodAttribute,
-            disposableInterface,
-            reportDiagnostic,
-            cancellationToken);
-        AnalyzeInheritedNonRefitMethods(
-            interfaceSymbol,
-            httpMethodAttribute,
-            disposableInterface,
-            reportDiagnostic,
-            cancellationToken);
+        AnalyzeNonRefitMethods(members, httpMethodAttribute, disposableInterface, reportDiagnostic, cancellationToken);
+        AnalyzeInheritedNonRefitMethods(interfaceSymbol, httpMethodAttribute, disposableInterface, reportDiagnostic, cancellationToken);
     }
 
     /// <summary>Reports diagnostics for invalid Refit method shapes.</summary>
-    /// <param name="method">The Refit method.</param>
-    /// <param name="analysis">The resolved symbols and options shared by the compilation.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
-    private static void AnalyzeRefitMethod(
-        IMethodSymbol method,
-        in CompilationAnalysisState analysis,
-        Action<Diagnostic> reportDiagnostic)
+    /// <param name = "method">The Refit method.</param>
+    /// <param name = "analysis">The resolved symbols and options shared by the compilation.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name = "cancellationToken">The analysis cancellation token.</param>
+    private static void AnalyzeRefitMethod(IMethodSymbol method, in CompilationAnalysisState analysis, Action<Diagnostic> reportDiagnostic, CancellationToken cancellationToken)
     {
         var httpMethodAttribute = analysis.HttpMethodAttribute;
         var httpMethod = FindHttpMethodAttribute(method, httpMethodAttribute);
@@ -211,30 +187,36 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
             // attribute, so both the attribute and its syntax reference are always present here.
             reportDiagnostic(Diagnostic.Create(
                 DiagnosticDescriptors.InvalidRouteBackslash,
-                httpMethod!.ApplicationSyntaxReference!.GetSyntax().GetLocation(),
+                httpMethod!.ApplicationSyntaxReference!.GetSyntax(cancellationToken).GetLocation(),
                 method.ContainingType.Name,
                 method.Name));
         }
 
         ReportMultipartBodyDiagnostic(method, reportDiagnostic);
         ReportParameterShapeDiagnostics(method, reportDiagnostic);
+        QueryDelimiterDiagnostics.Report(method, analysis.FormattableInterface, reportDiagnostic, cancellationToken);
 
-        // Both remaining checks read the generated request, which only exists when generated request building is on.
-        if (!analysis.ReportGeneratedRequestBuildingFallback)
+        if (!analysis.Generation.SourceGeneratorEnabled)
         {
             return;
         }
 
         // The eligibility decision and its reason are the source generator's own classifier, compiled into this
         // assembly, so RF006 can never drift from what the generator actually emits.
-        var request = Refit.Generator.Parser.ClassifyRequest(
+        var request = Generator.InlineRequestClassification.ClassifyRequest(
             method,
             httpMethodAttribute,
             analysis.FormattableInterface,
             analysis.ReturnTypeAdapterInterface,
             analysis.ReturnTypeAdapters,
-            analysis.IndexedCollectionFormatValue);
-        if (request.CanGenerateInline)
+            analysis.Generation.IndexedCollectionFormatValue,
+            new Refit.Generator.RequestAnalysisOptions(analysis.Generation.GeneratedRequestBuilding, reportDiagnostic, cancellationToken));
+        if (!analysis.Generation.GeneratedRequestBuilding)
+        {
+            return;
+        }
+
+        if (request.Generation.CanGenerateInline)
         {
             // The reflection builder binds placeholders by its own rules and validates them itself at runtime, so the
             // placeholder check only covers requests the generator builds.
@@ -242,19 +224,15 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        ReportGeneratedRequestBuildingFallback(method, httpMethod, request.Fallback, reportDiagnostic);
+        ReportGeneratedRequestBuildingFallback(method, httpMethod, request.Generation.Fallback, reportDiagnostic);
     }
 
     /// <summary>Reports RF006 at the declaration responsible for a method's fallback, naming the reason and remedy.</summary>
-    /// <param name="method">The Refit method.</param>
-    /// <param name="httpMethod">The method's HTTP method attribute.</param>
-    /// <param name="fallback">The classifier's fallback for the method.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
-    private static void ReportGeneratedRequestBuildingFallback(
-        IMethodSymbol method,
-        AttributeData? httpMethod,
-        in Refit.Generator.InlineFallback fallback,
-        Action<Diagnostic> reportDiagnostic)
+    /// <param name = "method">The Refit method.</param>
+    /// <param name = "httpMethod">The method's HTTP method attribute.</param>
+    /// <param name = "fallback">The classifier's fallback for the method.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
+    private static void ReportGeneratedRequestBuildingFallback(IMethodSymbol method, AttributeData? httpMethod, in Refit.Generator.InlineFallback fallback, Action<Diagnostic> reportDiagnostic)
     {
         var explanation = FallbackExplanation.Describe(method, fallback);
         reportDiagnostic(Diagnostic.Create(
@@ -269,7 +247,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Carries the machine-readable fallback reason on the diagnostic for tooling and code fixes.</summary>
-    /// <param name="fallback">The classifier's fallback for the method.</param>
+    /// <param name = "fallback">The classifier's fallback for the method.</param>
     /// <returns>The diagnostic properties.</returns>
     private static ImmutableDictionary<string, string?> CreateFallbackProperties(in Refit.Generator.InlineFallback fallback)
     {
@@ -284,23 +262,19 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Reports RF015 for each placeholder in a generated request's path that no parameter fills.</summary>
-    /// <param name="method">The Refit method.</param>
-    /// <param name="httpMethod">The method's HTTP method attribute.</param>
-    /// <param name="request">The classifier's parsed request.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name = "method">The Refit method.</param>
+    /// <param name = "httpMethod">The method's HTTP method attribute.</param>
+    /// <param name = "request">The classifier's parsed request.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
     /// <remarks>A placeholder is bound when a parsed path parameter or path-object property covers its range - the same
     /// ranges the emitter substitutes - so anything left over is exactly what the generated request would leave in the
     /// URL and reject at runtime.</remarks>
-    private static void ReportUnboundRoutePlaceholders(
-        IMethodSymbol method,
-        AttributeData? httpMethod,
-        in Refit.Generator.RequestModel request,
-        Action<Diagnostic> reportDiagnostic)
+    private static void ReportUnboundRoutePlaceholders(IMethodSymbol method, AttributeData? httpMethod, in Refit.Generator.RequestModel request, Action<Diagnostic> reportDiagnostic)
     {
-        var placeholders = Refit.Generator.Parser.ExtractPathParameterPlaceholderNames(request.Path);
+        var placeholders = Generator.RequestParsing.ExtractPathParameterPlaceholderNames(request.Path);
         foreach (var placeholder in placeholders.Occurrences)
         {
-            if (IsPlaceholderBound(placeholder.Location, request.Parameters))
+            if (IsPlaceholderBound(placeholder.Location, request.Bindings.Parameters))
             {
                 continue;
             }
@@ -317,12 +291,10 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Determines whether a parsed parameter fills a placeholder range.</summary>
-    /// <param name="range">The placeholder's range in the path.</param>
-    /// <param name="parameters">The parsed request parameters.</param>
+    /// <param name = "range">The placeholder's range in the path.</param>
+    /// <param name = "parameters">The parsed request parameters.</param>
     /// <returns><see langword="true"/> when a path parameter or a path-object property covers the range.</returns>
-    private static bool IsPlaceholderBound(
-        Range range,
-        Refit.Generator.ImmutableEquatableArray<Refit.Generator.RequestParameterModel> parameters)
+    private static bool IsPlaceholderBound(Range range, Refit.Generator.RequestParameterModel[] parameters)
     {
         foreach (var parameter in parameters)
         {
@@ -336,12 +308,12 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Determines whether one parsed parameter fills a placeholder range.</summary>
-    /// <param name="parameter">The parsed request parameter.</param>
-    /// <param name="range">The placeholder's range in the path.</param>
+    /// <param name = "parameter">The parsed request parameter.</param>
+    /// <param name = "range">The placeholder's range in the path.</param>
     /// <returns><see langword="true"/> when the parameter's path locations or path-object bindings include the range.</returns>
     private static bool CoversRange(in Refit.Generator.RequestParameterModel parameter, Range range)
     {
-        if (parameter.Locations is { } locations)
+        if (parameter.Path.Locations is { } locations)
         {
             foreach (var location in locations)
             {
@@ -352,7 +324,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (parameter.PathObjectBindings is { } bindings)
+        if (parameter.Path.PathObjectBindings is { } bindings)
         {
             foreach (var binding in bindings)
             {
@@ -367,21 +339,19 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Suggests the parameter name a placeholder expects.</summary>
-    /// <param name="placeholderName">The placeholder name, optional marker already removed.</param>
+    /// <param name = "placeholderName">The placeholder name, optional marker already removed.</param>
     /// <returns>The name without a round-trip <c>**</c> prefix, and only the root of a dotted property path.</returns>
     private static string SuggestParameterName(string placeholderName)
     {
         const string roundTripPrefix = "**";
-        var name = placeholderName.StartsWith(roundTripPrefix, StringComparison.Ordinal)
-            ? placeholderName[roundTripPrefix.Length..]
-            : placeholderName;
+        var name = placeholderName.StartsWith(roundTripPrefix, StringComparison.Ordinal) ? placeholderName[roundTripPrefix.Length..] : placeholderName;
         var dot = name.IndexOf('.');
         return dot > 0 ? name[..dot] : name;
     }
 
     /// <summary>Locates a placeholder inside the HTTP method attribute's path literal.</summary>
-    /// <param name="httpMethod">The method's HTTP method attribute.</param>
-    /// <param name="placeholder">The placeholder text including its braces.</param>
+    /// <param name = "httpMethod">The method's HTTP method attribute.</param>
+    /// <param name = "placeholder">The placeholder text including its braces.</param>
     /// <returns>The placeholder's span within the literal when it can be found, else the path argument's location.</returns>
     /// <remarks>A placeholder only exists when the path came from the first constructor argument of a source-declared
     /// HTTP method attribute, so the attribute, its syntax and that argument are always present here.</remarks>
@@ -391,17 +361,15 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         var pathArgument = attribute.ArgumentList!.Arguments[0];
         var literal = pathArgument.Expression.GetFirstToken();
         var offset = literal.Text.IndexOf(placeholder, StringComparison.Ordinal);
-        return offset < 0
-            ? pathArgument.GetLocation()
-            : Location.Create(pathArgument.SyntaxTree, new(literal.SpanStart + offset, placeholder.Length));
+        return offset < 0 ? pathArgument.GetLocation() : Location.Create(pathArgument.SyntaxTree, new(literal.SpanStart + offset, placeholder.Length));
     }
 
     /// <summary>Reports diagnostics for directly declared non-Refit methods on a Refit interface.</summary>
-    /// <param name="members">The directly declared interface members.</param>
-    /// <param name="httpMethodAttribute">The Refit HTTP method base attribute.</param>
-    /// <param name="disposableInterface">The <see cref="IDisposable"/> interface symbol.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name = "members">The directly declared interface members.</param>
+    /// <param name = "httpMethodAttribute">The Refit HTTP method base attribute.</param>
+    /// <param name = "disposableInterface">The <see cref = "IDisposable"/> interface symbol.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name = "cancellationToken">The cancellation token.</param>
     private static void AnalyzeNonRefitMethods(
         ImmutableArray<ISymbol> members,
         INamedTypeSymbol httpMethodAttribute,
@@ -412,10 +380,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         foreach (var member in members)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
-            if (member is IMethodSymbol method
-                && IsEmittableNonRefitMethod(method, disposableInterface)
-                && !IsRefitMethod(method, httpMethodAttribute))
+            if (member is IMethodSymbol method && IsEmittableNonRefitMethod(method, disposableInterface) && !IsRefitMethod(method, httpMethodAttribute))
             {
                 ReportInvalidRefitMember(method, reportDiagnostic);
             }
@@ -423,11 +388,11 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Reports diagnostics for inherited non-Refit methods that a generated client must still implement.</summary>
-    /// <param name="interfaceSymbol">The Refit interface being analyzed.</param>
-    /// <param name="httpMethodAttribute">The Refit HTTP method base attribute.</param>
-    /// <param name="disposableInterface">The <see cref="IDisposable"/> interface symbol.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name = "interfaceSymbol">The Refit interface being analyzed.</param>
+    /// <param name = "httpMethodAttribute">The Refit HTTP method base attribute.</param>
+    /// <param name = "disposableInterface">The <see cref = "IDisposable"/> interface symbol.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name = "cancellationToken">The cancellation token.</param>
     private static void AnalyzeInheritedNonRefitMethods(
         INamedTypeSymbol interfaceSymbol,
         INamedTypeSymbol httpMethodAttribute,
@@ -438,12 +403,9 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         foreach (var baseInterface in interfaceSymbol.AllInterfaces)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
             foreach (var member in baseInterface.GetMembers())
             {
-                if (member is IMethodSymbol method
-                    && IsEmittableNonRefitMethod(method, disposableInterface)
-                    && !IsRefitMethod(method, httpMethodAttribute))
+                if (member is IMethodSymbol method && IsEmittableNonRefitMethod(method, disposableInterface) && !IsRefitMethod(method, httpMethodAttribute))
                 {
                     ReportInvalidRefitMember(method, reportDiagnostic);
                 }
@@ -452,49 +414,37 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Reports RF001 for a method.</summary>
-    /// <param name="method">The invalid method.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
-    private static void ReportInvalidRefitMember(
-        IMethodSymbol method,
-        Action<Diagnostic> reportDiagnostic)
+    /// <param name = "method">The invalid method.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
+    private static void ReportInvalidRefitMember(IMethodSymbol method, Action<Diagnostic> reportDiagnostic)
     {
         foreach (var location in method.Locations)
         {
-            reportDiagnostic(Diagnostic.Create(
-                DiagnosticDescriptors.InvalidRefitMember,
-                location,
-                method.ContainingType.Name,
-                method.Name));
+            reportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.InvalidRefitMember, location, method.ContainingType.Name, method.Name));
         }
     }
 
     /// <summary>Determines whether a non-Refit method needs a generated implementation.</summary>
-    /// <param name="method">The method to inspect.</param>
-    /// <param name="disposableInterface">The <see cref="IDisposable"/> interface symbol.</param>
+    /// <param name = "method">The method to inspect.</param>
+    /// <param name = "disposableInterface">The <see cref = "IDisposable"/> interface symbol.</param>
     /// <returns><see langword="true"/> when the method requires implementation.</returns>
-    private static bool IsEmittableNonRefitMethod(
-        IMethodSymbol method,
-        INamedTypeSymbol disposableInterface) =>
-        !method.IsStatic
-        && method.MethodKind != MethodKind.PropertyGet
-        && method.MethodKind != MethodKind.PropertySet
-        && method.IsAbstract
-        && !SymbolEqualityComparer.Default.Equals(method.ContainingType, disposableInterface);
+    private static bool IsEmittableNonRefitMethod(IMethodSymbol method, INamedTypeSymbol disposableInterface) => !method.IsStatic
+                                                                                                                 && method.MethodKind != MethodKind.PropertyGet
+                                                                                                                 && method.MethodKind != MethodKind.PropertySet
+                                                                                                                 && method.IsAbstract
+                                                                                                                 && !SymbolEqualityComparer.Default.Equals(method.ContainingType, disposableInterface);
 
     /// <summary>Determines whether a method is decorated with a Refit HTTP method attribute.</summary>
-    /// <param name="method">The method to inspect.</param>
-    /// <param name="httpMethodAttribute">The Refit HTTP method base attribute symbol.</param>
+    /// <param name = "method">The method to inspect.</param>
+    /// <param name = "httpMethodAttribute">The Refit HTTP method base attribute symbol.</param>
     /// <returns><see langword="true"/> if the method is a Refit method; otherwise, <see langword="false"/>.</returns>
-    private static bool IsRefitMethod(IMethodSymbol method, INamedTypeSymbol httpMethodAttribute) =>
-        FindHttpMethodAttribute(method, httpMethodAttribute) is not null;
+    private static bool IsRefitMethod(IMethodSymbol method, INamedTypeSymbol httpMethodAttribute) => FindHttpMethodAttribute(method, httpMethodAttribute) is not null;
 
     /// <summary>Finds the HTTP method attribute on a Refit method.</summary>
-    /// <param name="method">The method to inspect.</param>
-    /// <param name="httpMethodAttribute">The Refit HTTP method base attribute symbol.</param>
+    /// <param name = "method">The method to inspect.</param>
+    /// <param name = "httpMethodAttribute">The Refit HTTP method base attribute symbol.</param>
     /// <returns>The matching attribute, if any.</returns>
-    private static AttributeData? FindHttpMethodAttribute(
-        IMethodSymbol method,
-        INamedTypeSymbol httpMethodAttribute)
+    private static AttributeData? FindHttpMethodAttribute(IMethodSymbol method, INamedTypeSymbol httpMethodAttribute)
     {
         foreach (var attribute in method.GetAttributes())
         {
@@ -508,12 +458,10 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Determines whether any base interface declares a Refit method.</summary>
-    /// <param name="interfaceSymbol">The interface symbol to inspect.</param>
-    /// <param name="httpMethodAttribute">The Refit HTTP method attribute symbol.</param>
+    /// <param name = "interfaceSymbol">The interface symbol to inspect.</param>
+    /// <param name = "httpMethodAttribute">The Refit HTTP method attribute symbol.</param>
     /// <returns><see langword="true"/> if a base interface declares a Refit method; otherwise, <see langword="false"/>.</returns>
-    private static bool HasInheritedRefitMethods(
-        INamedTypeSymbol interfaceSymbol,
-        INamedTypeSymbol httpMethodAttribute)
+    private static bool HasInheritedRefitMethods(INamedTypeSymbol interfaceSymbol, INamedTypeSymbol httpMethodAttribute)
     {
         foreach (var baseInterface in interfaceSymbol.AllInterfaces)
         {
@@ -530,12 +478,10 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Determines whether a symbol inherits from or equals another symbol.</summary>
-    /// <param name="symbol">The candidate symbol.</param>
-    /// <param name="expected">The expected base symbol.</param>
+    /// <param name = "symbol">The candidate symbol.</param>
+    /// <param name = "expected">The expected base symbol.</param>
     /// <returns><see langword="true"/> when the candidate matches.</returns>
-    private static bool InheritsFromOrEquals(
-        INamedTypeSymbol? symbol,
-        INamedTypeSymbol expected)
+    private static bool InheritsFromOrEquals(INamedTypeSymbol? symbol, INamedTypeSymbol expected)
     {
         while (symbol is not null)
         {
@@ -550,21 +496,17 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
-    /// <param name="type">The type to inspect.</param>
+    /// <summary>Determines whether a type is <see cref = "CancellationToken"/> or nullable <see cref = "CancellationToken"/>.</summary>
+    /// <param name = "type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is a cancellation token.</returns>
-    private static bool IsCancellationToken(ITypeSymbol type) =>
-        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-        == "global::System.Threading.CancellationToken" || (type is INamedTypeSymbol
-                                                            {
-                                                                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
-                                                            } namedType
-                                                            && namedType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                                                            == "global::System.Threading.CancellationToken");
+    private static bool IsCancellationToken(ITypeSymbol type) => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::System.Threading.CancellationToken"
+                                                                 || (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } namedType
+                                                                     && namedType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                                                                     == "global::System.Threading.CancellationToken");
 
     /// <summary>Reports the per-parameter duplicate and type diagnostics for a Refit method.</summary>
-    /// <param name="method">The Refit method.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name = "method">The Refit method.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
     private static void ReportParameterShapeDiagnostics(IMethodSymbol method, Action<Diagnostic> reportDiagnostic)
     {
         var cancellationTokenCount = 0;
@@ -573,25 +515,18 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         var bodyCount = 0;
         foreach (var parameter in method.Parameters)
         {
-            ReportParameterShapeDiagnostics(
-                method,
-                parameter,
-                reportDiagnostic,
-                ref cancellationTokenCount,
-                ref headerCollectionCount,
-                ref authorizeCount,
-                ref bodyCount);
+            ReportParameterShapeDiagnostics(method, parameter, reportDiagnostic, ref cancellationTokenCount, ref headerCollectionCount, ref authorizeCount, ref bodyCount);
         }
     }
 
     /// <summary>Reports the duplicate and type diagnostics for a single Refit method parameter.</summary>
-    /// <param name="method">The Refit method.</param>
-    /// <param name="parameter">The parameter to inspect.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
-    /// <param name="cancellationTokenCount">The running count of cancellation-token parameters seen so far.</param>
-    /// <param name="headerCollectionCount">The running count of header-collection parameters seen so far.</param>
-    /// <param name="authorizeCount">The running count of authorize parameters seen so far.</param>
-    /// <param name="bodyCount">The running count of body parameters seen so far.</param>
+    /// <param name = "method">The Refit method.</param>
+    /// <param name = "parameter">The parameter to inspect.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name = "cancellationTokenCount">The running count of cancellation-token parameters seen so far.</param>
+    /// <param name = "headerCollectionCount">The running count of header-collection parameters seen so far.</param>
+    /// <param name = "authorizeCount">The running count of authorize parameters seen so far.</param>
+    /// <param name = "bodyCount">The running count of body parameters seen so far.</param>
     private static void ReportParameterShapeDiagnostics(
         IMethodSymbol method,
         IParameterSymbol parameter,
@@ -615,12 +550,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         {
             if (!IsSupportedHeaderCollectionType(parameter.Type))
             {
-                reportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.InvalidHeaderCollectionParameter,
-                    FirstLocation(parameter),
-                    parameter.Name,
-                    method.ContainingType.Name,
-                    method.Name));
+                reportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.InvalidHeaderCollectionParameter, FirstLocation(parameter), parameter.Name, method.ContainingType.Name, method.Name));
             }
 
             if (headerCollectionCount > 0)
@@ -655,16 +585,16 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Creates a method-scoped diagnostic located at a parameter.</summary>
-    /// <param name="descriptor">The diagnostic descriptor.</param>
-    /// <param name="method">The Refit method.</param>
-    /// <param name="parameter">The parameter to locate the diagnostic at.</param>
+    /// <param name = "descriptor">The diagnostic descriptor.</param>
+    /// <param name = "method">The Refit method.</param>
+    /// <param name = "parameter">The parameter to locate the diagnostic at.</param>
     /// <returns>The diagnostic.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Diagnostic MethodShapeDiagnostic(DiagnosticDescriptor descriptor, IMethodSymbol method, IParameterSymbol parameter) =>
         Diagnostic.Create(descriptor, FirstLocation(parameter), method.ContainingType.Name, method.Name);
 
     /// <summary>Determines whether a parameter has <c>HeaderCollectionAttribute</c>.</summary>
-    /// <param name="parameter">The parameter to inspect.</param>
+    /// <param name = "parameter">The parameter to inspect.</param>
     /// <returns><see langword="true"/> when the parameter has the attribute.</returns>
     private static bool HasHeaderCollectionAttribute(IParameterSymbol parameter)
     {
@@ -682,7 +612,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Determines whether a parameter carries the <c>[Authorize]</c> attribute.</summary>
-    /// <param name="parameter">The parameter to inspect.</param>
+    /// <param name = "parameter">The parameter to inspect.</param>
     /// <returns><see langword="true"/> when the parameter has the attribute.</returns>
     private static bool HasAuthorizeAttribute(IParameterSymbol parameter)
     {
@@ -698,7 +628,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Determines whether a parameter carries the <c>[Body]</c> attribute.</summary>
-    /// <param name="parameter">The parameter to inspect.</param>
+    /// <param name = "parameter">The parameter to inspect.</param>
     /// <returns><see langword="true"/> when the parameter has the attribute.</returns>
     private static bool HasBodyAttribute(IParameterSymbol parameter)
     {
@@ -714,8 +644,8 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Reports RF012 when a multipart method also declares a <c>[Body]</c> parameter.</summary>
-    /// <param name="method">The Refit method.</param>
-    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name = "method">The Refit method.</param>
+    /// <param name = "reportDiagnostic">The diagnostic reporting callback.</param>
     private static void ReportMultipartBodyDiagnostic(IMethodSymbol method, Action<Diagnostic> reportDiagnostic)
     {
         if (!HasMultipartAttribute(method))
@@ -730,17 +660,13 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            reportDiagnostic(Diagnostic.Create(
-                DiagnosticDescriptors.MultipartBodyParameter,
-                FirstLocation(parameter),
-                method.ContainingType.Name,
-                method.Name));
+            reportDiagnostic(Diagnostic.Create(DiagnosticDescriptors.MultipartBodyParameter, FirstLocation(parameter), method.ContainingType.Name, method.Name));
             return;
         }
     }
 
     /// <summary>Determines whether a method carries the <c>[Multipart]</c> attribute.</summary>
-    /// <param name="method">The method to inspect.</param>
+    /// <param name = "method">The method to inspect.</param>
     /// <returns><see langword="true"/> when the method has the attribute.</returns>
     private static bool HasMultipartAttribute(IMethodSymbol method)
     {
@@ -756,34 +682,38 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>Determines whether a header collection parameter matches runtime semantics.</summary>
-    /// <param name="type">The parameter type.</param>
+    /// <param name = "type">The parameter type.</param>
     /// <returns><see langword="true"/> when the type is supported.</returns>
     private static bool IsSupportedHeaderCollectionType(ITypeSymbol type) =>
-        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-        == "global::System.Collections.Generic.IDictionary<string, string>";
+        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) == "global::System.Collections.Generic.IDictionary<string, string>";
 
     /// <summary>Gets the first source location for a symbol.</summary>
-    /// <param name="symbol">The symbol.</param>
+    /// <param name = "symbol">The symbol.</param>
     /// <returns>The first available location, or <see langword="null"/>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Location? FirstLocation(ISymbol symbol) =>
-        symbol.Locations.FirstOrDefault();
+    private static Location? FirstLocation(ISymbol symbol) => symbol.Locations.FirstOrDefault();
 
     /// <summary>Bundles the resolved symbols and options shared by one compilation's analysis.</summary>
-    /// <param name="HttpMethodAttribute">The Refit HTTP method base attribute.</param>
-    /// <param name="DisposableInterface">The <see cref="IDisposable"/> interface symbol.</param>
-    /// <param name="FormattableInterface">The <see cref="IFormattable"/> interface symbol, if available.</param>
-    /// <param name="ReturnTypeAdapterInterface">The <c>Refit.IReturnTypeAdapter`2</c> symbol, if available.</param>
-    /// <param name="ReturnTypeAdapters">The discovered <c>IReturnTypeAdapter</c> implementations, kept in lockstep with the generator.</param>
-    /// <param name="ReportGeneratedRequestBuildingFallback">Whether the RF006 fallback diagnostic is enabled.</param>
-    /// /// <param name="IndexedCollectionFormatValue">The underlying integer value of <c>CollectionFormat.Indexed</c> resolved once from the
-    /// compilation, or <see langword="null"/> when the <c>Refit.CollectionFormat</c> type cannot be found.</param>
+    /// <param name = "HttpMethodAttribute">The Refit HTTP method base attribute.</param>
+    /// <param name = "DisposableInterface">The <see cref = "IDisposable"/> interface symbol.</param>
+    /// <param name = "FormattableInterface">The <see cref = "IFormattable"/> interface symbol, if available.</param>
+    /// <param name = "ReturnTypeAdapterInterface">The <c>Refit.IReturnTypeAdapter`2</c> symbol, if available.</param>
+    /// <param name = "ReturnTypeAdapters">The discovered <c>IReturnTypeAdapter</c> implementations, kept in lockstep with the generator.</param>
+    /// <param name = "Generation">The consumer's request generation options.</param>
     private readonly record struct CompilationAnalysisState(
         INamedTypeSymbol HttpMethodAttribute,
         INamedTypeSymbol DisposableInterface,
         INamedTypeSymbol? FormattableInterface,
         INamedTypeSymbol? ReturnTypeAdapterInterface,
         INamedTypeSymbol[] ReturnTypeAdapters,
-        bool ReportGeneratedRequestBuildingFallback,
-        int? IndexedCollectionFormatValue = null);
+        RequestGenerationOptions Generation);
+
+    /// <summary>Stores the consumer options needed by request validation.</summary>
+    /// <param name="GeneratedRequestBuilding">Whether requests are generated inline.</param>
+    /// <param name="SourceGeneratorEnabled">Whether source generation is enabled.</param>
+    /// <param name="IndexedCollectionFormatValue">The resolved indexed collection format value.</param>
+    private readonly record struct RequestGenerationOptions(
+        bool GeneratedRequestBuilding,
+        bool SourceGeneratorEnabled,
+        int? IndexedCollectionFormatValue);
 }

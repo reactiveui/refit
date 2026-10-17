@@ -39,7 +39,7 @@ public class LiteralEmissionBenchmarks
     /// <returns>The emitted literal.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public string NullableCSharpLiteral() => Emitter.ToNullableCSharpStringLiteral(_cleanValue);
+    public string NullableCSharpLiteral() => LiteralEmissionHelpers.ToNullableCSharpStringLiteral(_cleanValue);
 
     /// <summary>Escapes a clean value for XML documentation (no-escape fast path).</summary>
     /// <returns>The emitted documentation text.</returns>

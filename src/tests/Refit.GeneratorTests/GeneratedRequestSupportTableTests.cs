@@ -1,8 +1,8 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-extern alias RefitAnalyzers;
 
+extern alias RefitAnalyzers;
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -153,7 +153,7 @@ public sealed partial class GeneratedRequestSupportTableTests
     public async Task JsonMetadataColumnMatchesTheParsedRequest(SupportRow row)
     {
         var request = ClassifyExample(row.Example);
-        var expected = request.CanGenerateInline ? DescribeJsonMetadata(request) : NotApplicable;
+        var expected = request.Generation.CanGenerateInline ? DescribeJsonMetadata(request) : NotApplicable;
 
         await Assert.That(row.JsonMetadata).IsEqualTo(expected);
     }
@@ -185,7 +185,7 @@ public sealed partial class GeneratedRequestSupportTableTests
     private static string DescribeJsonMetadata(in RequestModel request)
     {
         var supplied = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var parameter in request.Parameters)
+        foreach (var parameter in request.Bindings.Parameters)
         {
             if (parameter.Kind == RequestParameterKind.JsonTypeInfo)
             {
@@ -194,7 +194,7 @@ public sealed partial class GeneratedRequestSupportTableTests
         }
 
         var parts = new List<string>();
-        foreach (var parameter in request.Parameters)
+        foreach (var parameter in request.Bindings.Parameters)
         {
             if (DescribeBody(parameter, supplied) is { } body)
             {
@@ -202,9 +202,9 @@ public sealed partial class GeneratedRequestSupportTableTests
             }
         }
 
-        if (IsJsonReply(request.DeserializedResultType))
+        if (IsJsonReply(request.Return.DeserializedResultType))
         {
-            parts.Add($"reply {Describe(request.DeserializedResultType, supplied)}");
+            parts.Add($"reply {Describe(request.Return.DeserializedResultType, supplied)}");
         }
 
         return parts.Count == 0 ? NoJson : string.Join(", ", parts);
@@ -217,13 +217,13 @@ public sealed partial class GeneratedRequestSupportTableTests
     private static string? DescribeBody(in RequestParameterModel parameter, HashSet<string> supplied) =>
         parameter.Kind != RequestParameterKind.Body
             ? null
-            : parameter.BodySerializationMethod switch
+            : parameter.Body.BodySerializationMethod switch
             {
                 "UrlEncoded" => null,
-                "JsonLines" => $"JSON Lines {Describe(parameter.JsonLinesElementType!, supplied)}",
-                "Default" when parameter.Type == "string" => null,
-                _ when parameter.Type == "global::System.IO.Stream" => null,
-                _ => $"body {Describe(parameter.Type, supplied)}",
+                "JsonLines" => $"JSON Lines {Describe(parameter.Body.JsonLinesElementType!, supplied)}",
+                "Default" when parameter.Identity.Type == "string" => null,
+                _ when parameter.Identity.Type == "global::System.IO.Stream" => null,
+                _ => $"body {Describe(parameter.Identity.Type, supplied)}",
             };
 
     /// <summary>Determines whether a reply is read through a JSON serializer.</summary>
@@ -254,14 +254,14 @@ public sealed partial class GeneratedRequestSupportTableTests
             .GetMembers()
             .OfType<IMethodSymbol>()
             .Single();
-        var adapterInterface = Parser.ResolveReturnTypeAdapterInterface(compilation);
-        return Parser.ClassifyRequest(
+        var adapterInterface = ReturnTypeAdapterParsing.ResolveReturnTypeAdapterInterface(compilation);
+        return InlineRequestClassification.ClassifyRequest(
             method,
             compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")!,
             compilation.GetTypeByMetadataName("System.IFormattable"),
             adapterInterface,
-            Parser.DiscoverReturnTypeAdapters(compilation, adapterInterface, CancellationToken.None),
-            Parser.ResolveIndexedCollectionFormatValue(compilation));
+            ReturnTypeAdapterParsing.DiscoverReturnTypeAdapters(compilation, adapterInterface, CancellationToken.None),
+            QueryParameterParsing.ResolveIndexedCollectionFormatValue(compilation));
     }
 
     /// <summary>Wraps an example member in the table's supporting declarations.</summary>

@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Refit.Generator.Benchmarks;
 
-/// <summary>Profiles the parser transform (<see cref="Parser.GenerateInterfaceStubs"/>) in isolation from the driver.</summary>
+/// <summary>Profiles the parser transform in isolation from the driver.</summary>
 /// <remarks>This is the semantic-model-bound half of a cold run: symbol resolution, member walks, and request parsing.
 /// It excludes syntax-provider collection and driver bookkeeping, so it attributes cost to the generator's own parse.</remarks>
 [System.Diagnostics.DebuggerDisplay("{Size}")]
@@ -41,5 +41,5 @@ public class ParserTransformBenchmarks
     /// <returns>The parsed interface count, consumed so the transform is not elided and no model is boxed.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
-    public int Parse() => GeneratorHarness.Parse(_compilation, _candidates).Interfaces.Count;
+    public int Parse() => GeneratorHarness.Parse(_compilation, _candidates).Interfaces.Length;
 }

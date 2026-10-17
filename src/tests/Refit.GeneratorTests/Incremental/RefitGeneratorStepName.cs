@@ -6,9 +6,6 @@ namespace Refit.GeneratorTests.Incremental;
 /// <summary>Names of the tracked steps emitted by the Refit generator.</summary>
 internal static class RefitGeneratorStepName
 {
-    /// <summary>The name of the diagnostics reporting step.</summary>
-    internal const string ReportDiagnostics = "ReportDiagnostics";
-
     /// <summary>The name of the Refit build step.</summary>
     internal const string BuildRefit = "BuildRefit";
 }

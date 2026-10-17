@@ -150,6 +150,12 @@ internal partial class RequestBuilderImplementation
         object[] paramList,
         List<QueryParameterEntry>? queryParamsToAdd)
     {
+        if (restMethod.AllowRelativeUrl)
+        {
+            AssignRelativeOrAbsoluteRequestUri(ret, paramList[restMethod.UrlParameterInfo], queryParamsToAdd);
+            return;
+        }
+
         var urlString = GeneratedRequestRunner.RequireAbsoluteUrl(paramList[restMethod.UrlParameterInfo]);
 
         var builder = new UriBuilder(new Uri(urlString, UriKind.Absolute));
@@ -160,6 +166,37 @@ internal partial class RequestBuilderImplementation
             : null;
 
         ret.RequestUri = builder.Uri;
+    }
+
+    /// <summary>Appends query values to an opt-in URL reference while retaining its fragment.</summary>
+    /// <param name="request">The outgoing request.</param>
+    /// <param name="value">The supplied URL value.</param>
+    /// <param name="parameters">The query values to append.</param>
+    internal static void AssignRelativeOrAbsoluteRequestUri(
+        HttpRequestMessage request,
+        object? value,
+        List<QueryParameterEntry>? parameters)
+    {
+        var url = GeneratedRequestRunner.RequireRelativeOrAbsoluteUrl(value);
+        var fragmentIndex = url.IndexOf('#');
+        var fragment = fragmentIndex < 0 ? string.Empty : url[fragmentIndex..];
+        var query = new GeneratedQueryStringBuilder(fragmentIndex < 0 ? url : url[..fragmentIndex]);
+        if (parameters is not null)
+        {
+            foreach (var entry in parameters)
+            {
+                if (entry.KeyPreEscaped)
+                {
+                    query.AddPreEscapedKey(entry.Key, entry.Value, false);
+                }
+                else
+                {
+                    query.Add(entry.Key, entry.Value, false);
+                }
+            }
+        }
+
+        request.RequestUri = new(query.Build() + fragment, UriKind.RelativeOrAbsolute);
     }
 
     /// <summary>Parses a raw query string into the pending query parameter list, ahead of any already-collected entries.</summary>
@@ -442,7 +479,7 @@ internal partial class RequestBuilderImplementation
         }
 
         var props = GetCachedQueryProperties(@object.GetType());
-        var kvps = new List<QueryMapEntry>(props.Length);
+        List<QueryMapEntry> kvps = [with(props.Length)];
         for (var i = 0; i < props.Length; i++)
         {
             AppendPropertyToQueryMap(@object, in props[i], kvps, delimiter, parameterInfo, collectionFormat);
@@ -461,7 +498,7 @@ internal partial class RequestBuilderImplementation
         string? delimiter = null,
         CollectionFormat? collectionFormat = null)
     {
-        var kvps = new List<QueryMapEntry>();
+        List<QueryMapEntry> kvps = [];
 
         foreach (var key in dictionary.Keys)
         {
@@ -570,10 +607,11 @@ internal partial class RequestBuilderImplementation
         // wins, then the configured content serializer's field name ([JsonPropertyName] for System.Text.Json,
         // [JsonProperty] for Newtonsoft.Json) unless disabled, then the URL parameter key formatter over the CLR name.
         var name = aliasAttribute?.Name
-            ?? (_settings.HonorContentSerializerPropertyNamesInQuery
-                ? _settings.ContentSerializer.GetFieldNameForProperty(propertyInfo)
-                : null)
-            ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
+                   ?? queryAttribute?.Name
+                   ?? (_settings.HonorContentSerializerPropertyNamesInQuery
+                       ? _settings.ContentSerializer.GetFieldNameForProperty(propertyInfo)
+                       : null)
+                   ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
 
         // Honor a property-level [Query(delimiter, prefix)], matching how form-encoded fields are named.
         return queryAttribute is not null && !string.IsNullOrWhiteSpace(queryAttribute.Prefix)

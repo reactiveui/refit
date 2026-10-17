@@ -26,6 +26,11 @@ internal static class RequestBuilderTestExtensions
                 var task = (Task)factory(
                     new(testHttpMessageHandler) { BaseAddress = new(baseAddress) },
                     paramList)!;
+                if (task is Task<HttpRequestMessage> requestTask)
+                {
+                    return await requestTask;
+                }
+
                 await task;
                 return testHttpMessageHandler.RequestMessage!;
             };

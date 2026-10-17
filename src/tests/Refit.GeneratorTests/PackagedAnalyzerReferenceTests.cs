@@ -1,7 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Collections.Frozen;
+
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 
@@ -22,20 +22,21 @@ namespace Refit.GeneratorTests;
 public class PackagedAnalyzerReferenceTests
 {
     /// <summary>The facade versions the compiler host supplies, keyed by simple assembly name.</summary>
-    private static readonly FrozenDictionary<string, Version> HostSuppliedFacades =
-        new Dictionary<string, Version> { ["System.Memory"] = new(4, 0, 1, 2), ["System.Collections.Immutable"] = new(7, 0, 0, 0) }
-            .ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Version> _hostSuppliedFacades =
+        new(StringComparer.OrdinalIgnoreCase) { ["System.Memory"] = new(4, 0, 1, 2), ["System.Collections.Immutable"] = new(7, 0, 0, 0) };
 
     /// <summary>Verifies every declared analyzer was built, so the reference check cannot pass vacuously.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task EveryPackagedAnalyzerAssemblyIsBuilt()
     {
-        var missing = RefitPackageLayout.GetPackagedAnalyzers()
-            .Select(RefitPackageLayout.ResolveBuildOutput)
-            .Where(static path => !File.Exists(path))
-            .Order(StringComparer.Ordinal)
-            .ToArray();
+        string[] missing =
+        [
+            .. RefitPackageLayout.GetPackagedAnalyzers()
+                .Select(RefitPackageLayout.ResolveBuildOutput)
+                .Where(static path => !File.Exists(path))
+                .Order(StringComparer.Ordinal)
+        ];
 
         await Assert.That(missing).IsEmpty();
     }
@@ -50,7 +51,7 @@ public class PackagedAnalyzerReferenceTests
     {
         var minimumCompilerVersion = Version.Parse(AnalyzerPackagingTests.ReadMinimumCompilerVersion());
         var roslynVersion = new Version(minimumCompilerVersion.Major, minimumCompilerVersion.Minor, 0, 0);
-        var unsupported = new List<string>();
+        List<string> unsupported = [];
 
         foreach (var analyzer in RefitPackageLayout.GetPackagedAnalyzers())
         {
@@ -66,7 +67,7 @@ public class PackagedAnalyzerReferenceTests
                 {
                     "netstandard" => true,
                     _ when name.StartsWith("Microsoft.CodeAnalysis", StringComparison.Ordinal) => version == roslynVersion,
-                    _ => HostSuppliedFacades.TryGetValue(name, out var supportedVersion) && version == supportedVersion,
+                    _ => _hostSuppliedFacades.TryGetValue(name, out var supportedVersion) && version == supportedVersion,
                 };
 
                 if (!supported)
@@ -76,7 +77,7 @@ public class PackagedAnalyzerReferenceTests
             }
         }
 
-        await Assert.That(unsupported.Order(StringComparer.Ordinal).ToArray()).IsEmpty();
+        await Assert.That((string[])[.. unsupported.Order(StringComparer.Ordinal)]).IsEmpty();
     }
 
     /// <summary>Reads the assembly references recorded in a managed assembly's metadata.</summary>
@@ -87,7 +88,7 @@ public class PackagedAnalyzerReferenceTests
         using var stream = File.OpenRead(path);
         using var portableExecutable = new PEReader(stream);
         var metadata = portableExecutable.GetMetadataReader();
-        var references = new List<(string Name, Version Version)>();
+        List<(string Name, Version Version)> references = [];
 
         foreach (var handle in metadata.AssemblyReferences)
         {

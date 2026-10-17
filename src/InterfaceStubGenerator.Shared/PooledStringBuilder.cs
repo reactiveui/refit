@@ -10,7 +10,7 @@ namespace Refit.Generator;
 /// <remarks>The emitter builds many transient fragment strings. Backing accumulation with a pooled <c>char[]</c> lets the
 /// underlying buffer be reused across emissions instead of allocating fresh <see cref="System.Text.StringBuilder"/>
 /// chunks each time. The final <see cref="ToString"/> returns the buffer to the pool, so an instance is single-use.</remarks>
-internal sealed partial class PooledStringBuilder
+internal sealed class PooledStringBuilder
 {
     /// <summary>The default rented capacity, sized to hold a typical generated statement block without growing.</summary>
     private const int DefaultCapacity = 256;
@@ -54,6 +54,18 @@ internal sealed partial class PooledStringBuilder
 
     /// <summary>Gets the number of characters written so far.</summary>
     internal int Length => _pos;
+
+    /// <summary>Materializes the accumulated content into a string and returns the pooled buffer.</summary>
+    /// <returns>The accumulated string.</returns>
+    public override string ToString()
+    {
+        var result = _pos == 0 ? string.Empty : new string(_buffer, 0, _pos);
+        var toReturn = _buffer;
+        _buffer = [];
+        _pos = 0;
+        ReturnBuffer(toReturn);
+        return result;
+    }
 
     /// <summary>Appends a string.</summary>
     /// <param name="value">The string to append, or null.</param>

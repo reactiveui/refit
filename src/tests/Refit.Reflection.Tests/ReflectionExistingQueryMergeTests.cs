@@ -12,6 +12,25 @@ namespace Refit.Reflection.Tests;
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class ReflectionExistingQueryMergeTests
 {
+    /// <summary>Verifies pre-escaped query keys are appended once before an optional relative URL fragment.</summary>
+    /// <param name="target">The relative URI reference.</param>
+    /// <param name="expected">The URI with the appended query values.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("callback?code=a%2Fb#section", "callback?code=a%2Fb&filter%20key=value%20%2F&token=a%20b#section")]
+    [Arguments("callback", "callback?filter%20key=value%20%2F&token=a%20b")]
+    public async Task RelativeUrlQuery_PreservesPreEscapedKeys(string target, string expected)
+    {
+        using var request = new HttpRequestMessage();
+        RequestBuilderImplementation.AssignRelativeOrAbsoluteRequestUri(
+            request,
+            target,
+            [new("filter%20key", "value /", true), new("token", "a b")]);
+
+        await Assert.That(request.RequestUri!.OriginalString).IsEqualTo(expected);
+        await Assert.That(request.RequestUri.IsAbsoluteUri).IsFalse();
+    }
+
     /// <summary>Verifies an existing single query parameter is preserved before the appended one.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
