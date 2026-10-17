@@ -374,53 +374,18 @@ public sealed partial class QueryRequestBuildingLiveTests
         const string expectedPositionsUri = "/base/accounts/10/positions?ID=20";
         using var harness = LiveQueryHarness.Create();
 
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingPathAndQuery",
-            [accountId, filterId],
-            expectedPositionsUri);
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingPathAndQuery",
-            [accountId, null],
-            "/base/accounts/10/positions");
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingQueryThenPath",
-            [filterId, accountId],
-            expectedPositionsUri);
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingWithoutQueryAttribute",
-            [filterId, accountId],
-            expectedPositionsUri);
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingDualPathPlaceholders",
-            ["core", accountId, filterId],
-            "/base/accounts/core/10/positions/20/repeat/10");
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingRoundTripPathAndQuery",
-            ["docs", "draft", "a/b"],
-            "/base/files/docs/a/b?REST=draft");
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingSiblingClaimedByOtherPlaceholder",
-            [filterId, accountId],
-            "/base/accounts/10/positions/20");
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingWhitespaceFormatQuery",
-            [filterId, accountId],
-            expectedPositionsUri);
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingBothQuery",
-            [filterId, accountId],
-            expectedPositionsUri);
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingBodyAndRoute",
-            ["payload", accountId],
-            "/base/items/10");
-        _ = await harness.AssertParityAsync(
-            "CaseDifferingRouteAndCancellationToken",
-            ["abc", CancellationToken.None],
-            "/base/tokens/abc");
-        _ = await harness.AssertParityAsync(
-            "HeaderAndPath",
-            ["acme"],
-            "/base/tenant/acme");
+        _ = await harness.AssertParityAsync("CaseDifferingPathAndQuery", [accountId, filterId], expectedPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingPathAndQuery", [accountId, null], "/base/accounts/10/positions");
+        _ = await harness.AssertParityAsync("CaseDifferingQueryThenPath", [filterId, accountId], expectedPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingWithoutQueryAttribute", [filterId, accountId], expectedPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingDualPathPlaceholders", ["core", accountId, filterId], "/base/accounts/core/10/positions/20/repeat/10");
+        _ = await harness.AssertParityAsync("CaseDifferingRoundTripPathAndQuery", ["docs", "draft", "a/b"], "/base/files/docs/a/b?REST=draft");
+        _ = await harness.AssertParityAsync("CaseDifferingSiblingClaimedByOtherPlaceholder", [filterId, accountId], "/base/accounts/10/positions/20");
+        _ = await harness.AssertParityAsync("CaseDifferingWhitespaceFormatQuery", [filterId, accountId], expectedPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingBothQuery", [filterId, accountId], expectedPositionsUri);
+        _ = await harness.AssertParityAsync("CaseDifferingBodyAndRoute", ["payload", accountId], "/base/items/10");
+        _ = await harness.AssertParityAsync("CaseDifferingRouteAndCancellationToken", ["abc", CancellationToken.None], "/base/tokens/abc");
+        _ = await harness.AssertParityAsync("HeaderAndPath", ["acme"], "/base/tenant/acme");
+        _ = await harness.AssertParityAsync("CaseDifferingMixedOrdinaryAndRoundTrip", ["a/b", "folder"], "/base/files/folder/a/b");
     }
 }

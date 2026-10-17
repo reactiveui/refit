@@ -320,6 +320,9 @@ public sealed partial class QueryRequestBuildingLiveTests
 
                 [Get("/tenant/{id}")]
                 Task<string> HeaderAndPath([Header("X-Tenant")] string id);
+
+                [Get("/files/{Id}/{**ID}")]
+                Task<string> CaseDifferingMixedOrdinaryAndRoundTrip([AliasAs("ID")] string catchAllId, string id);
             }
             """;
 

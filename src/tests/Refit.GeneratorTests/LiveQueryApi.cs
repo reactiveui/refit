@@ -323,5 +323,12 @@ public static partial class LiveQueryApi
         /// <returns>The response body.</returns>
         [Get("/tenant/{id}")]
         Task<string> HeaderAndPath([Header("X-Tenant")] string id);
+
+        /// <summary>Sends mixed ordinary and round-trip placeholders whose names differ only by case (#2356).</summary>
+        /// <param name="catchAllId">The catch-all path value bound to <c>{**ID}</c>.</param>
+        /// <param name="id">The segment value bound to <c>{Id}</c>.</param>
+        /// <returns>The response body.</returns>
+        [Get("/files/{Id}/{**ID}")]
+        Task<string> CaseDifferingMixedOrdinaryAndRoundTrip([AliasAs("ID")] string catchAllId, string id);
     }
 }

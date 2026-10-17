@@ -158,11 +158,16 @@ internal static partial class Parser
         for (var i = 0; i < occurrences.Length; i++)
         {
             var occurrence = occurrences[i];
-            var placeholderName = roundTrip && occurrence.Name.StartsWith("**", StringComparison.Ordinal)
+            if (occurrence.Name.StartsWith("**", StringComparison.Ordinal) != roundTrip)
+            {
+                continue;
+            }
+
+            var placeholderName = roundTrip
                 ? occurrence.Name[roundTripPrefixLength..]
                 : occurrence.Name;
             if (!string.Equals(placeholderName, name, StringComparison.OrdinalIgnoreCase)
-                || !WinsPlaceholderOccurrence(parameters, parameterIndex, placeholderName, occurrences, roundTrip))
+                || !WinsPlaceholderOccurrence(parameters, parameterIndex, placeholderName, occurrences))
             {
                 continue;
             }
@@ -178,14 +183,12 @@ internal static partial class Parser
     /// <param name="parameterIndex">The index of the parameter being checked.</param>
     /// <param name="placeholderName">The unprefixed placeholder name from the route template.</param>
     /// <param name="occurrences">The placeholder occurrences in the URL.</param>
-    /// <param name="roundTrip">Whether the placeholder is a round-trip (<c>{**name}</c>) placeholder.</param>
     /// <returns><see langword="true"/> when the parameter at <paramref name="parameterIndex"/> wins the placeholder.</returns>
     internal static bool WinsPlaceholderOccurrence(
         in ImmutableArray<IParameterSymbol> parameters,
         int parameterIndex,
         string placeholderName,
-        ReadOnlySpan<PathPlaceholderOccurrence> occurrences,
-        bool roundTrip)
+        ReadOnlySpan<PathPlaceholderOccurrence> occurrences)
     {
         var bestIndex = -1;
         var bestRank = -1;
@@ -203,7 +206,7 @@ internal static partial class Parser
                 continue;
             }
 
-            var rank = GetRouteCandidateRank(candidate, candidateName, placeholderName, occurrences, roundTrip);
+            var rank = GetRouteCandidateRank(candidate, candidateName, placeholderName, occurrences);
             if (rank <= bestRank)
             {
                 continue;
@@ -221,14 +224,12 @@ internal static partial class Parser
     /// <param name="candidateName">The candidate parameter's resolved URL name.</param>
     /// <param name="placeholderName">The unprefixed placeholder name from the route template.</param>
     /// <param name="occurrences">The placeholder occurrences in the URL.</param>
-    /// <param name="roundTrip">Whether the placeholder is a round-trip (<c>{**name}</c>) placeholder.</param>
     /// <returns>The priority rank (0 to 4, higher is preferred).</returns>
     internal static int GetRouteCandidateRank(
         IParameterSymbol candidate,
         string candidateName,
         string placeholderName,
-        ReadOnlySpan<PathPlaceholderOccurrence> occurrences,
-        bool roundTrip)
+        ReadOnlySpan<PathPlaceholderOccurrence> occurrences)
     {
         const int exactNonQueryRank = 4;
         const int nonQueryFallbackRank = 3;
@@ -245,7 +246,7 @@ internal static partial class Parser
             return exactNonQueryRank;
         }
 
-        return HasExactCasePlaceholder(occurrences, candidateName, roundTrip)
+        return HasExactCasePlaceholder(occurrences, candidateName)
             ? nonQueryClaimedByOtherPlaceholderRank
             : nonQueryFallbackRank;
     }
@@ -271,19 +272,17 @@ internal static partial class Parser
     /// <summary>Determines whether the route template contains any placeholder matching <paramref name="urlName"/> with exact ordinal casing.</summary>
     /// <param name="occurrences">The placeholder occurrences in the URL.</param>
     /// <param name="urlName">The parameter's resolved URL name.</param>
-    /// <param name="roundTrip">Whether to inspect round-trip (<c>{**name}</c>) placeholders.</param>
     /// <returns><see langword="true"/> when an exact-case placeholder exists in the template.</returns>
     internal static bool HasExactCasePlaceholder(
         ReadOnlySpan<PathPlaceholderOccurrence> occurrences,
-        string urlName,
-        bool roundTrip)
+        string urlName)
     {
         const int roundTripPrefixLength = 2;
 
         for (var i = 0; i < occurrences.Length; i++)
         {
             var occurrenceName = occurrences[i].Name;
-            var candidateName = roundTrip && occurrenceName.StartsWith("**", StringComparison.Ordinal)
+            var candidateName = occurrenceName.StartsWith("**", StringComparison.Ordinal)
                 ? occurrenceName[roundTripPrefixLength..]
                 : occurrenceName;
             if (string.Equals(candidateName, urlName, StringComparison.Ordinal))

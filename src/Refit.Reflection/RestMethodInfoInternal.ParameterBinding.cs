@@ -157,7 +157,7 @@ internal partial class RestMethodInfoInternal
             if (validation.Param.Count < parameterInfo.Length)
             {
                 var originalName = isRoundTripping ? rawOriginalName[roundTripPrefix.Length..] : rawOriginalName;
-                value = ResolveSiblingRouteParameter(parameterInfo, value, originalName, relativePath, isRoundTripping);
+                value = ResolveSiblingRouteParameter(parameterInfo, value, originalName, relativePath);
             }
 
             AddStandardParameter(
@@ -197,14 +197,12 @@ internal partial class RestMethodInfoInternal
     /// <param name="fallback">The parameter selected from the lower-cased validation dictionary.</param>
     /// <param name="placeholderName">The original-case placeholder name from the route template.</param>
     /// <param name="relativePath">The relative URL path template.</param>
-    /// <param name="isRoundTripping">Whether the placeholder is a round-trip (<c>{**name}</c>) placeholder.</param>
     /// <returns>The winning method parameter for the placeholder.</returns>
     internal static ParameterInfo ResolveSiblingRouteParameter(
         ParameterInfo[] parameterInfo,
         ParameterInfo fallback,
         string placeholderName,
-        string relativePath,
-        bool isRoundTripping)
+        string relativePath)
     {
         var best = fallback;
         var bestRank = -1;
@@ -222,7 +220,7 @@ internal partial class RestMethodInfoInternal
                 continue;
             }
 
-            var rank = GetRouteCandidateRank(candidate, candidateName, placeholderName, relativePath, isRoundTripping);
+            var rank = GetRouteCandidateRank(candidate, candidateName, placeholderName, relativePath);
             if (rank <= bestRank)
             {
                 continue;
@@ -240,14 +238,12 @@ internal partial class RestMethodInfoInternal
     /// <param name="candidateName">The candidate parameter's resolved URL name.</param>
     /// <param name="placeholderName">The original-case placeholder name from the route template.</param>
     /// <param name="relativePath">The relative URL path template.</param>
-    /// <param name="isRoundTripping">Whether the placeholder is a round-trip (<c>{**name}</c>) placeholder.</param>
     /// <returns>The priority rank (0 to 4, higher is preferred).</returns>
     internal static int GetRouteCandidateRank(
         ParameterInfo candidate,
         string candidateName,
         string placeholderName,
-        string relativePath,
-        bool isRoundTripping)
+        string relativePath)
     {
         const int exactNonQueryRank = 4;
         const int nonQueryFallbackRank = 3;
@@ -264,7 +260,7 @@ internal partial class RestMethodInfoInternal
             return exactNonQueryRank;
         }
 
-        return HasExactCasePlaceholderInPath(relativePath, candidateName, isRoundTripping)
+        return HasExactCasePlaceholderInPath(relativePath, candidateName)
             ? nonQueryClaimedByOtherPlaceholderRank
             : nonQueryFallbackRank;
     }
@@ -289,12 +285,10 @@ internal partial class RestMethodInfoInternal
     /// <summary>Determines whether the route template contains a placeholder matching <paramref name="urlName"/> with exact ordinal casing.</summary>
     /// <param name="relativePath">The relative URL path template.</param>
     /// <param name="urlName">The parameter's resolved URL name.</param>
-    /// <param name="isRoundTripping">Whether to inspect round-trip (<c>{**name}</c>) placeholders.</param>
     /// <returns><see langword="true"/> when an exact-case placeholder exists in the template.</returns>
     internal static bool HasExactCasePlaceholderInPath(
         string relativePath,
-        string urlName,
-        bool isRoundTripping)
+        string urlName)
     {
         const string roundTripPrefix = "**";
 
@@ -302,7 +296,7 @@ internal partial class RestMethodInfoInternal
         for (var i = 0; i < matches.Count; i++)
         {
             var raw = matches[i].Groups[1].Value;
-            var matchName = isRoundTripping && raw.StartsWith(roundTripPrefix, StringComparison.Ordinal)
+            var matchName = raw.StartsWith(roundTripPrefix, StringComparison.Ordinal)
                 ? raw[roundTripPrefix.Length..]
                 : raw;
             if (string.Equals(matchName, urlName, StringComparison.Ordinal))
