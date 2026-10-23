@@ -64,8 +64,8 @@
     <PackageVersion Include="Serilog" Version="4.4.0"/>
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1"/>
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0"/>
-    <PackageVersion Include="OpenTelemetry" Version="1.20.0"/>
-    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.20.0"/>
+    <PackageVersion Include="OpenTelemetry" Version="1.20.1"/>
+    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.20.1"/>
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0"/>
   </ItemGroup>
 
