@@ -66,7 +66,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0"/>
     <PackageVersion Include="OpenTelemetry" Version="1.20.0"/>
     <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.20.0"/>
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0"/>
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.1"/>
   </ItemGroup>
 
   <!-- Legacy System.* compatibility packages, scoped to the net4*/netstandard targets.
