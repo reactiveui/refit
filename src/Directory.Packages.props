@@ -21,7 +21,7 @@
 
   <ItemGroup Label="Build And Versioning">
     <PackageVersion Include="MinVer" Version="8.0.0"/>
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.402"/>
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403"/>
   </ItemGroup>
 
   <ItemGroup Label="Analyzers">
