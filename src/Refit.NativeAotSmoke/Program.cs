@@ -88,6 +88,20 @@ catch (Exception ex) when (ex.GetBaseException() is NotSupportedException)
     // Expected: the generated JSON context is the only metadata source.
 }
 
+// The context does not describe ProblemDetails either, but a problem reply must still become a validation exception.
+try
+{
+    await api.GetProblemAsync().ConfigureAwait(false);
+    throw new InvalidOperationException("The AOT problem reply did not fault.");
+}
+catch (ValidationApiException ex)
+{
+    if (ex.Content?.Errors["name"][0] != "Name is required." || ex.Content.Extensions["traceId"] as string != "smoke-trace")
+    {
+        throw new InvalidOperationException("The AOT problem details were not read correctly.");
+    }
+}
+
 // A missed generated-client lookup forces the interface assembly's module initializer and looks again, which is what
 // rescues runtimes that have not run it yet. Prove that forcing path is reachable under Native AOT.
 string? missingClientMessage = null;
