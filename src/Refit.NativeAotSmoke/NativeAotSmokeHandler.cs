@@ -39,6 +39,7 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
             "/uploads" => HandleUploadAsync(request, cancellationToken),
             "/search" => Task.FromResult(HandleSearch(request)),
             "/status" or "/unregistered" => Task.FromResult(Json("""{"name":"native-aot"}""")),
+            "/problem" => Task.FromResult(Problem(request)),
             _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound)),
         };
 
@@ -47,6 +48,19 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
     /// <returns>The constructed JSON response message.</returns>
     private static HttpResponseMessage Json(string content) =>
         new(HttpStatusCode.OK) { Content = new StringContent(content, Encoding.UTF8, "application/json") };
+
+    /// <summary>Builds a bad request response with a problem details body.</summary>
+    /// <param name="request">The request being answered.</param>
+    /// <returns>The constructed problem response message.</returns>
+    private static HttpResponseMessage Problem(HttpRequestMessage request) =>
+        new(HttpStatusCode.BadRequest)
+        {
+            RequestMessage = request,
+            Content = new StringContent(
+                """{"title":"Invalid","status":400,"errors":{"name":["Name is required."]},"traceId":"smoke-trace"}""",
+                Encoding.UTF8,
+                "application/problem+json"),
+        };
 
     /// <summary>Serves <c>/todos</c>, recording whether the expected title reached this handler.</summary>
     /// <param name="request">The request to serve.</param>

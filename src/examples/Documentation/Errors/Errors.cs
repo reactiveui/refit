@@ -96,7 +96,7 @@ internal static class Errors
         SampleCheck.Equal(true, read);
     }
 
-    /// <summary>Handles a problem response through the public manual parser.</summary>
+    /// <summary>Handles a problem response, which Refit raises as a validation exception.</summary>
     /// <param name="api">The generated client for the problem route.</param>
     /// <returns>Completion after the problem response is checked.</returns>
     /// <exception cref="InvalidOperationException">The local problem request unexpectedly succeeds.</exception>
@@ -107,21 +107,20 @@ internal static class Errors
             _ = await api.GetProblemAsync(CancellationToken.None);
             throw new InvalidOperationException("The problem reply should throw.");
         }
-        catch (ApiException error)
+        catch (ValidationApiException error)
         {
             ReadProblem(error);
         }
     }
 
     /// <summary>Checks validation entries and extension data without JSON reflection.</summary>
-    /// <param name="error">The HTTP exception retaining the problem body.</param>
-    private static void ReadProblem(ApiException error)
+    /// <param name="error">The validation exception retaining the problem body.</param>
+    private static void ReadProblem(ValidationApiException error)
     {
-        ValidationApiException validation = error as ValidationApiException ?? ValidationApiException.Create(error);
-        ProblemDetails? problem = validation.Content;
+        ProblemDetails? problem = error.Content;
         Console.WriteLine(problem?.Title); // Invalid name
         Console.WriteLine(problem?.Errors["name"][0]); // Name is required.
-        Console.WriteLine(error.Content); // Raw JSON
+        Console.WriteLine(((ApiException)error).Content); // Raw JSON
 
         SampleCheck.Equal((int)HttpStatusCode.BadRequest, problem?.Status);
         SampleCheck.Equal("sample", problem?.Extensions["trace"].ToString());

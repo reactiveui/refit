@@ -63,6 +63,11 @@ public interface INativeAotApi
     [Get("/unregistered")]
     Task<SmokeUnregistered> GetUnregisteredAsync();
 
+    /// <summary>Gets a problem details reply, whose type the JSON context does not describe.</summary>
+    /// <returns>A task that faults with a <see cref="ValidationApiException"/>.</returns>
+    [Get("/problem")]
+    Task GetProblemAsync();
+
     /// <summary>An intentionally reflection-backed method shape proving the generated fallback builds cleanly
     /// under full trimming with IL2026/IL3050 promoted to errors. It is never invoked.</summary>
     /// <param name="filters">A query object whose shape is only known at runtime, so the generator falls back.</param>

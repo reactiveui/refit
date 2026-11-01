@@ -54,9 +54,9 @@ internal static class ContextClientSample
             _ = await api.PlaceOrderAsync(new("Ada", []), CancellationToken.None);
             throw new InvalidOperationException("The shop should reject an order with no lines.");
         }
-        catch (ApiException error)
+        catch (ValidationApiException error)
         {
-            ProblemDetails? problem = ValidationApiException.Create(error).Content;
+            ProblemDetails? problem = error.Content;
             Console.WriteLine(problem?.Errors["lines"][0]); // An order needs at least one line.
             SampleCheck.Equal("An order needs at least one line.", problem?.Errors["lines"][0]);
         }
