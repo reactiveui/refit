@@ -4,7 +4,10 @@
     <PackageDescription>XML content serializer for Refit clients that send or receive XML payloads through System.Xml.Serialization.XmlSerializer.</PackageDescription>
     <PackageTags>refit;rest;http;api-client;xml;xmlserializer;serializer;content-serializer</PackageTags>
     <TargetFrameworks>$(RefitShippingTargets)</TargetFrameworks>
-    <IsTrimmable>true</IsTrimmable>
+    <IsTrimmable>false</IsTrimmable>
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
   </PropertyGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System.Web" />

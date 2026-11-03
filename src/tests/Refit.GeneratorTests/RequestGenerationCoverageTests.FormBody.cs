@@ -132,6 +132,59 @@ public sealed partial class RequestGenerationCoverageTests
         await Assert.That(generated).Contains("new global::Refit.FormFieldNames(null, null, null, \"\")");
     }
 
+    /// <summary>Verifies the descriptor reads serializer names given as named attribute arguments.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UrlEncodedFormBodyDescriptorReadsNamedAttributeArguments()
+    {
+        const string Source =
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using System.Xml.Serialization;
+            using Refit;
+
+            namespace Newtonsoft.Json
+            {
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class JsonPropertyAttribute : System.Attribute
+                {
+                    public string PropertyName { get; set; }
+                }
+            }
+
+            namespace RefitGeneratorTest
+            {
+                public class NamedArgumentForm
+                {
+                    [Newtonsoft.Json.JsonProperty(PropertyName = "newtonsoft_named")]
+                    [XmlElement(ElementName = "xml_named")]
+                    public List<string> Both { get; set; }
+
+                    [XmlAttribute(AttributeName = "attribute_named")]
+                    public List<string> OnlyAttribute { get; set; }
+
+                    [XmlElement(Namespace = "urn:other")]
+                    public List<string> OtherNamedArgument { get; set; }
+                }
+
+                public interface IGeneratedClient
+                {
+                    [Post("/named")]
+                    Task Submit([Body(BodySerializationMethod.UrlEncoded)] NamedArgumentForm form);
+                }
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains("new global::Refit.FormFieldNames(null, null, \"newtonsoft_named\", \"xml_named\")");
+        await Assert.That(generated).Contains("new global::Refit.FormFieldNames(null, null, null, \"attribute_named\")");
+        await Assert.That(generated).Contains("new global::Refit.FormFieldNames(null, null, null, \"\")");
+    }
+
     /// <summary>Verifies an unrolled scalar form body asks the serializer-aware key helper and guards on the name style.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

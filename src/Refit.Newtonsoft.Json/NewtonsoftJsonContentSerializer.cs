@@ -54,14 +54,6 @@ public sealed class NewtonsoftJsonContentSerializer(
 
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
     public HttpContent ToHttpContent<T>(T item) =>
         new StringContent(
             JsonConvert.SerializeObject(item, _jsonSerializerSettings.Value),
@@ -69,14 +61,6 @@ public sealed class NewtonsoftJsonContentSerializer(
             "application/json");
 
     /// <inheritdoc/>
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -120,14 +104,6 @@ public sealed class NewtonsoftJsonContentSerializer(
 
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
