@@ -340,7 +340,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="provider">The underlying attribute provider.</param>
     /// <returns>The cached attribute provider.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ICustomAttributeProvider GetCachedAttributeProvider(ICustomAttributeProvider provider) =>
+    internal static IParameterAttributeProvider GetCachedAttributeProvider(ICustomAttributeProvider provider) =>
         AttributeProviderCache.GetValue(provider, static p => new CachedAttributeProvider(p));
 
     /// <summary>Builds the per-type query-property metadata, reading each property's serialization-ignore, query and

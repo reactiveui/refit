@@ -43,9 +43,9 @@ public class TestUrlFormatter : IUrlParameterFormatter
     /// <param name="type">The declared type of the value.</param>
     /// <returns>The string representation of the value.</returns>
     /// <exception cref="InvalidOperationException"><paramref name="attributeProvider"/> or <paramref name="type"/> does not match the expectation recorded for this invocation.</exception>
-    public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type)
+    public string? Format(object? value, IParameterAttributeProvider attributeProvider, Type type)
     {
-        if (!SameMetadata(attributeProvider, _expectedAttributeProviders[_index]))
+        if (!SameAttributes(attributeProvider, _expectedAttributeProviders[_index]))
         {
             throw new InvalidOperationException(
                 $"Unexpected attribute provider at index {_index}.");
@@ -69,47 +69,24 @@ public class TestUrlFormatter : IUrlParameterFormatter
     }
 
     /// <summary>
-    /// Compares two attribute providers by stable metadata identity rather than reference.
-    /// The runtime's reflection cache can evict and return a different <see cref="ParameterInfo"/>
-    /// (or <see cref="MemberInfo"/>) instance for the same member under memory pressure, so a
-    /// reference comparison is unreliable across separate reflection lookups.
-    /// </summary>
-    /// <param name="actual">The attribute provider received by the formatter.</param>
-    /// <param name="expected">The attribute provider the test expects.</param>
-    /// <returns><see langword="true"/> if both describe the same metadata element.</returns>
-    private static bool SameMetadata(ICustomAttributeProvider actual, ICustomAttributeProvider expected) =>
-        ReferenceEquals(actual, expected)
-            || (actual, expected) switch
-            {
-                (ParameterInfo a, ParameterInfo b) =>
-                    a.Position == b.Position
-                    && a.Member.MetadataToken == b.Member.MetadataToken
-                    && a.Member.Module == b.Member.Module,
-                (MemberInfo a, MemberInfo b) =>
-                    a.MetadataToken == b.MetadataToken && a.Module == b.Module,
-                _ => SameAttributes(actual, expected),
-            };
-
-    /// <summary>
-    /// Compares two providers of different kinds by the attributes they expose. Generated request
-    /// building supplies a synthetic <see cref="GeneratedParameterAttributeProvider"/> instead of the
-    /// reflection <see cref="ParameterInfo"/>, so the formatter matches on the attribute metadata both
-    /// providers carry rather than on the concrete provider type.
+    /// Compares the received provider with the expected reflection element by the attribute types both expose.
+    /// Generated and reflection request building supply different provider types, and the runtime's reflection
+    /// cache can return a different instance for the same member, so identity is not a reliable comparison.
     /// </summary>
     /// <param name="actual">The attribute provider received by the formatter.</param>
     /// <param name="expected">The attribute provider the test expects.</param>
     /// <returns><see langword="true"/> if both expose the same attribute types.</returns>
-    private static bool SameAttributes(ICustomAttributeProvider actual, ICustomAttributeProvider expected)
+    private static bool SameAttributes(IParameterAttributeProvider actual, ICustomAttributeProvider expected)
     {
-        static string[] AttributeTypeNames(ICustomAttributeProvider provider)
+        static string[] Names(IEnumerable<object> attributes)
         {
-            var names = provider.GetCustomAttributes(false)
+            var names = attributes
                 .Select(static attribute => attribute.GetType().FullName ?? string.Empty)
                 .ToArray();
             Array.Sort(names, StringComparer.Ordinal);
             return names;
         }
 
-        return AttributeTypeNames(actual).SequenceEqual(AttributeTypeNames(expected));
+        return Names(actual.GetCustomAttributes(false)).SequenceEqual(Names(expected.GetCustomAttributes(false)));
     }
 }

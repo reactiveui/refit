@@ -4,7 +4,6 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace Refit.Tests;
 
@@ -366,7 +365,7 @@ public partial class RequestBuilderTests
     private sealed class BlankKeyUrlParameterFormatter : DefaultUrlParameterFormatter
     {
         /// <inheritdoc/>
-        public override string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) =>
+        public override string? Format(object? value, IParameterAttributeProvider attributeProvider, Type type) =>
             value is string text && text == BlankDictionaryKey
                 ? " "
                 : base.Format(value, attributeProvider, type);
@@ -376,7 +375,7 @@ public partial class RequestBuilderTests
     private sealed class NullValueUrlParameterFormatter : DefaultUrlParameterFormatter
     {
         /// <inheritdoc/>
-        public override string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) =>
+        public override string? Format(object? value, IParameterAttributeProvider attributeProvider, Type type) =>
             value is string text && text == NullFormattedQueryValue
                 ? null
                 : base.Format(value, attributeProvider, type);
@@ -393,6 +392,6 @@ public partial class RequestBuilderTests
     private sealed class AlwaysNullUrlParameterFormatter : DefaultUrlParameterFormatter
     {
         /// <inheritdoc/>
-        public override string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) => null;
+        public override string? Format(object? value, IParameterAttributeProvider attributeProvider, Type type) => null;
     }
 }

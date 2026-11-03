@@ -181,7 +181,7 @@ public class DefaultUrlParameterFormatter : Refit.IUrlParameterFormatter
     public void AddFormat<TParameter>(string format) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public void AddFormat<TContainer, TParameter>(string format) { }
-    public virtual string? Format(object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+    public virtual string? Format(object? value, Refit.IParameterAttributeProvider attributeProvider, System.Type type) { }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
@@ -252,7 +252,7 @@ public static class GeneratedPaging
     public static System.Uri? ToLink(string? link) { }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-public sealed class GeneratedParameterAttributeProvider : System.Reflection.ICustomAttributeProvider
+public sealed class GeneratedParameterAttributeProvider : Refit.IParameterAttributeProvider
 {
     public GeneratedParameterAttributeProvider(System.Collections.Generic.Dictionary<System.Type, object[]> attributes) { }
     public static readonly Refit.GeneratedParameterAttributeProvider Empty;
@@ -279,7 +279,7 @@ public ref struct GeneratedQueryStringBuilder
 public static class GeneratedRequestRunner
 {
     public static void AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, System.Type interfaceType) { }
-    public static void AddFormattedCollectionProperty(ref Refit.GeneratedQueryStringBuilder builder, Refit.RefitSettings settings, System.Collections.IEnumerable? values, string key, Refit.CollectionFormat collectionFormat, bool preEncoded, (System.Type ElementProviderType, System.Reflection.ICustomAttributeProvider JoinedProvider, System.Type JoinedType) formatting) { }
+    public static void AddFormattedCollectionProperty(ref Refit.GeneratedQueryStringBuilder builder, Refit.RefitSettings settings, System.Collections.IEnumerable? values, string key, Refit.CollectionFormat collectionFormat, bool preEncoded, (System.Type ElementProviderType, Refit.IParameterAttributeProvider JoinedProvider, System.Type JoinedType) formatting) { }
     public static void AddHeaderCollection(System.Net.Http.HttpRequestMessage request, System.Collections.Generic.IDictionary<string, string>? headers, bool validateHeaders) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static void AddRequestProperty<TValue>(System.Net.Http.HttpRequestMessage request, string key, TValue value) { }
@@ -304,10 +304,10 @@ public static class GeneratedRequestRunner
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static string FormatInvariant<T>(T value, string? format) where T : System.IFormattable { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static string? FormatUrlParameter(Refit.RefitSettings settings, object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+    public static string? FormatUrlParameter(Refit.RefitSettings settings, object? value, Refit.IParameterAttributeProvider attributeProvider, System.Type type) { }
     public static string RequireAbsoluteUrl(object? url) { }
     public static string RequireRelativeOrAbsoluteUrl(object? url) { }
-    public static string RoundTripEscapePath(string? value, Refit.RefitSettings settings, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+    public static string RoundTripEscapePath(string? value, Refit.RefitSettings settings, Refit.IParameterAttributeProvider attributeProvider, System.Type type) { }
     public static System.Threading.Tasks.Task<T?> SendAsync<T, TBody>(System.Net.Http.HttpClient client, System.Net.Http.HttpRequestMessage request, Refit.RefitSettings settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static System.IObservable<T?> SendObservable<T, TBody>(System.Net.Http.HttpClient client, System.Func<System.Net.Http.HttpRequestMessage> requestFactory, Refit.RefitSettings settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken methodCancellationToken) { }
@@ -323,7 +323,7 @@ public static class GeneratedRequestRunner
     public static bool UsesDefaultUrlParameterKeyFormatting(Refit.RefitSettings settings) { }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-public sealed class GeneratedSingleTypeParameterAttributeProvider : System.Reflection.ICustomAttributeProvider
+public sealed class GeneratedSingleTypeParameterAttributeProvider : Refit.IParameterAttributeProvider
 {
     public GeneratedSingleTypeParameterAttributeProvider(System.Type type, object[] attributes) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
@@ -469,6 +469,12 @@ public interface IHttpContentSerializer
     System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
     System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
+public interface IParameterAttributeProvider
+{
+    object[] GetCustomAttributes(bool inherit) { }
+    object[] GetCustomAttributes(System.Type attributeType, bool inherit) { }
+    bool IsDefined(System.Type attributeType, bool inherit) { }
+}
 public interface IQueryConverter<in T>
 {
     void Flatten(T value, string keyPrefix, ref Refit.GeneratedQueryStringBuilder builder, Refit.RefitSettings settings) { }
@@ -500,7 +506,7 @@ public interface ISynchronousContentSerializer
 }
 public interface IUrlParameterFormatter
 {
-    string? Format(object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+    string? Format(object? value, Refit.IParameterAttributeProvider attributeProvider, System.Type type) { }
 }
 public interface IUrlParameterKeyFormatter
 {

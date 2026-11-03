@@ -517,7 +517,7 @@ public partial class GeneratedRequestRunnerTests
         var result = GeneratedRequestRunner.RoundTripEscapePath(
             "a/b",
             settings,
-            typeof(string),
+            GeneratedParameterAttributeProvider.Empty,
             typeof(string));
 
         await Assert.That(result).IsEqualTo("/");
@@ -708,7 +708,7 @@ public partial class GeneratedRequestRunnerTests
     private sealed class NullUrlParameterFormatter : IUrlParameterFormatter
     {
         /// <inheritdoc/>
-        public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) => null;
+        public string? Format(object? value, IParameterAttributeProvider attributeProvider, Type type) => null;
     }
 
     /// <summary>Declared form model used to verify generated URL-encoded bodies use compile-time metadata.</summary>

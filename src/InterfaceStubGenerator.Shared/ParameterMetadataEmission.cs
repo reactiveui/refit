@@ -86,7 +86,7 @@ internal static class ParameterMetadataEmission
         var memberIndent = SpanBufferEmission.Indent(Emitter.MethodMemberIndentation);
         _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
             .Append(Emitter.ToXmlDocumentationText(method)).Append(" method's ").Append(Emitter.ToXmlDocumentationText(parameter.Identity.Name)).AppendLine(" parameter.</summary>")
-            .Append(memberIndent).Append("private static readonly global::System.Reflection.ICustomAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
+            .Append(memberIndent).Append("private static readonly global::Refit.IParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
 
         // A parameter with no attributes shares the singleton empty provider instead of allocating an empty dictionary.
         if (parameter.Attributes.Length == 0)

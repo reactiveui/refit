@@ -10,6 +10,9 @@ namespace Refit.Generator;
 /// <content>Flattens a complex query object's properties into query-string statements.</content>
 internal static class QueryObjectEmission
 {
+    /// <summary>The expression for the shared attribute provider of values that declare no attributes, such as dictionary keys and collection elements.</summary>
+    internal const string EmptyProviderExpression = "global::Refit.GeneratedParameterAttributeProvider.Empty";
+
     /// <summary>Appends the statements flattening one query object's properties into query pairs.</summary>
     /// <param name="sb">The statement builder.</param>
     /// <param name="parameter">The parameter model.</param>
@@ -231,7 +234,7 @@ internal static class QueryObjectEmission
         in QueryParameterEmission.InlineValueEmission emission)
     {
         var keyTypeOf = $"typeof({dictionary.KeyTypeName})";
-        var customKey = EmitFormatUrlParameter($"{entryLocal}.Key", keyTypeOf, keyTypeOf, emission);
+        var customKey = EmitFormatUrlParameter($"{entryLocal}.Key", EmptyProviderExpression, keyTypeOf, emission);
         var fastKey = QueryValueEmission.BuildFastFormatExpression($"{entryLocal}.Key", dictionary.KeyFormat, emission);
         var entryKeyExpression = fastKey is null
             ? customKey
@@ -475,7 +478,7 @@ internal static class QueryObjectEmission
             // An element with no reflection-free rendering (e.g. an enum with duplicate constants) still uses the
             // formatter, which under the pristine default renders it correctly; the type doubles as the provider.
             var elementTypeOf = $"typeof({collection.PropertyTypeName})";
-            return EmitFormatUrlParameter(elementLocal, elementTypeOf, elementTypeOf, emission);
+            return EmitFormatUrlParameter(elementLocal, EmptyProviderExpression, elementTypeOf, emission);
         }
 
         // A string element renders itself, so a null element already renders as null; other formats guard first.

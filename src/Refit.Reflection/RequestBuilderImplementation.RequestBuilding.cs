@@ -637,7 +637,7 @@ internal partial class RequestBuilderImplementation
         var formatted = GeneratedRequestRunner.FormatUrlParameter(
             _settings,
             propertyObject,
-            property.PropertyInfo,
+            GetCachedAttributeProvider(property.PropertyInfo),
             property.PropertyInfo.PropertyType);
 
         // An optional {param.Prop?} placeholder whose bound value formats to nothing drops the segment and the '/'
@@ -685,7 +685,7 @@ internal partial class RequestBuilderImplementation
                     GeneratedRequestRunner.FormatUrlParameter(
                         _settings,
                         paramValue,
-                        parameterInfo,
+                        GetCachedAttributeProvider(parameterInfo),
                         parameterInfo.ParameterType) ?? string.Empty));
             return;
         }
@@ -709,7 +709,7 @@ internal partial class RequestBuilderImplementation
                     GeneratedRequestRunner.FormatUrlParameter(
                         _settings,
                         section,
-                        parameterInfo,
+                        GetCachedAttributeProvider(parameterInfo),
                         parameterInfo.ParameterType) ?? string.Empty));
             sectionStart = i + 1;
         }
@@ -726,7 +726,7 @@ internal partial class RequestBuilderImplementation
         ParameterInfo parameterInfo,
         bool isOptional)
     {
-        var formatted = GeneratedRequestRunner.FormatUrlParameter(_settings, param, parameterInfo, parameterInfo.ParameterType);
+        var formatted = GeneratedRequestRunner.FormatUrlParameter(_settings, param, GetCachedAttributeProvider(parameterInfo), parameterInfo.ParameterType);
 
         // An optional {name?} placeholder whose bound value formats to nothing (a null argument by default) drops the
         // segment and the '/' before it, so the URL never gains a trailing or doubled slash.

@@ -65,8 +65,8 @@ internal static class Formatters
     /// <param name="day">The date used by both URL and form examples.</param>
     private static void CheckDirectFormats(DefaultUrlParameterFormatter values, DateTime day)
     {
-        string? general = values.Format(day, typeof(DateTime), typeof(DateTime));
-        string? contained = values.Format(day, typeof(DateTime), typeof(DateFilter));
+        string? general = values.Format(day, GeneratedParameterAttributeProvider.Empty, typeof(DateTime));
+        string? contained = values.Format(day, GeneratedParameterAttributeProvider.Empty, typeof(DateFilter));
         DefaultFormUrlEncodedParameterFormatter formValues = new();
         string? formDate = formValues.Format(day, DateFormat);
         string? omitted = formValues.Format(null, null);
@@ -78,7 +78,7 @@ internal static class Formatters
         SampleCheck.Equal(DayText, contained);
         SampleCheck.Equal(DayText, formDate);
         SampleCheck.Equal(null, omitted);
-        SampleCheck.Equal(null, values.Format(null, typeof(DateTime), typeof(DateTime)));
+        SampleCheck.Equal(null, values.Format(null, GeneratedParameterAttributeProvider.Empty, typeof(DateTime)));
         SampleCheck.Equal("unchanged", formValues.Format("unchanged", DateFormat));
         SampleCheck.Equal("1", formValues.Format(1, " "));
     }

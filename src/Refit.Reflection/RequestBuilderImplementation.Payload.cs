@@ -486,7 +486,7 @@ internal partial class RequestBuilderImplementation
                 var valueType = kvp.Value?.GetType() ?? typeof(object);
                 queryParamsToAdd.Add(new(
                     indexedKey + attr.Delimiter + kvp.Key,
-                    GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, valueType, valueType),
+                    GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, GetCachedAttributeProvider(valueType), valueType),
                     KeyPreEscaped: true));
             }
 

@@ -124,7 +124,7 @@ public class RequestPathBuildingBenchmarks
     [Benchmark]
     [BenchmarkCategory("Path")]
     public int RoundTripEscapePath() =>
-        GeneratedRequestRunner.RoundTripEscapePath(_catchAllValue, _settings, typeof(string), typeof(string)).Length;
+        GeneratedRequestRunner.RoundTripEscapePath(_catchAllValue, _settings, GeneratedParameterAttributeProvider.Empty, typeof(string)).Length;
 
     /// <summary>Assembles a relative URI under RFC 3986 resolution.</summary>
     /// <returns>The relative URI string length.</returns>
@@ -191,7 +191,7 @@ public class RequestPathBuildingBenchmarks
             "ids",
             CollectionFormat.Csv,
             false,
-            (typeof(int[]), typeof(int[]), typeof(int[])));
+            (typeof(int[]), GeneratedParameterAttributeProvider.Empty, typeof(int[])));
         return builder.Build().Length;
     }
 
@@ -209,7 +209,7 @@ public class RequestPathBuildingBenchmarks
             "ids",
             CollectionFormat.Multi,
             false,
-            (typeof(int[]), typeof(int[]), typeof(int[])));
+            (typeof(int[]), GeneratedParameterAttributeProvider.Empty, typeof(int[])));
         return builder.Build().Length;
     }
 

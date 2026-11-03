@@ -112,7 +112,7 @@ internal static class PathSample
             (typeof(int[]), GeneratedParameterAttributeProvider.Empty, typeof(int[])));
         Check.Require(query.Build() == "/items?ids=1%2C2", "Collection properties use two formatting passes.");
         GeneratedQueryStringBuilder multi = new(unchangedPath);
-        (Type, System.Reflection.ICustomAttributeProvider, Type) formatting = (typeof(int[]), GeneratedParameterAttributeProvider.Empty, typeof(int[]));
+        (Type, IParameterAttributeProvider, Type) formatting = (typeof(int[]), GeneratedParameterAttributeProvider.Empty, typeof(int[]));
         GeneratedRequestRunner.AddFormattedCollectionProperty(ref multi, settings, null, "absent", CollectionFormat.Multi, false, formatting);
         GeneratedRequestRunner.AddFormattedCollectionProperty(ref multi, settings, SampleValues.Items, "ids", CollectionFormat.Multi, false, formatting);
         Check.Require(multi.Build() == "/items?ids=1&ids=2", "The two-pass helper omits null collections and repeats Multi keys.");

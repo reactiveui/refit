@@ -285,7 +285,7 @@ public static partial class GeneratedRequestRunner
     public static string RoundTripEscapePath(
         string? value,
         RefitSettings settings,
-        ICustomAttributeProvider attributeProvider,
+        IParameterAttributeProvider attributeProvider,
         Type type)
     {
         if (value is null)
@@ -345,7 +345,7 @@ public static partial class GeneratedRequestRunner
     public static string? FormatUrlParameter(
         RefitSettings settings,
         object? value,
-        ICustomAttributeProvider attributeProvider,
+        IParameterAttributeProvider attributeProvider,
         Type type) =>
         ResolveUrlParameterFormatter(settings, value).Format(value, attributeProvider, type);
 
@@ -470,7 +470,7 @@ public static partial class GeneratedRequestRunner
         string key,
         CollectionFormat collectionFormat,
         bool preEncoded,
-        (Type ElementProviderType, ICustomAttributeProvider JoinedProvider, Type JoinedType) formatting)
+        (Type ElementProviderType, IParameterAttributeProvider JoinedProvider, Type JoinedType) formatting)
     {
         if (values is null)
         {
@@ -482,7 +482,7 @@ public static partial class GeneratedRequestRunner
         {
             foreach (var value in values)
             {
-                var formatted = FormatUrlParameter(settings, value, element, element);
+                var formatted = FormatUrlParameter(settings, value, GeneratedParameterAttributeProvider.Empty, element);
                 builder.Add(key, FormatUrlParameter(settings, formatted, formatting.JoinedProvider, formatting.JoinedType), preEncoded);
             }
 
@@ -660,7 +660,7 @@ public static partial class GeneratedRequestRunner
             }
 
             first = false;
-            builder.Append(FormatUrlParameter(settings, value, elementProviderType, elementProviderType));
+            builder.Append(FormatUrlParameter(settings, value, GeneratedParameterAttributeProvider.Empty, elementProviderType));
         }
 
         return builder.ToString();
@@ -826,7 +826,7 @@ public static partial class GeneratedRequestRunner
         ref ValueStringBuilder sb,
         string section,
         RefitSettings settings,
-        ICustomAttributeProvider attributeProvider,
+        IParameterAttributeProvider attributeProvider,
         Type type) =>
         sb.Append(StringHelpers.EscapeDataString(FormatUrlParameter(settings, section, attributeProvider, type) ?? string.Empty));
 }

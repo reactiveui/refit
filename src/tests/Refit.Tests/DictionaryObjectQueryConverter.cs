@@ -22,7 +22,7 @@ public sealed class DictionaryObjectQueryConverter : IQueryConverter<IDictionary
                 continue;
             }
 
-            var formatted = settings.UrlParameterFormatter.Format(entry.Value, typeof(object), typeof(object));
+            var formatted = settings.UrlParameterFormatter.Format(entry.Value, GeneratedParameterAttributeProvider.Empty, typeof(object));
             builder.Add(keyPrefix + entry.Key, formatted, false);
         }
     }
