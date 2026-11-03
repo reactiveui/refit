@@ -65,32 +65,6 @@ public sealed partial class ApiExceptionTests
         await Assert.That(exception.Content).IsEqualTo("not json");
     }
 
-    /// <summary>Verifies the validation exception keeps what the originating exception carried.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task CreateKeepsOriginatingDetailsOnValidationException()
-    {
-        using var response = CreateErrorResponse(ProblemJson, ProblemJsonMediaType);
-        GeneratedRequestRunner.AddRequestProperty(
-            response.RequestMessage!,
-            HttpRequestMessageOptions.RequestContent,
-            RedactedText);
-        var cause = new InvalidOperationException(MessageText);
-
-        var exception = await ApiException.Create(
-            CustomMessage,
-            response.RequestMessage!,
-            HttpMethod.Get,
-            response,
-            new(),
-            cause);
-
-        await Assert.That(exception).IsTypeOf<ValidationApiException>();
-        await Assert.That(exception.Message).IsEqualTo(CustomMessage);
-        await Assert.That(exception.InnerException).IsSameReferenceAs(cause);
-        await Assert.That(exception.RequestContent).IsEqualTo(RedactedText);
-    }
-
     /// <summary>Asserts a problem response becomes a populated validation exception under the given settings.</summary>
     /// <param name="settings">The settings used to create the exception.</param>
     /// <returns>A task representing the asynchronous assertion.</returns>

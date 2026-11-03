@@ -61,21 +61,16 @@ public class ValidationApiException : ApiException
     /// <param name="apiException">The originating API exception to wrap.</param>
     internal ValidationApiException(ApiException apiException)
         : base(
-            apiException.Message,
             apiException.RequestMessage,
             apiException.HttpMethod,
             apiException.Content,
             apiException.StatusCode,
             apiException.ReasonPhrase,
             apiException.Headers,
-            apiException.RefitSettings,
-            apiException.InnerException)
-    {
-        // Carry over the content headers and captured request content from the originating
-        // ApiException so callers can inspect them on the validation exception too.
+            apiException.RefitSettings) =>
+        // Carry over the content headers from the originating ApiException so callers
+        // can inspect them on the validation exception too.
         ContentHeaders = apiException.ContentHeaders;
-        RequestContent = apiException.RequestContent;
-    }
 
     /// <summary>Gets the problem details of the RFC 7807 validation exception.</summary>
     public new ProblemDetails? Content { get; private set; }
@@ -120,8 +115,10 @@ public class ValidationApiException : ApiException
         catch (Exception serializerException) when (serializerException is NotSupportedException or InvalidOperationException)
         {
             // Source-generated contexts, trimming and Native AOT can leave the serializer without
-            // usable ProblemDetails metadata, so fall back to the reader that needs none. A JsonException
-            // means the serializer rejected the body itself, which stays a plain ApiException.
+            // usable ProblemDetails metadata, so fall back to the reader that needs none. System.Text.Json
+            // throws NotSupportedException when no metadata describes the type and InvalidOperationException
+            // when reflection is disabled. A JsonException means the serializer rejected the body itself,
+            // which stays a plain ApiException.
             ex.Content = DeserializeProblemDetails(exception.Content!);
         }
 
