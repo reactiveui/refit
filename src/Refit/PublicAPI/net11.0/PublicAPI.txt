@@ -238,6 +238,7 @@ public sealed class FormField<TBody>
     public string? ResolveFieldName(Refit.IUrlParameterKeyFormatter urlParameterKeyFormatter, Refit.ContentSerializerNameStyle nameStyle) { }
 }
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public readonly record struct FormFieldNames : System.IEquatable<Refit.FormFieldNames>
 {

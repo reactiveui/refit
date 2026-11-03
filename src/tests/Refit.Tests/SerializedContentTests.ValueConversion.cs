@@ -476,6 +476,9 @@ public partial class SerializedContentTests
 
         await Assert.That(SerializerFieldNames.ResolveForStyle(ContentSerializerNameStyle.Newtonsoft, named!)).IsEqualTo("newtonsoft_name");
         await Assert.That(SerializerFieldNames.ResolveForStyle(ContentSerializerNameStyle.Newtonsoft, plain!)).IsNull();
+        await Assert.That(SerializerFieldNames.ResolveForStyle(
+            ContentSerializerNameStyle.Newtonsoft,
+            typeof(NewtonsoftNamedModel).GetProperty(nameof(NewtonsoftNamedModel.Other))!)).IsNull();
     }
 
     /// <summary>Model whose property carries the stand-in Newtonsoft attribute.</summary>
@@ -487,6 +490,10 @@ public partial class SerializedContentTests
 
         /// <summary>Gets or sets a property with no attribute.</summary>
         public string? Plain { get; set; }
+
+        /// <summary>Gets or sets a property whose only attribute is not the Newtonsoft one.</summary>
+        [System.ComponentModel.Description("unrelated")]
+        public string? Other { get; set; }
     }
 
     /// <summary>Serializer that reports no name style and offers no provider.</summary>

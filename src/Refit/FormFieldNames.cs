@@ -12,6 +12,7 @@ namespace Refit;
 /// <param name="XmlName">The <c>[XmlElement]</c> or <c>[XmlAttribute]</c> name, or <see langword="null"/>.</param>
 [EditorBrowsable(EditorBrowsableState.Never)]
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // The only uncovered members are the compiler-generated record equality and formatting.
 public readonly record struct FormFieldNames(
     string? ExplicitName,
     string? JsonName,

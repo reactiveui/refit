@@ -125,7 +125,7 @@ public static partial class GeneratedRequestRunner
         IEnumerable<TElement>? body) =>
         body is null or HttpContent or Stream
             || settings.ContentSerializer is not SystemTextJsonContentSerializer serializer
-            || !serializer.WritesDeclaredTypeAsObject(typeof(TElement))
+            || !SystemTextJsonContentSerializer.WritesDeclaredTypeAsObject(typeof(TElement))
             ? CreateJsonLinesBodyContent(settings, body)
             : new JsonLinesContent<TElement>(body, serializer);
 
