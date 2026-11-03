@@ -17,6 +17,11 @@ public static class ReflectionJsonSerializerOptionsExtensions
         public System.Text.Json.JsonSerializerOptions AddReflectionConverters() { }
     }
 }
+public static class ReflectionSupport
+{
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static void EnsureRegistered() { }
+}
 public static class RequestBuilder
 {
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]

@@ -36,6 +36,7 @@ public static class RestServiceReflectionExtensions
         public static T For<T>(HttpClient client, RefitSettings? settings)
         {
             var resolvedSettings = settings ?? new();
+            ReflectionSupport.EnsureRegistered();
 
             // A generated settings factory means every method builds its request inline, so the reflection
             // request builder is never needed for this interface.
@@ -104,6 +105,7 @@ public static class RestServiceReflectionExtensions
         public static object For(Type refitInterfaceType, HttpClient client, RefitSettings? settings)
         {
             var resolvedSettings = settings ?? new();
+            ReflectionSupport.EnsureRegistered();
 
             // A generated settings factory means every method builds its request inline, so the reflection
             // request builder is never needed for this interface.

@@ -151,9 +151,7 @@ public static partial class GeneratedRequestRunner
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
-    public static HttpContent CreateUrlEncodedBodyContent<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        TBody>(
+    public static HttpContent CreateUrlEncodedBodyContent<TBody>(
         RefitSettings settings,
         TBody body)
     {
@@ -191,9 +189,7 @@ public static partial class GeneratedRequestRunner
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
-    public static HttpContent CreateUrlEncodedBodyContent<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        TBody>(
+    public static HttpContent CreateUrlEncodedBodyContent<TBody>(
         RefitSettings settings,
         TBody body,
         FormField<TBody>[] fields)

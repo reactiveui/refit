@@ -19,16 +19,22 @@ internal static class RequestBuilderFactory
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal static IRequestBuilder<T> Create<T>(RefitSettings? settings) =>
-        new CachedRequestBuilderImplementation<T>(
+    internal static IRequestBuilder<T> Create<T>(RefitSettings? settings)
+    {
+        ReflectionSupport.EnsureRegistered();
+        return new CachedRequestBuilderImplementation<T>(
             new RequestBuilderImplementation<T>(settings));
+    }
 
     /// <summary>Creates a request builder for the specified interface type.</summary>
     /// <param name="refitInterfaceType">The Refit interface type.</param>
     /// <param name="settings">The settings to configure the builder.</param>
     /// <returns>A request builder for the interface type.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static IRequestBuilder Create(Type refitInterfaceType, RefitSettings? settings) =>
-        new CachedRequestBuilderImplementation(
+    internal static IRequestBuilder Create(Type refitInterfaceType, RefitSettings? settings)
+    {
+        ReflectionSupport.EnsureRegistered();
+        return new CachedRequestBuilderImplementation(
             new RequestBuilderImplementation(refitInterfaceType, settings));
+    }
 }
