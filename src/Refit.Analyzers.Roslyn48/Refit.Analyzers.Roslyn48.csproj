@@ -47,6 +47,7 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\BodyBufferMode.cs" LinkBase="InterfaceStubGenerator.Shared\Models" />
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\EnumFormatMemberModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models" />
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\FormFieldModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models" />
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\FormPropertyAttributes.cs" LinkBase="InterfaceStubGenerator.Shared\Models" />
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\HeaderModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models" />
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\InlineFallback.cs" LinkBase="InterfaceStubGenerator.Shared\Models" />
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\InlineFallbackReason.cs" LinkBase="InterfaceStubGenerator.Shared\Models" />

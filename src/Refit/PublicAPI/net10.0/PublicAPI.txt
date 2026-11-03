@@ -169,6 +169,12 @@ public enum CollectionFormat
     Multi = 5,
     Indexed = 6,
 }
+public enum ContentSerializerNameStyle
+{
+    SystemTextJson = 0,
+    Newtonsoft = 1,
+    Xml = 2,
+}
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class DefaultApiExceptionFactory
 {
@@ -221,15 +227,26 @@ public class FileInfoPart : Refit.MultipartItem
 [System.Diagnostics.DebuggerDisplay("{Getter}")]
 public sealed class FormField<TBody>
 {
-    public FormField(System.Func<TBody, object?> getter, string clrName, string? explicitName, string? prefixSegment, string? format, Refit.CollectionFormat? collectionFormat, bool serializeNull) { }
+    public FormField(System.Func<TBody, object?> getter, string clrName, Refit.FormFieldNames names, string? prefixSegment, string? format, Refit.CollectionFormat? collectionFormat, bool serializeNull) { }
     public string ClrName { get; }
     public Refit.CollectionFormat? CollectionFormat { get; }
-    public string? ExplicitName { get; }
     public string? Format { get; }
     public System.Func<TBody, object?> Getter { get; }
+    public Refit.FormFieldNames Names { get; }
     public string? PrefixSegment { get; }
     public bool SerializeNull { get; }
-    public string? ResolveFieldName(Refit.IUrlParameterKeyFormatter urlParameterKeyFormatter) { }
+    public string? ResolveFieldName(Refit.IUrlParameterKeyFormatter urlParameterKeyFormatter, Refit.ContentSerializerNameStyle nameStyle) { }
+}
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+public readonly record struct FormFieldNames : System.IEquatable<Refit.FormFieldNames>
+{
+    public FormFieldNames(string? ExplicitName, string? JsonName, string? NewtonsoftName, string? XmlName) { }
+    public string? ExplicitName { get; init; }
+    public string? JsonName { get; init; }
+    public string? NewtonsoftName { get; init; }
+    public string? XmlName { get; init; }
+    public readonly string? ForStyle(Refit.ContentSerializerNameStyle nameStyle) { }
 }
 [System.AttributeUsage(System.AttributeTargets.Parameter)]
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
@@ -282,6 +299,7 @@ public static class GeneratedRequestRunner
     public static void AddHeaderCollection(System.Net.Http.HttpRequestMessage request, System.Collections.Generic.IDictionary<string, string>? headers, bool validateHeaders) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static void AddRequestProperty<TValue>(System.Net.Http.HttpRequestMessage request, string key, TValue value) { }
+    public static string BuildFormKey(Refit.RefitSettings settings, string clrName, string? explicitName, string? jsonName, string? newtonsoftName, string? xmlName, string? prefixSegment) { }
     public static string BuildQueryKey(Refit.RefitSettings settings, string clrName, string? explicitName, string? prefixSegment) { }
     public static System.Uri BuildRelativeUri(System.Net.Http.HttpClient client, string relativePath, Refit.UrlResolutionMode urlResolution) { }
     public static System.Uri BuildRelativeUri(System.Net.Http.HttpClient client, string relativePath, Refit.UrlResolutionMode urlResolution, System.UriFormat queryUriFormat) { }
@@ -468,6 +486,10 @@ public interface IApiResponse<out T> : Refit.IApiResponse
     bool HasContent { get; }
     [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
     bool IsSuccessfulWithContent { get; }
+}
+public interface IContentSerializerNameStyle
+{
+    Refit.ContentSerializerNameStyle NameStyle { get; }
 }
 public interface IFormUrlEncodedParameterFormatter
 {
@@ -959,10 +981,11 @@ public enum StreamingContentFormat
     ServerSentEvents = 2,
 }
 [System.Diagnostics.DebuggerDisplay("{SerializerOptions}")]
-public sealed class SystemTextJsonContentSerializer : Refit.IHttpContentSerializer, Refit.IJsonTypeInfoContentSerializer, Refit.IStreamingContentSerializer, Refit.ISynchronousContentDeserializer, Refit.ISynchronousContentSerializer
+public sealed class SystemTextJsonContentSerializer : Refit.IContentSerializerNameStyle, Refit.IHttpContentSerializer, Refit.IJsonTypeInfoContentSerializer, Refit.IStreamingContentSerializer, Refit.ISynchronousContentDeserializer, Refit.ISynchronousContentSerializer
 {
     public SystemTextJsonContentSerializer() { }
     public SystemTextJsonContentSerializer(System.Text.Json.JsonSerializerOptions jsonSerializerOptions) { }
+    public Refit.ContentSerializerNameStyle NameStyle { get; }
     public System.Text.Json.JsonSerializerOptions SerializerOptions { get; }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public T? DeserializeFromString<T>(string content) { }

@@ -217,13 +217,13 @@ public static partial class GeneratedRequestRunner
         }
 
         // The descriptor path only matches the reflection path when the serializer resolves field names from
-        // attributes the generator already inlined (the built-in System.Text.Json serializer); otherwise fall back.
+        // attributes the generator already inlined (a serializer that reports its name style); otherwise fall back.
         var useDescriptors = body is not null and not System.Collections.IDictionary
-                             && settings.ContentSerializer is SystemTextJsonContentSerializer;
+                             && settings.ContentSerializer is IContentSerializerNameStyle;
 
         return new FormUrlEncodedContent(
             useDescriptors
-                ? FormValueMultimap.CreateFromFields(body, fields, settings)
+                ? FormValueMultimap.CreateFromFields(body, fields, settings, ((IContentSerializerNameStyle)settings.ContentSerializer).NameStyle)
                 : FormValueMultimap.Create(body, settings));
     }
 

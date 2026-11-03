@@ -72,6 +72,103 @@ public sealed partial class RequestGenerationCoverageTests
         await Assert.That(generated).DoesNotContain("body.@Ignored");
     }
 
+    /// <summary>Verifies the form-field descriptor carries the JSON, Newtonsoft and XML names beside the explicit name.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UrlEncodedFormBodyDescriptorCarriesSerializerNames()
+    {
+        const string Source =
+            """
+            using System.Collections.Generic;
+            using System.Text.Json.Serialization;
+            using System.Threading.Tasks;
+            using System.Xml.Serialization;
+            using Refit;
+
+            namespace Newtonsoft.Json
+            {
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class JsonPropertyAttribute : System.Attribute
+                {
+                    public JsonPropertyAttribute() { }
+
+                    public JsonPropertyAttribute(string propertyName) => PropertyName = propertyName;
+
+                    public string PropertyName { get; set; }
+                }
+            }
+
+            namespace RefitGeneratorTest
+            {
+                public class NamedForm
+                {
+                    [JsonPropertyName("json_roles")]
+                    [Newtonsoft.Json.JsonProperty("newtonsoft_roles")]
+                    [XmlElement("xml_roles")]
+                    public List<string> Roles { get; set; }
+
+                    [AliasAs("alias")]
+                    [JsonPropertyName("json_name")]
+                    public string Name { get; set; }
+
+                    [XmlAttribute]
+                    public List<string> Unnamed { get; set; }
+                }
+
+                public interface IGeneratedClient
+                {
+                    [Post("/named")]
+                    Task Submit([Body(BodySerializationMethod.UrlEncoded)] NamedForm form);
+                }
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains("new global::Refit.FormFieldNames(null, \"json_roles\", \"newtonsoft_roles\", \"xml_roles\")");
+        await Assert.That(generated).Contains("new global::Refit.FormFieldNames(\"alias\", \"json_name\", null, null)");
+        await Assert.That(generated).Contains("new global::Refit.FormFieldNames(null, null, null, \"\")");
+    }
+
+    /// <summary>Verifies an unrolled scalar form body asks the serializer-aware key helper and guards on the name style.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UnrolledFormBodyUsesSerializerAwareKeyAndStyleGuard()
+    {
+        const string Source =
+            """
+            using System.Text.Json.Serialization;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class ScalarForm
+            {
+                [JsonPropertyName("json_name")]
+                public string Name { get; set; }
+
+                public string Plain { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Post("/scalar")]
+                Task Submit([Body(BodySerializationMethod.UrlEncoded)] ScalarForm form);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains("ContentSerializer is global::Refit.IContentSerializerNameStyle");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.BuildFormKey(");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.BuildQueryKey(");
+    }
+
     /// <summary>Verifies an unrolled scalar form body emits the empty-value branch for a nullable
     /// <c>[Query(SerializeNull = true)]</c> field, alongside an unconditionally added value-type field.</summary>
     /// <returns>A task representing the asynchronous test.</returns>

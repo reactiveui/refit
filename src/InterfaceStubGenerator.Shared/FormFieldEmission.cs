@@ -7,6 +7,12 @@ namespace Refit.Generator;
 /// <summary>Emits the cached HTTP method field and form-field descriptor array for the inline path.</summary>
 internal static class FormFieldEmission
 {
+    /// <summary>The opening of the grouped compile-time field names argument.</summary>
+    private const string FormFieldNamesNew = "new global::Refit.FormFieldNames(";
+
+    /// <summary>The closing of the grouped compile-time field names argument.</summary>
+    private const string FormFieldNamesClose = ")";
+
     /// <summary>Resolves the HTTP method expression, caching a custom verb in a static field.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <param name="uniqueNames">The interface-scope unique name builder.</param>
@@ -117,7 +123,15 @@ internal static class FormFieldEmission
                     SpanBufferEmission.AppendText(destination, InlineRequestEmission.FormFieldNameOpen, ref position);
                     SpanBufferEmission.AppendText(destination, field.PropertyName, ref position);
                     SpanBufferEmission.AppendText(destination, InlineRequestEmission.FormFieldNameClose, ref position);
+                    SpanBufferEmission.AppendText(destination, FormFieldNamesNew, ref position);
                     SpanBufferEmission.AppendLiteralOrNull(destination, field.ExplicitName, ref position);
+                    SpanBufferEmission.AppendText(destination, InlineRequestEmission.ArgumentSeparator, ref position);
+                    SpanBufferEmission.AppendLiteralOrNull(destination, field.JsonName, ref position);
+                    SpanBufferEmission.AppendText(destination, InlineRequestEmission.ArgumentSeparator, ref position);
+                    SpanBufferEmission.AppendLiteralOrNull(destination, field.NewtonsoftName, ref position);
+                    SpanBufferEmission.AppendText(destination, InlineRequestEmission.ArgumentSeparator, ref position);
+                    SpanBufferEmission.AppendLiteralOrNull(destination, field.XmlName, ref position);
+                    SpanBufferEmission.AppendText(destination, FormFieldNamesClose, ref position);
                     SpanBufferEmission.AppendText(destination, InlineRequestEmission.ArgumentSeparator, ref position);
                     SpanBufferEmission.AppendLiteralOrNull(destination, field.PrefixSegment, ref position);
                     SpanBufferEmission.AppendText(destination, InlineRequestEmission.ArgumentSeparator, ref position);
@@ -155,7 +169,15 @@ internal static class FormFieldEmission
         + InlineRequestEmission.FormFieldNameOpen.Length
         + field.PropertyName.Length
         + InlineRequestEmission.FormFieldNameClose.Length
+        + FormFieldNamesNew.Length
         + LiteralEmissionHelpers.LiteralOrNullLength(field.ExplicitName)
+        + InlineRequestEmission.ArgumentSeparator.Length
+        + LiteralEmissionHelpers.LiteralOrNullLength(field.JsonName)
+        + InlineRequestEmission.ArgumentSeparator.Length
+        + LiteralEmissionHelpers.LiteralOrNullLength(field.NewtonsoftName)
+        + InlineRequestEmission.ArgumentSeparator.Length
+        + LiteralEmissionHelpers.LiteralOrNullLength(field.XmlName)
+        + FormFieldNamesClose.Length
         + InlineRequestEmission.ArgumentSeparator.Length
         + LiteralEmissionHelpers.LiteralOrNullLength(field.PrefixSegment)
         + InlineRequestEmission.ArgumentSeparator.Length

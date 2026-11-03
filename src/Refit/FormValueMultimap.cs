@@ -112,18 +112,20 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <param name="body">The body instance to flatten into form entries.</param>
     /// <param name="fields">The compile-time field descriptors for the body type.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
+    /// <param name="nameStyle">The attribute family the configured content serializer reads names from.</param>
     /// <returns>The created form value map.</returns>
     internal static FormValueMultimap CreateFromFields<TBody>(
         TBody body,
         FormField<TBody>[] fields,
-        RefitSettings settings)
+        RefitSettings settings,
+        ContentSerializerNameStyle nameStyle)
     {
         var map = new FormValueMultimap(null, settings, null);
         for (var i = 0; i < fields.Length; i++)
         {
             var field = fields[i];
             var value = field.Getter(body);
-            var fieldName = field.ResolveFieldName(map._urlParameterKeyFormatter);
+            var fieldName = field.ResolveFieldName(map._urlParameterKeyFormatter, nameStyle);
 
             if (value is null)
             {

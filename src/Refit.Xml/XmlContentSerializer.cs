@@ -15,7 +15,7 @@ namespace Refit;
 /// Initializes a new instance of the <see cref="XmlContentSerializer"/> class.
 /// </remarks>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentDeserializer
+public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentDeserializer, IContentSerializerNameStyle
 {
     /// <summary>Explains why the trimming warning is suppressed for XML reflection.</summary>
     private const string XmlReflectionTrimmingJustification =
@@ -45,6 +45,9 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
         : this(new())
     {
     }
+
+    /// <inheritdoc/>
+    public ContentSerializerNameStyle NameStyle => ContentSerializerNameStyle.Xml;
 
     /// <summary>Serialize object of type <typeparamref name="T"/> to a <see cref="HttpContent"/> with Xml.</summary>
     /// <typeparam name="T">Type of the object to serialize from.</typeparam>

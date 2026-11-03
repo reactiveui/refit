@@ -39,12 +39,12 @@ public class FormBodySerializationBenchmark
 
         _fields =
         [
-            new(static b => b.FirstName, "FirstName", "first_name", null, null, null, false),
-            new(static b => b.LastName, "LastName", "last_name", null, null, null, false),
-            new(static b => b.Email, "Email", null, null, null, null, false),
-            new(static b => b.Age, "Age", null, null, null, null, false),
-            new(static b => b.Note, "Note", null, null, null, null, true),
-            new(static b => b.Roles, "Roles", null, null, null, CollectionFormat.Multi, false)
+            new(static b => b.FirstName, "FirstName", new("first_name", null, null, null), null, null, null, false),
+            new(static b => b.LastName, "LastName", new("last_name", null, null, null), null, null, null, false),
+            new(static b => b.Email, "Email", default, null, null, null, false),
+            new(static b => b.Age, "Age", default, null, null, null, false),
+            new(static b => b.Note, "Note", default, null, null, null, true),
+            new(static b => b.Roles, "Roles", default, null, null, CollectionFormat.Multi, false)
         ];
 
         VerifyUnrolledMatchesDescriptor();

@@ -25,21 +25,22 @@ internal static class BodySample
 
         FormBody body = new();
         const string formPrefix = "form.";
-        FormField<FormBody> count = new(static value => value.Count, nameof(FormBody.Count), nameof(count), formPrefix, "D3", null, false);
-        FormField<FormBody> note = new(static value => value.Note, nameof(FormBody.Note), "note", null, null, CollectionFormat.Csv, true);
+        FormField<FormBody> count = new(static value => value.Count, nameof(FormBody.Count), new(nameof(count), null, null, null), formPrefix, "D3", null, false);
+        FormField<FormBody> note = new(static value => value.Note, nameof(FormBody.Note), new("note", null, null, null), null, null, CollectionFormat.Csv, true);
         FormField<FormBody>[] fields = [count, note];
         using HttpContent form = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
         string formText = await form.ReadAsStringAsync();
-        string? fieldName = count.ResolveFieldName(settings.UrlParameterKeyFormatter);
+        string? fieldName = count.ResolveFieldName(settings.UrlParameterKeyFormatter, ContentSerializerNameStyle.SystemTextJson);
 
         Check.Require(formText == "form.count=012&note=" && fieldName == "form.count", "Descriptors apply naming, formats, and null serialization.");
         Check.Require(count.Getter(body) is int number && number == SampleValues.Count, "The getter reads the declared property.");
-        Check.Require(count.ClrName == nameof(FormBody.Count) && count.ExplicitName == nameof(count), "The descriptor retains both names.");
+        Check.Require(count.ClrName == nameof(FormBody.Count) && count.Names.ExplicitName == nameof(count), "The descriptor retains both names.");
         Check.Require(count.PrefixSegment == formPrefix && count.Format == "D3", "The descriptor retains prefix and format.");
         Check.Require(count.CollectionFormat is null && !count.SerializeNull, "The descriptor retains collection and null policy.");
         Check.Require(note.CollectionFormat == CollectionFormat.Csv && note.SerializeNull, "Explicit descriptor collection and null policies are retained.");
-        FormField<FormBody> unaliased = new(static value => value.Count, nameof(FormBody.Count), null, formPrefix, null, null, false);
-        Check.Require(unaliased.ResolveFieldName(new CamelCaseUrlParameterKeyFormatter()) == "form.count", "Unaliased fields use the supplied key formatter before adding their prefix.");
+        FormField<FormBody> unaliased = new(static value => value.Count, nameof(FormBody.Count), default, formPrefix, null, null, false);
+        string? unaliasedName = unaliased.ResolveFieldName(new CamelCaseUrlParameterKeyFormatter(), ContentSerializerNameStyle.SystemTextJson);
+        Check.Require(unaliasedName == "form.count", "Unaliased fields use the supplied key formatter before adding their prefix.");
         Check.Require(GeneratedRequestRunner.CanUnrollForm(body) && !GeneratedRequestRunner.CanUnrollForm("text"), "Only plain objects enter the unrolled path.");
 
         using HttpContent raw = GeneratedRequestRunner.CreateBodyContent(settings, "plain text", BodySerializationMethod.Default, streamBody: false);

@@ -16,7 +16,7 @@ namespace Refit;
 /// </remarks>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class NewtonsoftJsonContentSerializer(
-    JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer, ISynchronousContentDeserializer
+    JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer, ISynchronousContentDeserializer, IContentSerializerNameStyle
 {
     /// <summary>The number of characters consumed by a leading and trailing quote pair around a charset value.</summary>
     private const int QuotePairLength = 2;
@@ -48,6 +48,9 @@ public sealed class NewtonsoftJsonContentSerializer(
         : this(null)
     {
     }
+
+    /// <inheritdoc/>
+    public ContentSerializerNameStyle NameStyle => ContentSerializerNameStyle.Newtonsoft;
 
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

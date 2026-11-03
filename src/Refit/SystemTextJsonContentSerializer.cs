@@ -29,7 +29,7 @@ public sealed partial class SystemTextJsonContentSerializer(JsonSerializerOption
 #else
 public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
 #endif
-    : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer, ISynchronousContentDeserializer
+    : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer, ISynchronousContentDeserializer, IContentSerializerNameStyle
 {
     /// <summary>Justification shared by the reflection-fallback trim/AOT suppressions.</summary>
     private const string ReflectionFallbackJustification =
@@ -44,6 +44,9 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <summary>Gets the JSON serialization options this serializer uses, exposed so a query converter can walk a
     /// registered type's <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfo"/> without reflection.</summary>
     public JsonSerializerOptions SerializerOptions => jsonSerializerOptions;
+
+    /// <inheritdoc/>
+    public ContentSerializerNameStyle NameStyle => ContentSerializerNameStyle.SystemTextJson;
 
     /// <summary>Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters.</summary>
     /// <returns>The default <see cref="JsonSerializerOptions"/>.</returns>
