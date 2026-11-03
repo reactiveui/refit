@@ -54,9 +54,9 @@ public sealed class NewtonsoftJsonSecurityTests
         {
             var serializer = new NewtonsoftJsonContentSerializer();
 
-            var json = await serializer.ToHttpContent(new SampleModel { Name = "value" }).ReadAsStringAsync();
+            var json = await serializer.ToHttpContent(new SampleModel { Name = "fallback" }).ReadAsStringAsync();
 
-            await Assert.That(json).Contains("value");
+            await Assert.That(json).Contains("fallback");
         }
         finally
         {
