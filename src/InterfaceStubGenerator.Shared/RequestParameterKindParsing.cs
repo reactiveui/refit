@@ -448,7 +448,8 @@ internal static class RequestParameterKindParsing
             var allowRelative = false;
             foreach (var argument in attribute.NamedArguments)
             {
-                if (argument.Key == "AllowRelative" && argument.Value.Value is true)
+                // AllowRelative is the attribute's only settable member.
+                if (argument.Value.Value is true)
                 {
                     allowRelative = true;
                 }
