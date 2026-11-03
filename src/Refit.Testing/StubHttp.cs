@@ -84,12 +84,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     private int _outstanding;
 
     /// <summary>Initializes a new instance of the <see cref="StubHttp"/> class with an empty route table.</summary>
-    public StubHttp()
-    {
-        // The default serializer reads and writes typed replies through reflection-based JSON metadata, so register it.
-        ReflectionSupport.EnsureRegistered();
-        _requestsView = new(_requests);
-    }
+    public StubHttp() => _requestsView = new(_requests);
 
     /// <summary>Initializes a new instance of the <see cref="StubHttp"/> class with network-fault simulation.</summary>
     /// <param name="behavior">The network behavior applied to every matched request.</param>
@@ -201,7 +196,13 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The interface type is intentionally specified explicitly by the caller, matching RestService.For<T>.")]
-    public T CreateClient<T>(string hostUrl, RefitSettings baseSettings) => RestService.For<T>(hostUrl, ToSettings(baseSettings));
+    public T CreateClient<T>(string hostUrl, RefitSettings baseSettings)
+    {
+        // Only this reflection-based entry point registers the reflection JSON support, so a trimmed or AOT host that
+        // creates generated clients never reaches it.
+        ReflectionSupport.EnsureRegistered();
+        return RestService.For<T>(hostUrl, ToSettings(baseSettings));
+    }
 
     /// <summary>
     /// Creates a source-generated Refit implementation of <typeparamref name="T"/> whose HTTP requests are

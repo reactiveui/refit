@@ -75,9 +75,11 @@ internal static class Emitter
     /// <summary>Emits the shared preserve attribute and factory registration code.</summary>
     /// <param name="model">The context generation model describing the interfaces.</param>
     /// <param name="addSource">Callback used to add generated source files.</param>
+    /// <param name="support">How the registration is hooked to assembly load in the consumer compilation.</param>
     internal static void EmitSharedCode(
         ContextGenerationModel model,
-        Action<string, SourceText> addSource)
+        Action<string, SourceText> addSource,
+        ModuleInitializerSupport support = ModuleInitializerSupport.Guarded)
     {
         if (model.Interfaces.Length == 0)
         {
@@ -86,7 +88,7 @@ internal static class Emitter
 
         var generatedFileHeader = BuildSharedGeneratedFileHeader(model.Interfaces, model.EmitGeneratedCodeMarkers);
         SharedInfrastructureEmission.EmitPreserveAttribute(model, generatedFileHeader, addSource);
-        SharedInfrastructureEmission.EmitGeneratedFactoryModule(model, generatedFileHeader, addSource);
+        SharedInfrastructureEmission.EmitGeneratedFactoryModule(model, generatedFileHeader, addSource, support);
     }
 
     /// <summary>Emits the generated implementation source for a single interface.</summary>

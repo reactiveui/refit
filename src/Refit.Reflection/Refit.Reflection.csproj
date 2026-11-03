@@ -19,12 +19,6 @@
     <ProjectReference Include="..\Refit\Refit.csproj" PrivateAssets="Analyzers"/>
   </ItemGroup>
 
-  <!-- Nothing here is referenced statically; core Refit discovers this assembly by name at runtime. Root it so
-       trimmed publishes of applications that deliberately installed this package keep the reflection pipeline. -->
-  <ItemGroup Label="Package">
-    <None Include="targets\Refit.Reflection.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true"/>
-  </ItemGroup>
-
   <!-- This assembly is a friend of Refit and uses its internal polyfill shims directly; compiling local
        copies would conflict with the InternalsVisibleTo-imported ones (CS0436). -->
   <ItemGroup>

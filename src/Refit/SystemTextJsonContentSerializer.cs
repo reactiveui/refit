@@ -28,6 +28,9 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 #endif
     : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer, ISynchronousContentDeserializer, IContentSerializerNameStyle
 {
+    /// <summary>Guards the one-time assignment of the default resolver.</summary>
+    private readonly object _resolverLock = new();
+
     /// <summary>Initializes a new instance of the <see cref="SystemTextJsonContentSerializer"/> class.</summary>
     public SystemTextJsonContentSerializer()
         : this(GetDefaultJsonSerializerOptions())
@@ -52,7 +55,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         {
             if (jsonSerializerOptions.TypeInfoResolver is null && !jsonSerializerOptions.IsReadOnly)
             {
-                jsonSerializerOptions.TypeInfoResolver = ReflectionHooks.CreateDefaultJsonResolver();
+                AssignDefaultResolver();
             }
 
             return jsonSerializerOptions;
@@ -292,6 +295,17 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     internal JsonTypeInfo<T> GetJsonTypeInfo<T>() => GetJsonTypeInfo<T>(ReadyOptions);
+
+    /// <summary>Assigns the reflection resolver once, even when several threads share this serializer. A thread that loses the race
+    /// must not set it again, because the winner's first use makes the options read-only.</summary>
+    internal void AssignDefaultResolver()
+    {
+        lock (_resolverLock)
+        {
+            // The winner's resolver is already set, so the options may be read-only by now and must not be touched.
+            jsonSerializerOptions.TypeInfoResolver ??= ReflectionHooks.CreateDefaultJsonResolver();
+        }
+    }
 
     /// <summary>Serializes the item to HTTP content using the supplied runtime type.</summary>
     /// <param name="item">The item to serialize.</param>

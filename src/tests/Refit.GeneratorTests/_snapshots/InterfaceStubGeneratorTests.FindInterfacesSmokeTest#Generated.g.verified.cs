@@ -14,7 +14,7 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     internal static partial class GeneratedCompilation
     {
-#if NET5_0_OR_GREATER
+
         /// <summary>Registers generated Refit factories when the assembly is loaded.</summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessage(
             "Usage",
@@ -42,6 +42,6 @@ namespace Refit.Implementation
                 static (client, settings) =>
                     new global::Refit.Implementation.GeneratedCompilation.RefitTestsTestNestedINestedGitHubApi(client, settings));
         }
-#endif
+
     }
 }

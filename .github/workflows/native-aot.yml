@@ -21,7 +21,7 @@ jobs:
         with:
             projectFile: src/examples/Documentation/Aot/NativeClient/NativeClient.csproj
 
-    # Packs Refit, Refit.HttpClientFactory and Refit.Testing once for the package consumer below.
+    # Packs Refit, Refit.Reflection, Refit.HttpClientFactory and Refit.Testing once for the package consumer below.
     pack-for-package-consumer:
         runs-on: ubuntu-latest
         env:
@@ -46,7 +46,7 @@ jobs:
               shell: bash
               working-directory: src
               run: |
-                  for project in Refit Refit.HttpClientFactory Refit.Testing; do
+                  for project in Refit Refit.Reflection Refit.HttpClientFactory Refit.Testing; do
                       dotnet pack "$project/$project.csproj" --configuration Release --output "$GITHUB_WORKSPACE/aot-feed"
                   done
 
