@@ -125,7 +125,7 @@ public static partial class GeneratedRequestRunner
         IEnumerable<TElement>? body) =>
         body is null or HttpContent or Stream
             || settings.ContentSerializer is not SystemTextJsonContentSerializer serializer
-            || !serializer.WritesDeclaredTypeAsObject(typeof(TElement))
+            || !SystemTextJsonContentSerializer.WritesDeclaredTypeAsObject(typeof(TElement))
             ? CreateJsonLinesBodyContent(settings, body)
             : new JsonLinesContent<TElement>(body, serializer);
 
@@ -151,9 +151,7 @@ public static partial class GeneratedRequestRunner
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
-    public static HttpContent CreateUrlEncodedBodyContent<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        TBody>(
+    public static HttpContent CreateUrlEncodedBodyContent<TBody>(
         RefitSettings settings,
         TBody body)
     {
@@ -191,9 +189,7 @@ public static partial class GeneratedRequestRunner
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
-    public static HttpContent CreateUrlEncodedBodyContent<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        TBody>(
+    public static HttpContent CreateUrlEncodedBodyContent<TBody>(
         RefitSettings settings,
         TBody body,
         FormField<TBody>[] fields)
@@ -217,13 +213,13 @@ public static partial class GeneratedRequestRunner
         }
 
         // The descriptor path only matches the reflection path when the serializer resolves field names from
-        // attributes the generator already inlined (the built-in System.Text.Json serializer); otherwise fall back.
+        // attributes the generator already inlined (a serializer that reports its name style); otherwise fall back.
         var useDescriptors = body is not null and not System.Collections.IDictionary
-                             && settings.ContentSerializer is SystemTextJsonContentSerializer;
+                             && settings.ContentSerializer is IContentSerializerNameStyle;
 
         return new FormUrlEncodedContent(
             useDescriptors
-                ? FormValueMultimap.CreateFromFields(body, fields, settings)
+                ? FormValueMultimap.CreateFromFields(body, fields, settings, ((IContentSerializerNameStyle)settings.ContentSerializer).NameStyle)
                 : FormValueMultimap.Create(body, settings));
     }
 

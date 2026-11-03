@@ -165,6 +165,7 @@ dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f
 - Shared target frameworks and package versions are centralized in `src/Directory.Build.props` and `src/Directory.Packages.props`.
 - The repository uses `LangVersion=latest`; use modern C# features where they improve clarity or generated-code quality.
 - AOT and trim analyzer behavior is enabled for compatible TFMs; prefer APIs that avoid reflection, dynamic code, and runtime type lookup.
+- **No LINQ in production code.** Never use `System.Linq` (`Select`, `Where`, `OfType`, `FirstOrDefault`, `ToArray` and so on) in any shipping project, including the generator, analyzers and examples. Use plain loops. LINQ is allowed in test projects only.
 - Keep changes scoped. Do not rewrite unrelated files while touching generator/runtime paths.
 - Prefer focused tests that compile or execute the real generated output when changing source generator behavior.
 

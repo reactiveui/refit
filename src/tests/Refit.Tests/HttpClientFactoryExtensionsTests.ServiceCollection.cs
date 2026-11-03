@@ -353,15 +353,15 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(serviceProvider.GetRequiredKeyedService<IFooWithOtherAttribute>(TypeNoneKey)).IsNotNull();
     }
 
-    /// <summary>Verifies the generic <c>(IServiceCollection, RefitSettings)</c> overload still exists for binary compatibility.</summary>
+    /// <summary>Verifies the generic <c>(IServiceCollection, RefitSettings)</c> overload exists in the reflection package.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task AddRefitClient_ServiceCollectionGenericSettingsOverload_RemainsBinaryCompatible()
+    public async Task AddRefitClient_ServiceCollectionGenericSettingsOverload_ExistsInReflectionPackage()
     {
-        var method = typeof(HttpClientFactoryExtensions)
+        var method = typeof(HttpClientFactoryReflectionExtensions)
             .GetMethods(BindingFlags.Public | BindingFlags.Static)
             .SingleOrDefault(static method =>
-                method.Name == nameof(HttpClientFactoryExtensions.AddRefitClient)
+                method.Name == nameof(HttpClientFactoryReflectionExtensions.AddRefitClient)
                 && method.IsGenericMethodDefinition
                 && method.GetGenericArguments().Length == 1
                 && method.GetParameters() is
@@ -375,15 +375,15 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(method).IsNotNull();
     }
 
-    /// <summary>Verifies the <c>(IServiceCollection, Type, RefitSettings)</c> overload still exists for binary compatibility.</summary>
+    /// <summary>Verifies the <c>(IServiceCollection, Type, RefitSettings)</c> overload exists in the reflection package.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task AddRefitClient_ServiceCollectionTypeSettingsOverload_RemainsBinaryCompatible()
+    public async Task AddRefitClient_ServiceCollectionTypeSettingsOverload_ExistsInReflectionPackage()
     {
-        var method = typeof(HttpClientFactoryExtensions)
+        var method = typeof(HttpClientFactoryReflectionExtensions)
             .GetMethods(BindingFlags.Public | BindingFlags.Static)
             .SingleOrDefault(static method =>
-                method.Name == nameof(HttpClientFactoryExtensions.AddRefitClient)
+                method.Name == nameof(HttpClientFactoryReflectionExtensions.AddRefitClient)
                 && !method.IsGenericMethodDefinition
                 && method.GetParameters() is
                 [

@@ -13,6 +13,9 @@ public partial class GeneratedRequestRunnerTests
     /// <summary>An arbitrary form-field name, alongside "Note" and "Roles"; unrelated to any type in scope.</summary>
     private const string SkipFieldName = "Skip";
 
+    /// <summary>The Newtonsoft field name used by the serializer-name descriptor tests.</summary>
+    private const string NewtonsoftFieldName = "newtonsoft";
+
     /// <summary>Relative request path shared by the generated-runner fixtures.</summary>
     private const string RelativeResourcePath = "/resource";
 
@@ -249,12 +252,72 @@ public partial class GeneratedRequestRunnerTests
         var body = new DeclaredFormBody { Name = "Ada" };
         var fields = new[]
         {
-            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", "renamed", null, null, null, false),
+            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", new("renamed", null, null, null), null, null, null, false),
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
 
         await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("renamed=from-getter");
+    }
+
+    /// <summary>Verifies the descriptor overload picks the serializer-specific name for the XML serializer.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentWithFieldsUsesXmlNameForXmlSerializer()
+    {
+        var settings = new RefitSettings(new XmlContentSerializer());
+        var body = new DeclaredFormBody { Name = "Ada" };
+        var fields = new[]
+        {
+            new FormField<DeclaredFormBody>(static b => b.Name, "Name", new(null, "json", NewtonsoftFieldName, "xml"), null, null, null, false),
+        };
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
+
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("xml=Ada");
+    }
+
+    /// <summary>Verifies the descriptor overload picks the JSON name for System.Text.Json and lets an explicit name win.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentWithFieldsPrefersExplicitNameOverSerializerNames()
+    {
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+        var body = new DeclaredFormBody { Name = "Ada" };
+        var jsonFields = new[]
+        {
+            new FormField<DeclaredFormBody>(static b => b.Name, "Name", new(null, "json", NewtonsoftFieldName, "xml"), null, null, null, false),
+        };
+        var explicitFields = new[]
+        {
+            new FormField<DeclaredFormBody>(static b => b.Name, "Name", new("alias", "json", NewtonsoftFieldName, "xml"), null, null, null, false),
+        };
+
+        var json = await GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, jsonFields).ReadAsStringAsync();
+        var explicitName = await GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, explicitFields).ReadAsStringAsync();
+
+        await Assert.That(json).IsEqualTo("json=Ada");
+        await Assert.That(explicitName).IsEqualTo("alias=Ada");
+    }
+
+    /// <summary>Verifies the descriptor path and the reflection path agree on XML serializer names.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task XmlDescriptorAndReflectionFormPathsProduceIdenticalOutput()
+    {
+        var settings = new RefitSettings(new XmlContentSerializer());
+        var body = new XmlNamedFormBody { Element = "e", Attribute = "a", Unnamed = "u", };
+        var fields = new[]
+        {
+            new FormField<XmlNamedFormBody>(static b => b.Element, "Element", new(null, null, null, "el"), null, null, null, false),
+            new FormField<XmlNamedFormBody>(static b => b.Attribute, nameof(XmlNamedFormBody.Attribute), new(null, null, null, "at"), null, null, null, false),
+            new FormField<XmlNamedFormBody>(static b => b.Unnamed, "Unnamed", new(null, null, null, string.Empty), null, null, null, false),
+        };
+
+        var descriptor = await GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields).ReadAsStringAsync();
+        var reflection = await new FormUrlEncodedContent(new FormValueMultimap(body, settings)).ReadAsStringAsync();
+
+        await Assert.That(descriptor).IsEqualTo(reflection);
     }
 
     /// <summary>Verifies the descriptor overload falls back to reflection for a custom content serializer.</summary>
@@ -266,7 +329,7 @@ public partial class GeneratedRequestRunnerTests
         var body = new DeclaredFormBody { Name = "Ada" };
         var fields = new[]
         {
-            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", "renamed", null, null, null, false),
+            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", new("renamed", null, null, null), null, null, null, false),
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
@@ -308,9 +371,9 @@ public partial class GeneratedRequestRunnerTests
         var body = new DeclaredFormBody();
         var fields = new[]
         {
-            new FormField<DeclaredFormBody>(static _ => null, "Note", "note", null, null, null, serializeNull: true),
-            new FormField<DeclaredFormBody>(static _ => new List<string> { "a", "b" }, "Roles", "roles", null, null, CollectionFormat.Multi, false),
-            new FormField<DeclaredFormBody>(static _ => null, SkipFieldName, "skip", null, null, null, serializeNull: false),
+            new FormField<DeclaredFormBody>(static _ => null, "Note", new("note", null, null, null), null, null, null, serializeNull: true),
+            new FormField<DeclaredFormBody>(static _ => new List<string> { "a", "b" }, "Roles", new("roles", null, null, null), null, null, CollectionFormat.Multi, false),
+            new FormField<DeclaredFormBody>(static _ => null, SkipFieldName, new("skip", null, null, null), null, null, null, serializeNull: false),
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
@@ -327,7 +390,7 @@ public partial class GeneratedRequestRunnerTests
         var body = new DeclaredFormBody { Name = "v" };
         var fields = new[]
         {
-            new FormField<DeclaredFormBody>(static b => b.Name, "Name", null, "pre-", null, null, false),
+            new FormField<DeclaredFormBody>(static b => b.Name, "Name", default, "pre-", null, null, false),
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
@@ -343,10 +406,10 @@ public partial class GeneratedRequestRunnerTests
         var body = new ParityFormBody { WebPropertyId = "UA-1", Plain = "p", Note = null, Roles = ["x", "y"], };
         var fields = new[]
         {
-            new FormField<ParityFormBody>(static b => b.WebPropertyId, "WebPropertyId", "tid", null, null, null, false),
-            new FormField<ParityFormBody>(static b => b.Plain, "Plain", null, null, null, null, false),
-            new FormField<ParityFormBody>(static b => b.Note, "Note", null, null, null, null, serializeNull: true),
-            new FormField<ParityFormBody>(static b => b.Roles, "Roles", null, null, null, CollectionFormat.Multi, false),
+            new FormField<ParityFormBody>(static b => b.WebPropertyId, "WebPropertyId", new("tid", null, null, null), null, null, null, false),
+            new FormField<ParityFormBody>(static b => b.Plain, "Plain", default, null, null, null, false),
+            new FormField<ParityFormBody>(static b => b.Note, "Note", default, null, null, null, serializeNull: true),
+            new FormField<ParityFormBody>(static b => b.Roles, "Roles", default, null, null, CollectionFormat.Multi, false),
         };
 
         // SystemTextJson takes the generated descriptor path; the recording serializer forces the reflection path.
@@ -454,7 +517,7 @@ public partial class GeneratedRequestRunnerTests
         var result = GeneratedRequestRunner.RoundTripEscapePath(
             "a/b",
             settings,
-            typeof(string),
+            GeneratedParameterAttributeProvider.Empty,
             typeof(string));
 
         await Assert.That(result).IsEqualTo("/");
@@ -519,7 +582,7 @@ public partial class GeneratedRequestRunnerTests
     }
 
     /// <summary>Records serializer usage and returns configured test values.</summary>
-    private sealed class RecordingContentSerializer : IHttpContentSerializer
+    private sealed class RecordingContentSerializer : IHttpContentSerializer, IReflectionFieldNameProvider
     {
         /// <summary>Gets the number of serialization calls.</summary>
         public int SerializeCallCount { get; private set; }
@@ -645,7 +708,7 @@ public partial class GeneratedRequestRunnerTests
     private sealed class NullUrlParameterFormatter : IUrlParameterFormatter
     {
         /// <inheritdoc/>
-        public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type) => null;
+        public string? Format(object? value, IParameterAttributeProvider attributeProvider, Type type) => null;
     }
 
     /// <summary>Declared form model used to verify generated URL-encoded bodies use compile-time metadata.</summary>
@@ -660,6 +723,22 @@ public partial class GeneratedRequestRunnerTests
     {
         /// <summary>Gets or sets a derived-only value.</summary>
         public string? Hidden { get; set; }
+    }
+
+    /// <summary>Form model whose properties carry XML naming attributes.</summary>
+    private sealed class XmlNamedFormBody
+    {
+        /// <summary>Gets or sets the element-named property.</summary>
+        [System.Xml.Serialization.XmlElement("el")]
+        public string? Element { get; set; }
+
+        /// <summary>Gets or sets the attribute-named property.</summary>
+        [System.Xml.Serialization.XmlAttribute("at")]
+        public string? Attribute { get; set; }
+
+        /// <summary>Gets or sets the property with an unnamed element attribute.</summary>
+        [System.Xml.Serialization.XmlElement]
+        public string? Unnamed { get; set; }
     }
 
     /// <summary>Form model used to compare the descriptor and reflection serialization paths.</summary>

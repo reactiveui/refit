@@ -30,6 +30,24 @@ public sealed class ApiResponseEnsureSuccessTests
             .ThrowsExactly<ApiException>();
     }
 
+    /// <summary>Verifies the interface-typed guards return the same response when it succeeded.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task InterfaceTypedGuardsReturnSuccessfulResponse()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
+        using var okResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
+        using var success = new ApiResponse<string>(okResponse, "body", new());
+
+        IApiResponse<string> generic = success;
+        IApiResponse nonGeneric = success;
+
+        await Assert.That(await generic.EnsureSuccessStatusCodeAsync()).IsSameReferenceAs(success);
+        await Assert.That(await generic.EnsureSuccessfulAsync()).IsSameReferenceAs(success);
+        await Assert.That(await nonGeneric.EnsureSuccessStatusCodeAsync()).IsSameReferenceAs(success);
+        await Assert.That(await nonGeneric.EnsureSuccessfulAsync()).IsSameReferenceAs(success);
+    }
+
     /// <summary>Verifies the generic EnsureSuccessfulAsync returns the response on success and throws the error on failure.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

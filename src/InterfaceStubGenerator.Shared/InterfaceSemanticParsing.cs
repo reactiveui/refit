@@ -22,9 +22,10 @@ internal static class InterfaceSemanticParsing
         MethodDeclarationSyntax method,
         CancellationToken cancellationToken)
     {
-        var symbol = semanticModel.GetDeclaredSymbol(method, cancellationToken);
+        // A method declaration in the model's own syntax tree always has a declared symbol.
+        var symbol = semanticModel.GetDeclaredSymbol(method, cancellationToken)!;
         var attribute = semanticModel.Compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute");
-        if (symbol is null || attribute is null || !Parser.IsRefitMethod(symbol, attribute))
+        if (attribute is null || !Parser.IsRefitMethod(symbol, attribute))
         {
             return [];
         }
@@ -289,9 +290,11 @@ internal static class InterfaceSemanticParsing
             }
 
             methods.Add(method);
-            if (!compilationNullableEnabled && method.DeclaringSyntaxReferences is { IsEmpty: false } references)
+
+            // A method declared in source always has at least one declaring syntax reference.
+            if (!compilationNullableEnabled)
             {
-                nullableEnabled = IsNullableEnabled(references[0], semanticModel);
+                nullableEnabled = IsNullableEnabled(method.DeclaringSyntaxReferences[0], semanticModel);
             }
         }
 

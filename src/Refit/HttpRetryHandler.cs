@@ -92,7 +92,8 @@ public sealed class HttpRetryHandler(HttpRetryOptions options) : DelegatingHandl
             throw new ArgumentOutOfRangeException(nameof(options.BaseDelay));
         }
 
-        if (options.MaxDelay < TimeSpan.Zero || options.MaxDelay.TotalMilliseconds > uint.MaxValue - 1D)
+        // BaseDelay is already known to be non-negative and no greater than MaxDelay, so MaxDelay cannot be negative.
+        if (options.MaxDelay.TotalMilliseconds > uint.MaxValue - 1D)
         {
             throw new ArgumentOutOfRangeException(nameof(options.MaxDelay));
         }

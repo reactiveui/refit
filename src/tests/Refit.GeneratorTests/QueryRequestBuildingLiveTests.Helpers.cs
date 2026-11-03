@@ -17,7 +17,7 @@ public sealed partial class QueryRequestBuildingLiveTests
         /// <inheritdoc/>
         public override string? Format(
             object? value,
-            System.Reflection.ICustomAttributeProvider attributeProvider,
+            IParameterAttributeProvider attributeProvider,
             Type type) =>
             base.Format(value, attributeProvider, type)?.ToUpperInvariant();
     }

@@ -127,22 +127,16 @@ internal static class Errors
         SampleCheck.Equal("sample", problem?.Extensions["trace"].ToString());
     }
 
-    /// <summary>Reproduces the generated metadata failure for the extension-data property.</summary>
-    /// <returns>Completion after the exact serializer exception is verified.</returns>
-    /// <exception cref="InvalidOperationException">The expected metadata failure does not occur.</exception>
+    /// <summary>Reads a problem document with generated metadata, which once failed on the extension-data property.</summary>
+    /// <returns>Completion after the problem document is verified.</returns>
     private static async Task CheckProblemMetadataAsync()
     {
         using HttpContent content = new StringContent(ProblemJson);
-        try
-        {
-            _ = await Settings.ContentSerializer.FromHttpContentAsync<ProblemDetails>(content);
-            throw new InvalidOperationException("Generated ProblemDetails metadata should reproduce the failure.");
-        }
-        catch (InvalidOperationException error)
-        {
-            Console.WriteLine(error.Message);
-            SampleCheck.Equal("The extension data property 'Extensions' on type 'Refit.ProblemDetails' cannot bind with a parameter in the deserialization constructor.", error.Message);
-        }
+        ProblemDetails? problem = await Settings.ContentSerializer.FromHttpContentAsync<ProblemDetails>(content);
+        Console.WriteLine(problem?.Title);
+
+        SampleCheck.Equal("Invalid name", problem?.Title);
+        SampleCheck.Equal((int)HttpStatusCode.BadRequest, problem?.Status);
     }
 
     /// <summary>Checks public exception constructors and HTTP/validation factories.</summary>

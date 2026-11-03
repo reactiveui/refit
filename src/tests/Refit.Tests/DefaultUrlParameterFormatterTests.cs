@@ -38,7 +38,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTime,
-            parameters.GetType().GetProperty(nameof(parameters.DateTime))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTime))!),
             parameters.GetType());
 
         await Assert.That(output).IsNull();
@@ -55,7 +55,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTime,
-            parameters.GetType().GetProperty(nameof(parameters.DateTime))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTime))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("08/21/2023 00:00:00");
@@ -72,7 +72,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTimeWithAttributeFormatYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("2023");
@@ -90,7 +90,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTimeWithAttributeFormatYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("2023");
@@ -108,7 +108,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTimeWithAttributeFormatYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("2023");
@@ -127,7 +127,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTimeWithAttributeFormatYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("2023");
@@ -145,7 +145,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTime,
-            parameters.GetType().GetProperty(nameof(parameters.DateTime))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTime))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("2023");
@@ -163,7 +163,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTime,
-            parameters.GetType().GetProperty(nameof(parameters.DateTime))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTime))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("2023");
@@ -182,7 +182,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.DateTime,
-            parameters.GetType().GetProperty(nameof(parameters.DateTime))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.DateTime))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("2023");
@@ -306,7 +306,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.Flags,
-            parameters.GetType().GetProperty(nameof(parameters.Flags))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.Flags))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("First, Second");
@@ -323,7 +323,7 @@ public partial class DefaultUrlParameterFormatterTests
 
         var output = urlParameterFormatter.Format(
             parameters.Flags,
-            parameters.GetType().GetProperty(nameof(parameters.Flags))!,
+            new CachedAttributeProvider(parameters.GetType().GetProperty(nameof(parameters.Flags))!),
             parameters.GetType());
 
         await Assert.That(output).IsEqualTo("-1");

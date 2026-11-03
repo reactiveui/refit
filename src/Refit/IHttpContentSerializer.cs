@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 namespace Refit;
 
@@ -40,11 +39,4 @@ public interface IHttpContentSerializer
     Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands.
-    /// </summary>
-    /// <param name="propertyInfo">A PropertyInfo object.</param>
-    /// <returns>The calculated field name.</returns>
-    string? GetFieldNameForProperty(PropertyInfo propertyInfo);
 }

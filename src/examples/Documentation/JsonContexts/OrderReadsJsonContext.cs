@@ -7,6 +7,6 @@ using System.Text.Json.Serialization;
 namespace Refit.Documentation.JsonContexts;
 
 /// <summary>Metadata that describes <c>Order</c> and nothing else, so <c>NewOrder</c> has no metadata.</summary>
-[JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
+[JsonSourceGenerationOptions(JsonSerializerDefaults.Web, UseStringEnumConverter = true)]
 [JsonSerializable(typeof(Order))]
 internal sealed partial class OrderReadsJsonContext : JsonSerializerContext;

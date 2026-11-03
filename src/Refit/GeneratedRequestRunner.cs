@@ -285,7 +285,7 @@ public static partial class GeneratedRequestRunner
     public static string RoundTripEscapePath(
         string? value,
         RefitSettings settings,
-        ICustomAttributeProvider attributeProvider,
+        IParameterAttributeProvider attributeProvider,
         Type type)
     {
         if (value is null)
@@ -345,7 +345,7 @@ public static partial class GeneratedRequestRunner
     public static string? FormatUrlParameter(
         RefitSettings settings,
         object? value,
-        ICustomAttributeProvider attributeProvider,
+        IParameterAttributeProvider attributeProvider,
         Type type) =>
         ResolveUrlParameterFormatter(settings, value).Format(value, attributeProvider, type);
 
@@ -402,6 +402,31 @@ public static partial class GeneratedRequestRunner
         return prefixSegment is null ? name : prefixSegment + name;
     }
 
+    /// <summary>Builds a form field key, choosing the compile-time name that matches the configured content serializer.</summary>
+    /// <param name="settings">The Refit settings.</param>
+    /// <param name="clrName">The declared CLR property name.</param>
+    /// <param name="explicitName">The <c>[AliasAs]</c> or <c>[Query]</c> name, which wins over every serializer name, or null.</param>
+    /// <param name="jsonName">The <c>[JsonPropertyName]</c> name, or null.</param>
+    /// <param name="newtonsoftName">The Newtonsoft.Json <c>[JsonProperty]</c> name, or null.</param>
+    /// <param name="xmlName">The <c>[XmlElement]</c> or <c>[XmlAttribute]</c> name, or null.</param>
+    /// <param name="prefixSegment">The compile-time <c>prefix + delimiter</c>, or null.</param>
+    /// <returns>The form field key.</returns>
+    /// <remarks>Generated code only calls this after checking the serializer implements <see cref="IContentSerializerNameStyle"/>.</remarks>
+    public static string BuildFormKey(
+        RefitSettings settings,
+        string clrName,
+        string? explicitName,
+        string? jsonName,
+        string? newtonsoftName,
+        string? xmlName,
+        string? prefixSegment)
+    {
+        var serializerName = new FormFieldNames(explicitName, jsonName, newtonsoftName, xmlName)
+            .ForStyle(((IContentSerializerNameStyle)settings.ContentSerializer).NameStyle);
+
+        return BuildQueryKey(settings, clrName, explicitName ?? serializerName, prefixSegment);
+    }
+
     /// <summary>Formats a value with the invariant culture, matching the default URL parameter formatter's
     /// rendering for <see cref="IFormattable"/> values without boxing or reflection.</summary>
     /// <typeparam name="T">The formattable value type.</typeparam>
@@ -445,7 +470,7 @@ public static partial class GeneratedRequestRunner
         string key,
         CollectionFormat collectionFormat,
         bool preEncoded,
-        (Type ElementProviderType, ICustomAttributeProvider JoinedProvider, Type JoinedType) formatting)
+        (Type ElementProviderType, IParameterAttributeProvider JoinedProvider, Type JoinedType) formatting)
     {
         if (values is null)
         {
@@ -457,7 +482,7 @@ public static partial class GeneratedRequestRunner
         {
             foreach (var value in values)
             {
-                var formatted = FormatUrlParameter(settings, value, element, element);
+                var formatted = FormatUrlParameter(settings, value, GeneratedParameterAttributeProvider.Empty, element);
                 builder.Add(key, FormatUrlParameter(settings, formatted, formatting.JoinedProvider, formatting.JoinedType), preEncoded);
             }
 
@@ -635,7 +660,7 @@ public static partial class GeneratedRequestRunner
             }
 
             first = false;
-            builder.Append(FormatUrlParameter(settings, value, elementProviderType, elementProviderType));
+            builder.Append(FormatUrlParameter(settings, value, GeneratedParameterAttributeProvider.Empty, elementProviderType));
         }
 
         return builder.ToString();
@@ -801,7 +826,7 @@ public static partial class GeneratedRequestRunner
         ref ValueStringBuilder sb,
         string section,
         RefitSettings settings,
-        ICustomAttributeProvider attributeProvider,
+        IParameterAttributeProvider attributeProvider,
         Type type) =>
         sb.Append(StringHelpers.EscapeDataString(FormatUrlParameter(settings, section, attributeProvider, type) ?? string.Empty));
 }

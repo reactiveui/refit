@@ -32,8 +32,7 @@ internal static class MethodSignatureEmission
 
         // A [Url] method dispatches to an absolute URI (the validated [Url] value with any query appended), bypassing
         // the base-address merge; every other method builds a relative URI merged onto the base address.
-        var urlKind = InlineRequestEmission.FindRequestParameter(request, RequestParameterKind.Url)
-            ?.AllowRelativeUrl is true
+        var urlKind = InlineRequestEmission.AllowsRelativeUrl(request)
             ? "RelativeOrAbsolute"
             : "Absolute";
         var requestUriExpression = InlineRequestEmission.HasUrlParameter(request)
@@ -110,10 +109,7 @@ internal static class MethodSignatureEmission
 
         // A [Url] method dispatches to an absolute URI (the validated [Url] value with any query appended), bypassing
         // the base-address merge; every other method builds a relative URI merged onto the base address.
-        var urlKind = InlineRequestEmission.FindRequestParameter(
-                request,
-                RequestParameterKind.Url)
-            ?.AllowRelativeUrl is true
+        var urlKind = InlineRequestEmission.AllowsRelativeUrl(request)
             ? "RelativeOrAbsolute"
             : "Absolute";
         var requestUriExpression = InlineRequestEmission.HasUrlParameter(request)

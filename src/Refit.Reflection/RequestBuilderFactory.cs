@@ -1,40 +1,40 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Refit;
 
-/// <summary>Default implementation of <c>IRequestBuilderFactory</c>.</summary>
-internal class RequestBuilderFactory : IRequestBuilderFactory
+/// <summary>Creates the reflection request builders.</summary>
+internal static class RequestBuilderFactory
 {
-    /// <inheritdoc/>
+    /// <summary>Creates a strongly typed request builder for the specified interface type.</summary>
+    /// <typeparam name="T">The Refit interface type.</typeparam>
+    /// <param name="settings">The settings to configure the builder.</param>
+    /// <returns>A request builder for the interface type.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    public IRequestBuilder<T> Create<
-        [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces
-            | DynamicallyAccessedMemberTypes.PublicMethods
-            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(RefitSettings? settings) =>
-        new CachedRequestBuilderImplementation<T>(
+    internal static IRequestBuilder<T> Create<T>(RefitSettings? settings)
+    {
+        ReflectionSupport.EnsureRegistered();
+        return new CachedRequestBuilderImplementation<T>(
             new RequestBuilderImplementation<T>(settings));
+    }
 
-    /// <inheritdoc/>
+    /// <summary>Creates a request builder for the specified interface type.</summary>
+    /// <param name="refitInterfaceType">The Refit interface type.</param>
+    /// <param name="settings">The settings to configure the builder.</param>
+    /// <returns>A request builder for the interface type.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    public IRequestBuilder Create(
-        [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces
-            | DynamicallyAccessedMemberTypes.PublicMethods
-            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        Type refitInterfaceType,
-        RefitSettings? settings) =>
-        new CachedRequestBuilderImplementation(
+    internal static IRequestBuilder Create(Type refitInterfaceType, RefitSettings? settings)
+    {
+        ReflectionSupport.EnsureRegistered();
+        return new CachedRequestBuilderImplementation(
             new RequestBuilderImplementation(refitInterfaceType, settings));
+    }
 }

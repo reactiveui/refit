@@ -55,42 +55,42 @@ public class UrlParameterFormattingBenchmarks
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
-    public int FormatString() => (_valueFormatter.Format("widgets and gadgets", typeof(string), typeof(string)) ?? string.Empty).Length;
+    public int FormatString() => (_valueFormatter.Format("widgets and gadgets", GeneratedParameterAttributeProvider.Empty, typeof(string)) ?? string.Empty).Length;
 
     /// <summary>Formats an integer value (boxed through the invariant <c>string.Format</c> path).</summary>
     /// <returns>The formatted value length.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
-    public int FormatInt() => (_valueFormatter.Format(SampleInteger, typeof(int), typeof(int)) ?? string.Empty).Length;
+    public int FormatInt() => (_valueFormatter.Format(SampleInteger, GeneratedParameterAttributeProvider.Empty, typeof(int)) ?? string.Empty).Length;
 
     /// <summary>Formats an enum value with no <c>[EnumMember]</c> override.</summary>
     /// <returns>The formatted value length.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
-    public int FormatEnumPlain() => (_valueFormatter.Format(QuerySort.Name, typeof(QuerySort), typeof(QuerySort)) ?? string.Empty).Length;
+    public int FormatEnumPlain() => (_valueFormatter.Format(QuerySort.Name, GeneratedParameterAttributeProvider.Empty, typeof(QuerySort)) ?? string.Empty).Length;
 
     /// <summary>Formats an enum value carrying an <c>[EnumMember]</c> override (exercises the enum-member cache).</summary>
     /// <returns>The formatted value length.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
-    public int FormatEnumMember() => (_valueFormatter.Format(QuerySort.DateDescending, typeof(QuerySort), typeof(QuerySort)) ?? string.Empty).Length;
+    public int FormatEnumMember() => (_valueFormatter.Format(QuerySort.DateDescending, GeneratedParameterAttributeProvider.Empty, typeof(QuerySort)) ?? string.Empty).Length;
 
     /// <summary>Formats a <see cref="DateTimeOffset"/> value.</summary>
     /// <returns>The formatted value length.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
-    public int FormatDateTimeOffset() => (_valueFormatter.Format(_timestamp, typeof(DateTimeOffset), typeof(DateTimeOffset)) ?? string.Empty).Length;
+    public int FormatDateTimeOffset() => (_valueFormatter.Format(_timestamp, GeneratedParameterAttributeProvider.Empty, typeof(DateTimeOffset)) ?? string.Empty).Length;
 
     /// <summary>Formats a <see cref="Guid"/> value.</summary>
     /// <returns>The formatted value length.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Value")]
-    public int FormatGuid() => (_valueFormatter.Format(_guid, typeof(Guid), typeof(Guid)) ?? string.Empty).Length;
+    public int FormatGuid() => (_valueFormatter.Format(_guid, GeneratedParameterAttributeProvider.Empty, typeof(Guid)) ?? string.Empty).Length;
 
     /// <summary>Formats a key through the pass-through default key formatter (baseline).</summary>
     /// <returns>The formatted key length.</returns>

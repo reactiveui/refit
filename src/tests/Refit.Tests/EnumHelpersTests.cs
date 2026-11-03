@@ -128,6 +128,12 @@ public sealed class EnumHelpersTests
         await Assert.That(EnumHelpers.GetEnumMemberValue(typeof(MemberEnum), MemberEnum.Custom)).IsEqualTo("custom-value");
     }
 
+    /// <summary>Verifies the lookup yields no value when no resolver is registered.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetEnumMemberValueReturnsNullWithoutARegisteredResolver() =>
+        await Assert.That(EnumHelpers.GetEnumMemberValue(null, typeof(MemberEnum), MemberEnum.Custom)).IsNull();
+
     /// <summary>Verifies numeric enum helpers preserve every supported signed and unsigned backing type.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

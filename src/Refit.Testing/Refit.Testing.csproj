@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\Refit.Reflection\Refit.Reflection.csproj" />
   </ItemGroup>
 </Project>

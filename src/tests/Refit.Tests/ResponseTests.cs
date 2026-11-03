@@ -67,6 +67,10 @@ public sealed partial class ResponseTests
     private static readonly JsonSerializerOptions _caseSensitiveSerializerOptions =
         new() { PropertyNameCaseInsensitive = false };
 
+    /// <summary>Options whose resolver describes no types, so no ProblemDetails metadata exists.</summary>
+    private static readonly JsonSerializerOptions EmptyResolverSerializerOptions =
+        new(JsonSerializerDefaults.Web) { TypeInfoResolver = System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine() };
+
     /// <summary>Refit service used to exercise alias and response handling.</summary>
     public interface IMyAliasService
     {
@@ -174,15 +178,13 @@ public sealed partial class ResponseTests
     }
 
     /// <summary>
-    /// Verifies ValidationApiException deserializes ProblemDetails with the configured
-    /// IHttpContentSerializer instead of a hardcoded System.Text.Json instance. A
-    /// case-sensitive serializer is used here, so the camelCase DetailValue key must not map
-    /// to the PascalCase Detail property the way the old camelCase/case-insensitive
-    /// hardcoded options would have.
+    /// Verifies ValidationApiException reads ProblemDetails with Refit's own reader, so the result does not
+    /// depend on the configured serializer's options or type metadata. A case-sensitive serializer is
+    /// configured here, yet the camelCase detail key still maps to the Detail property.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task ValidationApiExceptionUsesConfiguredContentSerializer()
+    public async Task ValidationApiExceptionReadsProblemDetailsIndependentlyOfConfiguredSerializer()
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"Title\":\"mapped\",\"detail\":\"unmapped\"}"), };
         expectedResponse.Content.Headers.ContentType = new(
@@ -196,7 +198,29 @@ public sealed partial class ResponseTests
 
         await Assert.That(actualException!.Content).IsNotNull();
         await Assert.That(actualException.Content!.Title).IsEqualTo("mapped");
-        await Assert.That(actualException.Content.Detail).IsNull();
+        await Assert.That(actualException.Content.Detail).IsEqualTo("unmapped");
+    }
+
+    /// <summary>Verifies problem details are read when the serializer's resolver describes no ProblemDetails metadata (issue 2368).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ValidationApiExceptionIsCreatedWhenResolverHasNoProblemDetailsMetadata()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://example.test/api/items");
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            RequestMessage = request,
+            Content = new StringContent(
+                "{\"status\":400,\"errors\":{\"Name\":[\"Name is required.\"]},\"traceId\":\"abc\"}",
+                System.Text.Encoding.UTF8,
+                ProblemJsonMediaType),
+        };
+
+        var exception = await ApiException.Create(request, request.Method, response, new(new SystemTextJsonContentSerializer(EmptyResolverSerializerOptions)));
+
+        var validation = await Assert.That(exception).IsTypeOf<ValidationApiException>();
+        await Assert.That(validation!.Content!.Errors["Name"][0]).IsEqualTo("Name is required.");
+        await Assert.That(validation.Content.Extensions["traceId"]).IsEqualTo("abc");
     }
 
     /// <summary>Verifies that EnsureSuccessStatusCodeAsync throws a ValidationApiException for a Bad Request in terms of RFC 7807.</summary>

@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections;
-using System.Reflection;
 
 namespace Refit.Tests;
 
@@ -17,7 +16,7 @@ public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
     /// <returns>The formatted parameter value.</returns>
     public override string? Format(
         object? value,
-        ICustomAttributeProvider attributeProvider,
+        IParameterAttributeProvider attributeProvider,
         Type type) =>
         value switch
         {

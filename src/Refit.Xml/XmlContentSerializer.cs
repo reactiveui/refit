@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -15,16 +14,8 @@ namespace Refit;
 /// Initializes a new instance of the <see cref="XmlContentSerializer"/> class.
 /// </remarks>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentDeserializer
+public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentDeserializer, IContentSerializerNameStyle
 {
-    /// <summary>Explains why the trimming warning is suppressed for XML reflection.</summary>
-    private const string XmlReflectionTrimmingJustification =
-        "Refit's XML serialization uses System.Xml.Serialization reflection that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.";
-
-    /// <summary>Explains why the AOT warning is suppressed for XML reflection.</summary>
-    private const string XmlReflectionAotJustification =
-        "Refit's XML serialization may generate serialization assemblies at runtime. Use the Refit source generator for AOT apps.";
-
     /// <summary>The settings controlling XML serialization.</summary>
     private readonly XmlContentSerializerSettings _settings;
 
@@ -46,13 +37,14 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
     {
     }
 
+    /// <inheritdoc/>
+    public ContentSerializerNameStyle NameStyle => ContentSerializerNameStyle.Xml;
+
     /// <summary>Serialize object of type <typeparamref name="T"/> to a <see cref="HttpContent"/> with Xml.</summary>
     /// <typeparam name="T">Type of the object to serialize from.</typeparam>
     /// <param name="item">Object to serialize.</param>
     /// <returns><see cref="HttpContent"/> that contains the serialized <typeparamref name="T"/> object in Xml.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
-    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
     public HttpContent ToHttpContent<T>(T item)
     {
         ArgumentExceptionHelper.ThrowIfNull(item);
@@ -82,8 +74,6 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
     /// <param name="content">HttpContent object with Xml content to deserialize.</param>
     /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
     /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -113,8 +103,6 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
     }
 
     /// <inheritdoc/>
-    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -137,14 +125,5 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
             input,
             _settings.XmlReaderWriterSettings.ReaderSettings);
         return (T?)xmlSerializer.Deserialize(reader);
-    }
-
-    /// <inheritdoc/>
-    public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
-    {
-        ArgumentExceptionHelper.ThrowIfNull(propertyInfo);
-
-        return propertyInfo.GetCustomAttribute<XmlElementAttribute>(true)?.ElementName
-               ?? propertyInfo.GetCustomAttribute<XmlAttributeAttribute>(true)?.AttributeName;
     }
 }

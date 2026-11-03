@@ -54,11 +54,17 @@ internal static class SharedInfrastructureEmission
     /// <param name="model">The context generation model describing the interfaces.</param>
     /// <param name="generatedFileHeader">The shared generated file header.</param>
     /// <param name="addSource">Callback used to add generated source files.</param>
+    /// <param name="support">How the registration is hooked to assembly load in the consumer compilation.</param>
     internal static void EmitGeneratedFactoryModule(
         ContextGenerationModel model,
         string generatedFileHeader,
-        Action<string, SourceText> addSource)
+        Action<string, SourceText> addSource,
+        ModuleInitializerSupport support = ModuleInitializerSupport.Guarded)
     {
+        // A compiler lowers [ModuleInitializer] into the module constructor on every target, so a target that lacks the
+        // attribute only needs it declared. Without it, .NET Framework clients would never register.
+        var guardStart = support == ModuleInitializerSupport.Guarded ? "#if NET5_0_OR_GREATER" : string.Empty;
+        var guardEnd = support == ModuleInitializerSupport.Guarded ? "#endif" : string.Empty;
         var generatedSource = $$"""
             {{generatedFileHeader}}
             namespace Refit.Implementation
@@ -72,24 +78,53 @@ internal static class SharedInfrastructureEmission
                 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
                 internal static partial class {{model.GeneratedClassName}}
                 {
-            #if NET5_0_OR_GREATER
+            {{guardStart}}
                     /// <summary>Registers generated Refit factories when the assembly is loaded.</summary>
                     [global::System.Diagnostics.CodeAnalysis.SuppressMessage(
                         "Usage",
                         "CA2255:The ModuleInitializer attribute should not be used in libraries",
                         Justification = "ModuleInitializer is used intentionally so generated Refit factories are registered when the assembly loads.")]
                     [System.Runtime.CompilerServices.ModuleInitializer]
-                    [System.Diagnostics.CodeAnalysis.DynamicDependency(
-                        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All,
-                        typeof(global::Refit.Implementation.{{model.GeneratedClassName}}))]
                     internal static void Initialize()
                     {
             {{Emitter.BuildGeneratedFactoryRegistrations(model.Interfaces)}}        }
-            #endif
+            {{guardEnd}}
                 }
             }
 
             """;
         addSource("Generated.g.cs", Emitter.ToSourceText(generatedSource));
+
+        if (support == ModuleInitializerSupport.UnguardedWithPolyfill)
+        {
+            EmitModuleInitializerPolyfill(generatedFileHeader, addSource);
+        }
+    }
+
+    /// <summary>Declares <c>ModuleInitializerAttribute</c> for targets whose framework does not define it.</summary>
+    /// <param name="generatedFileHeader">The shared generated file header.</param>
+    /// <param name="addSource">Callback used to add generated source files.</param>
+    internal static void EmitModuleInitializerPolyfill(
+        string generatedFileHeader,
+        Action<string, SourceText> addSource)
+    {
+        var polyfillSource = $$"""
+            {{generatedFileHeader}}
+            #if !NET5_0_OR_GREATER
+            namespace System.Runtime.CompilerServices
+            {
+                /// <summary>Marks a method the compiler runs when the module loads.</summary>
+                {{Emitter.GeneratedCodeAttribute}}
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                [global::System.AttributeUsage(global::System.AttributeTargets.Method, Inherited = false)]
+                internal sealed class ModuleInitializerAttribute : global::System.Attribute
+                {
+                }
+            }
+            #endif
+
+            """;
+        addSource("ModuleInitializerAttribute.g.cs", Emitter.ToSourceText(polyfillSource));
     }
 }

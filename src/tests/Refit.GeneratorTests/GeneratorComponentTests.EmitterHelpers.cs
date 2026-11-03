@@ -77,6 +77,34 @@ public static partial class GeneratorComponentTests
             await Assert.That(builder.ToString()).IsEqualTo("""\\\"\0\a\b\f\n\r\t\v\u0085\u2028\u2029{}x""");
         }
 
+        /// <summary>Verifies characters across the whole range are either escaped or emitted unchanged.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task AppendEscapedCharacter_HandlesTheWholeCharacterRange()
+        {
+            var builder = new PooledStringBuilder();
+            const int lastCharacter = char.MaxValue;
+            for (var value = 0; value <= lastCharacter; value++)
+            {
+                LiteralEmissionHelpers.AppendEscapedCharacter(builder, (char)value, (value & 1) == 0);
+            }
+
+            await Assert.That(builder.ToString().Length).IsGreaterThan(lastCharacter);
+        }
+
+        /// <summary>Verifies braces are doubled in interpolated strings and left alone otherwise.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task AppendEscapedCharacter_DoublesBracesWhenInterpolated()
+        {
+            var builder = new PooledStringBuilder();
+            LiteralEmissionHelpers.AppendEscapedCharacter(builder, '{', true);
+            LiteralEmissionHelpers.AppendEscapedCharacter(builder, '}', true);
+            LiteralEmissionHelpers.AppendEscapedCharacter(builder, 'x', true);
+
+            await Assert.That(builder.ToString()).IsEqualTo("{{}}x");
+        }
+
         /// <summary>Verifies unguarded indexed query emission and the shared empty parameter provider.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]

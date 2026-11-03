@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Newtonsoft.Json;
@@ -16,7 +15,7 @@ namespace Refit;
 /// </remarks>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public sealed class NewtonsoftJsonContentSerializer(
-    JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer, ISynchronousContentDeserializer
+    JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer, ISynchronousContentDeserializer, IContentSerializerNameStyle
 {
     /// <summary>The number of characters consumed by a leading and trailing quote pair around a charset value.</summary>
     private const int QuotePairLength = 2;
@@ -50,15 +49,10 @@ public sealed class NewtonsoftJsonContentSerializer(
     }
 
     /// <inheritdoc/>
+    public ContentSerializerNameStyle NameStyle => ContentSerializerNameStyle.Newtonsoft;
+
+    /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
     public HttpContent ToHttpContent<T>(T item) =>
         new StringContent(
             JsonConvert.SerializeObject(item, _jsonSerializerSettings.Value),
@@ -66,14 +60,6 @@ public sealed class NewtonsoftJsonContentSerializer(
             "application/json");
 
     /// <inheritdoc/>
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -117,34 +103,12 @@ public sealed class NewtonsoftJsonContentSerializer(
 
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-    [UnconditionalSuppressMessage(
-        "AOT",
-        "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
-        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Implements ISynchronousContentDeserializer.DeserializeFromString<T>; the type parameter is the deserialization target and cannot be inferred from arguments.")]
     public T? DeserializeFromString<T>(string content) =>
         JsonConvert.DeserializeObject<T>(content, _jsonSerializerSettings.Value);
-
-    /// <summary>
-    /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands.
-    /// </summary>
-    /// <param name="propertyInfo">A PropertyInfo object.</param>
-    /// <returns>
-    /// The calculated field name.
-    /// </returns>
-    /// <exception cref="System.ArgumentNullException">propertyInfo</exception>
-    public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
-    {
-        ArgumentExceptionHelper.ThrowIfNull(propertyInfo);
-        return propertyInfo.GetCustomAttribute<JsonPropertyAttribute>(true)?.PropertyName;
-    }
 
     /// <summary>Resolves the text encoding from the content type charset, if present.</summary>
     /// <param name="content">The HTTP content to inspect.</param>

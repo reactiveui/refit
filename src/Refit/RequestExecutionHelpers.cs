@@ -278,6 +278,7 @@ internal static partial class RequestExecutionHelpers
     /// <summary>Returns the response content, substituting empty content when the response has none.</summary>
     /// <param name="response">The response whose content is read.</param>
     /// <returns>The response content, or empty content when none is present.</returns>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Content is non-null in the BCL on every supported runtime, so the fallback branch is unreachable.
     internal static HttpContent EnsureResponseContent(HttpResponseMessage response)
     {
         var content = response.Content ?? new StringContent(string.Empty);

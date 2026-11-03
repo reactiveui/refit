@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
@@ -54,7 +53,7 @@ public class ParameterAttributeProviderBenchmarks
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Construction")]
-    public ICustomAttributeProvider CreateSingleTypeProvider() =>
+    public IParameterAttributeProvider CreateSingleTypeProvider() =>
         new GeneratedSingleTypeParameterAttributeProvider(_attributeType, [new QueryAttribute()]);
 
     /// <summary>Builds the dictionary-backed provider for the same one-attribute parameter.</summary>
@@ -62,7 +61,7 @@ public class ParameterAttributeProviderBenchmarks
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("Construction")]
-    public ICustomAttributeProvider CreateManyTypeProvider() =>
+    public IParameterAttributeProvider CreateManyTypeProvider() =>
         new GeneratedParameterAttributeProvider(new Dictionary<Type, object[]> { [_attributeType] = [new QueryAttribute()], });
 
     /// <summary>Resolves the query attribute through the single-type provider.</summary>

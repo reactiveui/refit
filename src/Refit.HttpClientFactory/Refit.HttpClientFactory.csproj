@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Refit.HttpClientFactory.Tests" />
+    <InternalsVisibleTo Include="Refit.HttpClientFactory.Reflection" />
     <ProjectReference Include="..\Refit\Refit.csproj" PrivateAssets="Analyzers" />
     <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>

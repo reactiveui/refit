@@ -2,66 +2,33 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.Serialization;
 using System.Text.Json;
 
 namespace Refit;
 
-/// <summary>Provides shared enum helpers for formatting, serialization, and reflection-backed metadata.</summary>
+/// <summary>Provides shared enum helpers for formatting and serialization.</summary>
 internal static class EnumHelpers
 {
-    /// <summary>Caches <see cref="EnumMemberAttribute.Value"/> lookups by enum type and field name.</summary>
-    private static readonly ConcurrentDictionary<Type, Dictionary<string, string?>> _enumMemberValueCache = new();
-
-    /// <summary>Gets the <see cref="EnumMemberAttribute.Value"/> for a boxed enum value.</summary>
+    /// <summary>Gets the <c>[EnumMember]</c> value for a boxed enum value.</summary>
     /// <param name="enumType">The runtime enum type.</param>
     /// <param name="value">The boxed enum value.</param>
-    /// <returns>The configured enum member value, or null when none is configured.</returns>
-    internal static string? GetEnumMemberValue(Type enumType, object value)
-    {
-        if (!enumType.IsEnum)
-        {
-            return null;
-        }
+    /// <returns>The configured enum member value, or null when none is configured or the Refit.Reflection support is not registered.</returns>
+    /// <remarks>Reading the attribute from a run-time-typed enum needs reflection, so it is supplied by Refit.Reflection. Enums
+    /// whose type the generator can see at compile time have their <c>[EnumMember]</c> values generated instead.</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static string? GetEnumMemberValue(Type enumType, object value) =>
+        GetEnumMemberValue(ReflectionHooks.EnumMemberValueResolver, enumType, value);
 
-        var name = Enum.GetName(enumType, value);
-        if (name is null)
-        {
-            return null;
-        }
-
-        var enumMemberValues = _enumMemberValueCache.GetOrAdd(enumType, CreateEnumMemberValueMap);
-        return enumMemberValues.TryGetValue(name, out var enumMemberValue) ? enumMemberValue : null;
-    }
-
-    /// <summary>Builds the enum-member value map for the given enum type.</summary>
-    /// <param name="enumType">The enum type to inspect.</param>
-    /// <returns>The enum-member value map keyed by enum field name.</returns>
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2070:DynamicallyAccessedMembers",
-        Justification = "Enum field metadata is inspected for EnumMemberAttribute formatting on runtime enum values.")]
-    internal static Dictionary<string, string?> CreateEnumMemberValueMap(Type enumType)
-    {
-        var fields = enumType.GetFields(BindingFlags.Public | BindingFlags.Static);
-        var enumMemberValues = new Dictionary<string, string?>(fields.Length, StringComparer.Ordinal);
-        for (var i = 0; i < fields.Length; i++)
-        {
-            var field = fields[i];
-            var enumMemberAttribute = field.GetCustomAttribute<EnumMemberAttribute>();
-            if (enumMemberAttribute is not null)
-            {
-                enumMemberValues[field.Name] = enumMemberAttribute.Value;
-            }
-        }
-
-        return enumMemberValues;
-    }
+    /// <summary>Gets the <c>[EnumMember]</c> value for a boxed enum value through the supplied resolver.</summary>
+    /// <param name="resolver">The registered resolver, or <see langword="null"/> when none is registered.</param>
+    /// <param name="enumType">The runtime enum type.</param>
+    /// <param name="value">The boxed enum value.</param>
+    /// <returns>The configured enum member value, or null when none is configured or no resolver is registered.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static string? GetEnumMemberValue(Func<Type, object, string?>? resolver, Type enumType, object value) =>
+        resolver?.Invoke(enumType, value);
 
     /// <summary>Determines whether the given enum backing type code is unsigned.</summary>
     /// <param name="underlyingTypeCode">The enum backing type code.</param>
@@ -71,9 +38,7 @@ internal static class EnumHelpers
 
     /// <summary>Provides cached helpers for a single enum type.</summary>
     /// <typeparam name="TEnum">The enum type.</typeparam>
-    internal static class Info<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
-        TEnum>
+    internal static class Info<TEnum>
         where TEnum : struct, Enum
     {
         /// <summary>The enum backing type used when reading and writing undefined numeric values.</summary>

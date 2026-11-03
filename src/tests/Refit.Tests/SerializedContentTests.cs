@@ -37,29 +37,11 @@ public partial class SerializedContentTests
     /// <summary>The expected inferred integral value for object-value inference tests.</summary>
     private const long ExpectedIntegralValue = 42L;
 
-    /// <summary>The expected inferred floating-point value for object-value inference tests.</summary>
-    private const double ExpectedFloatingPointValue = 42.5;
-
     /// <summary>The expected identifier parsed from a numeric JSON string.</summary>
     private const int ExpectedId = 123;
 
     /// <summary>The expected amount parsed from a numeric JSON string.</summary>
     private const decimal ExpectedAmount = 9.99M;
-
-    /// <summary>The expected year component of the inferred date value.</summary>
-    private const int ExpectedYear = 2024;
-
-    /// <summary>The expected day component of the inferred date value.</summary>
-    private const int ExpectedDay = 2;
-
-    /// <summary>The expected hour component of the inferred date value.</summary>
-    private const int ExpectedHour = 3;
-
-    /// <summary>The expected minute component of the inferred date value.</summary>
-    private const int ExpectedMinute = 4;
-
-    /// <summary>The expected second component of the inferred date value.</summary>
-    private const int ExpectedSecond = 5;
 
     /// <summary>The year component of the sample created-at date used in body-serialization round-trips.</summary>
     private const int SampleCreatedYear = 1949;
@@ -78,6 +60,10 @@ public partial class SerializedContentTests
 
     /// <summary>The circuit-breaker timeout, in seconds, that bounds a body-serialization task run.</summary>
     private const int CircuitBreakerTimeoutSeconds = 30;
+
+    /// <summary>Web-default options over the string-enum context, shared so the options are built once.</summary>
+    private static readonly JsonSerializerOptions StringEnumOptions =
+        new(JsonSerializerDefaults.Web) { TypeInfoResolver = StringEnumJsonSerializerContext.Default };
 
     /// <summary>Serializer options carrying the source-generated polymorphic context, shared by the declared-base body test.</summary>
     private static readonly JsonSerializerOptions PolymorphicBaseSerializerOptions =
@@ -114,7 +100,7 @@ public partial class SerializedContentTests
 #endif
 
     /// <summary>Enum whose members exercise camelCase serialization and case-insensitive deserialization.</summary>
-    private enum CamelCaseEnum
+    internal enum CamelCaseEnum
     {
         /// <summary>The first value, serialized as "valueOne".</summary>
         ValueOne = 1,
@@ -335,44 +321,56 @@ public partial class SerializedContentTests
         await Assert.That(json.Headers.ContentType.MediaType).IsEqualTo(JsonMediaType);
     }
 
-    /// <summary>Verifies that the System.Text.Json content serializer returns the JsonPropertyName for a property.</summary>
+    /// <summary>Verifies that Refit resolves the JsonPropertyName for a property with the System.Text.Json serializer.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_GetFieldNameForProperty_ReturnsJsonPropertyName()
+    public async Task SerializerFieldNames_SystemTextJson_ReturnsJsonPropertyName()
     {
         var serializer = new SystemTextJsonContentSerializer();
         var property = typeof(SystemTextFieldNameModel).GetProperty(
             nameof(SystemTextFieldNameModel.Name));
 
-        var fieldName = serializer.GetFieldNameForProperty(property!);
+        var fieldName = SerializerFieldNames.Resolve(serializer, property!);
 
         await Assert.That(fieldName).IsEqualTo("json_name");
     }
 
-    /// <summary>Verifies that the System.Text.Json content serializer returns null without a JsonPropertyName attribute.</summary>
+    /// <summary>Verifies that Refit resolves no name without a JsonPropertyName attribute.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_GetFieldNameForProperty_ReturnsNullWithoutJsonPropertyNameAttribute()
+    public async Task SerializerFieldNames_SystemTextJson_ReturnsNullWithoutJsonPropertyNameAttribute()
     {
         var serializer = new SystemTextJsonContentSerializer();
         var property = typeof(SystemTextFieldNameModel).GetProperty(
             nameof(SystemTextFieldNameModel.Unaliased));
 
-        var fieldName = serializer.GetFieldNameForProperty(property!);
+        var fieldName = SerializerFieldNames.Resolve(serializer, property!);
 
         await Assert.That(fieldName).IsNull();
     }
 
-    /// <summary>Verifies that the System.Text.Json content serializer throws when the property argument is null.</summary>
+    /// <summary>Verifies that name resolution throws when the property argument is null.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_GetFieldNameForProperty_ThrowsForNullProperty()
+    public async Task SerializerFieldNames_ThrowsForNullProperty()
     {
         var serializer = new SystemTextJsonContentSerializer();
 
-        var exception = await Assert.That(() => serializer.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
+        var exception = await Assert.That(() => SerializerFieldNames.Resolve(serializer, null!)).ThrowsExactly<ArgumentNullException>();
 
-        await Assert.That(exception!.ParamName).IsEqualTo("propertyInfo");
+        await Assert.That(exception!.ParamName).IsEqualTo("property");
+    }
+
+    /// <summary>Verifies that a serializer with no name style and no provider contributes no name.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SerializerFieldNames_ReturnsNullForSerializerWithoutNameStyle()
+    {
+        var property = typeof(SystemTextFieldNameModel).GetProperty(nameof(SystemTextFieldNameModel.Name));
+
+        var fieldName = SerializerFieldNames.Resolve(new ContentOnlyTestSerializer(), property!);
+
+        await Assert.That(fieldName).IsNull();
     }
 
     /// <summary>Verifies that RestService can use source-generated System.Text.Json metadata.</summary>

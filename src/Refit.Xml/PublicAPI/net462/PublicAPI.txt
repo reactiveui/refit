@@ -1,13 +1,13 @@
 namespace Refit;
 
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-public class XmlContentSerializer : Refit.IHttpContentSerializer, Refit.ISynchronousContentDeserializer
+public class XmlContentSerializer : Refit.IContentSerializerNameStyle, Refit.IHttpContentSerializer, Refit.ISynchronousContentDeserializer
 {
     public XmlContentSerializer() { }
     public XmlContentSerializer(Refit.XmlContentSerializerSettings settings) { }
+    public Refit.ContentSerializerNameStyle NameStyle { get; }
     public T? DeserializeFromString<T>(string content) { }
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
-    public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
 [System.Diagnostics.DebuggerDisplay("XmlContentSerializerSettings: XmlDefaultNamespace = {XmlDefaultNamespace}")]

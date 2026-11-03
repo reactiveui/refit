@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../../Refit/Refit.csproj" />
+    <ProjectReference Include="../../../Refit.Reflection/Refit.Reflection.csproj" />
     <ProjectReference Include="../../../InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../../Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>

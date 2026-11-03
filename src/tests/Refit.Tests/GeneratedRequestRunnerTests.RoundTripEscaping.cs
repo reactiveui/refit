@@ -18,7 +18,7 @@ public partial class GeneratedRequestRunnerTests
         var result = GeneratedRequestRunner.RoundTripEscapePath(
             "aa a/bb-b/c%d/e",
             settings,
-            typeof(string),
+            GeneratedParameterAttributeProvider.Empty,
             typeof(string));
 
         await Assert.That(result).IsEqualTo("aa%20a/bb-b/c%25d/e");
@@ -35,7 +35,7 @@ public partial class GeneratedRequestRunnerTests
         var result = GeneratedRequestRunner.RoundTripEscapePath(
             null,
             settings,
-            typeof(string),
+            GeneratedParameterAttributeProvider.Empty,
             typeof(string));
 
         await Assert.That(result).IsEqualTo(string.Empty);

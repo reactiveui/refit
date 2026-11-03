@@ -92,7 +92,7 @@ internal static class QueryDictionaryEmission
         var dictionary = query.Dictionary!;
         var (entryLocal, keyLocal, valueLocal, indent) = entry;
         var keyTypeOf = $"typeof({dictionary.KeyTypeName})";
-        var customKey = QueryObjectEmission.EmitFormatUrlParameter($"{entryLocal}.Key", keyTypeOf, keyTypeOf, emission);
+        var customKey = QueryObjectEmission.EmitFormatUrlParameter($"{entryLocal}.Key", QueryObjectEmission.EmptyProviderExpression, keyTypeOf, emission);
         var fastKey = QueryValueEmission.BuildFastFormatExpression($"{entryLocal}.Key", dictionary.KeyFormat, emission);
         var keyExpression = fastKey is null
             ? customKey

@@ -174,9 +174,9 @@ internal static class BodyContentEmission
         }
 
         // CanUnrollForm rejects the null, HttpContent, Stream, string, and dictionary bodies the reflection path
-        // special-cases; a non-System.Text.Json serializer resolves field names differently, so it falls back too.
+        // special-cases; a serializer that does not report its name style resolves field names differently, so it falls back too.
         return $$"""
-            {{bodyIndent}}if ({{settingsLocal}}.ContentSerializer is global::Refit.SystemTextJsonContentSerializer
+            {{bodyIndent}}if ({{settingsLocal}}.ContentSerializer is global::Refit.IContentSerializerNameStyle
             {{inner}}    && global::Refit.GeneratedRequestRunner.CanUnrollForm({{bodyExpr}}))
             {{bodyIndent}}{
             {{inner}}var {{entriesLocal}} = new global::System.Collections.Generic.List<{{kvpType}}>({{fields.Length}});
@@ -206,8 +206,7 @@ internal static class BodyContentEmission
         var propertyNameLiteral = Emitter.ToCSharpStringLiteral(field.PropertyName);
         var explicitNameLiteral = LiteralEmissionHelpers.ToNullableCSharpStringLiteral(field.ExplicitName);
         var prefixSegmentLiteral = LiteralEmissionHelpers.ToNullableCSharpStringLiteral(field.PrefixSegment);
-        var keyExpr =
-            $"global::Refit.GeneratedRequestRunner.BuildQueryKey({emission.SettingsLocal}, {propertyNameLiteral}, {explicitNameLiteral}, {prefixSegmentLiteral})";
+        var keyExpr = BuildFormKeyExpression(field, emission.SettingsLocal, propertyNameLiteral, explicitNameLiteral, prefixSegmentLiteral);
 
         _ = sb.Append(indent).Append("var ").Append(valueLocal).Append(" = ").Append(site.BodyExpr).Append(".@").Append(field.PropertyName).AppendLine(";");
 
@@ -237,6 +236,31 @@ internal static class BodyContentEmission
             .Append(indent).AppendLine("{");
         AppendFormEntryAdd(sb, in site, childIndent, keyExpr, "string.Empty");
         _ = sb.Append(indent).AppendLine("}");
+    }
+
+    /// <summary>Builds the key expression for one unrolled form field, picking the serializer-aware helper when the field has serializer names.</summary>
+    /// <param name="field">The form field descriptor.</param>
+    /// <param name="settingsLocal">The settings local name.</param>
+    /// <param name="propertyNameLiteral">The CLR property name literal.</param>
+    /// <param name="explicitNameLiteral">The explicit name literal, or <c>null</c>.</param>
+    /// <param name="prefixSegmentLiteral">The prefix segment literal, or <c>null</c>.</param>
+    /// <returns>The key expression source.</returns>
+    internal static string BuildFormKeyExpression(
+        FormFieldModel field,
+        string settingsLocal,
+        string propertyNameLiteral,
+        string explicitNameLiteral,
+        string prefixSegmentLiteral)
+    {
+        if (field.JsonName is null && field.NewtonsoftName is null && field.XmlName is null)
+        {
+            return $"global::Refit.GeneratedRequestRunner.BuildQueryKey({settingsLocal}, {propertyNameLiteral}, {explicitNameLiteral}, {prefixSegmentLiteral})";
+        }
+
+        var json = LiteralEmissionHelpers.ToNullableCSharpStringLiteral(field.JsonName);
+        var newtonsoft = LiteralEmissionHelpers.ToNullableCSharpStringLiteral(field.NewtonsoftName);
+        var xml = LiteralEmissionHelpers.ToNullableCSharpStringLiteral(field.XmlName);
+        return $"global::Refit.GeneratedRequestRunner.BuildFormKey({settingsLocal}, {propertyNameLiteral}, {explicitNameLiteral}, {json}, {newtonsoft}, {xml}, {prefixSegmentLiteral})";
     }
 
     /// <summary>Appends one entry-list <c>Add</c> using an explicit <c>KeyValuePair</c> construction (no C# 9 target-typed new).</summary>

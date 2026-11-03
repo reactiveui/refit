@@ -274,9 +274,7 @@ public class ApiException : ApiExceptionBase
                 var mediaType = response.Content.Headers.ContentType?.MediaType;
                 if (mediaType?.Equals("application/problem+json", StringComparison.OrdinalIgnoreCase) ?? false)
                 {
-                    exception = await ValidationApiException
-                        .CreateAsync(exception)
-                        .ConfigureAwait(false);
+                    exception = ValidationApiException.Create(exception);
                 }
 
                 response.Content.Dispose();

@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Refit;
@@ -60,7 +59,7 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <exception cref="ArgumentNullException">attributeProvider.</exception>
     public virtual string? Format(
         object? value,
-        ICustomAttributeProvider attributeProvider,
+        IParameterAttributeProvider attributeProvider,
         Type type)
     {
         ArgumentExceptionHelper.ThrowIfNull(attributeProvider);
@@ -84,7 +83,7 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <summary>Gets the first query attribute from an attribute provider.</summary>
     /// <param name="attributeProvider">The attribute provider to inspect.</param>
     /// <returns>The first query attribute, or null when absent.</returns>
-    internal static QueryAttribute? GetFirstQueryAttribute(ICustomAttributeProvider attributeProvider)
+    internal static QueryAttribute? GetFirstQueryAttribute(IParameterAttributeProvider attributeProvider)
     {
         // IsDefined avoids materializing an attribute array when none is present. That matters for a Type provider
         // (used when formatting collection elements), whose GetCustomAttributes allocates even for an empty result,

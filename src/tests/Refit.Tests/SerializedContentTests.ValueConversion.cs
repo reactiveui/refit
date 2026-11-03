@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System;
-using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -12,19 +11,36 @@ using SystemTextJsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Refit.Tests;
 
-/// <summary>Verifies how the System.Text.Json content serializer converts JSON values and enums: object-value inference, number handling, and enum serialization and deserialization.</summary>
+/// <summary>Verifies how the System.Text.Json content serializer converts JSON values and enums with the fast-path-eligible default options.</summary>
 public partial class SerializedContentTests
 {
-    /// <summary>Verifies that boolean JSON object values are inferred as <see cref="bool"/>.</summary>
+    /// <summary>Verifies the default options carry nothing that disables the System.Text.Json fast-path.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_InferBooleanObjectValues()
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_AreFastPathEligible()
     {
-        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
-            """{"value":true}""",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
 
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<bool>()).IsTrue();
+        await Assert.That(options.Converters).IsEmpty();
+        await Assert.That(options.NumberHandling).IsEqualTo(JsonNumberHandling.Strict);
+        await Assert.That(options.ReferenceHandler).IsNull();
+        await Assert.That(options.Encoder).IsNull();
+        await Assert.That(options.DictionaryKeyPolicy).IsNull();
+        await Assert.That(options.PropertyNamingPolicy).IsEqualTo(JsonNamingPolicy.CamelCase);
+    }
+
+    /// <summary>Verifies the fast-path options carry nothing that disables the System.Text.Json fast-path.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_FastPathOptions_AreFastPathEligible()
+    {
+        var options = SystemTextJsonContentSerializer.GetFastPathJsonSerializerOptions();
+
+        await Assert.That(options.Converters).IsEmpty();
+        await Assert.That(options.NumberHandling).IsEqualTo(JsonNumberHandling.Strict);
+        await Assert.That(options.ReferenceHandler).IsNull();
+        await Assert.That(options.Encoder).IsNull();
+        await Assert.That(options.PropertyNamingPolicy).IsEqualTo(JsonNamingPolicy.CamelCase);
     }
 
 #if NET10_0_OR_GREATER
@@ -42,56 +58,30 @@ public partial class SerializedContentTests
 
 #endif
 
-    /// <summary>Verifies false JSON object values are inferred as <see cref="bool"/>.</summary>
+    /// <summary>Verifies the default options reject numbers written as JSON strings.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_InferFalseObjectValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
-            """{"value":false}""",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_RejectNumbersFromString() =>
+        await Assert
+            .That(static () => SystemTextJsonSerializer.Deserialize<NumberContainer>(
+                """{"id":"123","amount":"9.99"}""",
+                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
+            .ThrowsExactly<JsonException>();
 
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<bool>()).IsFalse();
-    }
-
-    /// <summary>Verifies that integral JSON object values are inferred as <see cref="long"/>.</summary>
+    /// <summary>Verifies the default options read JSON numbers.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_InferIntegralObjectValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
-            """{"value":42}""",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<long>()).IsEqualTo(ExpectedIntegralValue);
-    }
-
-    /// <summary>Verifies that floating-point JSON object values are inferred as <see cref="double"/>.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_InferFloatingPointObjectValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
-            """{"value":42.5}""",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<double>()).IsEqualTo(ExpectedFloatingPointValue);
-    }
-
-    /// <summary>Verifies the default options read numeric properties from JSON strings.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ReadNumbersFromString()
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_ReadNumbers()
     {
         var result = SystemTextJsonSerializer.Deserialize<NumberContainer>(
-            """{"id":"123","amount":"9.99"}""",
+            """{"id":123,"amount":9.99}""",
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(result!.Id).IsEqualTo(ExpectedId);
         await Assert.That(result.Amount).IsEqualTo(ExpectedAmount);
     }
 
-    /// <summary>Verifies the default options still write numbers as JSON numbers, not strings.</summary>
+    /// <summary>Verifies the default options write numbers as JSON numbers, not strings.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_WriteNumbersAsNumbers()
@@ -104,54 +94,7 @@ public partial class SerializedContentTests
         await Assert.That(json).DoesNotContain("\"123\"", StringComparison.Ordinal);
     }
 
-    /// <summary>Verifies the default options expose <see cref="JsonNumberHandling.AllowReadingFromString"/>.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_NumberHandlingAllowsReadingFromString() =>
-        await Assert
-            .That(SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions().NumberHandling)
-            .IsEqualTo(JsonNumberHandling.AllowReadingFromString);
-
-    /// <summary>Verifies the fast-path options omit the settings that disable the System.Text.Json fast-path.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_FastPathOptions_AreFastPathEligible()
-    {
-        var options = SystemTextJsonContentSerializer.GetFastPathJsonSerializerOptions();
-
-        await Assert.That(options.Converters).IsEmpty();
-        await Assert.That(options.NumberHandling).IsEqualTo(JsonNumberHandling.Strict);
-        await Assert.That(options.ReferenceHandler).IsNull();
-        await Assert.That(options.Encoder).IsNull();
-        await Assert.That(options.PropertyNamingPolicy).IsEqualTo(JsonNamingPolicy.CamelCase);
-    }
-
-    /// <summary>Verifies that ISO date JSON object values are inferred as <see cref="DateTime"/>.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_InferDateObjectValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
-            """{"value":"2024-01-02T03:04:05Z"}""",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<DateTime>())
-            .IsEqualTo(new(ExpectedYear, 1, ExpectedDay, ExpectedHour, ExpectedMinute, ExpectedSecond, DateTimeKind.Utc));
-    }
-
-    /// <summary>Verifies that string JSON object values are inferred as <see cref="string"/>.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_InferStringObjectValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
-            """{"value":"Road Runner"}""",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<string>()).IsEqualTo(RoadRunnerName);
-    }
-
-    /// <summary>Verifies that nested JSON object values are deserialized as <see cref="JsonElement"/>.</summary>
+    /// <summary>Verifies that object JSON values are deserialized as <see cref="JsonElement"/>.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeObjectValuesAsJsonElements()
@@ -164,16 +107,20 @@ public partial class SerializedContentTests
             .IsEqualTo(JsonValueKind.Object);
     }
 
-    /// <summary>Verifies that enum object values are serialized using camelCase.</summary>
+    /// <summary>Verifies that primitive object JSON values are deserialized as <see cref="JsonElement"/>, not inferred CLR types.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeObjectEnumValuesAsCamelCase()
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializePrimitiveObjectValuesAsJsonElements()
     {
-        var json = SystemTextJsonSerializer.Serialize(
-            new ObjectValueContainer { Value = CamelCaseEnum.ValueOne },
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
 
-        await Assert.That(json).IsEqualTo("""{"value":"valueOne"}""");
+        var text = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>("""{"value":"Road Runner"}""", options);
+        var number = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>("""{"value":42}""", options);
+        var flag = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>("""{"value":true}""", options);
+
+        await Assert.That((await Assert.That(text!.Value).IsTypeOf<JsonElement>()).GetString()).IsEqualTo(RoadRunnerName);
+        await Assert.That((await Assert.That(number!.Value).IsTypeOf<JsonElement>()).GetInt64()).IsEqualTo(ExpectedIntegralValue);
+        await Assert.That((await Assert.That(flag!.Value).IsTypeOf<JsonElement>()).GetBoolean()).IsTrue();
     }
 
     /// <summary>Verifies that null object values are serialized as JSON null.</summary>
@@ -209,40 +156,16 @@ public partial class SerializedContentTests
         await Assert.That(resolver.RequestedTypes).Contains(typeof(string));
     }
 
-    /// <summary>Verifies that camelCase enum values are deserialized correctly.</summary>
+    /// <summary>Verifies that enums are serialized as numbers by the default options.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeCamelCaseEnumValues()
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeEnumValuesAsNumbers()
     {
-        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-            "\"valueOne\"",
+        var json = SystemTextJsonSerializer.Serialize(
+            CamelCaseEnum.AlreadyLowercase,
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
-        await Assert.That(result).IsEqualTo(CamelCaseEnum.ValueOne);
-    }
-
-    /// <summary>Verifies that enum values are deserialized case-insensitively.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeCaseInsensitiveEnumValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-            "\"VALUEONE\"",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-
-        await Assert.That(result).IsEqualTo(CamelCaseEnum.ValueOne);
-    }
-
-    /// <summary>Verifies that already-lowercase enum values are deserialized correctly.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeLowercaseEnumValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-            "\"alreadyLowercase\"",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-
-        await Assert.That(result).IsEqualTo(CamelCaseEnum.AlreadyLowercase);
+        await Assert.That(json).IsEqualTo("2");
     }
 
     /// <summary>Verifies that numeric enum values are deserialized correctly.</summary>
@@ -256,6 +179,16 @@ public partial class SerializedContentTests
 
         await Assert.That(result).IsEqualTo(CamelCaseEnum.AlreadyLowercase);
     }
+
+    /// <summary>Verifies that string enum names are rejected unless a source-generated context enables them.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_RejectEnumNames() =>
+        await Assert
+            .That(static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                "\"valueOne\"",
+                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
+            .ThrowsExactly<JsonException>();
 
     /// <summary>Verifies that unsigned numeric enum values are deserialized correctly.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
@@ -281,30 +214,6 @@ public partial class SerializedContentTests
         await Assert.That(result).IsNull();
     }
 
-    /// <summary>Verifies that an empty string deserializes to a null nullable enum.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeEmptyNullableEnumValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum?>(
-            "\"\"",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-
-        await Assert.That(result).IsNull();
-    }
-
-    /// <summary>Verifies that a populated nullable enum string deserializes to its value.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeValuedNullableEnumValues()
-    {
-        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum?>(
-            "\"valueOne\"",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-
-        await Assert.That(result).IsEqualTo(CamelCaseEnum.ValueOne);
-    }
-
     /// <summary>Verifies that a numeric nullable enum token deserializes to its value.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -324,36 +233,6 @@ public partial class SerializedContentTests
         await Assert.That(
                 static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "null",
-                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
-            .ThrowsExactly<JsonException>();
-
-    /// <summary>Verifies that an empty string throws for a non-nullable enum.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForEmptyNonNullableEnumValues() =>
-        await Assert.That(
-                static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-                    "\"\"",
-                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
-            .ThrowsExactly<JsonException>();
-
-    /// <summary>Verifies that an unknown enum name throws.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForInvalidEnumValues() =>
-        await Assert.That(
-                static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-                    "\"notAValue\"",
-                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
-            .ThrowsExactly<JsonException>();
-
-    /// <summary>Verifies that unexpected JSON tokens throw when parsing enums.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForUnexpectedTokensWhenParsingEnums() =>
-        await Assert.That(
-                static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-                    "true",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<JsonException>();
 
@@ -405,63 +284,46 @@ public partial class SerializedContentTests
         await Assert.That(json).IsEqualTo("""{"9223372036854775808":"unknown"}""");
     }
 
-    /// <summary>Verifies that lowercase enum names are serialized unchanged.</summary>
+    /// <summary>Verifies that a source-generated context with string enums round-trips through the serializer.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeLowercaseEnumNamesUnchanged()
+    public async Task SystemTextJsonContentSerializer_StringEnumContext_RoundTripsEnumNames()
     {
-        var json = SystemTextJsonSerializer.Serialize(
-            CamelCaseEnum.AlreadyLowercase,
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        var serializer = new SystemTextJsonContentSerializer(StringEnumOptions);
 
-        await Assert.That(json).IsEqualTo("\"alreadyLowercase\"");
+        var content = serializer.ToHttpContent(new StringEnumEnvelope { Value = CamelCaseEnum.ValueOne });
+        var serialized = await content.ReadAsStringAsync();
+        var roundTrip = await serializer.FromHttpContentAsync<StringEnumEnvelope>(
+            new StringContent(serialized, Encoding.UTF8, JsonMediaType));
+
+        await Assert.That(serialized).Contains("\"ValueOne\"");
+        await Assert.That(roundTrip!.Value).IsEqualTo(CamelCaseEnum.ValueOne);
     }
 
-    /// <summary>Verifies that enum values are deserialized across a variety of casings.</summary>
-    /// <param name="jsonValue">The JSON string value to deserialize.</param>
+    /// <summary>Verifies the opt-in reflection converters restore camelCase enum names.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [Arguments("vAlUeOnE")]
-    [Arguments("ValueOne")]
-    [Arguments("VALUEONE")]
-    [Arguments("valueone")]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializesEnumValuesWithVariousCasings(
-        string jsonValue)
+    public async Task AddReflectionConverters_RoundTripsCamelCaseEnumNames()
     {
-        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-            $"\"{jsonValue}\"",
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions().AddReflectionConverters();
 
+        var json = SystemTextJsonSerializer.Serialize(CamelCaseEnum.ValueOne, options);
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>("\"VALUEONE\"", options);
+
+        await Assert.That(json).IsEqualTo("\"valueOne\"");
         await Assert.That(result).IsEqualTo(CamelCaseEnum.ValueOne);
     }
 
-    /// <summary>Verifies that an exact-case match takes priority over case-insensitive matching when members differ only by case.</summary>
+    /// <summary>Verifies the opt-in reflection converters infer CLR primitives for object values.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ExactCaseMatchTakesPriorityOverCaseInsensitiveWhenMembersDifferByCase()
+    public async Task AddReflectionConverters_InfersObjectValues()
     {
-        // When enum has members whose names differ only by case, the exact serialized form
-        // (camelCase) should be used first (case-sensitive), falling back to case-insensitive only
-        // for inputs that do not exactly match any known serialized form.
-        // CaseDifferentMembers.Alpha serializes to "alpha" (camelCase),
-        // CaseDifferentMembers.ALPHA serializes to "aLPHA" (camelCase).
-        // Exact-match lookups must correctly disambiguate these.
-        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions().AddReflectionConverters();
 
-        await Assert.That(
-            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"alpha\"", options))
-            .IsEqualTo(CaseDifferentMembers.Alpha);
-        await Assert.That(
-            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"aLPHA\"", options))
-            .IsEqualTo(CaseDifferentMembers.ALPHA);
+        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>("""{"value":42}""", options);
 
-        // Field names are also accepted via exact match.
-        await Assert.That(
-            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"Alpha\"", options))
-            .IsEqualTo(CaseDifferentMembers.Alpha);
-        await Assert.That(
-            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"ALPHA\"", options))
-            .IsEqualTo(CaseDifferentMembers.ALPHA);
+        await Assert.That(await Assert.That(result!.Value).IsTypeOf<long>()).IsEqualTo(ExpectedIntegralValue);
     }
 
     /// <summary>Verifies that source-generated metadata is used when provided to the serializer.</summary>
@@ -533,36 +395,13 @@ public partial class SerializedContentTests
         await Assert.That(roundTrip[CamelCaseEnum.AlreadyLowercase]).IsEqualTo("second");
     }
 
-    /// <summary>Verifies nullable enum dictionary key conversion handles empty and non-empty property names.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_NullableEnumPropertyNamesRoundTripThroughConverter()
-    {
-        var (emptyNameValue, namedValue, json) = ReadAndWriteNullableEnumPropertyNames();
-
-        await Assert.That(emptyNameValue).IsNull();
-        await Assert.That(namedValue).IsEqualTo(CamelCaseEnum.ValueOne);
-        await Assert.That(json).IsEqualTo("""{"":"empty","valueOne":"first"}""");
-    }
-
-    /// <summary>Verifies nullable enum values write null and concrete enum names through the custom converter.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task SystemTextJsonContentSerializer_NullableEnumValuesWriteThroughConverter()
-    {
-        var json = WriteNullableEnumValues();
-
-        await Assert.That(json).IsEqualTo("""[null,"valueOne"]""");
-    }
-
 #if NET9_0_OR_GREATER
-    /// <summary>Verifies that JsonStringEnumMemberName is honored when serializing and deserializing.</summary>
+    /// <summary>Verifies that JsonStringEnumMemberName is honored through a source-generated string-enum context.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
     public async Task SystemTextJsonContentSerializer_SupportsJsonStringEnumMemberName()
     {
-        var serializer = new SystemTextJsonContentSerializer(
-            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        var serializer = new SystemTextJsonContentSerializer(StringEnumOptions);
 
         var content = serializer.ToHttpContent(
             new EnumMemberNameEnvelope { Status = EnumMemberNameStatus.TotallyReady });
@@ -575,14 +414,12 @@ public partial class SerializedContentTests
         await Assert.That(roundTrip!.Status).IsEqualTo(EnumMemberNameStatus.TotallyReady);
     }
 
-    /// <summary>Verifies that RestService uses the default enum converter with JsonStringEnumMemberName.</summary>
+    /// <summary>Verifies that RestService honors JsonStringEnumMemberName when a string-enum context is supplied.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task RestService_UsesDefaultEnumConverterWithJsonStringEnumMemberName()
+    public async Task RestService_HonorsJsonStringEnumMemberNameWithStringEnumContext()
     {
-        var settings = new RefitSettings(
-            new SystemTextJsonContentSerializer(
-                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer(StringEnumOptions))
         {
             HttpMessageHandlerFactory = static () => new StubHttpMessageHandler(static _ =>
                 Task.FromResult(
@@ -617,54 +454,85 @@ public partial class SerializedContentTests
     }
 #endif
 
-    /// <summary>Exercises the nullable enum converter's property-name read and write paths.</summary>
-    /// <returns>The values read from property names and the JSON written through the converter.</returns>
-    private static (CamelCaseEnum? EmptyNameValue, CamelCaseEnum? NamedValue, string Json) ReadAndWriteNullableEnumPropertyNames()
+    /// <summary>Verifies a custom serializer that implements the reflection provider names fields itself.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SerializerFieldNames_UsesCustomProviderWhenImplemented()
     {
-        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
-        var converter = (JsonConverter<CamelCaseEnum?>)options.GetConverter(
-            typeof(CamelCaseEnum?));
-        var reader = new Utf8JsonReader("""{"":"empty","valueOne":"first"}"""u8);
-        _ = reader.Read();
-        _ = reader.Read();
-        var emptyNameValue = converter.ReadAsPropertyName(ref reader, typeof(CamelCaseEnum?), options);
-        _ = reader.Read();
-        _ = reader.Read();
-        var namedValue = converter.ReadAsPropertyName(ref reader, typeof(CamelCaseEnum?), options);
+        var property = typeof(SystemTextFieldNameModel).GetProperty(nameof(SystemTextFieldNameModel.Name));
 
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartObject();
+        var fieldName = SerializerFieldNames.Resolve(new ProviderTestSerializer(), property!);
 
-            // The nullable converter intentionally supports null keys by writing an empty property name.
-            converter.WriteAsPropertyName(writer, null!, options);
-            writer.WriteStringValue("empty");
-            converter.WriteAsPropertyName(writer, CamelCaseEnum.ValueOne, options);
-            writer.WriteStringValue(FirstEnumValue);
-            writer.WriteEndObject();
-        }
-
-        return (emptyNameValue, namedValue, Encoding.UTF8.GetString(stream.ToArray()));
+        await Assert.That(fieldName).IsEqualTo("from-provider");
     }
 
-    /// <summary>Writes nullable enum values through the converter directly.</summary>
-    /// <returns>The JSON written by the converter.</returns>
-    private static string WriteNullableEnumValues()
+    /// <summary>Verifies the Newtonsoft attribute is read by its type name, so no Newtonsoft reference is needed.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SerializerFieldNames_ReadsNewtonsoftNameByTypeName()
     {
-        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
-        var converter = (JsonConverter<CamelCaseEnum?>)options.GetConverter(
-            typeof(CamelCaseEnum?));
+        var named = typeof(NewtonsoftNamedModel).GetProperty(nameof(NewtonsoftNamedModel.Named));
+        var plain = typeof(NewtonsoftNamedModel).GetProperty(nameof(NewtonsoftNamedModel.Plain));
 
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream))
-        {
-            writer.WriteStartArray();
-            converter.Write(writer, null, options);
-            converter.Write(writer, CamelCaseEnum.ValueOne, options);
-            writer.WriteEndArray();
-        }
-
-        return Encoding.UTF8.GetString(stream.ToArray());
+        await Assert.That(SerializerFieldNames.ResolveForStyle(ContentSerializerNameStyle.Newtonsoft, named!)).IsEqualTo("newtonsoft_name");
+        await Assert.That(SerializerFieldNames.ResolveForStyle(ContentSerializerNameStyle.Newtonsoft, plain!)).IsNull();
+        await Assert.That(SerializerFieldNames.ResolveForStyle(
+            ContentSerializerNameStyle.Newtonsoft,
+            typeof(NewtonsoftNamedModel).GetProperty(nameof(NewtonsoftNamedModel.Other))!)).IsNull();
     }
+
+    /// <summary>Model whose property carries the stand-in Newtonsoft attribute.</summary>
+    internal sealed class NewtonsoftNamedModel
+    {
+        /// <summary>Gets or sets the property named through the stand-in attribute.</summary>
+        [global::Newtonsoft.Json.JsonProperty("newtonsoft_name")]
+        public string? Named { get; set; }
+
+        /// <summary>Gets or sets a property with no attribute.</summary>
+        public string? Plain { get; set; }
+
+        /// <summary>Gets or sets a property whose only attribute is not the Newtonsoft one.</summary>
+        [System.ComponentModel.Description("unrelated")]
+        public string? Other { get; set; }
+    }
+
+    /// <summary>Serializer that reports no name style and offers no provider.</summary>
+    internal sealed class ContentOnlyTestSerializer : IHttpContentSerializer
+    {
+        /// <inheritdoc/>
+        public HttpContent ToHttpContent<T>(T item) => new StringContent(string.Empty);
+
+        /// <inheritdoc/>
+        public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
+            Task.FromResult<T?>(default);
+    }
+
+    /// <summary>Serializer that names every field itself through the reflection provider.</summary>
+    internal sealed class ProviderTestSerializer : IHttpContentSerializer, IReflectionFieldNameProvider
+    {
+        /// <inheritdoc/>
+        public HttpContent ToHttpContent<T>(T item) => new StringContent(string.Empty);
+
+        /// <inheritdoc/>
+        public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
+            Task.FromResult<T?>(default);
+
+        /// <inheritdoc/>
+        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) => "from-provider";
+    }
+
+    /// <summary>Container for an enum property used to verify string-enum source generation.</summary>
+    internal sealed class StringEnumEnvelope
+    {
+        /// <summary>Gets or sets the enum value.</summary>
+        public CamelCaseEnum Value { get; set; }
+    }
+
+    /// <summary>Source-generated context that writes enums as strings.</summary>
+    [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, UseStringEnumConverter = true)]
+    [JsonSerializable(typeof(StringEnumEnvelope))]
+#if NET9_0_OR_GREATER
+    [JsonSerializable(typeof(EnumMemberNameEnvelope))]
+#endif
+    internal sealed partial class StringEnumJsonSerializerContext : JsonSerializerContext;
 }

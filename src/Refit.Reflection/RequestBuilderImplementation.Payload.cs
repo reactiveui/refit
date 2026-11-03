@@ -70,7 +70,7 @@ internal partial class RequestBuilderImplementation
                         StringHelpers.EscapeDataString(str),
                         Encoding.UTF8,
                         "application/x-www-form-urlencoded")
-                    : new FormUrlEncodedContent(new FormValueMultimap(param, _settings));
+                    : new FormUrlEncodedContent(ReflectionSupport.CreateFormMap(param, _settings));
                 break;
             }
 
@@ -272,11 +272,11 @@ internal partial class RequestBuilderImplementation
     /// flattening. Each entry is added as its own text <see cref="StringContent"/> under the resolved field name.</remarks>
     internal void AddFlattenedFormObject(MultipartFormDataContent multiPartContent, object param)
     {
-        foreach (var field in new FormValueMultimap(param, _settings))
+        foreach (var field in ReflectionSupport.CreateFormMap(param, _settings))
         {
             // A field with no resolvable name cannot be a valid form-data part (the framework rejects an empty
             // content-disposition name), so it is skipped rather than allowed to throw mid-request.
-            if (field.Key is null || string.IsNullOrWhiteSpace(field.Key))
+            if (string.IsNullOrWhiteSpace(field.Key))
             {
                 continue;
             }
@@ -486,7 +486,7 @@ internal partial class RequestBuilderImplementation
                 var valueType = kvp.Value?.GetType() ?? typeof(object);
                 queryParamsToAdd.Add(new(
                     indexedKey + attr.Delimiter + kvp.Key,
-                    GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, valueType, valueType),
+                    GeneratedRequestRunner.FormatUrlParameter(_settings, kvp.Value, GetCachedAttributeProvider(valueType), valueType),
                     KeyPreEscaped: true));
             }
 

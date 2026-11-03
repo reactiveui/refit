@@ -340,7 +340,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="provider">The underlying attribute provider.</param>
     /// <returns>The cached attribute provider.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ICustomAttributeProvider GetCachedAttributeProvider(ICustomAttributeProvider provider) =>
+    internal static IParameterAttributeProvider GetCachedAttributeProvider(ICustomAttributeProvider provider) =>
         AttributeProviderCache.GetValue(provider, static p => new CachedAttributeProvider(p));
 
     /// <summary>Builds the per-type query-property metadata, reading each property's serialization-ignore, query and
@@ -511,7 +511,7 @@ internal partial class RequestBuilderImplementation
             var keyType = key.GetType();
             var formattedKey = GeneratedRequestRunner.FormatUrlParameter(_settings, key, GetCachedAttributeProvider(keyType), keyType);
 
-            if (formattedKey is null || string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
+            if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
             {
                 continue;
             }
@@ -609,7 +609,7 @@ internal partial class RequestBuilderImplementation
         var name = aliasAttribute?.Name
                    ?? queryAttribute?.Name
                    ?? (_settings.HonorContentSerializerPropertyNamesInQuery
-                       ? _settings.ContentSerializer.GetFieldNameForProperty(propertyInfo)
+                       ? SerializerFieldNames.Resolve(_settings.ContentSerializer, propertyInfo)
                        : null)
                    ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
 

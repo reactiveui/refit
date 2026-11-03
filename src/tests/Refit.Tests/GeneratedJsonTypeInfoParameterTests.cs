@@ -1,7 +1,6 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Reflection;
 using System.Text.Json.Serialization.Metadata;
 
 namespace Refit.Tests;
@@ -235,9 +234,6 @@ public class GeneratedJsonTypeInfoParameterTests
         /// <inheritdoc/>
         public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
             Task.FromResult<T?>(default);
-
-        /// <inheritdoc/>
-        public string? GetFieldNameForProperty(PropertyInfo propertyInfo) => null;
     }
 
     /// <summary>An observer that completes a task with the first value it receives.</summary>

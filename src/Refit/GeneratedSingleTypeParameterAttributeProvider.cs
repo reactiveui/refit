@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Refit;
@@ -13,7 +12,7 @@ namespace Refit;
 /// <param name="type">The attribute type every entry of <paramref name="attributes"/> has.</param>
 /// <param name="attributes">The attribute information.</param>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-public sealed class GeneratedSingleTypeParameterAttributeProvider(Type type, object[] attributes) : ICustomAttributeProvider
+public sealed class GeneratedSingleTypeParameterAttributeProvider(Type type, object[] attributes) : IParameterAttributeProvider
 {
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Refit;
@@ -11,7 +10,7 @@ namespace Refit;
 /// <see cref="GeneratedSingleTypeParameterAttributeProvider"/> instead when every attribute has the same type.</summary>
 /// <param name="attributes">The attribute information.</param>
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[]> attributes) : ICustomAttributeProvider
+public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[]> attributes) : IParameterAttributeProvider
 {
     /// <summary>A shared provider for parameters that declare no attributes, avoiding a per-parameter empty dictionary.</summary>
     public static readonly GeneratedParameterAttributeProvider Empty = new([]);

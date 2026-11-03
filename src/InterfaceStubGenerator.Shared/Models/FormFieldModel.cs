@@ -5,7 +5,7 @@ namespace Refit.Generator;
 
 /// <summary>Compile-time metadata for one form-url-encoded field of a strongly-typed body.</summary>
 /// <param name="PropertyName">The declared CLR property name read by the generated getter.</param>
-/// <param name="ExplicitName">The explicit field name from <c>[AliasAs]</c> or <c>[JsonPropertyName]</c>, or <see langword="null"/>.</param>
+/// <param name="ExplicitName">The explicit field name from <c>[AliasAs]</c> or <c>[Query]</c>, which wins over every serializer name, or <see langword="null"/>.</param>
 /// <param name="PrefixSegment">The precomputed <c>prefix + delimiter</c> prepended to the field name, or <see langword="null"/>.</param>
 /// <param name="Format">The <c>[Query]</c> value format, or <see langword="null"/>.</param>
 /// <param name="CollectionFormatValue">The explicit collection format underlying value, or <see langword="null"/> to use the settings default.</param>
@@ -13,6 +13,9 @@ namespace Refit.Generator;
 /// <param name="CanBeNull">Whether the field value can be <see langword="null"/> and therefore needs a null guard.</param>
 /// <param name="ValueFormat">The reflection-free scalar value fast-path descriptor, or <see langword="null"/> when the
 /// field is not a simple scalar (a collection or complex property) and the body must keep using the descriptor path.</param>
+/// <param name="JsonName">The System.Text.Json <c>[JsonPropertyName]</c> name, or <see langword="null"/>.</param>
+/// <param name="NewtonsoftName">The Newtonsoft.Json <c>[JsonProperty]</c> name, or <see langword="null"/>.</param>
+/// <param name="XmlName">The <c>[XmlElement]</c> or <c>[XmlAttribute]</c> name, or <see langword="null"/>.</param>
 internal sealed record FormFieldModel(
     string PropertyName,
     string? ExplicitName,
@@ -21,4 +24,7 @@ internal sealed record FormFieldModel(
     int? CollectionFormatValue,
     bool SerializeNull,
     bool CanBeNull,
-    InlineValueFormatModel? ValueFormat);
+    InlineValueFormatModel? ValueFormat,
+    string? JsonName,
+    string? NewtonsoftName,
+    string? XmlName);

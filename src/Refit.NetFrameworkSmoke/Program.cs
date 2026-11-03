@@ -10,12 +10,15 @@ const int SearchPage = 3;
 
 const string MissingClientFragment = "doesn't look like a Refit interface";
 
+// The smoke types have no source-generated JSON context, so typed replies need the reflection-based metadata.
+ReflectionSupport.EnsureRegistered();
+
 var handler = new NetFrameworkSmokeHandler();
 
 using var client = new HttpClient(handler) { BaseAddress = new("https://netfx.refit.test") };
 
-// .NET Framework has no [ModuleInitializer], so the generator emits no factory registrations here and the registries
-// stay empty. ForGenerated has to resolve the generated implementation by name for any of this to work at all.
+// .NET Framework does not define [ModuleInitializer], so the generator declares the attribute itself. The compiler still
+// lowers it into the module constructor, which registers the generated factories when ForGenerated runs it.
 var api = RestService.ForGenerated<INetFrameworkSmokeApi>(client);
 
 var fetched = await api.GetTodoAsync(ExpectedTodoId).ConfigureAwait(false);

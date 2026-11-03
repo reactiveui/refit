@@ -16,9 +16,9 @@ public partial class DefaultUrlParameterFormatterTests
         const int sample = 1234;
         var formatter = new DefaultUrlParameterFormatter();
 
-        await Assert.That(formatter.Format("widgets and gadgets", typeof(string), typeof(string)))
+        await Assert.That(formatter.Format("widgets and gadgets", GeneratedParameterAttributeProvider.Empty, typeof(string)))
             .IsEqualTo("widgets and gadgets");
-        await Assert.That(formatter.Format(sample, typeof(int), typeof(int)))
+        await Assert.That(formatter.Format(sample, GeneratedParameterAttributeProvider.Empty, typeof(int)))
             .IsEqualTo("1234");
     }
 
@@ -30,9 +30,9 @@ public partial class DefaultUrlParameterFormatterTests
     {
         var formatter = new DefaultUrlParameterFormatter();
 
-        await Assert.That(formatter.Format(new NonFormattableValue(), typeof(NonFormattableValue), typeof(NonFormattableValue)))
+        await Assert.That(formatter.Format(new NonFormattableValue(), GeneratedParameterAttributeProvider.Empty, typeof(NonFormattableValue)))
             .IsEqualTo("custom-text");
-        await Assert.That(formatter.Format(new NullToStringValue(), typeof(NullToStringValue), typeof(NullToStringValue)))
+        await Assert.That(formatter.Format(new NullToStringValue(), GeneratedParameterAttributeProvider.Empty, typeof(NullToStringValue)))
             .IsEqualTo(string.Empty);
     }
 

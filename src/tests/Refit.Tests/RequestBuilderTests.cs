@@ -65,9 +65,8 @@ public partial class RequestBuilderTests
         var genericBuilderWithSettings = RequestBuilder.ForType<IDummyHttpApi>(new());
         var typeBuilder = RequestBuilder.ForType(typeof(IDummyHttpApi));
         var typeBuilderWithSettings = RequestBuilder.ForType(typeof(IDummyHttpApi), new());
-        var factory = new RequestBuilderFactory();
-        var factoryGenericBuilder = factory.Create<IDummyHttpApi>(new());
-        var factoryTypeBuilder = factory.Create(typeof(IDummyHttpApi), new());
+        var factoryGenericBuilder = RequestBuilderFactory.Create<IDummyHttpApi>(new());
+        var factoryTypeBuilder = RequestBuilderFactory.Create(typeof(IDummyHttpApi), new());
 
         await Assert.That(genericBuilder).IsNotNull();
         await Assert.That(genericBuilderWithSettings).IsNotNull();

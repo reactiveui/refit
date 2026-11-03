@@ -248,18 +248,42 @@ internal static class InterfaceMemberParsing
     /// <c>Name`1</c> corresponds to <c>(Name, 1)</c>, so this classifies identically.</remarks>
     internal static ReturnTypeInfo GetReturnTypeInfo(IMethodSymbol methodSymbol) =>
         methodSymbol.ReturnType is INamedTypeSymbol named
-            ? (named.Name, named.Arity) switch
+            ? named.Arity switch
             {
-                ("Task", 0) => ReturnTypeInfo.AsyncVoid,
-                ("Task", 1) when InlineRequestClassification.IsHttpRequestMessageType(named.TypeArguments[0]) => ReturnTypeInfo.RequestMessage,
-                ("Task", 1) or ("ValueTask", 1) => ReturnTypeInfo.AsyncResult,
-                ("IAsyncEnumerable", 1) => ReturnTypeInfo.AsyncEnumerable,
-                ("IObservable", 1) => ReturnTypeInfo.Observable,
-                (PagedEnumerableName, PagedEnumerableArity) when RequestParameterParsingHelpers.IsInNamespace(named, "Refit") => ReturnTypeInfo.Paged,
-                ("Void", 0) => ReturnTypeInfo.SyncVoid,
+                0 => ClassifyNonGenericReturn(named.Name),
+                1 => ClassifySingleArgumentReturn(named),
+                PagedEnumerableArity => named.Name == PagedEnumerableName && RequestParameterParsingHelpers.IsInNamespace(named, "Refit")
+                    ? ReturnTypeInfo.Paged
+                    : ReturnTypeInfo.Return,
                 _ => ReturnTypeInfo.Return
             }
             : ReturnTypeInfo.Return;
+
+    /// <summary>Classifies a return type that has no type arguments.</summary>
+    /// <param name="name">The type's name.</param>
+    /// <returns>The classified return type information.</returns>
+    internal static ReturnTypeInfo ClassifyNonGenericReturn(string name) =>
+        name switch
+        {
+            "Task" => ReturnTypeInfo.AsyncVoid,
+            "Void" => ReturnTypeInfo.SyncVoid,
+            _ => ReturnTypeInfo.Return
+        };
+
+    /// <summary>Classifies a return type that has one type argument.</summary>
+    /// <param name="named">The return type.</param>
+    /// <returns>The classified return type information.</returns>
+    internal static ReturnTypeInfo ClassifySingleArgumentReturn(INamedTypeSymbol named) =>
+        named.Name switch
+        {
+            "Task" => InlineRequestClassification.IsHttpRequestMessageType(named.TypeArguments[0])
+                ? ReturnTypeInfo.RequestMessage
+                : ReturnTypeInfo.AsyncResult,
+            "ValueTask" => ReturnTypeInfo.AsyncResult,
+            "IAsyncEnumerable" => ReturnTypeInfo.AsyncEnumerable,
+            "IObservable" => ReturnTypeInfo.Observable,
+            _ => ReturnTypeInfo.Return
+        };
 
     /// <summary>Collects the distinct member names declared on the interface, preserving order.</summary>
     /// <param name="members">The directly declared members of the interface.</param>

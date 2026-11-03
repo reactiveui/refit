@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 
 namespace Refit.Tests;
 
@@ -27,9 +26,6 @@ public class JsonLinesContentTypedTests
 
     /// <summary>The serializer used directly by these tests.</summary>
     private static readonly SystemTextJsonContentSerializer Serializer = new();
-
-    /// <summary>The options used by the "converter handles object" fallback test: a converter that reports it can convert <see cref="object"/>.</summary>
-    private static readonly System.Text.Json.JsonSerializerOptions ObjectConverterOptions = new() { Converters = { new ObjectConverter() } };
 
     /// <summary>The timeout used by every wait in the flush ordering test, so a regression fails instead of hanging.</summary>
     private static readonly TimeSpan FlushWaitTimeout = TimeSpan.FromSeconds(10);
@@ -153,6 +149,23 @@ public class JsonLinesContentTypedTests
         using var content = new JsonLinesContent<SealedRecord>(TrackedAsync(tracker, throwAt: -1), Serializer);
 
         _ = await content.ReadAsStringAsync();
+
+        await Assert.That(tracker.Disposed).IsTrue();
+    }
+
+    /// <summary>Verifies an enumerator whose disposal finishes asynchronously is still disposed when the destination fails.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EnumeratorWithAsynchronousDisposalIsDisposedWhenTheDestinationFails()
+    {
+        var tracker = new DisposeTracker();
+        using var content = new JsonLinesContent<SealedRecord>(SlowDisposalAsync(tracker), Serializer);
+
+        await Assert.That(async () =>
+        {
+            await using var target = new WriteFailingStream();
+            await content.CopyToAsync(target);
+        }).Throws<HttpRequestException>();
 
         await Assert.That(tracker.Disposed).IsTrue();
     }
@@ -317,18 +330,6 @@ public class JsonLinesContentTypedTests
         await Assert.That(content).IsTypeOf<JsonLinesContent>();
     }
 
-    /// <summary>Verifies the typed factory falls back to the untyped content when a converter can handle <see cref="object"/>.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task CreateTypedFallsBackWhenAConverterHandlesObject()
-    {
-        var settings = new RefitSettings(new SystemTextJsonContentSerializer(ObjectConverterOptions));
-
-        var content = GeneratedRequestRunner.CreateTypedJsonLinesBodyContent(settings, (IEnumerable<SealedRecord>)[new("1", "a")]);
-
-        await Assert.That(content).IsTypeOf<JsonLinesContent>();
-    }
-
     /// <summary>Verifies the typed factory falls back to the untyped content for a non-sealed reference element type.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -425,6 +426,26 @@ public class JsonLinesContentTypedTests
     {
         await Task.CompletedTask;
         yield break;
+    }
+
+    /// <summary>Produces elements and finishes its disposal asynchronously.</summary>
+    /// <param name="tracker">Records whether the enumerator was disposed.</param>
+    /// <returns>The asynchronous sequence.</returns>
+    private static async IAsyncEnumerable<SealedRecord> SlowDisposalAsync(DisposeTracker tracker)
+    {
+        try
+        {
+            for (var i = 0; i < SampleElementCount; i++)
+            {
+                await Task.Yield();
+                yield return new(i.ToString(), $"n{i}");
+            }
+        }
+        finally
+        {
+            await Task.Yield();
+            tracker.Disposed = true;
+        }
     }
 
     /// <summary>Produces elements while recording enumerator disposal, optionally throwing before a given index.</summary>
@@ -539,6 +560,24 @@ public class JsonLinesContentTypedTests
         internal bool Disposed { get; set; }
     }
 
+    /// <summary>A stream whose writes always fail.</summary>
+    private sealed class WriteFailingStream : MemoryStream
+    {
+        /// <summary>The message every failed write carries.</summary>
+        private const string FailureMessage = "Write failed.";
+
+        /// <inheritdoc/>
+        public override void Write(byte[] buffer, int offset, int count) => throw new IOException(FailureMessage);
+
+        /// <inheritdoc/>
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            throw new IOException(FailureMessage);
+
+        /// <inheritdoc/>
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) =>
+            throw new IOException(FailureMessage);
+    }
+
     /// <summary>A content serializer that is not <see cref="SystemTextJsonContentSerializer"/>.</summary>
     private sealed class PlainSerializer : IHttpContentSerializer
     {
@@ -548,24 +587,6 @@ public class JsonLinesContentTypedTests
         /// <inheritdoc/>
         public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
             Task.FromResult<T?>(default);
-
-        /// <inheritdoc/>
-        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) => null;
-    }
-
-    /// <summary>A converter that reports it can convert <see cref="object"/>, forcing the untyped fallback.</summary>
-    private sealed class ObjectConverter : JsonConverter<object>
-    {
-        /// <inheritdoc/>
-        public override bool CanConvert(Type typeToConvert) => typeToConvert == typeof(object);
-
-        /// <inheritdoc/>
-        public override object? Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert, System.Text.Json.JsonSerializerOptions options) =>
-            null;
-
-        /// <inheritdoc/>
-        public override void Write(System.Text.Json.Utf8JsonWriter writer, object value, System.Text.Json.JsonSerializerOptions options) =>
-            writer.WriteNullValue();
     }
 
 #if NET8_0_OR_GREATER

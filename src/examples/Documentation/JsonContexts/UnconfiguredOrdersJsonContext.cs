@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 namespace Refit.Documentation.JsonContexts;
 
 /// <summary>The orders metadata without <c>JsonSourceGenerationOptions</c>, so System.Text.Json's own defaults apply.</summary>
+[JsonSourceGenerationOptions(UseStringEnumConverter = true)]
 [JsonSerializable(typeof(Order))]
 [JsonSerializable(typeof(List<Order>))]
 [JsonSerializable(typeof(NewOrder))]

@@ -141,10 +141,8 @@ public sealed class StubHttp : System.Net.Http.HttpMessageHandler, System.Collec
     public System.Collections.Generic.IReadOnlyList<System.Net.Http.HttpRequestMessage> Requests { get; }
     public System.TimeProvider TimeProvider { get; set; }
     public void Add(Refit.Testing.RouteMatcher route, Refit.Testing.StubResponse response) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a Refit client through the reflection path requires runtime type lookup and request metadata.")]
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public T CreateClient<T>(string hostUrl) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a Refit client through the reflection path requires runtime type lookup and request metadata.")]
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public T CreateClient<T>(string hostUrl, Refit.RefitSettings baseSettings) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]

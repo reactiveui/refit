@@ -15,7 +15,7 @@ namespace Refit;
 /// other query delegates to <paramref name="inner"/>, so a custom formatter that reads other attributes sees exactly the
 /// same values it would from the original provider. The cached array holds immutable metadata attributes, so sharing it
 /// across format calls is behaviourally identical to re-reading it.</remarks>
-internal sealed class CachedAttributeProvider(ICustomAttributeProvider inner) : ICustomAttributeProvider
+internal sealed class CachedAttributeProvider(ICustomAttributeProvider inner) : IParameterAttributeProvider
 {
     /// <summary>The materialized <see cref="QueryAttribute"/> lookup, cached on first read.</summary>
     private object[]? _queryAttributes;

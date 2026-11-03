@@ -15,7 +15,7 @@ namespace Refit;
 /// ASP.NET <c>[FromForm]</c> model) receives the individual values.
 /// <para>
 /// Field names are resolved per property in the same order as url-encoded body flattening: an explicit
-/// <see cref="AliasAsAttribute"/>, then <see cref="IHttpContentSerializer.GetFieldNameForProperty"/>, then
+/// <see cref="AliasAsAttribute"/>, then the configured content serializer's own field name, then
 /// <see cref="RefitSettings.UrlParameterKeyFormatter"/>. Values are rendered through
 /// <see cref="RefitSettings.FormUrlEncodedParameterFormatter"/>, collections honour
 /// <see cref="RefitSettings.CollectionFormat"/>, and a nested object composes its children under a

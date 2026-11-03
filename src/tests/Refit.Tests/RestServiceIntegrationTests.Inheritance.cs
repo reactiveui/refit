@@ -214,9 +214,9 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.GetQuery(myParams);
 
-        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
-        await Assert.That(resp.Args[LastNameKey]).IsEqualTo(RamboLastName);
-        await Assert.That(resp.Args["Address_Zip"]).IsEqualTo("9999");
+        await Assert.That(resp.Args![FirstNameKey]?.ToString()).IsEqualTo("John");
+        await Assert.That(resp.Args[LastNameKey]?.ToString()).IsEqualTo(RamboLastName);
+        await Assert.That(resp.Args["Address_Zip"]?.ToString()).IsEqualTo("9999");
     }
 
     /// <summary>Verifies complex dynamic query parameters work with an included parameter name.</summary>
@@ -245,9 +245,9 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.GetQueryWithIncludeParameterName(myParams);
 
-        await Assert.That(resp.Args!["search.FirstName"]).IsEqualTo("John");
-        await Assert.That(resp.Args["search.LastName"]).IsEqualTo(RamboLastName);
-        await Assert.That(resp.Args["search.Addr.Zip"]).IsEqualTo("9999");
+        await Assert.That(resp.Args!["search.FirstName"]?.ToString()).IsEqualTo("John");
+        await Assert.That(resp.Args["search.LastName"]?.ToString()).IsEqualTo(RamboLastName);
+        await Assert.That(resp.Args["search.Addr.Zip"]?.ToString()).IsEqualTo("9999");
     }
 
     /// <summary>Verifies a GET request works for a service declared outside a namespace.</summary>

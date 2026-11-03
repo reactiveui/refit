@@ -120,7 +120,7 @@ public class CachedRequestBuilderTests
     }
 
     /// <summary>Content serializer test double used only to satisfy <see cref="RefitSettings"/> construction.</summary>
-    private sealed class NullContentSerializer : IHttpContentSerializer
+    private sealed class NullContentSerializer : IHttpContentSerializer, IReflectionFieldNameProvider
     {
         /// <inheritdoc />
         public HttpContent ToHttpContent<T>(T item) => new ByteArrayContent([]);

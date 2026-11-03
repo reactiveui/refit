@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -109,9 +110,28 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             .WithTrackingName(RefitGeneratorStepName.BuildRefit);
         context.EmitSource(interfaceModels);
 
+        var moduleInitializerSupport = context.CompilationProvider.Select(static (compilation, _) =>
+            DetectModuleInitializerSupport(compilation));
+
         context.RegisterImplementationSourceOutput(
-            contextModel,
-            static (spc, model) => Emitter.EmitSharedCode(model, spc.AddSource));
+            contextModel.Combine(moduleInitializerSupport),
+            static (spc, combined) => Emitter.EmitSharedCode(combined.Left, spc.AddSource, combined.Right));
+    }
+
+    /// <summary>Decides how the generated factory registration can be hooked to assembly load in a compilation.</summary>
+    /// <param name="compilation">The consumer compilation.</param>
+    /// <returns>The module initializer support the compilation offers.</returns>
+    internal static ModuleInitializerSupport DetectModuleInitializerSupport(Compilation compilation)
+    {
+        // The compiler only recognises [ModuleInitializer] from C# 9. The generator only runs on C# compilations.
+        if (((CSharpCompilation)compilation).LanguageVersion < LanguageVersion.CSharp9)
+        {
+            return ModuleInitializerSupport.Guarded;
+        }
+
+        return compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ModuleInitializerAttribute") is null
+            ? ModuleInitializerSupport.UnguardedWithPolyfill
+            : ModuleInitializerSupport.Unguarded;
     }
 
     /// <summary>Combines built-in and potential custom HTTP method candidates.</summary>

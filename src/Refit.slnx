@@ -107,6 +107,7 @@
     <Project Path="Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" />
     <Project Path="Refit.CodeFixes.Roslyn48/Refit.CodeFixes.Roslyn48.csproj" />
     <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
+    <Project Path="Refit.HttpClientFactory.Reflection/Refit.HttpClientFactory.Reflection.csproj" />
     <Project Path="Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj" />
     <Project Path="Refit.NetFrameworkSmoke/Refit.NetFrameworkSmoke.csproj" />
     <Project Path="Refit.Reflection/Refit.Reflection.csproj" />

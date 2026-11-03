@@ -19,7 +19,7 @@ public sealed class FormField<TBody>
     /// <summary>Initializes a new instance of the <see cref="FormField{TBody}"/> class.</summary>
     /// <param name="getter">Reads the property value from a body instance without reflection.</param>
     /// <param name="clrName">The declared CLR property name, used when no explicit name is configured.</param>
-    /// <param name="explicitName">The explicit field name from <c>[AliasAs]</c> or <c>[JsonPropertyName]</c>, or <see langword="null"/>.</param>
+    /// <param name="names">The compile-time explicit and serializer-specific field names.</param>
     /// <param name="prefixSegment">The precomputed <c>prefix + delimiter</c> prepended to the field name, or <see langword="null"/> when no prefix applies.</param>
     /// <param name="format">The <see cref="QueryAttribute.Format"/> applied to the value, or <see langword="null"/>.</param>
     /// <param name="collectionFormat">The explicit <see cref="CollectionFormat"/>, or <see langword="null"/> to use the settings default.</param>
@@ -27,7 +27,7 @@ public sealed class FormField<TBody>
     public FormField(
         Func<TBody, object?> getter,
         string clrName,
-        string? explicitName,
+        FormFieldNames names,
         string? prefixSegment,
         string? format,
         CollectionFormat? collectionFormat,
@@ -35,7 +35,7 @@ public sealed class FormField<TBody>
     {
         Getter = getter;
         ClrName = clrName;
-        ExplicitName = explicitName;
+        Names = names;
         PrefixSegment = prefixSegment;
         Format = format;
         CollectionFormat = collectionFormat;
@@ -48,8 +48,8 @@ public sealed class FormField<TBody>
     /// <summary>Gets the declared CLR property name.</summary>
     public string ClrName { get; }
 
-    /// <summary>Gets the explicit field name from <c>[AliasAs]</c> or <c>[JsonPropertyName]</c>, if any.</summary>
-    public string? ExplicitName { get; }
+    /// <summary>Gets the compile-time explicit and serializer-specific field names.</summary>
+    public FormFieldNames Names { get; }
 
     /// <summary>Gets the precomputed <c>prefix + delimiter</c> prepended to the field name, if any.</summary>
     public string? PrefixSegment { get; }
@@ -65,10 +65,11 @@ public sealed class FormField<TBody>
 
     /// <summary>Resolves the form field name, applying the key formatter and any prefix.</summary>
     /// <param name="urlParameterKeyFormatter">The formatter applied to the CLR name when no explicit name is set.</param>
+    /// <param name="nameStyle">The attribute family the configured content serializer reads names from.</param>
     /// <returns>The resolved field name.</returns>
-    public string? ResolveFieldName(IUrlParameterKeyFormatter urlParameterKeyFormatter)
+    public string? ResolveFieldName(IUrlParameterKeyFormatter urlParameterKeyFormatter, ContentSerializerNameStyle nameStyle)
     {
-        var name = ExplicitName ?? urlParameterKeyFormatter.Format(ClrName);
+        var name = Names.ExplicitName ?? Names.ForStyle(nameStyle) ?? urlParameterKeyFormatter.Format(ClrName);
         return PrefixSegment is null ? name : PrefixSegment + name;
     }
 }

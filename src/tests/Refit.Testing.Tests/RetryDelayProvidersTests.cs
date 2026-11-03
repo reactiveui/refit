@@ -83,6 +83,7 @@ public class RetryDelayProvidersTests
     [Arguments(RetryHeaderFormat.Iso8601Date, "1970-01-01T00:00:00.000Z", 0L)]
     [Arguments(RetryHeaderFormat.Iso8601Date, "1970-01-01T00:00:20", null)]
     [Arguments(RetryHeaderFormat.Iso8601Date, "tomorrow", null)]
+    [Arguments(RetryHeaderFormat.Iso8601Date, "", null)]
     public async Task ReadHeader_ValidatesEncoding(RetryHeaderFormat format, string value, long? milliseconds, CancellationToken cancellationToken)
     {
         using var response = new HttpResponseMessage();

@@ -5,7 +5,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Refit;
@@ -16,28 +15,14 @@ namespace Refit;
 /// same or different values.</remarks>
 internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, string?>>
 {
+    /// <summary>The default delimiter composing a nested field key from its parent key, matching the query-flattening default.</summary>
+    internal const string DefaultNestingDelimiter = ".";
+
     /// <summary>The maximum object-graph depth flattened before deeper nested values are dropped, guarding against runaway recursion.</summary>
     private const int MaxNestingDepth = 32;
 
-    /// <summary>The default delimiter composing a nested field key from its parent key, matching the query-flattening default.</summary>
-    private const string DefaultNestingDelimiter = ".";
-
-    /// <summary>Caches the per-property attribute metadata for each source type without keeping collectible types alive.</summary>
-    /// <remarks>The reflection form path reads <see cref="AliasAsAttribute"/> and <see cref="QueryAttribute"/> for every
-    /// property on every request. Those attributes are compile-time metadata that never change for a type, so they are
-    /// read once and reused, collapsing the per-property attribute lookups (the dominant allocation on this path) into a
-    /// single one-time-per-type cost. Field names still consult the settings' content serializer and key formatter per
-    /// call, so settings-dependent naming is never frozen.</remarks>
-    private static readonly ConditionalWeakTable<Type, FormPropertyMetadata[]> _metadataCache = new();
-
     /// <summary>Holds the collected form key/value entries.</summary>
     private readonly List<KeyValuePair<string?, string?>> _formEntries = [];
-
-    /// <summary>The content serializer used to resolve field names.</summary>
-    private readonly IHttpContentSerializer _contentSerializer;
-
-    /// <summary>The formatter applied to property names that are not explicitly aliased.</summary>
-    private readonly IUrlParameterKeyFormatter _urlParameterKeyFormatter;
 
     /// <summary>The complex values currently being flattened on the recursion path, guarding against reference cycles.</summary>
     private List<object>? _ancestors;
@@ -45,24 +30,25 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Initializes a new instance of the <see cref="FormValueMultimap"/> class from a source object.</summary>
     /// <param name="source">The source object or dictionary to convert into form entries.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    internal FormValueMultimap(object source, RefitSettings settings)
-        : this(source, settings, null)
+    internal FormValueMultimap(object? source, RefitSettings settings)
+        : this(source, source?.GetType(), settings)
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="FormValueMultimap"/> class from a source object.</summary>
     /// <param name="source">The source object or dictionary to convert into form entries.</param>
+    /// <param name="sourceType">The type whose readable public properties are flattened, or <see langword="null"/> when there is no source.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    /// <param name="declaredMetadata">The cached attribute metadata for the declared source type, if available.</param>
-    internal FormValueMultimap(
-        object? source,
-        RefitSettings settings,
-        FormPropertyMetadata[]? declaredMetadata)
+    [SuppressMessage(
+        "Correctness",
+        "SST2403",
+        Justification = "Every field is assigned before the registered flattener receives the map, and the class is sealed, so the flattener only sees a fully initialized instance.")]
+    internal FormValueMultimap(object? source, Type? sourceType, RefitSettings settings)
     {
         ArgumentExceptionHelper.ThrowIfNull(settings);
 
-        _contentSerializer = settings.ContentSerializer;
-        _urlParameterKeyFormatter = settings.UrlParameterKeyFormatter;
+        ContentSerializer = settings.ContentSerializer;
+        UrlParameterKeyFormatter = settings.UrlParameterKeyFormatter;
 
         if (source is null)
         {
@@ -75,8 +61,15 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             return;
         }
 
-        AddObject(source, declaredMetadata ?? GetCachedMetadata(source.GetType()), settings, null, DefaultNestingDelimiter, 0);
+        ReflectionHooks.RequireFormObjectFlattener()
+            .AddObject(this, source, sourceType!, settings, null, DefaultNestingDelimiter, 0);
     }
+
+    /// <summary>Gets the content serializer used to resolve field names.</summary>
+    internal IHttpContentSerializer ContentSerializer { get; }
+
+    /// <summary>Gets the formatter applied to property names that are not explicitly aliased.</summary>
+    internal IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; }
 
     /// <summary>Gets a key for each entry. If multiple entries share the same key, the key is returned multiple times.</summary>
     internal IEnumerable<string?> Keys => GetKeys();
@@ -95,35 +88,32 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <param name="source">The source object or dictionary to convert into form entries.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
     /// <returns>The created form value map.</returns>
-    internal static FormValueMultimap Create<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        TSource>(
+    internal static FormValueMultimap Create<TSource>(
         TSource source,
         RefitSettings settings) =>
         source is null or IDictionary
-            ? new(source!, settings)
-            : new FormValueMultimap(
-                source,
-                settings,
-                GetCachedMetadata(source));
+            ? new(source, settings)
+            : new FormValueMultimap(source, typeof(TSource), settings);
 
     /// <summary>Creates a form value map from source-generated field descriptors, avoiding reflection.</summary>
     /// <typeparam name="TBody">The declared body type.</typeparam>
     /// <param name="body">The body instance to flatten into form entries.</param>
     /// <param name="fields">The compile-time field descriptors for the body type.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
+    /// <param name="nameStyle">The attribute family the configured content serializer reads names from.</param>
     /// <returns>The created form value map.</returns>
     internal static FormValueMultimap CreateFromFields<TBody>(
         TBody body,
         FormField<TBody>[] fields,
-        RefitSettings settings)
+        RefitSettings settings,
+        ContentSerializerNameStyle nameStyle)
     {
-        var map = new FormValueMultimap(null, settings, null);
+        var map = new FormValueMultimap(null, settings);
         for (var i = 0; i < fields.Length; i++)
         {
             var field = fields[i];
             var value = field.Getter(body);
-            var fieldName = field.ResolveFieldName(map._urlParameterKeyFormatter);
+            var fieldName = field.ResolveFieldName(map.UrlParameterKeyFormatter, nameStyle);
 
             if (value is null)
             {
@@ -139,54 +129,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         }
 
         return map;
-    }
-
-    /// <summary>Resolves the cached per-property attribute metadata for the given source type.</summary>
-    /// <param name="type">The type to inspect.</param>
-    /// <returns>The cached attribute metadata for each readable public property.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage(
-        "Trimming",
-        "IL2111:Method with DynamicallyAccessedMembersAttribute is accessed via reflection",
-        Justification = "The cache callback receives the same Type key that carries the public property metadata requirement.")]
-    internal static FormPropertyMetadata[] GetCachedMetadata(Type type) =>
-        _metadataCache.GetValue(type, BuildMetadata);
-
-    /// <summary>Resolves the cached per-property attribute metadata for the given declared source type.</summary>
-    /// <typeparam name="TSource">The declared source type to inspect.</typeparam>
-    /// <param name="source">A value of the declared source type.</param>
-    /// <returns>The cached attribute metadata for each readable public property.</returns>
-    internal static FormPropertyMetadata[] GetCachedMetadata<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        TSource>(TSource source)
-    {
-        _ = source;
-
-        return _metadataCache.GetValue(typeof(TSource), static _ => BuildMetadata(typeof(TSource)));
-    }
-
-    /// <summary>Reads the attribute metadata for each readable public property of the given type.</summary>
-    /// <param name="type">The type whose properties are inspected.</param>
-    /// <returns>The attribute metadata array, in property order.</returns>
-    /// <remarks>Runs once per type as the cache miss callback: the <see cref="AliasAsAttribute"/> name and the
-    /// <see cref="QueryAttribute"/> are read here and reused for every subsequent request instead of being re-read per
-    /// property per call.</remarks>
-    internal static FormPropertyMetadata[] BuildMetadata(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        Type type)
-    {
-        var properties = ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(type);
-        var metadata = new FormPropertyMetadata[properties.Length];
-        for (var i = 0; i < properties.Length; i++)
-        {
-            var property = properties[i];
-            metadata[i] = new(
-                property,
-                property.GetCustomAttribute<AliasAsAttribute>(true)?.Name,
-                property.GetCustomAttribute<QueryAttribute>(true));
-        }
-
-        return metadata;
     }
 
     /// <summary>Gets the delimiter string for a delimited collection format.</summary>
@@ -291,53 +233,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         }
     }
 
-    /// <summary>Adds the entries reflected from an object source, composing nested keys under the given prefix.</summary>
-    /// <param name="source">The object source.</param>
-    /// <param name="metadata">The cached attribute metadata for the source's readable public properties.</param>
-    /// <param name="settings">The Refit settings controlling formatting.</param>
-    /// <param name="keyPrefix">The parent key prefix, or <see langword="null"/> for a top-level object.</param>
-    /// <param name="delimiter">The delimiter composing each property key under the prefix.</param>
-    /// <param name="depth">The current nesting depth.</param>
-    internal void AddObject(
-        object source,
-        FormPropertyMetadata[] metadata,
-        RefitSettings settings,
-        string? keyPrefix,
-        string? delimiter,
-        int depth)
-    {
-        for (var i = 0; i < metadata.Length; i++)
-        {
-            var property = metadata[i].Property;
-            var value = property.GetValue(source, null);
-
-            // The query attribute was read once when the metadata was cached for this type.
-            var attrib = metadata[i].Query;
-
-            var fieldName = ComposeKey(keyPrefix, GetFieldNameForProperty(metadata[i]), delimiter);
-
-            if (value is null)
-            {
-                if (attrib?.SerializeNull == true)
-                {
-                    Add(fieldName, string.Empty);
-                }
-
-                continue;
-            }
-
-            var collectionFormat = attrib?.IsCollectionFormatSpecified == true
-                ? attrib.CollectionFormat
-                : (CollectionFormat?)null;
-
-            // A nested object/dictionary composes its children under this property's key using this property's own
-            // [Query] delimiter when present, otherwise the inherited delimiter (matching the query-flattening path).
-            var nestedDelimiter = attrib is not null ? attrib.Delimiter : (delimiter ?? DefaultNestingDelimiter);
-
-            AppendValue(fieldName, value, attrib?.Format, collectionFormat, settings, nestedDelimiter, depth);
-        }
-    }
-
     /// <summary>Adds a non-null property or descriptor value, choosing scalar, collection, dictionary, or nested-object handling.</summary>
     /// <param name="fieldName">The resolved form field name.</param>
     /// <param name="value">The non-null value to add.</param>
@@ -389,7 +284,8 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             return;
         }
 
-        AddObject(value, GetCachedMetadata(value.GetType()), settings, fieldName, delimiter, depth + 1);
+        ReflectionHooks.RequireFormObjectFlattener()
+            .AddObject(this, value, value.GetType(), settings, fieldName, delimiter, depth + 1);
         ExitComplex();
     }
 
@@ -495,32 +391,4 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             yield return _formEntries[i].Key;
         }
     }
-
-    /// <summary>Resolves the form field name for the given property from its cached attribute metadata.</summary>
-    /// <param name="metadata">The cached attribute metadata for the property.</param>
-    /// <returns>The resolved form field name.</returns>
-    /// <remarks>The <see cref="AliasAsAttribute"/> name and <see cref="QueryAttribute"/> come from the per-type cache;
-    /// the content serializer and key formatter are still consulted per call because they are settings-dependent.</remarks>
-    internal string GetFieldNameForProperty(in FormPropertyMetadata metadata)
-    {
-        var name = metadata.AliasName
-                   ?? metadata.Query?.Name
-                   ?? _contentSerializer.GetFieldNameForProperty(metadata.Property)
-                   ?? _urlParameterKeyFormatter.Format(metadata.Property.Name);
-
-        var qattrib = metadata.Query;
-        return qattrib is not null && !string.IsNullOrWhiteSpace(qattrib.Prefix)
-            ? qattrib.Prefix + qattrib.Delimiter + name
-            : name;
-    }
-
-    /// <summary>The cached, settings-independent attribute metadata for a single readable public property on a form
-    /// source type, read once when the property list is first cached and reused for every request.</summary>
-    /// <param name="Property">The reflected property.</param>
-    /// <param name="AliasName">The <see cref="AliasAsAttribute.Name"/> override, or <see langword="null"/> when absent.</param>
-    /// <param name="Query">The <see cref="QueryAttribute"/> applied to the property, or <see langword="null"/> when absent.</param>
-    internal readonly record struct FormPropertyMetadata(
-        PropertyInfo Property,
-        string? AliasName,
-        QueryAttribute? Query);
 }

@@ -4,7 +4,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,8 +25,4 @@ public sealed class NonStreamingContentSerializer : IHttpContentSerializer
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
         _inner.FromHttpContentAsync<T>(content, cancellationToken);
-
-    /// <inheritdoc/>
-    public string? GetFieldNameForProperty(PropertyInfo propertyInfo) =>
-        _inner.GetFieldNameForProperty(propertyInfo);
 }

@@ -119,26 +119,8 @@ internal static class RequestBodyParsing
         IPropertySymbol property,
         in InterfaceGenerationContext context)
     {
-        string? aliasName = null;
-        string? jsonName = null;
-        var query = default(QueryFormData);
-
-        foreach (var attribute in property.GetAttributes())
-        {
-            var attributeName = attribute.AttributeClass!.ToDisplayString();
-            if (attributeName == "Refit.AliasAsAttribute")
-            {
-                aliasName = GetFirstStringArgument(attribute);
-            }
-            else if (attributeName == "System.Text.Json.Serialization.JsonPropertyNameAttribute")
-            {
-                jsonName = GetFirstStringArgument(attribute);
-            }
-            else if (attributeName == "Refit.QueryAttribute")
-            {
-                query = ParseFormQueryAttribute(attribute);
-            }
-        }
+        var attributes = ReadFormPropertyAttributes(property);
+        var query = attributes.Query;
 
         // A scalar property (string/bool/IFormattable, matching the query fast path) can be rendered straight-line
         // without the descriptor array; collections and complex properties leave ValueFormat null so the whole body
@@ -156,13 +138,101 @@ internal static class RequestBodyParsing
         var prefixSegment = string.IsNullOrWhiteSpace(query.Prefix) ? null : query.Prefix + query.Delimiter;
         return new(
             property.Name,
-            aliasName ?? query.Name ?? jsonName,
+            attributes.Alias ?? query.Name,
             prefixSegment,
             query.Format,
             query.CollectionFormatValue,
             query.SerializeNull,
             QueryParameterParsing.CanElementBeNull(property.Type),
-            valueFormat);
+            valueFormat,
+            attributes.Json,
+            attributes.Newtonsoft,
+            attributes.Xml);
+    }
+
+    /// <summary>Reads the form-relevant naming and query attributes from a body property.</summary>
+    /// <param name="property">The property to inspect.</param>
+    /// <returns>The alias, serializer-specific names and query data.</returns>
+    internal static FormPropertyAttributes ReadFormPropertyAttributes(IPropertySymbol property)
+    {
+        string? alias = null;
+        string? json = null;
+        string? newtonsoft = null;
+        string? xmlElement = null;
+        string? xmlAttribute = null;
+        var query = default(QueryFormData);
+
+        foreach (var attribute in property.GetAttributes())
+        {
+            switch (attribute.AttributeClass!.ToDisplayString())
+            {
+                case "Refit.AliasAsAttribute":
+                {
+                    alias = GetFirstStringArgument(attribute);
+                    break;
+                }
+
+                case "System.Text.Json.Serialization.JsonPropertyNameAttribute":
+                {
+                    json = GetFirstStringArgument(attribute);
+                    break;
+                }
+
+                case "Newtonsoft.Json.JsonPropertyAttribute":
+                {
+                    newtonsoft = ReadAttributeName(attribute, "PropertyName", null);
+                    break;
+                }
+
+                case "System.Xml.Serialization.XmlElementAttribute":
+                {
+                    // An unnamed [XmlElement] reports an empty ElementName, which the reflection path returns as the name.
+                    xmlElement = ReadAttributeName(attribute, "ElementName", string.Empty);
+                    break;
+                }
+
+                case "System.Xml.Serialization.XmlAttributeAttribute":
+                {
+                    xmlAttribute = ReadAttributeName(attribute, "AttributeName", string.Empty);
+                    break;
+                }
+
+                case "Refit.QueryAttribute":
+                {
+                    query = ParseFormQueryAttribute(attribute);
+                    break;
+                }
+            }
+        }
+
+        return new(alias, json, newtonsoft, xmlElement ?? xmlAttribute, query);
+    }
+
+    /// <summary>Reads an attribute's name from its first string argument or a named argument.</summary>
+    /// <param name="attribute">The attribute to inspect.</param>
+    /// <param name="namedArgument">The named argument that can carry the name.</param>
+    /// <param name="whenMissing">The value to return when the attribute carries no name.</param>
+    /// <returns>The attribute's name, or <paramref name="whenMissing"/>.</returns>
+    internal static string? ReadAttributeName(AttributeData attribute, string namedArgument, string? whenMissing) =>
+        GetFirstStringArgument(attribute) ?? GetNamedStringArgument(attribute, namedArgument) ?? whenMissing;
+
+    /// <summary>Reads a named string argument from an attribute.</summary>
+    /// <param name="attribute">The attribute to inspect.</param>
+    /// <param name="name">The named argument to read.</param>
+    /// <returns>The string value, or <see langword="null"/> when the argument is absent.</returns>
+    internal static string? GetNamedStringArgument(
+        AttributeData attribute,
+        string name)
+    {
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (argument.Key == name && argument.Value.Value is string value)
+            {
+                return value;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Reads the first string constructor argument from an attribute.</summary>

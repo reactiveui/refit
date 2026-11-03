@@ -154,12 +154,12 @@ public class XmlContentSerializerTests
 
         await Assert.That(static () => new XmlContentSerializer(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => sut.ToHttpContent<Dto>(null!)).ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => sut.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
-        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Element))!))
+        await Assert.That(() => SerializerFieldNames.Resolve(sut, null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(SerializerFieldNames.Resolve(sut, typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Element))!))
             .IsEqualTo("element-name");
-        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Attribute))!))
+        await Assert.That(SerializerFieldNames.Resolve(sut, typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Attribute))!))
             .IsEqualTo("attribute-name");
-        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Unannotated))!))
+        await Assert.That(SerializerFieldNames.Resolve(sut, typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Unannotated))!))
             .IsNull();
     }
 

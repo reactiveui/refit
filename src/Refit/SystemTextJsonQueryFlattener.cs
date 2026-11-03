@@ -105,5 +105,5 @@ internal static class SystemTextJsonQueryFlattener
     /// <returns>The formatted value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string? Format(object value, RefitSettings settings) =>
-        settings.UrlParameterFormatter.Format(value, value.GetType(), value.GetType());
+        settings.UrlParameterFormatter.Format(value, GeneratedParameterAttributeProvider.Empty, value.GetType());
 }

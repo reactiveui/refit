@@ -198,7 +198,7 @@ public partial class GeneratedRequestRunnerTests
             CollectionPropertyKey,
             collectionFormat,
             false,
-            (typeof(string), typeof(string), typeof(string)));
+            (typeof(string), GeneratedParameterAttributeProvider.Empty, typeof(string)));
         return builder.Build();
     }
 }

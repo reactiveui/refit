@@ -100,7 +100,7 @@ public sealed partial class RequestGenerationCoverageTests
                 {
                     foreach (var entry in value)
                     {
-                        builder.Add(keyPrefix + entry.Key, settings.UrlParameterFormatter.Format(entry.Value, typeof(object), typeof(object)), false);
+                        builder.Add(keyPrefix + entry.Key, settings.UrlParameterFormatter.Format(entry.Value, GeneratedParameterAttributeProvider.Empty, typeof(object)), false);
                     }
                 }
             }

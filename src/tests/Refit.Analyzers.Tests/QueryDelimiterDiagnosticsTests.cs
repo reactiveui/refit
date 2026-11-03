@@ -32,6 +32,7 @@ public sealed class QueryDelimiterDiagnosticsTests
     [Arguments("[Query(\"client_id\")][AliasAs(\"id\")] string value", false)]
     [Arguments("[Query(\"client_id\", Name = \"id\")] string value", false)]
     [Arguments("[Query(\"client_id\", Name = null)] string value", true)]
+    [Arguments("[Query(\"client_id\", Format = \"x\")] string value", true)]
     public async Task Analyze_QueryDelimiterMistakes(string parameter, bool expected, CancellationToken cancellationToken)
     {
         var diagnostics = await AnalyzerFixture.RunForBodyWithDiagnostic(
