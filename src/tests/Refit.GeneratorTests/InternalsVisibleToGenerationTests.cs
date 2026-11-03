@@ -136,7 +136,6 @@ public sealed class InternalsVisibleToGenerationTests
         // against a newline-anchored needle; otherwise the "...Generated\n" match fails on Windows runners.
         var generated = string.Join("\n", result.GeneratedSources.Values).Replace("\r\n", "\n");
 
-        await Assert.That(generated).Contains("typeof(global::Refit.Implementation.Generated))");
         await Assert.That(generated).Contains("namespace RefitInternalGenerated\n");
     }
 }

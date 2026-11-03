@@ -79,9 +79,6 @@ internal static class SharedInfrastructureEmission
                         "CA2255:The ModuleInitializer attribute should not be used in libraries",
                         Justification = "ModuleInitializer is used intentionally so generated Refit factories are registered when the assembly loads.")]
                     [System.Runtime.CompilerServices.ModuleInitializer]
-                    [System.Diagnostics.CodeAnalysis.DynamicDependency(
-                        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All,
-                        typeof(global::Refit.Implementation.{{model.GeneratedClassName}}))]
                     internal static void Initialize()
                     {
             {{Emitter.BuildGeneratedFactoryRegistrations(model.Interfaces)}}        }
