@@ -48,6 +48,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <summary>Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters.</summary>
     /// <returns>The default <see cref="JsonSerializerOptions"/>.</returns>
     [SuppressMessage(
+        "Design",
+        "CA1024:Use properties where appropriate",
+        Justification = "Returns a new mutable options instance on each call; a property would wrongly imply a cached value.")]
+    [SuppressMessage(
         "Performance",
         "PSH1416:Cache constructed objects in a static readonly field",
         Justification = "Returns a new mutable options instance on each call; callers mutate it, so a cached instance would be shared.")]
@@ -58,22 +62,18 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         {
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            NumberHandling = JsonNumberHandling.AllowReadingFromString,
 #if NET10_0_OR_GREATER
             AllowDuplicateProperties = false,
 #endif
         };
-        jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-        jsonSerializerOptions.Converters.Add(new CamelCaseStringEnumConverter());
 
         return jsonSerializerOptions;
     }
 
     /// <summary>
     /// Creates <see cref="JsonSerializerOptions"/> that are eligible for the System.Text.Json source-generated
-    /// fast-path on serialization. Unlike <see cref="GetDefaultJsonSerializerOptions"/>, these options add no
-    /// converters and leave number handling at its default. Custom converters and number handling that changes
-    /// writing can disable the fast-path; AllowReadingFromString alone does not. Assign a generated TypeInfoResolver (a
+    /// fast-path on serialization. They are the same as <see cref="GetDefaultJsonSerializerOptions"/>: Refit adds no
+    /// converters and leaves number handling at its default, because either would disable the fast-path. Assign a generated TypeInfoResolver (a
     /// <see cref="JsonSerializerContext"/> generated in <see cref="JsonSourceGenerationMode.Serialization"/> or
     /// <see cref="JsonSourceGenerationMode.Default"/> mode) to enable it. The fast-path runs through the synchronous
     /// serialization primitives (<c>SerializeToUtf8Bytes</c> / <c>Serialize(Utf8JsonWriter, ...)</c>); the
@@ -325,11 +325,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
         foreach (var converter in jsonSerializerOptions.Converters)
         {
-            // ObjectToInferredTypesConverter is the built-in handling of object the doc above refers to: its
-            // Write serializes by the value's own runtime type (see its implementation), which is always
-            // declaredType here (a value type or sealed class has no derived types), so it writes the same JSON a
-            // typed write would. Only a converter replacing that behavior forces the untyped fallback.
-            if (converter is not ObjectToInferredTypesConverter && converter.CanConvert(typeof(object)))
+            // A converter replacing the built-in handling of object forces the untyped fallback.
+            if (converter.CanConvert(typeof(object)))
             {
                 return false;
             }

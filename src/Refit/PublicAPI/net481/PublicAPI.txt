@@ -543,13 +543,6 @@ public sealed class NextLinkOriginPolicy
     public override string ToString() { }
     public static Refit.NextLinkOriginPolicy Allow(params System.Uri[] origins) { }
 }
-[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
-public class ObjectToInferredTypesConverter : System.Text.Json.Serialization.JsonConverter<object>
-{
-    public ObjectToInferredTypesConverter() { }
-    public override object? Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options) { }
-    public override void Write(System.Text.Json.Utf8JsonWriter writer, object value, System.Text.Json.JsonSerializerOptions options) { }
-}
 [System.AttributeUsage(System.AttributeTargets.Method)]
 [System.Diagnostics.DebuggerDisplay("{Method}")]
 public sealed class OptionsAttribute : Refit.HttpMethodAttribute
@@ -644,7 +637,6 @@ public class ProblemDetails
     public ProblemDetails() { }
     public string? Detail { get; set; }
     public System.Collections.Generic.Dictionary<string, string[]> Errors { get; init; }
-    [System.Text.Json.Serialization.JsonExtensionData]
     public System.Collections.Generic.IDictionary<string, object> Extensions { get; init; }
     public string? Instance { get; set; }
     public int Status { get; set; }

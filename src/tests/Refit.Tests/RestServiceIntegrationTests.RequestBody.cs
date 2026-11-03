@@ -349,7 +349,7 @@ public partial class RestServiceIntegrationTests
         var result = await fixture.Get("foo", XRefitHeaderValue);
 
         await Assert.That(result.Url).IsEqualTo("http://httpbin.org/get?param=foo");
-        await Assert.That(result.Args!["param"]).IsEqualTo("foo");
+        await Assert.That(result.Args!["param"]?.ToString()).IsEqualTo("foo");
         await Assert.That(result.Headers![RefitHeaderName]).IsEqualTo("99");
 
         await handler.VerifyAllCalledAsync();
@@ -409,8 +409,8 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.Get(myParams, XRefitHeaderValue);
 
-        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
-        await Assert.That(resp.Args["lName"]).IsEqualTo(RamboLastName);
+        await Assert.That(resp.Args![FirstNameKey]?.ToString()).IsEqualTo("John");
+        await Assert.That(resp.Args["lName"]?.ToString()).IsEqualTo(RamboLastName);
     }
 
     /// <summary>Verifies complex dynamic query parameters are echoed correctly.</summary>
@@ -452,9 +452,9 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.GetQuery(myParams);
 
-        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
-        await Assert.That(resp.Args["LastName"]).IsEqualTo(RamboLastName);
-        await Assert.That(resp.Args["Addr_Zip"]).IsEqualTo("9999");
+        await Assert.That(resp.Args![FirstNameKey]?.ToString()).IsEqualTo("John");
+        await Assert.That(resp.Args["LastName"]?.ToString()).IsEqualTo(RamboLastName);
+        await Assert.That(resp.Args["Addr_Zip"]?.ToString()).IsEqualTo("9999");
     }
 
     /// <summary>Verifies complex dynamic query parameters work for POST requests.</summary>
@@ -496,9 +496,9 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.PostQuery(myParams);
 
-        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
-        await Assert.That(resp.Args["LastName"]).IsEqualTo(RamboLastName);
-        await Assert.That(resp.Args["Addr_Zip"]).IsEqualTo("9999");
+        await Assert.That(resp.Args![FirstNameKey]?.ToString()).IsEqualTo("John");
+        await Assert.That(resp.Args["LastName"]?.ToString()).IsEqualTo(RamboLastName);
+        await Assert.That(resp.Args["Addr_Zip"]?.ToString()).IsEqualTo("9999");
     }
 
     /// <summary>Verifies an object URL-encoded body flows through generated reflection-free form fields.</summary>

@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 namespace Refit.Documentation.JsonContexts;
 
 /// <summary>Generated JSON metadata for every request and reply type of the orders API.</summary>
-[JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
+[JsonSourceGenerationOptions(JsonSerializerDefaults.Web, UseStringEnumConverter = true)]
 [JsonSerializable(typeof(Order))]
 [JsonSerializable(typeof(List<Order>))]
 [JsonSerializable(typeof(NewOrder))]

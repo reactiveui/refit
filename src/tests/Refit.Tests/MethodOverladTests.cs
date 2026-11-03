@@ -111,7 +111,7 @@ public class MethodOverladTests
         const int headerValue = 99;
         var result = await fixture.Get("foo", headerValue);
 
-        await Assert.That(result.Args![ParamKey]).IsEqualTo("foo");
+        await Assert.That(result.Args![ParamKey]?.ToString()).IsEqualTo("foo");
     }
 
     /// <summary>Verifies the generic <c>Get</c> overload with header and parameter types swapped.</summary>
@@ -132,7 +132,7 @@ public class MethodOverladTests
         const int paramValue = 99;
         var result = await fixture.Get(paramValue, "foo");
 
-        await Assert.That(result.Args![ParamKey]).IsEqualTo("99");
+        await Assert.That(result.Args![ParamKey]?.ToString()).IsEqualTo("99");
     }
 
     /// <summary>Verifies the two-type-argument generic <c>Get</c> overload.</summary>

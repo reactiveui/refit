@@ -24,7 +24,6 @@ internal static class ContentSample
         Person person = new(1, "Ada");
         await CheckLinesAsync(serializer, person);
         await CheckStreamingAsync(serializer, person);
-        CheckConverter(person);
         await CheckAdapterAsync(person);
     }
 
@@ -130,45 +129,6 @@ internal static class ContentSample
         }
 
         SampleCheck.Equal(true, early.CanRead);
-    }
-
-    /// <summary>Checks direct converter reads and runtime-type writes.</summary>
-    /// <param name="person">The runtime object written using generated metadata.</param>
-    private static void CheckConverter(Person person)
-    {
-        ObjectToInferredTypesConverter converter = new();
-        Utf8JsonReader reader = new("1"u8);
-        _ = reader.Read();
-        object? inferred = converter.Read(ref reader, typeof(object), Options);
-        Console.WriteLine(inferred!.GetType().Name); // Int64
-        SampleCheck.Equal(1L, (long)inferred);
-        string[] tokens = ["true", "false", "1.5", "\"2026-01-01T00:00:00\"", "\"Ada\"", "{}", "[]", "null"];
-        Type[] expected = [typeof(bool), typeof(bool), typeof(double), typeof(DateTime), typeof(string), typeof(JsonElement), typeof(JsonElement), typeof(JsonElement)];
-        object[] expectedValues = [true, false, 1.5, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Unspecified), "Ada", JsonValueKind.Object, JsonValueKind.Array, JsonValueKind.Null];
-        for (int index = 0; index < tokens.Length; index++)
-        {
-            Utf8JsonReader tokenReader = new(Encoding.UTF8.GetBytes(tokens[index]));
-            _ = tokenReader.Read();
-            object? value = converter.Read(ref tokenReader, typeof(object), Options);
-            SampleCheck.Equal(expected[index], value!.GetType());
-            SampleCheck.Equal(expectedValues[index], value is JsonElement element ? element.ValueKind : value);
-        }
-
-        using MemoryStream buffer = new();
-        using (Utf8JsonWriter writer = new(buffer))
-        {
-            converter.Write(writer, person, Options);
-        }
-
-        Console.WriteLine(Encoding.UTF8.GetString(buffer.ToArray()));
-        SampleCheck.Equal(PersonJson, Encoding.UTF8.GetString(buffer.ToArray()));
-        using MemoryStream emptyObject = new();
-        using (Utf8JsonWriter writer = new(emptyObject))
-        {
-            converter.Write(writer, new(), Options);
-        }
-
-        SampleCheck.Equal("{}", Encoding.UTF8.GetString(emptyObject.ToArray()));
     }
 
     /// <summary>Checks compile-time adapter discovery and a single deferred send.</summary>

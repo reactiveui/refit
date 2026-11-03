@@ -1,0 +1,19 @@
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Reflection.Benchmarks")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Reflection.Tests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Tests")]
+namespace Refit;
+
+[System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+public class ObjectToInferredTypesConverter : System.Text.Json.Serialization.JsonConverter<object>
+{
+    public ObjectToInferredTypesConverter() { }
+    public override object? Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options) { }
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, object value, System.Text.Json.JsonSerializerOptions options) { }
+}
+public static class ReflectionJsonSerializerOptionsExtensions
+{
+    extension(System.Text.Json.JsonSerializerOptions options)
+    {
+        public System.Text.Json.JsonSerializerOptions AddReflectionConverters() { }
+    }
+}

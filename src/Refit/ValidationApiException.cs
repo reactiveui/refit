@@ -85,31 +85,6 @@ public class ValidationApiException : ApiException
         return ex;
     }
 
-    /// <summary>
-    /// Creates a new instance of a ValidationException from an existing ApiException,
-    /// deserializing the problem details with the serializer configured in
-    /// <see cref="RefitSettings"/>.
-    /// </summary>
-    /// <param name="exception">An instance of an ApiException to use to build a ValidationException.</param>
-    /// <returns>ValidationApiException.</returns>
-    internal static async Task<ValidationApiException> CreateAsync(ApiException exception)
-    {
-        var ex = CreateCore(exception);
-
-        // Deserialize through the configured IHttpContentSerializer rather than a
-        // hardcoded System.Text.Json instance, so problem details honor the user's
-        // serializer (e.g. Newtonsoft) and its settings.
-        using var content = new StringContent(
-            exception.Content!,
-            Encoding.UTF8,
-            "application/problem+json");
-        ex.Content = await exception
-            .RefitSettings.ContentSerializer.FromHttpContentAsync<ProblemDetails>(content)
-            .ConfigureAwait(false);
-
-        return ex;
-    }
-
     /// <summary>Validates the exception content and builds the base validation exception.</summary>
     /// <param name="exception">The API exception to convert.</param>
     /// <returns>A new validation exception wrapping the API exception.</returns>
@@ -266,7 +241,7 @@ public class ValidationApiException : ApiException
             ? element.GetString()! // A String-kind element always yields a non-null string.
             : element.GetRawText();
 
-    /// <summary>Reads extension data using the same inferred primitives as the System.Text.Json converter.</summary>
+    /// <summary>Reads extension data as inferred primitives, falling back to a cloned <see cref="JsonElement"/>.</summary>
     /// <param name="element">The JSON element.</param>
     /// <returns>The extension value.</returns>
     internal static object ReadExtensionValue(JsonElement element) =>

@@ -11,5 +11,6 @@ namespace Refit.NativeAotSmoke;
 [JsonSerializable(typeof(SmokeRecord))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    PropertyNameCaseInsensitive = true)]
+    PropertyNameCaseInsensitive = true,
+    UseStringEnumConverter = true)]
 internal sealed partial class AotJsonContext : JsonSerializerContext;

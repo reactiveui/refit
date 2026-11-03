@@ -113,7 +113,8 @@ internal static class Serialization
         SampleCheck.Equal(false, ReferenceEquals(defaultOptions, separateDefaults));
         SampleCheck.Equal(true, defaultOptions.PropertyNameCaseInsensitive);
         SampleCheck.Equal(false, defaultOptions.AllowDuplicateProperties);
-        SampleCheck.Equal(System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString, defaultOptions.NumberHandling);
+        SampleCheck.Equal(System.Text.Json.Serialization.JsonNumberHandling.Strict, defaultOptions.NumberHandling);
+        SampleCheck.Equal(0, defaultOptions.Converters.Count);
         SampleCheck.Equal("displayName", defaultOptions.PropertyNamingPolicy!.ConvertName("DisplayName"));
     }
 
