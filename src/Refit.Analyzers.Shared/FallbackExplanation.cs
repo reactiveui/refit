@@ -221,15 +221,10 @@ internal static class FallbackExplanation
     /// <returns>The return type's location, or <see langword="null"/> when the method has no source declaration.</returns>
     private static Location? GetReturnTypeLocation(IMethodSymbol method)
     {
-        foreach (var reference in method.DeclaringSyntaxReferences)
-        {
-            if (reference.GetSyntax() is MethodDeclarationSyntax declaration)
-            {
-                return declaration.ReturnType.GetLocation();
-            }
-        }
-
-        return null;
+        var references = method.DeclaringSyntaxReferences;
+        return !references.IsEmpty && references[0].GetSyntax() is MethodDeclarationSyntax declaration
+            ? declaration.ReturnType.GetLocation()
+            : null;
     }
 
     /// <summary>Formats a type the way a user wrote it.</summary>

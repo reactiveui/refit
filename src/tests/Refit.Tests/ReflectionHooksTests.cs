@@ -72,6 +72,17 @@ public sealed class ReflectionHooksTests
         await Assert.That(ReflectionHooks.FormObjectFlattener).IsSameReferenceAs(first);
     }
 
+    /// <summary>Verifies no reflection resolver is reported and no modifiers move when nothing is registered.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task UnregisteredResolverHooksDoNothing()
+    {
+        var resolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver();
+
+        await Assert.That(ReflectionHooks.IsReflectionResolver(null, resolver)).IsFalse();
+        await Assert.That(ReflectionHooks.CarryModifiers(null, resolver, [resolver])).IsSameReferenceAs(resolver);
+    }
+
     /// <summary>Form value whose property is a complex object, which needs the reflection flattener.</summary>
     private sealed class NestedValue
     {

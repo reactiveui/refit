@@ -175,7 +175,7 @@ public sealed partial class SystemTextJsonContentSerializer : IJsonTypeInfoConte
         foreach (var resolver in options.TypeInfoResolverChain)
         {
             hasContext |= ReferenceEquals(resolver, context);
-            hasReflection |= resolver is DefaultJsonTypeInfoResolver;
+            hasReflection |= ReflectionHooks.IsReflectionResolver(resolver);
         }
 
         return hasContext && hasReflection == allowReflectionFallback;
@@ -195,13 +195,13 @@ public sealed partial class SystemTextJsonContentSerializer : IJsonTypeInfoConte
         var chain = options.TypeInfoResolverChain;
 
         List<IJsonTypeInfoResolver> leading = [];
-        List<DefaultJsonTypeInfoResolver> reflective = [];
+        List<IJsonTypeInfoResolver> reflective = [];
         SplitResolvers(chain, context, leading, reflective);
 
         IJsonTypeInfoResolver contextResolver = context;
         if (!allowReflectionFallback)
         {
-            contextResolver = CarryModifiers(context, reflective);
+            contextResolver = ReflectionHooks.CarryModifiers(context, reflective);
             reflective.Clear();
         }
         else if (reflective.Count == 0)
@@ -226,7 +226,7 @@ public sealed partial class SystemTextJsonContentSerializer : IJsonTypeInfoConte
         IList<IJsonTypeInfoResolver> chain,
         JsonSerializerContext context,
         List<IJsonTypeInfoResolver> leading,
-        List<DefaultJsonTypeInfoResolver> reflective)
+        List<IJsonTypeInfoResolver> reflective)
     {
         foreach (var resolver in chain)
         {
@@ -235,34 +235,15 @@ public sealed partial class SystemTextJsonContentSerializer : IJsonTypeInfoConte
                 continue;
             }
 
-            if (resolver is DefaultJsonTypeInfoResolver reflectionResolver)
+            if (ReflectionHooks.IsReflectionResolver(resolver))
             {
-                reflective.Add(reflectionResolver);
+                reflective.Add(resolver);
             }
             else
             {
                 leading.Add(resolver);
             }
         }
-    }
-
-    /// <summary>Applies the contract modifiers of reflection resolvers to another resolver, so registrations such as polymorphism survive.</summary>
-    /// <param name="resolver">The resolver that receives the modifiers.</param>
-    /// <param name="reflective">The reflection resolvers whose modifiers are carried over.</param>
-    /// <returns>The resolver with every modifier applied.</returns>
-    internal static IJsonTypeInfoResolver CarryModifiers(
-        IJsonTypeInfoResolver resolver,
-        List<DefaultJsonTypeInfoResolver> reflective)
-    {
-        foreach (var reflectionResolver in reflective)
-        {
-            foreach (var modifier in reflectionResolver.Modifiers)
-            {
-                resolver = resolver.WithAddedModifier(modifier);
-            }
-        }
-
-        return resolver;
     }
 
     /// <summary>Appends every resolver to a chain.</summary>

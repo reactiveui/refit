@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Refit;
 
@@ -19,7 +20,26 @@ public static class ReflectionSupport
     {
         ReflectionHooks.FormObjectFlattener ??= new FormObjectFlattener();
         ReflectionHooks.EnumMemberValueResolver ??= EnumMemberValues.GetEnumMemberValue;
-        ReflectionHooks.DefaultJsonResolverFactory ??= static () => new();
+        ReflectionHooks.DefaultJsonResolverFactory ??= static () => new DefaultJsonTypeInfoResolver();
+        ReflectionHooks.ReflectionResolverTest ??= static resolver => resolver is DefaultJsonTypeInfoResolver;
+        ReflectionHooks.ModifierCarrier ??= CarryModifiers;
+    }
+
+    /// <summary>Applies the contract modifiers of reflection resolvers to another resolver, so registrations such as polymorphism survive.</summary>
+    /// <param name="resolver">The resolver that receives the modifiers.</param>
+    /// <param name="reflective">The reflection resolvers whose modifiers are carried over.</param>
+    /// <returns>The resolver with every modifier applied.</returns>
+    internal static IJsonTypeInfoResolver CarryModifiers(IJsonTypeInfoResolver resolver, List<IJsonTypeInfoResolver> reflective)
+    {
+        foreach (var reflectionResolver in reflective)
+        {
+            foreach (var modifier in ((DefaultJsonTypeInfoResolver)reflectionResolver).Modifiers)
+            {
+                resolver = resolver.WithAddedModifier(modifier);
+            }
+        }
+
+        return resolver;
     }
 
     /// <summary>Creates a form map for a source object, registering the reflection support first.</summary>
