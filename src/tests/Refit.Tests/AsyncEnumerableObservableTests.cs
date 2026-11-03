@@ -130,6 +130,20 @@ public class AsyncEnumerableObservableTests
         await Assert.That(observer.Completed).IsFalse();
     }
 
+    /// <summary>Verifies an observer that throws still disposes a source whose disposal finishes asynchronously.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task Subscribe_ObserverThrowsWithAsynchronousDisposal_StillDisposesTheSource()
+    {
+        var sourceDisposed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var observer = new RecordingObserver<int> { OnNextStep = static _ => throw new InvalidOperationException("observer failed") };
+
+        using var subscription = new AsyncEnumerableObservable<int>(DisposeSlowly(sourceDisposed)).Subscribe(observer);
+
+        await Assert.That(sourceDisposed.Task).CompletesWithin(AwaitTimeout);
+        await Assert.That(observer.Completed).IsFalse();
+    }
+
     /// <summary>Verifies a source whose disposal fails after a subscription was disposed delivers nothing further.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

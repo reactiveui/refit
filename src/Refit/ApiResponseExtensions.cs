@@ -7,6 +7,17 @@ namespace Refit;
 /// <summary>Convenience helpers for working with <see cref="IApiResponse"/> and <see cref="IApiResponse{T}"/>.</summary>
 public static class ApiResponseExtensions
 {
+    /// <summary>Returns the response when the check passed, otherwise a faulted task carrying its captured error.</summary>
+    /// <typeparam name="TResponse">The response type.</typeparam>
+    /// <param name="response">The response being guarded.</param>
+    /// <param name="succeeded">Whether the response passed the check.</param>
+    /// <returns>The response, or a faulted task.</returns>
+    internal static ValueTask<TResponse> EnsureResult<TResponse>(TResponse response, bool succeeded)
+        where TResponse : IApiResponse =>
+        succeeded
+            ? new(response)
+            : new(Task.FromException<TResponse>(response.GetError()));
+
     /// <summary>Success-guard helpers on the non-generic <see cref="IApiResponse"/>.</summary>
     /// <param name="response">The response to guard.</param>
     extension(IApiResponse response)
@@ -22,9 +33,7 @@ public static class ApiResponseExtensions
         public ValueTask<IApiResponse> EnsureSuccessStatusCodeAsync()
         {
             var checkedResponse = response ?? throw new ArgumentNullException(nameof(response));
-            return checkedResponse.IsSuccessStatusCode
-                ? new(checkedResponse)
-                : new(Task.FromException<IApiResponse>(GetError(checkedResponse)));
+            return EnsureResult(checkedResponse, checkedResponse.IsSuccessStatusCode);
         }
 
         /// <summary>
@@ -38,9 +47,7 @@ public static class ApiResponseExtensions
         public ValueTask<IApiResponse> EnsureSuccessfulAsync()
         {
             var checkedResponse = response ?? throw new ArgumentNullException(nameof(response));
-            return checkedResponse.IsSuccessful
-                ? new(checkedResponse)
-                : new(Task.FromException<IApiResponse>(GetError(checkedResponse)));
+            return EnsureResult(checkedResponse, checkedResponse.IsSuccessful);
         }
 
         /// <summary>Gets the target of the first <c>Link</c> response header entry that carries a relation, as defined by RFC 8288.</summary>
@@ -78,9 +85,7 @@ public static class ApiResponseExtensions
         public ValueTask<IApiResponse<T>> EnsureSuccessStatusCodeAsync()
         {
             var checkedResponse = response ?? throw new ArgumentNullException(nameof(response));
-            return checkedResponse.IsSuccessStatusCode
-                ? new(checkedResponse)
-                : new(Task.FromException<IApiResponse<T>>(GetError(checkedResponse)));
+            return EnsureResult(checkedResponse, checkedResponse.IsSuccessStatusCode);
         }
 
         /// <summary>
@@ -94,9 +99,7 @@ public static class ApiResponseExtensions
         public ValueTask<IApiResponse<T>> EnsureSuccessfulAsync()
         {
             var checkedResponse = response ?? throw new ArgumentNullException(nameof(response));
-            return checkedResponse.IsSuccessful
-                ? new(checkedResponse)
-                : new(Task.FromException<IApiResponse<T>>(GetError(checkedResponse)));
+            return EnsureResult(checkedResponse, checkedResponse.IsSuccessful);
         }
     }
 }

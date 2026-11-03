@@ -153,6 +153,23 @@ public class JsonLinesContentTypedTests
         await Assert.That(tracker.Disposed).IsTrue();
     }
 
+    /// <summary>Verifies an enumerator whose disposal finishes asynchronously is still disposed when the destination fails.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EnumeratorWithAsynchronousDisposalIsDisposedWhenTheDestinationFails()
+    {
+        var tracker = new DisposeTracker();
+        using var content = new JsonLinesContent<SealedRecord>(SlowDisposalAsync(tracker), Serializer);
+
+        await Assert.That(async () =>
+        {
+            await using var target = new WriteFailingStream();
+            await content.CopyToAsync(target);
+        }).Throws<HttpRequestException>();
+
+        await Assert.That(tracker.Disposed).IsTrue();
+    }
+
     /// <summary>Verifies the async enumerator is disposed when the producer throws.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -411,6 +428,26 @@ public class JsonLinesContentTypedTests
         yield break;
     }
 
+    /// <summary>Produces elements and finishes its disposal asynchronously.</summary>
+    /// <param name="tracker">Records whether the enumerator was disposed.</param>
+    /// <returns>The asynchronous sequence.</returns>
+    private static async IAsyncEnumerable<SealedRecord> SlowDisposalAsync(DisposeTracker tracker)
+    {
+        try
+        {
+            for (var i = 0; i < SampleElementCount; i++)
+            {
+                await Task.Yield();
+                yield return new(i.ToString(), $"n{i}");
+            }
+        }
+        finally
+        {
+            await Task.Yield();
+            tracker.Disposed = true;
+        }
+    }
+
     /// <summary>Produces elements while recording enumerator disposal, optionally throwing before a given index.</summary>
     /// <param name="tracker">Records whether the enumerator was disposed.</param>
     /// <param name="throwAt">The zero-based index to throw at, or -1 to never throw.</param>
@@ -521,6 +558,24 @@ public class JsonLinesContentTypedTests
     {
         /// <summary>Gets or sets a value indicating whether the enumerator's finally block ran.</summary>
         internal bool Disposed { get; set; }
+    }
+
+    /// <summary>A stream whose writes always fail.</summary>
+    private sealed class WriteFailingStream : MemoryStream
+    {
+        /// <summary>The message every failed write carries.</summary>
+        private const string FailureMessage = "Write failed.";
+
+        /// <inheritdoc/>
+        public override void Write(byte[] buffer, int offset, int count) => throw new IOException(FailureMessage);
+
+        /// <inheritdoc/>
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            throw new IOException(FailureMessage);
+
+        /// <inheritdoc/>
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) =>
+            throw new IOException(FailureMessage);
     }
 
     /// <summary>A content serializer that is not <see cref="SystemTextJsonContentSerializer"/>.</summary>

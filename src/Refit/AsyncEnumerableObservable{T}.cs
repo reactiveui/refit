@@ -64,6 +64,7 @@ internal sealed class AsyncEnumerableObservable<T>(IAsyncEnumerable<T> source) :
         /// <param name="source">The sequence to enumerate.</param>
         /// <param name="cancellationToken">A token that is cancelled when the subscription is disposed.</param>
         /// <returns>A task that completes when the sequence has been enumerated and disposed.</returns>
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // The compiler's rethrow edge after an awaited disposal in finally cannot be exercised or removed.
         private async Task PumpAsync(IAsyncEnumerable<T> source, CancellationToken cancellationToken)
         {
             var enumerator = source.GetAsyncEnumerator(cancellationToken);

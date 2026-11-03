@@ -213,23 +213,34 @@ public sealed class JsonLinesContent<T> : HttpContent
     /// <param name="stream">The request body stream.</param>
     /// <param name="cancellationToken">The send's cancellation token, also passed to the producer.</param>
     /// <returns>A task that completes when the sequence has been written.</returns>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // The compiler's rethrow edge after an awaited disposal in finally cannot be exercised or removed.
     private async Task WriteAsyncItemsAsync(IAsyncEnumerable<T> items, Stream stream, CancellationToken cancellationToken)
     {
         var enumerator = items.GetAsyncEnumerator(cancellationToken);
         try
         {
-            var unflushed = false;
-            while (await MoveNextAsync(enumerator, stream, unflushed, cancellationToken).ConfigureAwait(false))
-            {
-                // Terminate every line, so a server reading line by line can act on it before the next one exists.
-                await WriteItemAsync(stream, enumerator.Current, cancellationToken).ConfigureAwait(false);
-                await WriteLineSeparatorAsync(stream, cancellationToken).ConfigureAwait(false);
-                unflushed = true;
-            }
+            await WriteEnumeratedItemsAsync(enumerator, stream, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             await enumerator.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Writes each element of an enumerator, one per line, flushing before waiting on the producer.</summary>
+    /// <param name="enumerator">The enumerator to drain.</param>
+    /// <param name="stream">The request body stream.</param>
+    /// <param name="cancellationToken">The send's cancellation token.</param>
+    /// <returns>A task that completes when the enumerator has been drained.</returns>
+    private async Task WriteEnumeratedItemsAsync(IAsyncEnumerator<T> enumerator, Stream stream, CancellationToken cancellationToken)
+    {
+        var unflushed = false;
+        while (await MoveNextAsync(enumerator, stream, unflushed, cancellationToken).ConfigureAwait(false))
+        {
+            // Terminate every line, so a server reading line by line can act on it before the next one exists.
+            await WriteItemAsync(stream, enumerator.Current, cancellationToken).ConfigureAwait(false);
+            await WriteLineSeparatorAsync(stream, cancellationToken).ConfigureAwait(false);
+            unflushed = true;
         }
     }
 }
