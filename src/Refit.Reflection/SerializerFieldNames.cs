@@ -56,7 +56,7 @@ internal static class SerializerFieldNames
             {
                 if (type.FullName == NewtonsoftAttributeName)
                 {
-                    return type.GetProperty("PropertyName")?.GetValue(attribute) as string;
+                    return (string?)type.GetProperty("PropertyName")!.GetValue(attribute);
                 }
             }
         }

@@ -511,7 +511,7 @@ internal partial class RequestBuilderImplementation
             var keyType = key.GetType();
             var formattedKey = GeneratedRequestRunner.FormatUrlParameter(_settings, key, GetCachedAttributeProvider(keyType), keyType);
 
-            if (formattedKey is null || string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
+            if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
             {
                 continue;
             }
