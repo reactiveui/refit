@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="../../../../Refit/Refit.csproj" />
     <ProjectReference Include="../../../../Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
+    <ProjectReference Include="../../../../Refit.HttpClientFactory.Reflection/Refit.HttpClientFactory.Reflection.csproj" />
     <ProjectReference Include="../../../../Refit.Reflection/Refit.Reflection.csproj" />
     <ProjectReference Include="../../../../Refit.Testing/Refit.Testing.csproj" />
     <ProjectReference Include="../../../../Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />

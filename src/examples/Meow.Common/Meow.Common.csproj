@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\Refit.Reflection\Refit.Reflection.csproj" />
     <ProjectReference Include="..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" ReferenceOutputAssembly="false" OutputItemType="Analyzer" PrivateAssets="all" />
     <PackageReference Include="Serilog" />

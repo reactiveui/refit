@@ -17,3 +17,36 @@ public static class ReflectionJsonSerializerOptionsExtensions
         public System.Text.Json.JsonSerializerOptions AddReflectionConverters() { }
     }
 }
+public static class RequestBuilder
+{
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.IRequestBuilder<T> ForType<T>() { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Refit.IRequestBuilder<T> ForType<T>(Refit.RefitSettings? settings) { }
+}
+public static class RestServiceReflectionExtensions
+{
+    extension(Refit.RestService)
+    {
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client) { }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static object For(System.Type refitInterfaceType, string hostUrl) { }
+        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.IRequestBuilder builder) { }
+        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static object For(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings? settings) { }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static T For<T>(System.Net.Http.HttpClient client) { }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static T For<T>(string hostUrl) { }
+        public static T For<T>(System.Net.Http.HttpClient client, Refit.IRequestBuilder<T> builder) { }
+        public static T For<T>(System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public static T For<T>(string hostUrl, Refit.RefitSettings? settings) { }
+    }
+}

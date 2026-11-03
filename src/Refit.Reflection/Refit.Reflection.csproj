@@ -32,9 +32,8 @@
   <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
     <IsAotCompatible>false</IsAotCompatible>
     <EnableAotAnalyzer>false</EnableAotAnalyzer>
-    <TrimMode>link</TrimMode>
-    <IsTrimmable>true</IsTrimmable>
-    <IlcGenerateCompleteTypeMetadata>true</IlcGenerateCompleteTypeMetadata>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <IsTrimmable>false</IsTrimmable>
   </PropertyGroup>
 
   <ItemGroup>

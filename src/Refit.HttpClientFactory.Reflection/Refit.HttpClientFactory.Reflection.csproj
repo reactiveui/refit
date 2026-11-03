@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Product>Refit.HttpClientFactory.Reflection ($(TargetFramework))</Product>
+    <PackageDescription>The opt-in reflection registration methods for Refit and HttpClientFactory. Install this package to use AddRefitClient and AddKeyedRefitClient, which build requests by reflection. Applications that only use generated clients and AddRefitGeneratedClient never need it.</PackageDescription>
+    <PackageTags>refit;rest;http;httpclient;httpclientfactory;dependency-injection;reflection</PackageTags>
+    <TargetFrameworks>$(RefitTargets)</TargetFrameworks>
+    <RootNamespace>Refit</RootNamespace>
+    <Nullable>enable</Nullable>
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <IsTrimmable>false</IsTrimmable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Refit.Tests"/>
+    <ProjectReference Include="..\Refit\Refit.csproj" PrivateAssets="Analyzers"/>
+    <ProjectReference Include="..\Refit.Reflection\Refit.Reflection.csproj" PrivateAssets="Analyzers"/>
+    <ProjectReference Include="..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" PrivateAssets="Analyzers"/>
+  </ItemGroup>
+
+  <!-- This assembly is a friend of Refit and uses its internal polyfill shims directly. -->
+  <ItemGroup>
+    <Compile Remove="..\Polyfills\**\*.cs"/>
+  </ItemGroup>
+
+</Project>

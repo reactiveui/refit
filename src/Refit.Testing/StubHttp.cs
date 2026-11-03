@@ -180,13 +180,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The interface type is intentionally specified explicitly by the caller, matching RestService.For<T>.")]
-    [RequiresUnreferencedCode("Creating a Refit client through the reflection path requires runtime type lookup and request metadata.")]
-    public T CreateClient<
-        [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces
-            | DynamicallyAccessedMemberTypes.PublicMethods
-            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(string hostUrl) => CreateClient<T>(hostUrl, new());
+    public T CreateClient<T>(string hostUrl) => CreateClient<T>(hostUrl, new());
 
     /// <summary>
     /// Creates a Refit implementation of <typeparamref name="T"/> whose HTTP requests are routed through this
@@ -202,13 +196,7 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "The interface type is intentionally specified explicitly by the caller, matching RestService.For<T>.")]
-    [RequiresUnreferencedCode("Creating a Refit client through the reflection path requires runtime type lookup and request metadata.")]
-    public T CreateClient<
-        [DynamicallyAccessedMembers(
-            DynamicallyAccessedMemberTypes.Interfaces
-            | DynamicallyAccessedMemberTypes.PublicMethods
-            | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(string hostUrl, RefitSettings baseSettings) => RestService.For<T>(hostUrl, ToSettings(baseSettings));
+    public T CreateClient<T>(string hostUrl, RefitSettings baseSettings) => RestService.For<T>(hostUrl, ToSettings(baseSettings));
 
     /// <summary>
     /// Creates a source-generated Refit implementation of <typeparamref name="T"/> whose HTTP requests are

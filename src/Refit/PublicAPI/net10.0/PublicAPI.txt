@@ -844,21 +844,6 @@ public enum RequestBodySerializationMode
     Buffered = 1,
     Streamed = 2,
 }
-public static class RequestBuilder
-{
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static Refit.IRequestBuilder<T> ForType<T>() { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static Refit.IRequestBuilder<T> ForType<T>(Refit.RefitSettings? settings) { }
-}
 public enum RequestCompression
 {
     Default = 0,
@@ -907,30 +892,6 @@ public class RestMethodParameterProperty
 public static class RestService
 {
     public static System.Net.Http.HttpClient CreateHttpClient(string hostUrl, Refit.RefitSettings? settings) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static object For(System.Type refitInterfaceType, string hostUrl) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client by Type requires runtime type lookup and constructor metadata.")]
-    public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.IRequestBuilder builder) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
-    public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
-    public static object For(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings? settings) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static T For<T>(System.Net.Http.HttpClient client) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static T For<T>(string hostUrl) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and constructor metadata.")]
-    public static T For<T>(System.Net.Http.HttpClient client, Refit.IRequestBuilder<T> builder) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
-    public static T For<T>(System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Creating a generated client through the reflection path requires runtime type lookup and request metadata.")]
-    public static T For<T>(string hostUrl, Refit.RefitSettings? settings) { }
     public static object ForGenerated(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings settings) { }
     public static object ForGenerated(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings settings) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
