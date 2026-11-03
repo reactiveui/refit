@@ -495,8 +495,6 @@ public interface IQueryConverter<in T>
 public interface IRequestBuilder
 {
     Refit.RefitSettings Settings { get; }
-    [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("Building request delegates from reflected method metadata requires runtime generic method instantiation.")]
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Building request delegates from reflected method metadata requires generic method metadata to be available at runtime.")]
     System.Func<System.Net.Http.HttpClient, object[], object?> BuildRestResultFuncForMethod(string methodName, System.Type[]? parameterTypes = null, System.Type[]? genericArgumentTypes = null) { }
 }
 public interface IRequestBuilder<T> : Refit.IRequestBuilder
