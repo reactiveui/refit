@@ -42,6 +42,28 @@ public sealed class NewtonsoftJsonSecurityTests
         }
     }
 
+    /// <summary>Verifies a global settings factory that returns <see langword="null"/> falls back to fresh settings.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GlobalSettingsFactoryReturningNullFallsBackToNewSettings()
+    {
+        var previous = JsonConvert.DefaultSettings;
+        JsonConvert.DefaultSettings = static () => null!;
+
+        try
+        {
+            var serializer = new NewtonsoftJsonContentSerializer();
+
+            var json = await serializer.ToHttpContent(new SampleModel { Name = "value" }).ReadAsStringAsync();
+
+            await Assert.That(json).Contains("value");
+        }
+        finally
+        {
+            JsonConvert.DefaultSettings = previous;
+        }
+    }
+
     /// <summary>Verifies a caller that explicitly opts into <c>TypeNameHandling</c> is honored.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
