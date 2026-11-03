@@ -19,7 +19,16 @@ internal static class EnumHelpers
     /// whose type the generator can see at compile time have their <c>[EnumMember]</c> values generated instead.</remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static string? GetEnumMemberValue(Type enumType, object value) =>
-        ReflectionHooks.EnumMemberValueResolver?.Invoke(enumType, value);
+        GetEnumMemberValue(ReflectionHooks.EnumMemberValueResolver, enumType, value);
+
+    /// <summary>Gets the <c>[EnumMember]</c> value for a boxed enum value through the supplied resolver.</summary>
+    /// <param name="resolver">The registered resolver, or <see langword="null"/> when none is registered.</param>
+    /// <param name="enumType">The runtime enum type.</param>
+    /// <param name="value">The boxed enum value.</param>
+    /// <returns>The configured enum member value, or null when none is configured or no resolver is registered.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static string? GetEnumMemberValue(Func<Type, object, string?>? resolver, Type enumType, object value) =>
+        resolver?.Invoke(enumType, value);
 
     /// <summary>Determines whether the given enum backing type code is unsigned.</summary>
     /// <param name="underlyingTypeCode">The enum backing type code.</param>
