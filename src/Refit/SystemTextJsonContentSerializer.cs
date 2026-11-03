@@ -11,9 +11,7 @@ using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-#if NET8_0_OR_GREATER
 using System.Text.Json.Serialization.Metadata;
-#endif
 
 namespace Refit;
 
@@ -30,10 +28,6 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 #endif
     : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer, ISynchronousContentDeserializer, IContentSerializerNameStyle
 {
-    /// <summary>Justification shared by the reflection-fallback trim/AOT suppressions.</summary>
-    private const string ReflectionFallbackJustification =
-        "Serializing or deserializing without supplied JSON type metadata requires runtime serializer metadata.";
-
     /// <summary>Initializes a new instance of the <see cref="SystemTextJsonContentSerializer"/> class.</summary>
     public SystemTextJsonContentSerializer()
         : this(GetDefaultJsonSerializerOptions())
@@ -46,6 +40,24 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
     /// <inheritdoc/>
     public ContentSerializerNameStyle NameStyle => ContentSerializerNameStyle.SystemTextJson;
+
+    /// <summary>
+    /// Gets the options with type metadata available. Options that carry no <see cref="JsonSerializerOptions.TypeInfoResolver"/>
+    /// get the reflection resolver the Refit.Reflection package registers, or fail with a message that explains how to
+    /// supply a source-generated context or register that package.
+    /// </summary>
+    private JsonSerializerOptions ReadyOptions
+    {
+        get
+        {
+            if (jsonSerializerOptions.TypeInfoResolver is null && !jsonSerializerOptions.IsReadOnly)
+            {
+                jsonSerializerOptions.TypeInfoResolver = ReflectionHooks.CreateDefaultJsonResolver();
+            }
+
+            return jsonSerializerOptions;
+        }
+    }
 
     /// <summary>Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters.</summary>
     /// <returns>The default <see cref="JsonSerializerOptions"/>.</returns>
@@ -103,26 +115,14 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <inheritdoc/>
     public HttpContent ToHttpContent<T>(T item)
     {
+        var options = ReadyOptions;
         var serializeByRuntimeType = item is not null
             && (typeof(T).IsInterface || typeof(T).IsAbstract)
-#if NET8_0_OR_GREATER
-            && !DeclaredTypeIsPolymorphic(typeof(T), jsonSerializerOptions);
-#else
-            && !DeclaredTypeIsPolymorphic(typeof(T));
-#endif
+            && !DeclaredTypeIsPolymorphic(typeof(T), options);
 
-#if NET8_0_OR_GREATER
-        return serializeByRuntimeType switch
-        {
-            true => ToHttpContentRuntimeTyped(item!, item!.GetType()),
-            false when jsonSerializerOptions.TypeInfoResolver is not null => JsonContent.Create(item, GetJsonTypeInfo<T>()),
-            _ => ToHttpContentReflection(item),
-        };
-#else
         return serializeByRuntimeType
             ? ToHttpContentRuntimeTyped(item!, item!.GetType())
-            : ToHttpContentReflection(item);
-#endif
+            : JsonContent.Create(item, GetJsonTypeInfo<T>(options));
     }
 
     /// <inheritdoc/>
@@ -172,13 +172,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     public Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
         CancellationToken cancellationToken = default) =>
-#if NET8_0_OR_GREATER
-        jsonSerializerOptions.TypeInfoResolver is not null
-            ? content.ReadFromJsonAsync(GetJsonTypeInfo<T>(), cancellationToken)
-            : FromHttpContentReflectionAsync<T>(content, cancellationToken);
-#else
-        FromHttpContentReflectionAsync<T>(content, cancellationToken);
-#endif
+        content.ReadFromJsonAsync(GetJsonTypeInfo<T>(), cancellationToken);
 
     /// <inheritdoc/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -186,14 +180,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-#if NET8_0_OR_GREATER
     public T? DeserializeFromString<T>(string content) =>
-        jsonSerializerOptions.TypeInfoResolver is not null
-            ? JsonSerializer.Deserialize(content, GetJsonTypeInfo<T>())
-            : DeserializeFromStringReflection<T>(content);
-#else
-    public T? DeserializeFromString<T>(string content) => DeserializeFromStringReflection<T>(content);
-#endif
+        JsonSerializer.Deserialize(content, GetJsonTypeInfo<T>());
 
     /// <inheritdoc/>
     [SuppressMessage(
@@ -215,24 +203,12 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         };
     }
 
-#if NET8_0_OR_GREATER
     /// <summary>Determines whether the declared type is configured for polymorphic serialization.</summary>
     /// <param name="type">The declared type to inspect.</param>
     /// <param name="jsonSerializerOptions">The serializer options to consult for type metadata.</param>
     /// <returns><see langword="true"/> if the type is polymorphic; otherwise <see langword="false"/>.</returns>
     internal static bool DeclaredTypeIsPolymorphic(Type type, JsonSerializerOptions jsonSerializerOptions) =>
-        type.IsDefined(typeof(JsonPolymorphicAttribute), false)
-            || type.IsDefined(typeof(JsonDerivedTypeAttribute), false)
-            || (jsonSerializerOptions.TypeInfoResolver is not null
-                && GetJsonTypeInfo(type, jsonSerializerOptions).PolymorphismOptions is not null);
-#else
-    /// <summary>Determines whether attributes configure the declared type for polymorphic serialization.</summary>
-    /// <param name="type">The declared type to inspect.</param>
-    /// <returns><see langword="true"/> if the type is polymorphic; otherwise <see langword="false"/>.</returns>
-    internal static bool DeclaredTypeIsPolymorphic(Type type) =>
-        type.IsDefined(typeof(JsonPolymorphicAttribute), false)
-            || type.IsDefined(typeof(JsonDerivedTypeAttribute), false);
-#endif
+        GetJsonTypeInfo(type, jsonSerializerOptions).PolymorphismOptions is not null;
 
 #if !NET9_0_OR_GREATER
     /// <summary>Determines whether a buffered line is blank, ignoring a trailing carriage return and treating spaces and tabs as blank.</summary>
@@ -273,11 +249,11 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     }
 #endif
 
-#if NET8_0_OR_GREATER
     /// <summary>Gets the JSON type metadata for the given runtime type from the supplied options.</summary>
     /// <param name="type">The runtime type to resolve metadata for.</param>
     /// <param name="jsonSerializerOptions">The serializer options to consult.</param>
     /// <returns>The JSON type metadata.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static JsonTypeInfo GetJsonTypeInfo(Type type, JsonSerializerOptions jsonSerializerOptions) =>
         jsonSerializerOptions.GetTypeInfo(type); // Returns non-null metadata for the requested type or throws; there is no null case to guard.
 
@@ -285,6 +261,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type to resolve metadata for.</typeparam>
     /// <param name="jsonSerializerOptions">The serializer options to consult.</param>
     /// <returns>The JSON type metadata.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
@@ -294,7 +271,6 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         jsonSerializerOptions.GetTypeInfo<T>();
 #else
         (JsonTypeInfo<T>)GetJsonTypeInfo(typeof(T), jsonSerializerOptions);
-#endif
 #endif
 
     /// <summary>Determines whether <see cref="ToHttpContent{T}(T)"/> writes a declared-type value as it writes it passed as <see cref="object"/>.</summary>
@@ -323,66 +299,25 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         return true;
     }
 
-#if NET8_0_OR_GREATER
     /// <summary>Gets the JSON type metadata for the given type from the configured options.</summary>
     /// <typeparam name="T">The type to resolve metadata for.</typeparam>
     /// <returns>The JSON type metadata.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal JsonTypeInfo<T> GetJsonTypeInfo<T>() => GetJsonTypeInfo<T>(jsonSerializerOptions);
-#endif
+    internal JsonTypeInfo<T> GetJsonTypeInfo<T>() => GetJsonTypeInfo<T>(ReadyOptions);
 
     /// <summary>Serializes the item to HTTP content using the supplied runtime type.</summary>
     /// <param name="item">The item to serialize.</param>
     /// <param name="runtimeType">The runtime type to serialize the item as.</param>
     /// <returns>The serialized HTTP content.</returns>
-#if NET8_0_OR_GREATER
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal JsonContent ToHttpContentRuntimeTyped(object item, Type runtimeType) =>
-        jsonSerializerOptions.TypeInfoResolver is not null
-            ? JsonContent.Create(item, GetJsonTypeInfo(runtimeType, jsonSerializerOptions))
-            : ToHttpContentRuntimeReflection(item, runtimeType);
-#else
-    internal JsonContent ToHttpContentRuntimeTyped(object item, Type runtimeType) => ToHttpContentRuntimeReflection(item, runtimeType);
-#endif
+        JsonContent.Create(item, GetJsonTypeInfo(runtimeType, ReadyOptions));
 
-    /// <summary>Serializes the item by runtime type using reflection-based metadata (used when the options provide no resolver).</summary>
-    /// <param name="item">The item to serialize.</param>
-    /// <param name="runtimeType">The runtime type to serialize the item as.</param>
-    /// <returns>The serialized HTTP content.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    internal JsonContent ToHttpContentRuntimeReflection(object item, Type runtimeType) =>
-        JsonContent.Create(item, runtimeType, options: jsonSerializerOptions);
-
-    /// <summary>Serializes the item using reflection-based metadata (used when the options provide no resolver).</summary>
-    /// <typeparam name="T">The type of the item being serialized.</typeparam>
-    /// <param name="item">The item to serialize.</param>
-    /// <returns>The serialized HTTP content.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    internal JsonContent ToHttpContentReflection<T>(T item) =>
-        JsonContent.Create(item, options: jsonSerializerOptions);
-
-    /// <summary>Deserializes the content using reflection-based metadata (used when the options provide no resolver).</summary>
-    /// <typeparam name="T">The type to deserialize.</typeparam>
-    /// <param name="content">The HTTP content to read from.</param>
-    /// <param name="cancellationToken">A token used to cancel the operation.</param>
-    /// <returns>The deserialized value.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    internal Task<T?> FromHttpContentReflectionAsync<T>(HttpContent content, CancellationToken cancellationToken) =>
-        content.ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken);
-
-    /// <summary>Serializes an item to UTF-8 JSON bytes, using source-gen metadata when a resolver is configured.</summary>
+    /// <summary>Serializes an item to UTF-8 JSON bytes through the configured type metadata.</summary>
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
     /// <param name="item">The item to serialize.</param>
     /// <returns>The UTF-8 encoded JSON.</returns>
@@ -391,30 +326,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-#if NET8_0_OR_GREATER
     internal byte[] SerializeToUtf8Bytes<T>(T item) =>
-        jsonSerializerOptions.TypeInfoResolver is not null
-            ? JsonSerializer.SerializeToUtf8Bytes(item, GetJsonTypeInfo<T>())
-            : SerializeToUtf8BytesReflection(item);
-#else
-    internal byte[] SerializeToUtf8Bytes<T>(T item) => SerializeToUtf8BytesReflection(item);
-#endif
+        JsonSerializer.SerializeToUtf8Bytes(item, GetJsonTypeInfo<T>());
 
-    /// <summary>Serializes an item to UTF-8 JSON bytes using reflection-based metadata.</summary>
-    /// <typeparam name="T">The type of the item being serialized.</typeparam>
-    /// <param name="item">The item to serialize.</param>
-    /// <returns>The UTF-8 encoded JSON.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal byte[] SerializeToUtf8BytesReflection<T>(T item) =>
-        JsonSerializer.SerializeToUtf8Bytes(item, jsonSerializerOptions);
-
-    /// <summary>Writes an item to a <see cref="Utf8JsonWriter"/>, using source-gen metadata when a resolver is configured.</summary>
+    /// <summary>Writes an item to a <see cref="Utf8JsonWriter"/> through the configured type metadata.</summary>
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
     /// <param name="item">The item to serialize.</param>
     /// <param name="writer">The writer to serialize into.</param>
@@ -423,56 +338,21 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-#if NET8_0_OR_GREATER
-    internal void SerializeToWriter<T>(T item, Utf8JsonWriter writer)
-    {
-        if (jsonSerializerOptions.TypeInfoResolver is not null)
-        {
-            JsonSerializer.Serialize(writer, item, GetJsonTypeInfo<T>());
-        }
-        else
-        {
-            SerializeToWriterReflection(item, writer);
-        }
-    }
-#else
-    internal void SerializeToWriter<T>(T item, Utf8JsonWriter writer) => SerializeToWriterReflection(item, writer);
-#endif
-
-    /// <summary>Writes an item to a <see cref="Utf8JsonWriter"/> using reflection-based metadata.</summary>
-    /// <typeparam name="T">The type of the item being serialized.</typeparam>
-    /// <param name="item">The item to serialize.</param>
-    /// <param name="writer">The writer to serialize into.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal void SerializeToWriterReflection<T>(T item, Utf8JsonWriter writer) =>
-        JsonSerializer.Serialize(writer, item, jsonSerializerOptions);
+    internal void SerializeToWriter<T>(T item, Utf8JsonWriter writer) =>
+        JsonSerializer.Serialize(writer, item, GetJsonTypeInfo<T>());
 
     /// <summary>Streams the elements of a single top-level JSON array.</summary>
     /// <typeparam name="T">The element type to deserialize.</typeparam>
     /// <param name="stream">The response body stream.</param>
     /// <param name="cancellationToken">A token to cancel enumeration.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [SuppressMessage(
         "Design",
         "SST2307:Generic method type parameters should be inferable from the parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal IAsyncEnumerable<T?> DeserializeJsonArrayAsync<T>(Stream stream, CancellationToken cancellationToken)
-    {
-        var options = jsonSerializerOptions;
-#if NET8_0_OR_GREATER
-        return options.TypeInfoResolver is not null
-            ? JsonSerializer.DeserializeAsyncEnumerable(stream, GetJsonTypeInfo<T>(options), cancellationToken)
-            : SystemTextJsonStreamingDeserializer.DeserializeJsonArrayReflectionAsync<T>(stream, options, cancellationToken);
-#else
-        return SystemTextJsonStreamingDeserializer.DeserializeJsonArrayReflectionAsync<T>(stream, options, cancellationToken);
-#endif
-    }
+    internal IAsyncEnumerable<T?> DeserializeJsonArrayAsync<T>(Stream stream, CancellationToken cancellationToken) =>
+        JsonSerializer.DeserializeAsyncEnumerable(stream, GetJsonTypeInfo<T>(), cancellationToken);
 
     /// <summary>Streams newline-delimited JSON values from the response body.</summary>
     /// <typeparam name="T">The element type to deserialize.</typeparam>
@@ -485,15 +365,12 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     internal IAsyncEnumerable<T?> DeserializeJsonLinesAsync<T>(Stream stream, CancellationToken cancellationToken)
     {
-        var options = jsonSerializerOptions;
 #if NET9_0_OR_GREATER
         // .NET 9 added the topLevelValues overload, which reads a stream of whitespace-separated
         // top-level JSON values - exactly the JSON Lines framing - without per-line buffering.
-        return options.TypeInfoResolver is not null
-            ? JsonSerializer.DeserializeAsyncEnumerable(stream, GetJsonTypeInfo<T>(options), topLevelValues: true, cancellationToken)
-            : SystemTextJsonStreamingDeserializer.DeserializeJsonLinesTopLevelReflectionAsync<T>(stream, options, cancellationToken);
+        return JsonSerializer.DeserializeAsyncEnumerable(stream, GetJsonTypeInfo<T>(), topLevelValues: true, cancellationToken);
 #else
-        return SystemTextJsonStreamingDeserializer.DeserializeJsonLinesManualAsync<T>(stream, options, cancellationToken);
+        return SystemTextJsonStreamingDeserializer.DeserializeJsonLinesManualAsync<T>(stream, ReadyOptions, cancellationToken);
 #endif
     }
 
@@ -511,7 +388,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         Stream stream,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var options = jsonSerializerOptions;
+        var options = ReadyOptions;
         var parser = SseParser.Create(
             stream,
             (eventType, data) => SystemTextJsonStreamingDeserializer.DeserializeSseData<T>(eventType, data, options));
@@ -520,18 +397,4 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
             yield return item.Data;
         }
     }
-
-    /// <summary>Deserializes a buffered string using reflection-based metadata.</summary>
-    /// <typeparam name="T">The type to deserialize.</typeparam>
-    /// <param name="content">The buffered content string.</param>
-    /// <returns>The deserialized value.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-    [SuppressMessage(
-        "Design",
-        "SST2307:Generic method type parameters should be inferable from the parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    internal T? DeserializeFromStringReflection<T>(string content) =>
-        JsonSerializer.Deserialize<T>(content, jsonSerializerOptions);
 }

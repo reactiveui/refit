@@ -19,6 +19,33 @@ public sealed class ReflectionHooksTests
         await Assert.That(exception!.Message).Contains("ReflectionSupport.EnsureRegistered");
     }
 
+    /// <summary>Verifies missing JSON type metadata fails with a message that names the context and the reflection registration.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task MissingJsonResolverExplainsHowToSupplyMetadata()
+    {
+        var exception = await Assert
+            .That(static () => ReflectionHooks.CreateDefaultJsonResolver(null))
+            .ThrowsExactly<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("JsonSerializerContext");
+        await Assert.That(exception.Message).Contains("ReflectionSupport.EnsureRegistered");
+    }
+
+    /// <summary>Verifies the default serializer reads and writes JSON once the reflection support is registered.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task DefaultSerializerUsesRegisteredReflectionResolver()
+    {
+        ReflectionSupport.EnsureRegistered();
+        var serializer = new SystemTextJsonContentSerializer();
+
+        var roundTrip = serializer.DeserializeFromString<NestedValue>("""{"child":{"name":"x"}}""");
+
+        await Assert.That(roundTrip!.Child!.Name).IsEqualTo("x");
+        await Assert.That(serializer.SerializerOptions.TypeInfoResolver).IsNotNull();
+    }
+
     /// <summary>Verifies a nested form value flattens once the reflection support is registered.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]

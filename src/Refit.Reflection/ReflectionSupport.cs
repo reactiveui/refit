@@ -19,6 +19,7 @@ public static class ReflectionSupport
     {
         ReflectionHooks.FormObjectFlattener ??= new FormObjectFlattener();
         ReflectionHooks.EnumMemberValueResolver ??= EnumMemberValues.GetEnumMemberValue;
+        ReflectionHooks.DefaultJsonResolverFactory ??= static () => new();
     }
 
     /// <summary>Creates a form map for a source object, registering the reflection support first.</summary>

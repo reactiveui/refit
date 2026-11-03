@@ -73,6 +73,7 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
 
         var targetInterfaceInheritedInterfaces = refitInterfaceType.GetInterfaces();
 
+        ReflectionSupport.EnsureRegistered();
         _settings = refitSettings ?? new RefitSettings();
         _serializer = _settings.ContentSerializer;
         _interfaceGenericHttpMethods =

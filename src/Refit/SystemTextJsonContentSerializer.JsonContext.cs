@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 #if NET8_0_OR_GREATER
-using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -187,8 +186,6 @@ public sealed partial class SystemTextJsonContentSerializer : IJsonTypeInfoConte
     /// <param name="context">The context to register.</param>
     /// <param name="allowReflectionFallback">Whether reflection may describe the types no other resolver describes.</param>
     /// <returns>New options that keep everything in <paramref name="source"/> and resolve <paramref name="context"/>.</returns>
-    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
-    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
     internal static JsonSerializerOptions ComposeOptions(
         JsonSerializerOptions source,
         JsonSerializerContext context,
@@ -209,7 +206,7 @@ public sealed partial class SystemTextJsonContentSerializer : IJsonTypeInfoConte
         }
         else if (reflective.Count == 0)
         {
-            reflective.Add(new());
+            reflective.Add(ReflectionHooks.CreateDefaultJsonResolver());
         }
 
         chain.Clear();

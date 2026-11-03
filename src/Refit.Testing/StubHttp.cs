@@ -84,7 +84,12 @@ public sealed partial class StubHttp : HttpMessageHandler, IEnumerable<RouteMatc
     private int _outstanding;
 
     /// <summary>Initializes a new instance of the <see cref="StubHttp"/> class with an empty route table.</summary>
-    public StubHttp() => _requestsView = new(_requests);
+    public StubHttp()
+    {
+        // The default serializer reads and writes typed replies through reflection-based JSON metadata, so register it.
+        ReflectionSupport.EnsureRegistered();
+        _requestsView = new(_requests);
+    }
 
     /// <summary>Initializes a new instance of the <see cref="StubHttp"/> class with network-fault simulation.</summary>
     /// <param name="behavior">The network behavior applied to every matched request.</param>
