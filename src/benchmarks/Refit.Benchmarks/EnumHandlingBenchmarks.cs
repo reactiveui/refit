@@ -33,6 +33,11 @@ public class EnumHandlingBenchmarks
     /// <summary>An undefined enum value formatted through the numeric path.</summary>
     private readonly QuerySort _undefinedValue = (QuerySort)999;
 
+    /// <summary>Registers the reflection support that supplies the <c>[EnumMember]</c> lookup.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [GlobalSetup]
+    public static void Setup() => ReflectionSupport.EnsureRegistered();
+
     /// <summary>Looks up the cached <c>[EnumMember]</c> value for a member that declares one.</summary>
     /// <returns>The looked-up value length.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -54,7 +59,7 @@ public class EnumHandlingBenchmarks
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     [Benchmark]
     [BenchmarkCategory("Build")]
-    public int CreateEnumMemberValueMap() => EnumHelpers.CreateEnumMemberValueMap(_enumType).Count;
+    public int CreateEnumMemberValueMap() => EnumMemberValues.CreateEnumMemberValueMap(_enumType).Count;
 
     /// <summary>Formats an undefined enum value through the numeric backing-type path.</summary>
     /// <returns>The formatted value length.</returns>

@@ -15,7 +15,11 @@ public static class ReflectionSupport
     /// generated client posts a nested or run-time-typed form body and nothing else loads this package.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void EnsureRegistered() => ReflectionHooks.FormObjectFlattener ??= new FormObjectFlattener();
+    public static void EnsureRegistered()
+    {
+        ReflectionHooks.FormObjectFlattener ??= new FormObjectFlattener();
+        ReflectionHooks.EnumMemberValueResolver ??= EnumMemberValues.GetEnumMemberValue;
+    }
 
     /// <summary>Creates a form map for a source object, registering the reflection support first.</summary>
     /// <param name="source">The source object or dictionary to convert into form entries.</param>

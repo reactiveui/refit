@@ -12,6 +12,9 @@ internal static class ReflectionHooks
     /// <summary>Gets or sets the flattener for complex form values, or <see langword="null"/> when Refit.Reflection is not loaded.</summary>
     internal static IFormObjectFlattener? FormObjectFlattener { get; set; }
 
+    /// <summary>Gets or sets the reader of <c>[EnumMember]</c> values for run-time-typed enums, or <see langword="null"/> when Refit.Reflection is not loaded.</summary>
+    internal static Func<Type, object, string?>? EnumMemberValueResolver { get; set; }
+
     /// <summary>Gets the registered form flattener or explains how to add one.</summary>
     /// <returns>The registered flattener.</returns>
     /// <exception cref="NotSupportedException">The Refit.Reflection package is not loaded.</exception>
