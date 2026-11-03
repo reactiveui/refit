@@ -466,7 +466,6 @@ public interface IFormUrlEncodedParameterFormatter
 public interface IHttpContentSerializer
 {
     System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
-    string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
 public interface IQueryConverter<in T>
@@ -513,7 +512,6 @@ public class JsonContentSerializer : Refit.IHttpContentSerializer
 {
     public JsonContentSerializer() { }
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
-    public string GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
@@ -923,7 +921,6 @@ public sealed class SystemTextJsonContentSerializer : Refit.IContentSerializerNa
     public System.Collections.Generic.IAsyncEnumerable<T?> DeserializeStreamAsync<T>(System.IO.Stream stream, Refit.StreamingContentFormat format, System.Threading.CancellationToken cancellationToken = default) { }
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
-    public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
     public System.Net.Http.HttpContent ToHttpContentSynchronous<T>(T item) { }
     public System.Net.Http.HttpContent ToStreamingHttpContent<T>(T item) { }

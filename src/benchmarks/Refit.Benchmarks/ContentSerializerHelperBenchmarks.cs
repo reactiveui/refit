@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
@@ -33,9 +32,6 @@ public class ContentSerializerHelperBenchmarks
     /// <summary>A JSON object serialized and deserialized by the round-trip benchmarks.</summary>
     private User _user = null!;
 
-    /// <summary>The reflected property whose JSON field name is resolved.</summary>
-    private PropertyInfo _property = null!;
-
     /// <summary>The JSON string deserialized by the round-trip benchmark.</summary>
     private string _json = null!;
 
@@ -44,15 +40,8 @@ public class ContentSerializerHelperBenchmarks
     public void Setup()
     {
         _user = new() { Id = 1, Name = "Ada", Bio = "mathematician", Url = "https://x/y" };
-        _property = _declaredType.GetProperty(nameof(User.Name))!;
         _json = System.Text.Encoding.UTF8.GetString(_serializer.SerializeToUtf8Bytes(_user));
     }
-
-    /// <summary>Resolves the JSON field name for a property (attribute lookup).</summary>
-    /// <returns>The resolved field name length, or zero when unset.</returns>
-    [Benchmark]
-    [BenchmarkCategory("Metadata")]
-    public int GetFieldNameForProperty() => _serializer.GetFieldNameForProperty(_property)?.Length ?? 0;
 
     /// <summary>Determines whether the declared type is configured for polymorphic serialization.</summary>
     /// <returns>1 when polymorphic; otherwise 0.</returns>

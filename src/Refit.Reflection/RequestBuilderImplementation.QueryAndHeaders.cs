@@ -609,7 +609,7 @@ internal partial class RequestBuilderImplementation
         var name = aliasAttribute?.Name
                    ?? queryAttribute?.Name
                    ?? (_settings.HonorContentSerializerPropertyNamesInQuery
-                       ? _settings.ContentSerializer.GetFieldNameForProperty(propertyInfo)
+                       ? SerializerFieldNames.Resolve(_settings.ContentSerializer, propertyInfo)
                        : null)
                    ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
 

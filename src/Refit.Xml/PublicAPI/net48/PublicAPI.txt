@@ -8,7 +8,6 @@ public class XmlContentSerializer : Refit.IContentSerializerNameStyle, Refit.IHt
     public Refit.ContentSerializerNameStyle NameStyle { get; }
     public T? DeserializeFromString<T>(string content) { }
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
-    public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
 [System.Diagnostics.DebuggerDisplay("XmlContentSerializerSettings: XmlDefaultNamespace = {XmlDefaultNamespace}")]

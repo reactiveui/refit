@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 namespace Refit;
 
@@ -43,15 +42,4 @@ public class JsonContentSerializer : IHttpContentSerializer
     public Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
         CancellationToken cancellationToken = default) => throw new NotSupportedException();
-
-    /// <summary>
-    /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands.
-    /// </summary>
-    /// <param name="propertyInfo">A PropertyInfo object.</param>
-    /// <returns>
-    /// The calculated field name.
-    /// </returns>
-    /// <exception cref="System.NotSupportedException">Always thrown; this serializer is obsolete.</exception>
-    public string GetFieldNameForProperty(PropertyInfo propertyInfo) =>
-        throw new NotSupportedException();
 }

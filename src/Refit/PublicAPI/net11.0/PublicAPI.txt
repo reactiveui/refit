@@ -498,7 +498,6 @@ public interface IFormUrlEncodedParameterFormatter
 public interface IHttpContentSerializer
 {
     System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
-    string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
 public interface IJsonTypeInfoContentSerializer
@@ -554,7 +553,6 @@ public class JsonContentSerializer : Refit.IHttpContentSerializer
 {
     public JsonContentSerializer() { }
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
-    public string GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
 }
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
@@ -996,7 +994,6 @@ public sealed class SystemTextJsonContentSerializer : Refit.IContentSerializerNa
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
     public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo, System.Threading.CancellationToken cancellationToken = default) { }
-    public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
     public System.Net.Http.HttpContent ToHttpContent<T>(T item, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
     public System.Net.Http.HttpContent ToHttpContentSynchronous<T>(T item) { }

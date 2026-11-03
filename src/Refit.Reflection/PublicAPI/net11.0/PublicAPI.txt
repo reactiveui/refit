@@ -1,8 +1,13 @@
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Benchmarks")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Reflection.Benchmarks")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Reflection.Tests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Tests")]
 namespace Refit;
 
+public interface IReflectionFieldNameProvider
+{
+    string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
+}
 [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
 public class ObjectToInferredTypesConverter : System.Text.Json.Serialization.JsonConverter<object>
 {

@@ -144,44 +144,32 @@ public class SerializedContentNewtonsoftTests
         await Assert.That(result).IsNull();
     }
 
-    /// <summary>Verifies that the Newtonsoft content serializer returns the JsonProperty name for a property.</summary>
+    /// <summary>Verifies that Refit resolves the JsonProperty name for a property with the Newtonsoft serializer.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ReturnsJsonPropertyName()
+    public async Task SerializerFieldNames_Newtonsoft_ReturnsJsonPropertyName()
     {
         var serializer = new NewtonsoftJsonContentSerializer();
         var property = typeof(NewtonsoftFieldNameModel).GetProperty(
             nameof(NewtonsoftFieldNameModel.Name));
 
-        var fieldName = serializer.GetFieldNameForProperty(property!);
+        var fieldName = SerializerFieldNames.Resolve(serializer, property!);
 
         await Assert.That(fieldName).IsEqualTo("json_name");
     }
 
-    /// <summary>Verifies that the Newtonsoft content serializer returns null when no JsonProperty attribute exists.</summary>
+    /// <summary>Verifies that Refit resolves no name when no JsonProperty attribute exists.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ReturnsNullWithoutJsonPropertyAttribute()
+    public async Task SerializerFieldNames_Newtonsoft_ReturnsNullWithoutJsonPropertyAttribute()
     {
         var serializer = new NewtonsoftJsonContentSerializer();
         var property = typeof(NewtonsoftFieldNameModel).GetProperty(
             nameof(NewtonsoftFieldNameModel.Unaliased));
 
-        var fieldName = serializer.GetFieldNameForProperty(property!);
+        var fieldName = SerializerFieldNames.Resolve(serializer, property!);
 
         await Assert.That(fieldName).IsNull();
-    }
-
-    /// <summary>Verifies that the Newtonsoft content serializer throws when the property argument is null.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ThrowsForNullProperty()
-    {
-        var serializer = new NewtonsoftJsonContentSerializer();
-
-        var exception = await Assert.That(() => serializer.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
-
-        await Assert.That(exception!.ParamName).IsEqualTo("propertyInfo");
     }
 
     /// <summary>Verifies quoted charsets are unwrapped before Newtonsoft deserialization resolves the encoding.</summary>

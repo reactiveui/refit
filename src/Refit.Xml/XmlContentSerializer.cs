@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -140,14 +139,5 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
             input,
             _settings.XmlReaderWriterSettings.ReaderSettings);
         return (T?)xmlSerializer.Deserialize(reader);
-    }
-
-    /// <inheritdoc/>
-    public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
-    {
-        ArgumentExceptionHelper.ThrowIfNull(propertyInfo);
-
-        return propertyInfo.GetCustomAttribute<XmlElementAttribute>(true)?.ElementName
-               ?? propertyInfo.GetCustomAttribute<XmlAttributeAttribute>(true)?.AttributeName;
     }
 }

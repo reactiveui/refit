@@ -454,6 +454,66 @@ public partial class SerializedContentTests
     }
 #endif
 
+    /// <summary>Verifies a custom serializer that implements the reflection provider names fields itself.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SerializerFieldNames_UsesCustomProviderWhenImplemented()
+    {
+        var property = typeof(SystemTextFieldNameModel).GetProperty(nameof(SystemTextFieldNameModel.Name));
+
+        var fieldName = SerializerFieldNames.Resolve(new ProviderTestSerializer(), property!);
+
+        await Assert.That(fieldName).IsEqualTo("from-provider");
+    }
+
+    /// <summary>Verifies the Newtonsoft attribute is read by its type name, so no Newtonsoft reference is needed.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SerializerFieldNames_ReadsNewtonsoftNameByTypeName()
+    {
+        var named = typeof(NewtonsoftNamedModel).GetProperty(nameof(NewtonsoftNamedModel.Named));
+        var plain = typeof(NewtonsoftNamedModel).GetProperty(nameof(NewtonsoftNamedModel.Plain));
+
+        await Assert.That(SerializerFieldNames.ResolveForStyle(ContentSerializerNameStyle.Newtonsoft, named!)).IsEqualTo("newtonsoft_name");
+        await Assert.That(SerializerFieldNames.ResolveForStyle(ContentSerializerNameStyle.Newtonsoft, plain!)).IsNull();
+    }
+
+    /// <summary>Model whose property carries the stand-in Newtonsoft attribute.</summary>
+    internal sealed class NewtonsoftNamedModel
+    {
+        /// <summary>Gets or sets the property named through the stand-in attribute.</summary>
+        [global::Newtonsoft.Json.JsonProperty("newtonsoft_name")]
+        public string? Named { get; set; }
+
+        /// <summary>Gets or sets a property with no attribute.</summary>
+        public string? Plain { get; set; }
+    }
+
+    /// <summary>Serializer that reports no name style and offers no provider.</summary>
+    internal sealed class ContentOnlyTestSerializer : IHttpContentSerializer
+    {
+        /// <inheritdoc/>
+        public HttpContent ToHttpContent<T>(T item) => new StringContent(string.Empty);
+
+        /// <inheritdoc/>
+        public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
+            Task.FromResult<T?>(default);
+    }
+
+    /// <summary>Serializer that names every field itself through the reflection provider.</summary>
+    internal sealed class ProviderTestSerializer : IHttpContentSerializer, IReflectionFieldNameProvider
+    {
+        /// <inheritdoc/>
+        public HttpContent ToHttpContent<T>(T item) => new StringContent(string.Empty);
+
+        /// <inheritdoc/>
+        public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
+            Task.FromResult<T?>(default);
+
+        /// <inheritdoc/>
+        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) => "from-provider";
+    }
+
     /// <summary>Container for an enum property used to verify string-enum source generation.</summary>
     internal sealed class StringEnumEnvelope
     {

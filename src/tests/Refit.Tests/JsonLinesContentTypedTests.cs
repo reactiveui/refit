@@ -548,9 +548,6 @@ public class JsonLinesContentTypedTests
         /// <inheritdoc/>
         public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
             Task.FromResult<T?>(default);
-
-        /// <inheritdoc/>
-        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) => null;
     }
 
     /// <summary>A converter that reports it can convert <see cref="object"/>, forcing the untyped fallback.</summary>

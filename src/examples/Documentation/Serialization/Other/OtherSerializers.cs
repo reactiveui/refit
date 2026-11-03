@@ -50,12 +50,9 @@ internal static class OtherSerializers
     private static void ShowNewtonsoftSynchronous(NewtonsoftJsonContentSerializer serializer)
     {
         WirePerson? person = serializer.DeserializeFromString<WirePerson>("""{"Id":1,"display_name":"Ada"}""");
-        string? name = serializer.GetFieldNameForProperty(typeof(WirePerson).GetProperty(nameof(WirePerson.Name))!);
         Console.WriteLine(person?.Name); // Ada
-        Console.WriteLine(name); // display_name
 
         SampleCheck.Equal("Ada", person?.Name);
-        SampleCheck.Equal("display_name", name);
     }
 
     /// <summary>Checks XML configuration and an HTTP content round trip.</summary>
@@ -151,10 +148,7 @@ internal static class OtherSerializers
     private static void ShowXmlSynchronous(XmlContentSerializer serializer)
     {
         WirePerson? person = serializer.DeserializeFromString<WirePerson>("<person><Id>1</Id><display_name>Ada</display_name></person>");
-        string? name = serializer.GetFieldNameForProperty(typeof(WirePerson).GetProperty(nameof(WirePerson.Name))!);
         Console.WriteLine(person?.Name); // Ada
-        Console.WriteLine(name); // display_name
         SampleCheck.Equal("Ada", person?.Name);
-        SampleCheck.Equal("display_name", name);
     }
 }

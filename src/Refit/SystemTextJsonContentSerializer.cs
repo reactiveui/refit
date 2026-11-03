@@ -8,7 +8,6 @@ using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using System.Net.ServerSentEvents;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -214,20 +213,6 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
             StreamingContentFormat.JsonLines => DeserializeJsonLinesAsync<T>(stream, cancellationToken),
             _ => DeserializeJsonArrayAsync<T>(stream, cancellationToken),
         };
-    }
-
-    /// <summary>
-    /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands.
-    /// </summary>
-    /// <param name="propertyInfo">A PropertyInfo object.</param>
-    /// <returns>
-    /// The calculated field name.
-    /// </returns>
-    /// <exception cref="System.ArgumentNullException">propertyInfo.</exception>
-    public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
-    {
-        ArgumentExceptionHelper.ThrowIfNull(propertyInfo);
-        return propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>(true)?.Name;
     }
 
 #if NET8_0_OR_GREATER

@@ -243,9 +243,5 @@ public sealed partial class ApiExceptionTests
         /// <inheritdoc />
         public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
             _inner.FromHttpContentAsync<T>(content, cancellationToken);
-
-        /// <inheritdoc />
-        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) =>
-            _inner.GetFieldNameForProperty(propertyInfo);
     }
 }

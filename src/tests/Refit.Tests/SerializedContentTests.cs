@@ -321,44 +321,56 @@ public partial class SerializedContentTests
         await Assert.That(json.Headers.ContentType.MediaType).IsEqualTo(JsonMediaType);
     }
 
-    /// <summary>Verifies that the System.Text.Json content serializer returns the JsonPropertyName for a property.</summary>
+    /// <summary>Verifies that Refit resolves the JsonPropertyName for a property with the System.Text.Json serializer.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_GetFieldNameForProperty_ReturnsJsonPropertyName()
+    public async Task SerializerFieldNames_SystemTextJson_ReturnsJsonPropertyName()
     {
         var serializer = new SystemTextJsonContentSerializer();
         var property = typeof(SystemTextFieldNameModel).GetProperty(
             nameof(SystemTextFieldNameModel.Name));
 
-        var fieldName = serializer.GetFieldNameForProperty(property!);
+        var fieldName = SerializerFieldNames.Resolve(serializer, property!);
 
         await Assert.That(fieldName).IsEqualTo("json_name");
     }
 
-    /// <summary>Verifies that the System.Text.Json content serializer returns null without a JsonPropertyName attribute.</summary>
+    /// <summary>Verifies that Refit resolves no name without a JsonPropertyName attribute.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_GetFieldNameForProperty_ReturnsNullWithoutJsonPropertyNameAttribute()
+    public async Task SerializerFieldNames_SystemTextJson_ReturnsNullWithoutJsonPropertyNameAttribute()
     {
         var serializer = new SystemTextJsonContentSerializer();
         var property = typeof(SystemTextFieldNameModel).GetProperty(
             nameof(SystemTextFieldNameModel.Unaliased));
 
-        var fieldName = serializer.GetFieldNameForProperty(property!);
+        var fieldName = SerializerFieldNames.Resolve(serializer, property!);
 
         await Assert.That(fieldName).IsNull();
     }
 
-    /// <summary>Verifies that the System.Text.Json content serializer throws when the property argument is null.</summary>
+    /// <summary>Verifies that name resolution throws when the property argument is null.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_GetFieldNameForProperty_ThrowsForNullProperty()
+    public async Task SerializerFieldNames_ThrowsForNullProperty()
     {
         var serializer = new SystemTextJsonContentSerializer();
 
-        var exception = await Assert.That(() => serializer.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
+        var exception = await Assert.That(() => SerializerFieldNames.Resolve(serializer, null!)).ThrowsExactly<ArgumentNullException>();
 
-        await Assert.That(exception!.ParamName).IsEqualTo("propertyInfo");
+        await Assert.That(exception!.ParamName).IsEqualTo("property");
+    }
+
+    /// <summary>Verifies that a serializer with no name style and no provider contributes no name.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SerializerFieldNames_ReturnsNullForSerializerWithoutNameStyle()
+    {
+        var property = typeof(SystemTextFieldNameModel).GetProperty(nameof(SystemTextFieldNameModel.Name));
+
+        var fieldName = SerializerFieldNames.Resolve(new ContentOnlyTestSerializer(), property!);
+
+        await Assert.That(fieldName).IsNull();
     }
 
     /// <summary>Verifies that RestService can use source-generated System.Text.Json metadata.</summary>

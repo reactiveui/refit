@@ -487,10 +487,6 @@ public sealed partial class ApiExceptionTests
             await Task.Yield();
             return await _inner.FromHttpContentAsync<T>(content, cancellationToken).ConfigureAwait(false);
         }
-
-        /// <inheritdoc />
-        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) =>
-            _inner.GetFieldNameForProperty(propertyInfo);
     }
 
     /// <summary>Response model used by content deserialization tests.</summary>

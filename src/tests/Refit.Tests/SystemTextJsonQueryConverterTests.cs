@@ -174,7 +174,7 @@ public sealed class SystemTextJsonQueryConverterTests
     }
 
     /// <summary>A minimal non-System.Text.Json serializer used to trip the converter's serializer guard.</summary>
-    private sealed class NonJsonSerializer : IHttpContentSerializer
+    private sealed class NonJsonSerializer : IHttpContentSerializer, IReflectionFieldNameProvider
     {
         /// <inheritdoc/>
         public HttpContent ToHttpContent<T>(T item) => new StringContent(string.Empty);

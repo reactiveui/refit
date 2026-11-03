@@ -508,9 +508,5 @@ public partial class MultipartTests
             HttpContent content,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(default(T));
-
-        /// <inheritdoc />
-        public string? GetFieldNameForProperty(PropertyInfo propertyInfo) =>
-            null;
     }
 }

@@ -582,7 +582,7 @@ public partial class GeneratedRequestRunnerTests
     }
 
     /// <summary>Records serializer usage and returns configured test values.</summary>
-    private sealed class RecordingContentSerializer : IHttpContentSerializer
+    private sealed class RecordingContentSerializer : IHttpContentSerializer, IReflectionFieldNameProvider
     {
         /// <summary>Gets the number of serialization calls.</summary>
         public int SerializeCallCount { get; private set; }

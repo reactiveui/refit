@@ -21,6 +21,7 @@ public sealed class NewtonsoftFormFieldNameTests
     [Test]
     public async Task DescriptorPathUsesNewtonsoftNameAndMatchesReflection()
     {
+        ReflectionSupport.EnsureRegistered();
         var settings = new RefitSettings(new NewtonsoftJsonContentSerializer());
         var body = new NamedBody { Renamed = "r", Unnamed = "u", Aliased = "a", };
         var fields = new[]

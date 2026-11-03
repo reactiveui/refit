@@ -135,20 +135,6 @@ public sealed class NewtonsoftJsonContentSerializer(
     public T? DeserializeFromString<T>(string content) =>
         JsonConvert.DeserializeObject<T>(content, _jsonSerializerSettings.Value);
 
-    /// <summary>
-    /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands.
-    /// </summary>
-    /// <param name="propertyInfo">A PropertyInfo object.</param>
-    /// <returns>
-    /// The calculated field name.
-    /// </returns>
-    /// <exception cref="System.ArgumentNullException">propertyInfo</exception>
-    public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
-    {
-        ArgumentExceptionHelper.ThrowIfNull(propertyInfo);
-        return propertyInfo.GetCustomAttribute<JsonPropertyAttribute>(true)?.PropertyName;
-    }
-
     /// <summary>Resolves the text encoding from the content type charset, if present.</summary>
     /// <param name="content">The HTTP content to inspect.</param>
     /// <returns>The resolved encoding, or null when no charset is specified.</returns>

@@ -53,7 +53,6 @@ internal static class Serialization
         await RunContextSerializerAsync();
         await RunContextClientAsync();
         await RunDefaultsAsync();
-        VerifyFieldNames();
         await RunFastPathAsync();
         await RunCombinedContextsAsync();
         VerifyMissingMetadata();
@@ -117,30 +116,6 @@ internal static class Serialization
         SampleCheck.Equal(0, defaultOptions.Converters.Count);
         SampleCheck.Equal("displayName", defaultOptions.PropertyNamingPolicy!.ConvertName("DisplayName"));
     }
-
-    /// <summary>Checks explicit JSON property names without applying the camel-case naming policy.</summary>
-    private static void VerifyFieldNames()
-    {
-        JsonNamedValue model = new();
-        System.Reflection.PropertyInfo explicitName = model.GetType().GetProperty(nameof(JsonNamedValue.Value))!;
-        System.Reflection.PropertyInfo policyOnly = typeof(Person).GetProperty(nameof(Person.Name))!;
-        string? name = Serializer.GetFieldNameForProperty(explicitName);
-        string? absent = Serializer.GetFieldNameForProperty(policyOnly);
-        Console.WriteLine(name); // wire-name
-        Console.WriteLine(absent is null); // True
-        SampleCheck.Equal("wire-name", name);
-        SampleCheck.Equal(true, absent is null);
-        SampleCheck.Equal("wire-name", GetCapabilityName(Serializer, explicitName));
-    }
-
-    /// <summary>Checks the reflected naming hook through the base serializer capability.</summary>
-    /// <typeparam name="TSerializer">The content serializer capability selected by the caller.</typeparam>
-    /// <param name="serializer">The serializer whose naming contract is called.</param>
-    /// <param name="property">The known property to inspect.</param>
-    /// <returns>The explicit field name, or null.</returns>
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    private static string? GetCapabilityName<TSerializer>(TSerializer serializer, System.Reflection.PropertyInfo property)
-        where TSerializer : IHttpContentSerializer => serializer.GetFieldNameForProperty(property);
 
     /// <summary>Checks that fast-path options work after a generated resolver is supplied.</summary>
     /// <returns>A task that completes after the sample assertions pass.</returns>

@@ -85,7 +85,7 @@ internal sealed class FormObjectFlattener : IFormObjectFlattener
     {
         var name = metadata.AliasName
                    ?? metadata.Query?.Name
-                   ?? map.ContentSerializer.GetFieldNameForProperty(metadata.Property)
+                   ?? SerializerFieldNames.Resolve(map.ContentSerializer, metadata.Property)
                    ?? map.UrlParameterKeyFormatter.Format(metadata.Property.Name);
 
         var qattrib = metadata.Query;

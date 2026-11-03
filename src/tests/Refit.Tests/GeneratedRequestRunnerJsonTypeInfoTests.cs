@@ -191,8 +191,5 @@ public class GeneratedRequestRunnerJsonTypeInfoTests
         /// <inheritdoc/>
         public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
             Task.FromResult<T?>(default);
-
-        /// <inheritdoc/>
-        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) => null;
     }
 }
