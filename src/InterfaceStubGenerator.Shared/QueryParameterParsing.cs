@@ -361,8 +361,14 @@ internal static class QueryParameterParsing
                 elementProperties,
                 null,
                 null,
-                data.Delimiter ?? DefaultNestingDelimiter);
+                ResolveNestingDelimiter(data));
     }
+
+    /// <summary>Gets the delimiter the parameter declares, or the default nesting delimiter.</summary>
+    /// <param name="data">The parameter's parsed <c>[Query]</c> data.</param>
+    /// <returns>The delimiter to place between nested keys.</returns>
+    internal static string ResolveNestingDelimiter(in RequestBodyParsing.QueryFormData data) =>
+        data.Delimiter ?? DefaultNestingDelimiter;
 
     /// <summary>Builds the query model for a <c>[QueryConverter]</c> parameter, or null when the type is unresolved.</summary>
     /// <param name="parameter">The parameter carrying the converter.</param>

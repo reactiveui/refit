@@ -449,10 +449,7 @@ internal static class RequestParameterKindParsing
             foreach (var argument in attribute.NamedArguments)
             {
                 // AllowRelative is the attribute's only settable member.
-                if (argument.Value.Value is true)
-                {
-                    allowRelative = true;
-                }
+                allowRelative |= Equals(argument.Value.Value, true);
             }
 
             urlParameter = new(

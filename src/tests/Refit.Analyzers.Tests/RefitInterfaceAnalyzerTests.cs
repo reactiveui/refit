@@ -561,6 +561,23 @@ public sealed class RefitInterfaceAnalyzerTests
         await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id)).DoesNotContain(GeneratedRequestBuildingFallbackDiagnosticId);
     }
 
+    /// <summary>Verifies a placeholder written with an escape sequence is reported on the whole path argument.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReportsEscapedUnboundRoutePlaceholderOnThePathArgument()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Get("/users/\x7bid}/posts")]
+            Task<string> GetPosts(string userId);
+            """);
+
+        var unbound = diagnostics.Single(static diagnostic => diagnostic.Id == UnboundRoutePlaceholderDiagnosticId);
+        var text = await unbound.Location.SourceTree!.GetTextAsync();
+
+        await Assert.That(text.ToString(unbound.Location.SourceSpan)).IsEqualTo("\"/users/\\x7bid}/posts\"");
+    }
+
     /// <summary>Verifies the suggested parameter name drops the round-trip prefix and any dotted property path.</summary>
     /// <param name="path">The route template.</param>
     /// <param name="suggestion">The expected suggested parameter name.</param>

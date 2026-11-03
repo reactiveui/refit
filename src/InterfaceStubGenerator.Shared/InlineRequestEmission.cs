@@ -743,6 +743,22 @@ internal static class InlineRequestEmission
         return null;
     }
 
+    /// <summary>Determines whether the method's <c>[Url]</c> parameter accepts relative URI references.</summary>
+    /// <param name = "request">The request model to inspect.</param>
+    /// <returns><see langword="true"/> when a <c>[Url]</c> parameter exists and allows relative URIs.</returns>
+    internal static bool AllowsRelativeUrl(in RequestModel request)
+    {
+        foreach (var parameter in request.Bindings.Parameters)
+        {
+            if (parameter.Kind == RequestParameterKind.Url)
+            {
+                return parameter.AllowRelativeUrl;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Builds the cancellation token expression for an inline generated method.</summary>
     /// <param name = "request">The request model to inspect.</param>
     /// <returns>The cancellation token expression.</returns>

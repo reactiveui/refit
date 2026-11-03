@@ -42,6 +42,28 @@ public sealed class NewtonsoftJsonSecurityTests
         }
     }
 
+    /// <summary>Verifies the serializer uses fresh settings when no global settings factory is configured.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MissingGlobalSettingsFactoryFallsBackToNewSettings()
+    {
+        var previous = JsonConvert.DefaultSettings;
+        JsonConvert.DefaultSettings = null;
+
+        try
+        {
+            var serializer = new NewtonsoftJsonContentSerializer();
+
+            var json = await serializer.ToHttpContent(new SampleModel { Name = "unset" }).ReadAsStringAsync();
+
+            await Assert.That(json).Contains("unset");
+        }
+        finally
+        {
+            JsonConvert.DefaultSettings = previous;
+        }
+    }
+
     /// <summary>Verifies a global settings factory that returns <see langword="null"/> falls back to fresh settings.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
