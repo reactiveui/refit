@@ -3,6 +3,7 @@
 Every breaking change and notable addition, newest first. Each major version links back to the feature documentation
 in the [main README](../README.md).
 
+* [V17.x.x](#v17xx)
 * [V16.x.x](#v16xx)
 * [V15.x.x](#v15xx)
 * [V14.x.x](#v14xx)
@@ -11,6 +12,115 @@ in the [main README](../README.md).
 * [V11.x.x](#v11xx)
 * [Updates in 8.0.x](#updates-in-80x)
 * [V6.x.x](#v6xx)
+
+## V17.x.x
+
+### Breaking changes in V17.x
+
+Refit 17 makes the `Refit` package free of reflection. Everything that needs reflection now lives in `Refit.Reflection`
+(and `Refit.HttpClientFactory.Reflection` for dependency injection), and the default JSON options no longer add
+converters, so the System.Text.Json fast path stays available. If your interfaces are all source generated and you use
+`ForGenerated` with a `JsonSerializerContext`, most of this does not touch you. If you call `RestService.For` or
+`AddRefitClient`, start with items 2 to 4.
+
+**Packages and targets**
+
+1. **.NET 8 and .NET 9 are no longer targeted.** Microsoft ends support for both on 10 November 2026 (see the
+   [.NET support policy](https://dotnet.microsoft.com/platform/support/policy/dotnet-core)). Refit now ships `net462` to `net481`, `net10.0` and `net11.0`.
+   Every .NET Framework target from `net462` to `net481` (`net462`, `net470`, `net471`, `net472`, `net48`, `net481`)
+   is still supported. A `net8.0` or `net9.0` project cannot restore Refit 17. Move the project to `net10.0` or later, or stay on Refit 16.
+2. **`RestService.For` moved to the `Refit.Reflection` package.** Every `For<T>` and `For(Type, ...)` overload is gone
+   from `Refit.dll`, even for fully generated interfaces. Pick one:
+   * Keep `RestService.For<T>(...)`: add a reference to [`Refit.Reflection`](https://www.nuget.org/packages/Refit.Reflection)
+     and rebuild. The call syntax and the `using Refit;` stay the same. The methods are C# 14 extension members, so the
+     project needs the .NET 10 SDK or later to compile them.
+   * Drop reflection: call `RestService.ForGenerated<T>(...)`, ideally with a `JsonSerializerContext`. This is the
+     only choice for trimmed and Native AOT apps.
+3. **`RequestBuilder.ForType` moved to `Refit.Reflection`.** Add the package and rebuild. Code that builds an
+   `IRequestBuilder` by hand needs the reference too.
+4. **`AddRefitClient` and `AddKeyedRefitClient` moved to a new package, `Refit.HttpClientFactory.Reflection`.** Install
+   it next to `Refit.HttpClientFactory` and rebuild; the call sites do not change. To avoid reflection, use
+   `AddRefitGeneratedClient<T>(context)` or `AddKeyedRefitGeneratedClient<T>(serviceKey, context)`, which stay in
+   `Refit.HttpClientFactory`.
+5. **`RestMethodInfo`, `RestMethodParameterInfo` and `RestMethodParameterProperty` moved to `Refit.Reflection`.** The
+   namespace is still `Refit`, so only code that uses these types (custom request builders, method metadata
+   inspection) needs the package reference.
+
+**JSON defaults**
+
+6. **Enums are written and read as numbers by default.** The default options no longer include the camelCase string
+   enum converter. A client that sent `"pending"` now sends `0`, and a reply of `"pending"` fails to read. Fix it where
+   you build the options: on a source-generated context use `[JsonSourceGenerationOptions(UseStringEnumConverter = true)]`
+   or `[JsonConverter(typeof(JsonStringEnumConverter<MyEnum>))]` on the enum. Those write the member names as declared
+   (`Pending`); the old converter wrote camelCase (`pending`), so pass `JsonNamingPolicy.CamelCase` to keep the wire
+   format. In a reflection app call `options.AddReflectionConverters()` from `Refit.Reflection`, which keeps camelCase
+   (see item 8).
+7. **Numbers in JSON strings are no longer accepted.** The default options dropped
+   `JsonNumberHandling.AllowReadingFromString`, so `{"id":"42"}` no longer reads into an `int`. If your API does this,
+   set `NumberHandling = JsonNumberHandling.AllowReadingFromString` on your `JsonSerializerOptions`, or add
+   `[JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]` to the property.
+8. **`object` values read as `JsonElement`, not as CLR values.** `ObjectToInferredTypesConverter` is no longer in the
+   defaults and moved to `Refit.Reflection`. A property typed `object` or a `Dictionary<string, object>` now holds
+   `JsonElement`s instead of `string`, `long`, `double`, `bool` and so on. Either read the `JsonElement`, or call
+   `options.AddReflectionConverters()` from `Refit.Reflection`, which adds the inferred-types converter and the camelCase
+   enum converter (items 6 and 8 in one call). Any converter turns off the System.Text.Json fast path, which is why
+   Refit no longer adds them for you.
+9. **Options with no type metadata no longer fall back to reflection on their own.** `new SystemTextJsonContentSerializer()`
+   and options you build without a resolver used to switch to reflection-based JSON silently. Now the first request
+   throws a `NotSupportedException` that explains the choices. Either give the options a source-generated context
+   (`RefitSettings.ForJsonContext(context)` or `ForGenerated<T>(client, context)`), or reference `Refit.Reflection` and call
+   `ReflectionSupport.EnsureRegistered()` once at startup. `RestService.For` and `AddRefitClient` call it for you.
+   Streaming JSON arrays (`IAsyncEnumerable<T>` replies) follow the same rule.
+10. **`ProblemDetails.Extensions` is no longer filled by the serializer.** `[JsonExtensionData]` is gone from the
+    property, and `ValidationApiException` reads problem details with Refit's own reader. This means validation
+    errors parse under Native AOT and with any serializer, including Newtonsoft, but a custom
+    `ProblemDetails` subclass or serializer setting no longer takes part. `ValidationApiException.Content.Extensions`
+    still holds the extra members. If you deserialize `ProblemDetails` yourself with a serializer, `Extensions` stays empty;
+    read the extra members from the raw JSON, or use `ValidationApiException.Create(apiException)`.
+
+**Contracts you may implement**
+
+11. **`IUrlParameterFormatter.Format` takes `IParameterAttributeProvider` instead of `ICustomAttributeProvider`.**
+    The same change applies to `DefaultUrlParameterFormatter.Format` (virtual). Change the parameter type in your
+    formatter. The new interface has the same three members (`GetCustomAttributes(bool)`, `GetCustomAttributes(Type, bool)`
+    and `IsDefined`), so the body usually needs no edit. It no longer inherits from `System.Reflection`, which is what lets
+    generated code call the formatter without reflection.
+12. **`IHttpContentSerializer.GetFieldNameForProperty` is removed.** The method took a `PropertyInfo`, so it could not
+    work without reflection. Delete it from your custom serializer (and remove any `override` or explicit interface
+    implementation of it). To control form field names:
+    * Implement `IContentSerializerNameStyle` and return `ContentSerializerNameStyle.SystemTextJson`, `Newtonsoft` or
+      `Xml`, so the generator uses the matching attribute (`[JsonPropertyName]`, `[JsonProperty]`, `[XmlElement]`).
+    * Or, for reflection clients, implement `IReflectionFieldNameProvider` from `Refit.Reflection`.
+
+    A custom serializer that does neither is treated as having no name attributes: field names come from the property
+    name and Refit's key formatter, and generated form bodies use the run-time flattener instead of the generated field list.
+
+**Behavior that now needs `Refit.Reflection`**
+
+13. **Nested and run-time-typed objects in form bodies need `Refit.Reflection`.** Core Refit still flattens simple
+    values, collections and dictionaries. A `[FormObject]` or `Dictionary<string, object>` holding a complex object
+    now throws a `NotSupportedException` unless the package is referenced and registered
+    (`ReflectionSupport.EnsureRegistered()`). To avoid it, flatten the model to simple properties or type the body so the
+    generator sees every member at compile time.
+14. **`[EnumMember]` values on run-time-typed enums need `Refit.Reflection`.** When the generator can see the enum type
+    it still generates the `[EnumMember]` names. An enum that only appears as `object` or a generic argument now formats
+    as its plain name unless the package is registered.
+
+**Generated code and trimming**
+
+15. **Rebuild every project that contains Refit-generated clients.** `GeneratedRequestRunner`, `FormField<TBody>`
+    (`ExplicitName` became `Names`, and `ResolveFieldName` takes a `ContentSerializerNameStyle`), and the generated
+    attribute providers changed shape. Code generated by Refit 16 does not link against the 17 runtime. Update the
+    `Refit` package and rebuild; do not mix a Refit 16 generator output with the Refit 17 `Refit.dll`.
+16. **`Refit.Newtonsoft.Json` and `Refit.Xml` are no longer marked trimmable or AOT compatible.** They wrap libraries that
+    use reflection (`Newtonsoft.Json`, `XmlSerializer`), so the old trim and AOT suppressions were wrong. A trimmed or
+    Native AOT app that references them now gets trim and AOT warnings, and the serializers can fail at run time. Use
+    the System.Text.Json serializer with a `JsonSerializerContext` for those apps.
+17. **`Refit.Reflection` and `Refit.HttpClientFactory.Reflection` are not trimmable, and the trimmer root file is gone.**
+    The `Refit.Reflection.targets` file that rooted the assembly no longer ships, and `IRequestBuilder` no longer carries
+    `RequiresUnreferencedCode` or `RequiresDynamicCode`, so the reflection builder no longer warns at the call sites that
+    use `IRequestBuilder`. Apps that publish trimmed with reflection clients must keep the types they send and receive
+    themselves (for example with `TrimmerRootDescriptor` or `DynamicDependency`), or move to generated clients.
 
 ## V16.x.x
 
