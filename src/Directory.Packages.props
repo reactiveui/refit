@@ -83,19 +83,19 @@
     <When Condition="'$(TargetFramework)' == 'net11.0'">
       <ItemGroup Label="Microsoft ASP.NET">
         <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="System.Net.Http.Json" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0-rc.3.26522.148" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="11.0.0"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0"/>
+        <PackageVersion Include="System.Text.Json" Version="11.0.0"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup Label="Microsoft ASP.NET">
         <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.14"/>
-        <PackageVersion Include="System.Net.Http.Json" Version="10.0.14"/>
-        <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.14"/>
-        <PackageVersion Include="System.Text.Json" Version="10.0.14"/>
-        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="10.0.15"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.15"/>
+        <PackageVersion Include="System.Text.Json" Version="10.0.15"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.15" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
       </ItemGroup>
     </Otherwise>
   </Choose>
