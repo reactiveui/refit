@@ -61,7 +61,7 @@
     <TUnitAssertionsImplicitUsings>true</TUnitAssertionsImplicitUsings>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
     <IsAotCompatible>true</IsAotCompatible>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
@@ -104,14 +104,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Polyfills\NotNullAttribute.cs" Link="Polyfills\NotNullAttribute.cs"/>
   </ItemGroup>
 
-  <!-- net8.0 has every other shim natively but lacks OverloadResolutionPriority (added in net9.0).
-       Only Refit.HttpClientFactory uses the attribute; compiling the shim into consumers that already
-       reference Refit would create a duplicate compiler-recognized type. The net4* leg already pulls
-       this in via the Polyfills\*.cs glob above. -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' and '$(MSBuildProjectName)' == 'Refit.HttpClientFactory'">
-    <Compile Include="$(MSBuildThisFileDirectory)Polyfills\OverloadResolutionPriorityAttribute.cs" Link="Polyfills\OverloadResolutionPriorityAttribute.cs"/>
-  </ItemGroup>
-
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4')) or '$(TargetFramework)' == 'netstandard2.0'">
     <Using Include="Refit.Internal.ArgumentExceptionHelper" Alias="ArgumentExceptionHelper"/>
     <Using Include="Refit.Internal.ArgumentOutOfRangeExceptionHelper" Alias="ArgumentOutOfRangeExceptionHelper"/>
@@ -139,11 +131,11 @@
 
   <!-- Alias Lock to the dedicated System.Threading.Lock on .NET 9+ (faster EnterScope fast path),
        and to a plain object elsewhere (the lock statement falls back to Monitor). -->
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
     <Using Include="System.Threading.Lock" Alias="Lock"/>
   </ItemGroup>
 
-  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
     <Using Include="System.Object" Alias="Lock"/>
   </ItemGroup>
 

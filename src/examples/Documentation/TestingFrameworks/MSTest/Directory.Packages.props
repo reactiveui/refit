@@ -4,8 +4,8 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Packages.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <ItemGroup>
-    <PackageVersion Include="MSTest.TestFramework" Version="4.5.2"/>
+    <PackageVersion Include="MSTest.TestFramework" Version="4.5.3"/>
     <!-- MSTest.TestAdapter runs natively under Microsoft Testing Platform (the MSTest runner). -->
-    <PackageVersion Include="MSTest.TestAdapter" Version="4.5.2"/>
+    <PackageVersion Include="MSTest.TestAdapter" Version="4.5.3"/>
   </ItemGroup>
 </Project>

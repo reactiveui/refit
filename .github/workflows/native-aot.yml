@@ -36,8 +36,6 @@ jobs:
               uses: reactiveui/actions-common/.github/actions/dotnet-environment@main
               with:
                   dotnet-versions: |
-                      8.0.x
-                      9.0.x
                       10.0.x
                       11.0.x
                   src-folder: src

@@ -6,7 +6,7 @@
 
   <PropertyGroup Label="Shared Version Variables">
     <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
-    <SharpAnalyzersVersion>5.1.4</SharpAnalyzersVersion>
+    <SharpAnalyzersVersion>5.2.0</SharpAnalyzersVersion>
     <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>
 
@@ -21,14 +21,14 @@
 
   <ItemGroup Label="Build And Versioning">
     <PackageVersion Include="MinVer" Version="8.0.0"/>
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.403"/>
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="11.0.100"/>
   </ItemGroup>
 
   <ItemGroup Label="Analyzers">
     <PackageVersion Include="StyleSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="PerformanceSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="SecuritySharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
-    <PackageVersion Include="PublicApiSharp.Analyzers" Version="2.1.0"/>
+    <PackageVersion Include="PublicApiSharp.Analyzers" Version="2.2.0"/>
   </ItemGroup>
 
   <!-- Roslyn toolchain. Versions are intentionally held at their current bands: the source
@@ -40,7 +40,7 @@
   <ItemGroup Label="Roslyn Toolchain">
     <!-- Deliberately clamped to 4.14.0; do not bump globally (held back in .github/renovate.json). -->
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0"/>
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.12.0"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4"/>
   </ItemGroup>
 
@@ -48,7 +48,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Test Stack">
-    <PackageVersion Include="TUnit" Version="1.78.0"/>
+    <PackageVersion Include="TUnit" Version="1.84.0"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0"/>
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0"/>
   </ItemGroup>
@@ -57,16 +57,16 @@
     <PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.2"/>
     <!-- BenchmarkDotNet 0.16.0-preview.2 pulls in Microsoft.CodeAnalysis.CSharp 5.6.0; override the
          transitive Workspaces pin only for benchmark projects (including .bdn generated runners). -->
-    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.6.0" Condition="$(MSBuildProjectDirectory.Contains('benchmarks'))"/>
+    <PackageVersion Update="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.12.0" Condition="$(MSBuildProjectDirectory.Contains('benchmarks'))"/>
   </ItemGroup>
 
   <ItemGroup Label="Examples">
     <PackageVersion Include="Serilog" Version="4.4.0"/>
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1"/>
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0"/>
-    <PackageVersion Include="OpenTelemetry" Version="1.20.1"/>
-    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.20.1"/>
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.1"/>
+    <PackageVersion Include="OpenTelemetry" Version="1.21.0"/>
+    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.21.0"/>
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.21.0"/>
   </ItemGroup>
 
   <!-- Legacy System.* compatibility packages, scoped to the net4*/netstandard targets.
@@ -80,53 +80,48 @@
        mutually exclusive item group for each inner target-framework build.
        Roslyn test tooling needs a patched transitive PKCS version, with RCs only on net11.0. -->
   <Choose>
-    <When Condition="'$(TargetFramework)' == 'net11.0'">
+    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="System.Net.Http.Json" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="System.Text.Json" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0-rc.3.26522.148" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="11.0.0"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="11.0.0"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="11.0.0"/>
+        <PackageVersion Include="System.Text.Json" Version="11.0.0"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
+      </ItemGroup>
+    </When>
+    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
+      <ItemGroup Label="Microsoft ASP.NET">
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.15"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="10.0.15"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.15"/>
+        <PackageVersion Include="System.Text.Json" Version="10.0.15"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.15" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.14"/>
-        <PackageVersion Include="System.Net.Http.Json" Version="10.0.14"/>
-        <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.14"/>
-        <PackageVersion Include="System.Text.Json" Version="10.0.14"/>
-        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
+        <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.15"/>
+        <PackageVersion Include="System.Net.Http.Json" Version="10.0.15"/>
+        <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.15"/>
+        <PackageVersion Include="System.Text.Json" Version="10.0.15"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.15" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
       </ItemGroup>
     </Otherwise>
   </Choose>
 
   <Choose>
-    <When Condition="'$(TargetFramework)' == 'net11.0'">
+    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="11.0.0-rc.3.26522.148"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="11.0.0-rc.3.26522.148"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="11.0.0"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="11.0.0"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="11.0.0"/>
       </ItemGroup>
     </When>
-    <When Condition="'$(TargetFramework)' == 'net10.0'">
+    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
       <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.13"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.13"/>
-      </ItemGroup>
-    </When>
-    <When Condition="'$(TargetFramework)' == 'net9.0'">
-      <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.21"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.21"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.21"/>
-      </ItemGroup>
-    </When>
-    <When Condition="'$(TargetFramework)' == 'net8.0'">
-      <ItemGroup Label="Microsoft ASP.NET">
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.32"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.32"/>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.32"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.15"/>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.15"/>
       </ItemGroup>
     </When>
   </Choose>

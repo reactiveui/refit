@@ -51,8 +51,8 @@ dotnet clean "Refit.slnx"
 cd src
 
 dotnet build "InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" -v:minimal --no-restore /p:NuGetAudit=false /m:1
-dotnet build "tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" -f net8.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
-dotnet build "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
+dotnet build "tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" -f net10.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
+dotnet build "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net10.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
 ```
 
 If you run from the repository root, use explicit `src/`-prefixed paths:
@@ -88,16 +88,16 @@ cd src
 dotnet test "Refit.slnx"
 
 # Run a specific project
-dotnet test "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0
+dotnet test "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net10.0
 
 # Direct TUnit/MTP runner invocation
-dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 --no-restore --no-build
+dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net10.0 --no-restore --no-build
 
 # Detailed output (argument goes after --)
 dotnet test "Refit.slnx" -- --output Detailed
 
 # List tests for a project
-dotnet test "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 -- --list-tests
+dotnet test "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net10.0 -- --list-tests
 
 # Fail fast
 dotnet test "Refit.slnx" -- --fail-fast
@@ -117,15 +117,15 @@ Examples:
 cd src
 
 # Single test
-dotnet test "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 -- \
+dotnet test "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net10.0 -- \
   --treenode-filter "/*/*/*/GeneratedRequestBuilding_CanBeEmittedLoadedAndInvoked"
 
 # All tests in a class
-dotnet test "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 -- \
+dotnet test "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net10.0 -- \
   --treenode-filter "/*/*/GeneratedRequestBuildingTests/*"
 
 # Direct runner with a filter
-dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 --no-restore --no-build -- \
+dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net10.0 --no-restore --no-build -- \
   --treenode-filter "/*/*/GeneratedRequestBuildingTests/*"
 ```
 
@@ -154,8 +154,8 @@ Useful validation:
 cd src
 
 dotnet build "InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" -v:minimal --no-restore /p:NuGetAudit=false /m:1
-dotnet build "tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" -f net8.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
-dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net8.0 --no-restore --no-build
+dotnet build "tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" -f net10.0 -v:minimal --no-restore /p:NuGetAudit=false /m:1
+dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f net10.0 --no-restore --no-build
 ```
 
 ---
