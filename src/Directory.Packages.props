@@ -95,7 +95,7 @@
         <PackageVersion Include="System.Net.Http.Json" Version="10.0.15"/>
         <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.15"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.15"/>
-        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.15" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
       </ItemGroup>
     </When>
     <Otherwise>
@@ -104,7 +104,7 @@
         <PackageVersion Include="System.Net.Http.Json" Version="10.0.15"/>
         <PackageVersion Include="System.Net.ServerSentEvents" Version="10.0.15"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.15"/>
-        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.15" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="11.0.0" Condition="'$(MSBuildProjectName)' == 'Refit.GeneratorTests'"/>
       </ItemGroup>
     </Otherwise>
   </Choose>
