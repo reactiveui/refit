@@ -47,7 +47,7 @@
   <!-- Target Framework Monikers. -->
   <PropertyGroup>
     <RefitGeneratorTargets>netstandard2.0</RefitGeneratorTargets>
-    <RefitFrameworkTargets>net462;net470;net471;net472;net48;net481</RefitFrameworkTargets>
+    <RefitFrameworkTargets>net470;net471;net472;net48;net481</RefitFrameworkTargets>
     <RefitModernTargets>net10.0;net11.0</RefitModernTargets>
     <RefitShippingTargets>$(RefitFrameworkTargets);$(RefitModernTargets)</RefitShippingTargets>
     <RefitTestTargets>$(RefitModernTargets)</RefitTestTargets>

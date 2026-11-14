@@ -85,7 +85,7 @@ The source generator requires Roslyn 4.8 or newer and `PackageReference`.
 .NET SDK 8.0.100 and Visual Studio 2022 17.8 provide that compiler baseline.
 These build requirements are separate from the application's target framework.
 
-The source projects target .NET 10 and 11, plus .NET Framework 4.6.2, 4.7, 4.7.1,
+The source projects target .NET 10 and 11, plus .NET Framework 4.7, 4.7.1,
 4.7.2, 4.8 and 4.8.1. Availability of individual framework features can differ.
 Read the [AOT guide](https://www.reactiveui.net/documentation/refit/aot/) before choosing
 reflection-dependent APIs for a trimmed or native app.
