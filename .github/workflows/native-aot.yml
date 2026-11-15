@@ -15,7 +15,7 @@ jobs:
         with:
             projectFile: src/Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj
 
-    # The documentation examples that support Native AOT, published and run on net10.0.
+    # The documentation example that supports Native AOT.
     native-aot-documentation:
         uses: reactiveui/actions-common/.github/workflows/workflow-common-aot-smoke.yml@main
         with:
@@ -35,18 +35,17 @@ jobs:
             - name: Setup .NET Environment
               uses: reactiveui/actions-common/.github/actions/dotnet-environment@main
               with:
-                  dotnet-versions: |
-                      10.0.x
-                      11.0.x
+                  dotnet-versions: 11.0.x
                   src-folder: src
 
             - name: Pack
               shell: bash
               working-directory: src
               run: |
-                  for project in Refit Refit.Reflection Refit.HttpClientFactory Refit.Testing; do
-                      dotnet pack "$project/$project.csproj" --configuration Release --output "$GITHUB_WORKSPACE/aot-feed"
-                  done
+                  dotnet pack Refit/Refit.csproj --configuration Release --output "$GITHUB_WORKSPACE/aot-feed"
+                  dotnet pack Refit.Reflection/Refit.Reflection.csproj --configuration Release --output "$GITHUB_WORKSPACE/aot-feed"
+                  dotnet pack Refit.HttpClientFactory/Refit.HttpClientFactory.csproj --configuration Release --output "$GITHUB_WORKSPACE/aot-feed"
+                  dotnet pack Refit.Testing/Refit.Testing.csproj --configuration Release --output "$GITHUB_WORKSPACE/aot-feed"
 
             - name: Upload packages
               uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -80,7 +79,7 @@ jobs:
             - name: Setup .NET Environment
               uses: reactiveui/actions-common/.github/actions/dotnet-environment@main
               with:
-                  dotnet-versions: 10.0.x
+                  dotnet-versions: 11.0.x
                   src-folder: src
                   # The packages already carry their version; this shallow checkout has no tags to stamp from.
                   stamp-version: 'false'
@@ -109,10 +108,7 @@ jobs:
                       --output aot-publish
 
             - name: Run
-              shell: bash
-              run: |
-                  if [ "$RUNNER_OS" = "Windows" ]; then
-                      ./aot-publish/Refit.NativeAotPackageSmoke.exe
-                  else
-                      ./aot-publish/Refit.NativeAotPackageSmoke
-                  fi
+              uses: reactiveui/actions-common/.github/actions/aot-smoke-run@main
+              with:
+                  project-file: src/Refit.NativeAotPackageSmoke/Refit.NativeAotPackageSmoke.csproj
+                  publish-folder: aot-publish

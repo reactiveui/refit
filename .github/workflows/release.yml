@@ -63,6 +63,8 @@ jobs:
 
             -   name: Setup .NET
                 uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
+                with:
+                  dotnet-version: 11.0.x
 
             -   name: NuGet login (OIDC trusted publishing)
                 id: nuget-login
@@ -72,10 +74,9 @@ jobs:
 
             -   name: Push to NuGet
                 shell: bash
-                run: |
-                    for pkg in *.nupkg; do
-                      dotnet nuget push "$pkg" --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
-                    done
+                env:
+                  NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+                run: dotnet nuget push "*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"
     create-release:
         needs: [ release, publish-nuget ]
         uses: reactiveui/actions-common/.github/workflows/workflow-common-create-release.yml@main
