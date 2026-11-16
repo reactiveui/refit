@@ -3,12 +3,11 @@
 // See the LICENSE file in the project root for full license information.
 using System.Net;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http.Resilience;
 using Refit.Testing;
 
 namespace Refit.Documentation;
 
-/// <summary>Adds Microsoft's standard resilience handler to a generated client and checks what it retries.</summary>
+/// <summary>Adds Refit's HTTP retry handler to a generated client and checks what it retries.</summary>
 internal static class Resilience
 {
     /// <summary>The service address the registered clients use.</summary>
@@ -24,16 +23,13 @@ internal static class Resilience
         await RefreshTokenPerAttemptAsync();
     }
 
-    /// <summary>Retries only safe methods, with short waits and explicit timeouts.</summary>
-    /// <param name="options">The standard pipeline's options.</param>
-    internal static void ConfigureRetries(HttpStandardResilienceOptions options)
+    /// <summary>Retries safe methods and respects server retry timing hints.</summary>
+    /// <returns>A fresh retry handler for a client pipeline.</returns>
+    internal static HttpRetryHandler CreateRetryHandler() => new(new HttpRetryOptions
     {
-        options.Retry.MaxRetryAttempts = 3;
-        options.Retry.Delay = TimeSpan.FromMilliseconds(100);
-        options.Retry.DisableForUnsafeHttpMethods(); // POST, PUT, PATCH, DELETE and CONNECT are sent once
-        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5); // limits each try
-        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(20); // limits every try and wait together
-    }
+        MaxRetries = 3,
+        BaseDelay = TimeSpan.FromMilliseconds(100),
+    });
 
     /// <summary>Problem: How do you retry a read when the service is briefly unavailable?</summary>
     /// <returns>A task that completes after the retried read is checked.</returns>
@@ -47,9 +43,13 @@ internal static class Resilience
 
         ServiceCollection services = new ServiceCollection();
         _ = services.AddRefitGeneratedClient<IResilientPeopleApi>(SampleJsonContext.Default)
-            .ConfigureHttpClient(static client => client.BaseAddress = new Uri(BaseUrl))
+            .ConfigureHttpClient(static client =>
+            {
+                client.BaseAddress = new Uri(BaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(20); // bounds all attempts and waits
+            })
             .ConfigurePrimaryHttpMessageHandler(() => http)
-            .AddStandardResilienceHandler(ConfigureRetries);
+            .AddHttpMessageHandler(CreateRetryHandler);
 
         await using ServiceProvider provider = services.BuildServiceProvider();
         IResilientPeopleApi api = provider.GetRequiredService<IResilientPeopleApi>();
@@ -146,7 +146,7 @@ internal static class Resilience
         IHttpClientBuilder builder = services.AddRefitGeneratedClient<IResilientPeopleApi>(SampleJsonContext.Default)
             .ConfigureHttpClient(static client => client.BaseAddress = new Uri(BaseUrl))
             .ConfigurePrimaryHttpMessageHandler(() => http);
-        _ = builder.AddStandardResilienceHandler(ConfigureRetries); // added first: the outer handler, which repeats what follows
+        _ = builder.AddHttpMessageHandler(CreateRetryHandler); // added first: the outer handler, which repeats what follows
         _ = builder.AddAuthorizationHeaderValueProvider((_, _, _) =>
             ValueTask.FromResult($"token-{Interlocked.Increment(ref tokensIssued)}")); // added second: runs again for every try
 
@@ -167,9 +167,13 @@ internal static class Resilience
     {
         ServiceCollection services = new ServiceCollection();
         _ = services.AddRefitGeneratedClient<IResilientPeopleApi>(SampleJsonContext.Default)
-            .ConfigureHttpClient(static client => client.BaseAddress = new Uri(BaseUrl))
+            .ConfigureHttpClient(static client =>
+            {
+                client.BaseAddress = new Uri(BaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(20);
+            })
             .ConfigurePrimaryHttpMessageHandler(() => http)
-            .AddStandardResilienceHandler(ConfigureRetries);
+            .AddHttpMessageHandler(CreateRetryHandler);
         return services.BuildServiceProvider();
     }
 }

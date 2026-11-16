@@ -1,7 +1,7 @@
 # HTTP-aware retries
 
 `HttpRetryHandler` is an opt-in `DelegatingHandler` for Refit and ordinary `HttpClient` callers on
-.NET 8 and later. It needs no source-generator changes or resilience package.
+.NET 10 and later. It needs no source-generator changes or resilience package.
 
 ```csharp
 var handler = new HttpRetryHandler(new HttpRetryOptions
@@ -135,8 +135,6 @@ outside. A circuit breaker's position determines whether it counts individual at
 final logical failures. Partition rate limits and breakers by the relevant provider, tenant
 or endpoint rather than pausing unrelated requests.
 
-Both `Microsoft.Extensions.Resilience` and `Microsoft.Extensions.Http.Resilience` are built
-on Polly. They remain optional integrations; this handler does not depend on either.
 Do not stack two retry strategies without calculating their combined attempt count.
 For example, three retries in each of two layers can cause sixteen network sends.
 
@@ -163,4 +161,3 @@ on a method with an empty path. The encoded query stays intact. A route placehol
 - [GitHub REST rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
 - [Slack Web API rate limits](https://docs.slack.dev/apis/web-api/rate-limits/)
 - [Jira Cloud rate limiting](https://developer.atlassian.com/cloud/jira/platform/rate-limiting/)
-- [.NET resilience libraries](https://learn.microsoft.com/en-us/dotnet/core/resilience/)

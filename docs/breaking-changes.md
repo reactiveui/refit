@@ -25,10 +25,12 @@ converters, so the System.Text.Json fast path stays available. If your interface
 
 **Packages and targets**
 
-1. **.NET 8 and .NET 9 are no longer targeted.** Microsoft ends support for both on 10 November 2026 (see the
-   [.NET support policy](https://dotnet.microsoft.com/platform/support/policy/dotnet-core)). Refit now ships `net462` to `net481`, `net10.0` and `net11.0`.
-   Every .NET Framework target from `net462` to `net481` (`net462`, `net470`, `net471`, `net472`, `net48`, `net481`)
-   is still supported. A `net8.0` or `net9.0` project cannot restore Refit 17. Move the project to `net10.0` or later, or stay on Refit 16.
+1. **.NET 8, .NET 9 and .NET Framework 4.6.2 are no longer targeted.** Microsoft ended support for .NET 8 and .NET 9 on
+   10 November 2026 (see the [.NET support policy](https://dotnet.microsoft.com/en-us/platform/support/policy)).
+   Refit also removes `net462` ahead of its 12 January 2027 end-of-support date (see the
+   [.NET Framework support policy](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-framework)).
+   Refit ships `net470`, `net471`, `net472`, `net48`, `net481`, `net10.0` and `net11.0`.
+   Retarget applications using a removed framework before upgrading, or stay on a compatible Refit 16 version while planning the migration.
 2. **`RestService.For` moved to the `Refit.Reflection` package.** Every `For<T>` and `For(Type, ...)` overload is gone
    from `Refit.dll`, even for fully generated interfaces. Pick one:
    * Keep `RestService.For<T>(...)`: add a reference to [`Refit.Reflection`](https://www.nuget.org/packages/Refit.Reflection)

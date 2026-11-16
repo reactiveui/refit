@@ -78,8 +78,9 @@ internal static class MetadataSample
         string runtimeKeyedName = UniqueName.ForType(interfaceType, "primary");
 
         Check.Require(generatedName == runtimeName, "Generic and runtime-Type names agree.");
-        Type? generatedType = Type.GetType(generatedName);
-        Check.Require(generatedType is not null && typeof(IHelperApi).IsAssignableFrom(generatedType), "The generated name resolves to the emitted implementation of the interface.");
+        using HttpClient client = new();
+        Type generatedType = RestService.ForGenerated<IHelperApi>(client, HelperJsonContext.Default).GetType();
+        Check.Require(generatedType.AssemblyQualifiedName == generatedName, "The generated name identifies the emitted implementation of the interface.");
         Check.Require(keyedName == runtimeKeyedName, "Generic and runtime-Type keyed names agree.");
         Check.Require(keyedName == $"{generatedName}, ServiceKey=primary", "Keys add their string representation.");
         Check.Require(UniqueName.ForType<IHelperApi>(null) == generatedName, "Null keys add no suffix.");

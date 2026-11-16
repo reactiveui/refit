@@ -27,8 +27,8 @@ internal static class ExistingSettingsSample
     private static readonly JsonSerializerOptions AppOptions = new(JsonSerializerDefaults.Web) { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, Converters = { new PriceJsonConverter() } };
 
 #if !NATIVE_AOT
-    /// <summary>Options whose reflection resolver registers a derived type in code.</summary>
-    private static readonly JsonSerializerOptions ModifiedOptions = new(JsonSerializerDefaults.Web) { TypeInfoResolver = new DefaultJsonTypeInfoResolver { Modifiers = { RegisterPickupShipments } } };
+    /// <summary>Options whose generated metadata resolver registers a derived type in code.</summary>
+    private static readonly JsonSerializerOptions ModifiedOptions = new(JsonSerializerDefaults.Web) { TypeInfoResolver = OrdersJsonContext.Default.WithAddedModifier(RegisterPickupShipments) };
 #endif
 
     /// <summary>Runs every scenario.</summary>
@@ -84,7 +84,7 @@ internal static class ExistingSettingsSample
     }
 
 #if !NATIVE_AOT
-    /// <summary>Keeps a derived type that an existing reflection resolver registers in code.</summary>
+    /// <summary>Keeps a derived type that an existing metadata resolver registers in code.</summary>
     /// <returns>A task that completes after the reply is read as the derived type.</returns>
     private static async Task KeepContractModifiersAsync()
     {

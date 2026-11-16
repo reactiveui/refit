@@ -4,7 +4,7 @@
     <PackageDescription>Testing helpers for Refit clients: a declarative HttpMessageHandler that stubs responses and verifies the requests your Refit interfaces make.</PackageDescription>
     <PackageTags>refit;rest;http;api-client;testing;test;mock;httpclient;httpmessagehandler</PackageTags>
     <TargetFrameworks>$(RefitShippingTargets)</TargetFrameworks>
-    <IsTrimmable>true</IsTrimmable>
+    <IsTrimmable Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">true</IsTrimmable>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
