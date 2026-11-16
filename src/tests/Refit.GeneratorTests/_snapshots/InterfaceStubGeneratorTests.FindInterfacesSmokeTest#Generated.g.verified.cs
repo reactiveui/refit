@@ -9,7 +9,6 @@ namespace Refit.Implementation
     /// <summary>Registers generated Refit factories for interfaces discovered at compile time.</summary>
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.Diagnostics.DebuggerNonUserCode]
-    [global::RefitInternalGenerated.Compilation.PreserveAttribute]
     [global::System.Reflection.Obfuscation(Exclude=true)]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     internal static partial class GeneratedCompilation

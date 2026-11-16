@@ -488,7 +488,7 @@ public class GeneratorModelEqualityTests
         var left = new InterfaceModel(
             "IApi.g.cs",
             new("Generated", "Api", "Consumer", "class Api", "global::Consumer.IApi", string.Empty),
-            new("global::Preserve", true, true, true, true, true),
+            new(true, true, true, true, true),
             new([], [ParameterName], [], [], [], []),
             Nullability.Enabled,
             false,
@@ -519,7 +519,7 @@ public class GeneratorModelEqualityTests
     public async Task ContextGeneration_EqualsAndHashCode_CompareAllBindings()
     {
         var model = new InterfaceModel("IApi.g.cs", default, default, new([], [], [], [], [], []), Nullability.Disabled, false, []);
-        var left = new ContextGenerationModel("Consumer", "global::Preserve", "Generated", true, true, [model]);
+        var left = new ContextGenerationModel("Consumer", "Generated", true, true, [model]);
         var right = left with { Interfaces = [model with { Members = new([], [], [], [], [], []), ExternAliases = [] }] };
 
         await VerifyEqualityAsync(
@@ -527,7 +527,6 @@ public class GeneratorModelEqualityTests
             right,
             [
                 left with { RefitInternalNamespace = "OtherConsumer" },
-                left with { PreserveAttributeDisplayName = "global::OtherPreserve" },
                 left with { GeneratedClassName = OtherMemberName },
                 left with { GeneratedRequestBuilding = false },
                 left with { EmitGeneratedCodeMarkers = false },

@@ -27,7 +27,7 @@ public sealed class RefitRequestsSettings
     /// Each entry is a type implementing <see cref="IReturnTypeAdapter{TReturn, TResult}"/>: either a closed type,
     /// or an open generic definition whose single type parameter is the wrapped result type. The source generator
     /// does not consult this collection - it discovers adapters at compile time - so this only affects
-    /// <see cref="RestService.For{T}(HttpClient, RefitSettings)"/> and other reflection-based builds.
+    /// <c>RestService.For&lt;T&gt;(HttpClient, RefitSettings)</c> and other reflection-based builds.
     /// </remarks>
     public List<Type> ReturnTypeAdapters { get; } = [];
 

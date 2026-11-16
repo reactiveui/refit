@@ -105,17 +105,16 @@ internal static class InterfaceSemanticParsing
     {
         if (options.DisableSourceGenerator)
         {
-            return new(string.Empty, string.Empty, string.Empty, false, true, []);
+            return new(string.Empty, string.Empty, false, true, []);
         }
 
         var internalNamespace = GeneratedTypeNaming.BuildRefitInternalNamespace(options.RefitInternalNamespace, assemblyName);
         var generatedClassName = GeneratedTypeNaming.BuildGeneratedContainerName(assemblyName);
         if (models.Length == 0)
         {
-            return new(internalNamespace, string.Empty, generatedClassName, options.GeneratedRequestBuilding, options.EmitGeneratedCodeMarkers, []);
+            return new(internalNamespace, generatedClassName, options.GeneratedRequestBuilding, options.EmitGeneratedCodeMarkers, []);
         }
 
-        var preserveAttribute = $"global::{internalNamespace}.PreserveAttribute";
         var interfaces = new InterfaceModel[models.Length];
         Dictionary<string, int> keyCount = [with(StringComparer.OrdinalIgnoreCase)];
         for (var i = 0; i < models.Length; i++)
@@ -134,7 +133,6 @@ internal static class InterfaceSemanticParsing
                 FileName = $"{keyName}.g.cs",
                 Options = model.Options with
                 {
-                    PreserveAttributeDisplayName = preserveAttribute,
                     GeneratedRequestBuilding = options.GeneratedRequestBuilding,
                     EmitGeneratedCodeMarkers = options.EmitGeneratedCodeMarkers
                 },
@@ -150,7 +148,6 @@ internal static class InterfaceSemanticParsing
 
         return new(
             internalNamespace,
-            preserveAttribute,
             generatedClassName,
             options.GeneratedRequestBuilding,
             options.EmitGeneratedCodeMarkers,
@@ -239,11 +236,9 @@ internal static class InterfaceSemanticParsing
         CancellationToken cancellationToken)
     {
         var compilation = (CSharpCompilation)semanticModel.Compilation;
-        var internalNamespace = GeneratedTypeNaming.BuildRefitInternalNamespace(null, compilation.AssemblyName);
         var context = Parser.CreateGenerationContext(
             compilation,
             [],
-            internalNamespace,
             attribute,
             true,
             true,

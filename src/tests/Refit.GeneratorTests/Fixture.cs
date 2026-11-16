@@ -513,8 +513,7 @@ public static class Fixture
             Path.GetFileNameWithoutExtension(filePath),
             memberName,
             ignoreNonInterfaces
-                ? static x => x.HintName.Contains("PreserveAttribute.g.cs", StringComparison.Ordinal)
-                    || x.HintName.Contains("Generated.g.cs", StringComparison.Ordinal)
+                ? static x => x.HintName.Contains("Generated.g.cs", StringComparison.Ordinal)
                 : null);
     }
 

@@ -417,7 +417,7 @@ public async Task RawArraysUseStructuralEquality()
         var httpMethodAttribute = symbolCompilation.GetTypeByMetadataName("Refit.HttpMethodAttribute") ?? throw new InvalidOperationException("Missing HttpMethodAttribute symbol.");
         return new(
             [],
-            new GenerationOptionsModel(string.Empty, string.Empty, generatedRequestBuilding, false),
+            new GenerationOptionsModel(string.Empty, generatedRequestBuilding, false),
             new GenerationSymbolsModel(
                 null,
                 httpMethodAttribute,

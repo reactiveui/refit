@@ -213,7 +213,7 @@ public class GeneratedCodeComplianceTests
 
         await Assert.That(result.GeneratedSources[GeneratedClientHintName]).Contains(generatedCodeAttribute);
         await Assert.That(result.GeneratedSources["Generated.g.cs"]).Contains(generatedCodeAttribute);
-        await Assert.That(result.GeneratedSources["PreserveAttribute.g.cs"]).Contains(generatedCodeAttribute);
+        await Assert.That(result.GeneratedSources["Generated.g.cs"]).Contains(generatedCodeAttribute);
     }
 
     /// <summary>Verifies generated source can be compiled again under strict warning settings.</summary>

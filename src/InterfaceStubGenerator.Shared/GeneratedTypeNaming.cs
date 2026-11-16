@@ -24,9 +24,7 @@ internal static class GeneratedTypeNaming
             ? Parser.RefitInternalGeneratedSuffix
             : refitInternalNamespace + Parser.RefitInternalGeneratedSuffix;
 
-        // Fold the assembly name in as a trailing segment so the PreserveAttribute this namespace houses no longer
-        // collides across assemblies linked by [InternalsVisibleTo]. Blank names (unnamed compilations) leave the
-        // namespace as-is, matching the historical single-assembly output.
+        // Scope generated helper names to avoid collisions across assemblies linked by [InternalsVisibleTo].
         var assemblyScope = SanitizeAssemblyScope(assemblyName);
         var rawNamespace = assemblyScope.Length == 0
             ? prefixedNamespace

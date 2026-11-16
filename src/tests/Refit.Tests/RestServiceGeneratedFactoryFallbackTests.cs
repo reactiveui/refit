@@ -4,7 +4,7 @@
 
 namespace Refit.Tests;
 
-/// <summary>Verifies <see cref="RestService.For{T}(HttpClient, RefitSettings?)"/> falls back to the type-keyed
+/// <summary>Verifies <c>RestService.For&lt;T&gt;(HttpClient, RefitSettings?)</c> falls back to the type-keyed
 /// generated settings factory when the strongly typed holder for the interface is unset.</summary>
 public sealed class RestServiceGeneratedFactoryFallbackTests
 {

@@ -17,7 +17,6 @@ namespace Refit.Implementation
         /// <typeparam name="T5">The generated interface type parameter.</typeparam>
         [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         [global::System.Diagnostics.DebuggerNonUserCode]
-        [global::RefitInternalGenerated.Compilation.PreserveAttribute]
         [global::System.Reflection.Obfuscation(Exclude=true)]
         [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
         private sealed class IGeneratedInterface<T1, T2, T3, T4, T5>

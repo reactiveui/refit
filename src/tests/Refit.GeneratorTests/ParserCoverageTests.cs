@@ -59,8 +59,7 @@ public sealed class ParserCoverageTests
         var (_, dottedModel) = Parser.GenerateInterfaceStubs(compilation, "One.Two", generatedRequestBuilding: true, emitGeneratedCodeMarkers: true, [], [], CancellationToken.None);
         var (_, invalidStartModel) = Parser.GenerateInterfaceStubs(compilation, "!.Application", generatedRequestBuilding: true, emitGeneratedCodeMarkers: true, [], [], CancellationToken.None);
 
-        // The compilation assembly name ("no-refit") is folded in as a trailing, identifier-sanitized segment so each
-        // assembly's PreserveAttribute namespace is distinct; the user-provided prefix normalization is unchanged.
+        // Namespace prefixes and assembly names are normalized into valid generated identifiers.
         await Assert.That(leadingDotModel.RefitInternalNamespace).IsEqualTo("ApplicationRefitInternalGenerated.no_refit");
         await Assert.That(digitModel.RefitInternalNamespace).IsEqualTo("_123_AppRefitInternalGenerated.no_refit");
         await Assert.That(dottedModel.RefitInternalNamespace).IsEqualTo("One.TwoRefitInternalGenerated.no_refit");

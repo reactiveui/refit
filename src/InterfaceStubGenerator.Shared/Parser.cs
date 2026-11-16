@@ -87,7 +87,6 @@ internal static class Parser
         var context = CreateGenerationContext(
             compilation,
             diagnostics,
-            refitInternalNamespace,
             httpMethodBaseAttributeSymbol,
             generatedRequestBuilding,
             emitGeneratedCodeMarkers,
@@ -101,7 +100,6 @@ internal static class Parser
 
         var contextGenerationSpec = new ContextGenerationModel(
             refitInternalNamespace,
-            context.Options.PreserveAttributeDisplayName,
             generatedClassName,
             generatedRequestBuilding,
             emitGeneratedCodeMarkers,
@@ -126,7 +124,6 @@ internal static class Parser
         diagnostics,
         new(
             refitInternalNamespace,
-            string.Empty,
             generatedClassName,
             generatedRequestBuilding,
             emitGeneratedCodeMarkers,
@@ -136,7 +133,6 @@ internal static class Parser
     /// <summary>Resolves the well-known symbols and language capabilities used throughout a single generation pass.</summary>
     /// <param name="compilation">The compilation.</param>
     /// <param name="diagnostics">The list that collects diagnostics produced during processing.</param>
-    /// <param name="refitInternalNamespace">The resolved internal generated namespace.</param>
     /// <param name="httpMethodBaseAttributeSymbol">The resolved Refit HTTP method attribute symbol.</param>
     /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
     /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
@@ -145,7 +141,6 @@ internal static class Parser
     internal static InterfaceGenerationContext CreateGenerationContext(
         CSharpCompilation compilation,
         List<Diagnostic> diagnostics,
-        string refitInternalNamespace,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         bool generatedRequestBuilding,
         bool emitGeneratedCodeMarkers,
@@ -167,13 +162,6 @@ internal static class Parser
         var supportsNullable = options.LanguageVersion >= LanguageVersion.CSharp8;
         var supportsStaticLambdas = options.LanguageVersion >= LanguageVersion.CSharp9;
 
-        // The PreserveAttribute is emitted into the consumer's compilation by the emitter
-        // (see Emitter.EmitSharedCode). Its fully-qualified display name is fully determined
-        // by refitInternalNamespace, so we compute it directly instead of round-tripping
-        // through compilation.AddSyntaxTrees + GetTypeByMetadataName + ToDisplayString on
-        // every generator pass, which mutated the compilation and forced an extra bind.
-        var preserveAttributeDisplayName = $"global::{refitInternalNamespace}.PreserveAttribute";
-
         // The generated implementation container folds in the assembly name so each assembly emits a distinctly named
         // container; UniqueName reconstructs the identical name at runtime for reflection-based resolution.
         var generatedClassName = GeneratedTypeNaming.BuildGeneratedContainerName(compilation.AssemblyName);
@@ -185,7 +173,7 @@ internal static class Parser
 
         return new(
             diagnostics,
-            new GenerationOptionsModel(preserveAttributeDisplayName, generatedClassName, generatedRequestBuilding, emitGeneratedCodeMarkers),
+            new GenerationOptionsModel(generatedClassName, generatedRequestBuilding, emitGeneratedCodeMarkers),
             new GenerationSymbolsModel(
                 disposableInterfaceSymbol,
                 httpMethodBaseAttributeSymbol,
@@ -394,7 +382,6 @@ internal static class Parser
                 names.InterfaceDisplayName,
                 names.ClassSuffix),
             new InterfaceOptionsModel(
-                context.Options.PreserveAttributeDisplayName,
                 context.Options.GeneratedRequestBuilding,
                 context.Options.EmitGeneratedCodeMarkers,
                 context.Capabilities.SupportsNullable,

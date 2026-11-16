@@ -84,7 +84,7 @@ internal static class InlineRequestClassification
         analysisOptions?.CancellationToken.ThrowIfCancellationRequested();
         var context = new InterfaceGenerationContext(
             [],
-            new GenerationOptionsModel(string.Empty, string.Empty, analysisOptions?.GeneratedRequestBuilding ?? true, false),
+            new GenerationOptionsModel(string.Empty, analysisOptions?.GeneratedRequestBuilding ?? true, false),
             new GenerationSymbolsModel(null, httpMethodBaseAttributeSymbol, formattableSymbol, null, null, returnTypeAdapterInterface, returnTypeAdapters, indexedCollectionFormatValue),
             new GenerationCapabilitiesModel(false, false, false, false),
             new GenerationCachesModel([], [with(SymbolEqualityComparer.Default)], [with(SymbolEqualityComparer.Default)], [with(SymbolEqualityComparer.Default)]));

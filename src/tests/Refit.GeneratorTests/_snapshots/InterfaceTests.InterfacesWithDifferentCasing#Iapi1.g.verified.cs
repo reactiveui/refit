@@ -12,7 +12,6 @@ namespace Refit.Implementation
         /// <summary>Generated Refit implementation for global::RefitGeneratorTest.Iapi.</summary>
         [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         [global::System.Diagnostics.DebuggerNonUserCode]
-        [global::RefitInternalGenerated.Compilation.PreserveAttribute]
         [global::System.Reflection.Obfuscation(Exclude=true)]
         [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
         private sealed class RefitGeneratorTestIapi

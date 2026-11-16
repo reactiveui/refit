@@ -40,10 +40,7 @@ public sealed class InternalsVisibleToGenerationTests
             }
             """;
 
-        // The upstream assembly exposes its internal generated helpers to "Downstream", so the downstream compile
-        // imports them. Before the fix, both assemblies emitted Refit.Implementation.Generated and
-        // RefitInternalGenerated.PreserveAttribute, and the downstream compile saw its own copy plus the imported
-        // one, raising CS0436.
+        // Each assembly needs a distinct generated container because Downstream imports Upstream's internal helpers.
         var upstreamCompilation = Fixture.CreateNamedLibrary("Upstream", CSharpSyntaxTree.ParseText(upstream));
         var upstreamResult = Fixture.RunGenerator(upstreamCompilation, generatedRequestBuilding: true, false, null);
         var upstreamReference = upstreamResult.OutputCompilation.ToMetadataReference();
@@ -136,6 +133,6 @@ public sealed class InternalsVisibleToGenerationTests
         // against a newline-anchored needle; otherwise the "...Generated\n" match fails on Windows runners.
         var generated = string.Join("\n", result.GeneratedSources.Values).Replace("\r\n", "\n");
 
-        await Assert.That(generated).Contains("namespace RefitInternalGenerated\n");
+        await Assert.That(generated).Contains("internal static partial class Generated\n");
     }
 }

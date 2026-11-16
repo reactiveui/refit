@@ -490,7 +490,7 @@ public static partial class GeneratorComponentTests
         private static InterfaceModel CreateInterfaceModel(MethodModel[] refitMethods, MethodModel[] derivedRefitMethods) => new(
             "IGeneratedClient.g.cs",
             new InterfaceNamesModel("Generated", "IGeneratedClient", "RefitGeneratorTest", "public partial class IGeneratedClient", "RefitGeneratorTest.IGeneratedClient", string.Empty),
-            new InterfaceOptionsModel("RefitInternalGenerated.PreserveAttribute", true, true, true, true, true),
+            new InterfaceOptionsModel(true, true, true, true, true),
             new InterfaceMembersModel([], [], [], [], refitMethods, derivedRefitMethods),
             Nullability.Enabled,
             false,

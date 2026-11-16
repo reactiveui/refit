@@ -6,14 +6,12 @@ namespace Refit.Generator;
 
 /// <summary>Model describing the shared generation context for a set of Refit interfaces.</summary>
 /// <param name="RefitInternalNamespace">The namespace used for Refit internal generated types.</param>
-/// <param name="PreserveAttributeDisplayName">The display name of the preserve attribute.</param>
 /// <param name="GeneratedClassName">The assembly-scoped name of the generated implementation container type.</param>
 /// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled.</param>
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="Interfaces">The interfaces to generate implementations for.</param>
 internal sealed record ContextGenerationModel(
     string RefitInternalNamespace,
-    string PreserveAttributeDisplayName,
     string GeneratedClassName,
     bool GeneratedRequestBuilding,
     bool EmitGeneratedCodeMarkers,
@@ -27,9 +25,6 @@ internal sealed record ContextGenerationModel(
         && EqualityComparer<string>.Default.Equals(
             RefitInternalNamespace,
             other.RefitInternalNamespace)
-        && EqualityComparer<string>.Default.Equals(
-            PreserveAttributeDisplayName,
-            other.PreserveAttributeDisplayName)
         && EqualityComparer<string>.Default.Equals(
             GeneratedClassName,
             other.GeneratedClassName)
@@ -46,7 +41,6 @@ internal sealed record ContextGenerationModel(
     {
         var hash = 0;
         hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(RefitInternalNamespace));
-        hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(PreserveAttributeDisplayName));
         hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(GeneratedClassName));
         hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(GeneratedRequestBuilding));
         hash = GeneratorModelEquality.Combine(hash, GeneratorModelEquality.GetHashCode(EmitGeneratedCodeMarkers));

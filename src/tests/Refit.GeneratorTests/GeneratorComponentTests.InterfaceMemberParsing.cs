@@ -144,7 +144,6 @@ public static partial class GeneratorComponentTests
                 cancellationToken);
 
             await Assert.That(result.Interfaces).IsEmpty();
-            await Assert.That(result.PreserveAttributeDisplayName).IsEqualTo(string.Empty);
             await Assert.That(result.RefitInternalNamespace).IsEqualTo(GeneratedTypeNaming.BuildRefitInternalNamespace(null, AssemblyName));
             await Assert.That(result.GeneratedClassName).IsEqualTo(GeneratedTypeNaming.BuildGeneratedContainerName(AssemblyName));
             await Assert.That(result.GeneratedRequestBuilding).IsEqualTo(generatedRequests);

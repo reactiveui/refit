@@ -72,14 +72,16 @@ internal static class Emitter
     /// <summary>The XML metacharacters that force <see cref="Emitter.ToXmlDocumentationText"/> onto its escaping path.</summary>
     private static readonly char[] XmlEscapeChars = ['&', '<', '>'];
 
-    /// <summary>Emits the shared preserve attribute and factory registration code.</summary>
+    /// <summary>Emits the shared factory registration code and required compatibility attributes.</summary>
     /// <param name="model">The context generation model describing the interfaces.</param>
     /// <param name="addSource">Callback used to add generated source files.</param>
     /// <param name="support">How the registration is hooked to assembly load in the consumer compilation.</param>
+    /// <param name="needsDynamicDependencyPolyfill">Whether the consumer framework lacks the trimming attribute.</param>
     internal static void EmitSharedCode(
         ContextGenerationModel model,
         Action<string, SourceText> addSource,
-        ModuleInitializerSupport support = ModuleInitializerSupport.Guarded)
+        ModuleInitializerSupport support = ModuleInitializerSupport.Guarded,
+        bool needsDynamicDependencyPolyfill = false)
     {
         if (model.Interfaces.Length == 0)
         {
@@ -87,8 +89,7 @@ internal static class Emitter
         }
 
         var generatedFileHeader = BuildSharedGeneratedFileHeader(model.Interfaces, model.EmitGeneratedCodeMarkers);
-        SharedInfrastructureEmission.EmitPreserveAttribute(model, generatedFileHeader, addSource);
-        SharedInfrastructureEmission.EmitGeneratedFactoryModule(model, generatedFileHeader, addSource, support);
+        SharedInfrastructureEmission.EmitGeneratedFactoryModule(model, generatedFileHeader, addSource, support, needsDynamicDependencyPolyfill);
     }
 
     /// <summary>Emits the generated implementation source for a single interface.</summary>
@@ -144,7 +145,6 @@ internal static class Emitter
             .Append("        ").Append(GeneratedCodeAttribute).AppendLine()
             .AppendLine("        [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]")
             .AppendLine("        [global::System.Diagnostics.DebuggerNonUserCode]")
-            .Append("        [").Append(model.Options.PreserveAttributeDisplayName).AppendLine("]")
             .AppendLine("        [global::System.Reflection.Obfuscation(Exclude=true)]")
             .AppendLine("        [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]")
             .Append("        private sealed class ").Append(model.Names.Ns).Append(model.Names.ClassDeclaration).AppendLine()
@@ -361,6 +361,33 @@ internal static class Emitter
                     .Append("                    new ").Append(GeneratedNamespacePrefix).Append(interfaceModel.Names.GeneratedClassName).Append('.')
                     .Append(interfaceModel.Names.Ns).Append(interfaceModel.Names.ClassSuffix).AppendLine("(client, settings));");
             }
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>Keeps constructors used by reflection for open generic clients.</summary>
+    /// <param name="interfaces">The interfaces to generate implementations for.</param>
+    /// <returns>Dependencies attached to the reachable module initializer.</returns>
+    internal static string BuildGeneratedTrimmingDependencies(InterfaceModel[] interfaces)
+    {
+        var builder = new PooledStringBuilder();
+        foreach (var model in interfaces)
+        {
+            if (model.Members.Constraints.Length == 0)
+            {
+                continue;
+            }
+
+            _ = builder.Append("        [global::System.Diagnostics.CodeAnalysis.DynamicDependency(\".ctor\", typeof(")
+                .Append(GeneratedNamespacePrefix).Append(model.Names.GeneratedClassName).Append('.')
+                .Append(model.Names.Ns).Append(model.Names.ClassSuffix).Append('<');
+            for (var i = 1; i < model.Members.Constraints.Length; i++)
+            {
+                _ = builder.Append(',');
+            }
+
+            _ = builder.AppendLine(">))]");
         }
 
         return builder.ToString();

@@ -112,10 +112,15 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
 
         var moduleInitializerSupport = context.CompilationProvider.Select(static (compilation, _) =>
             DetectModuleInitializerSupport(compilation));
+        var needsDynamicDependencyPolyfill = context.CompilationProvider.Select(static (compilation, _) =>
+        {
+            var attribute = compilation.GetTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute");
+            return attribute is null || !compilation.IsSymbolAccessibleWithin(attribute, compilation.Assembly);
+        });
 
         context.RegisterImplementationSourceOutput(
-            contextModel.Combine(moduleInitializerSupport),
-            static (spc, combined) => Emitter.EmitSharedCode(combined.Left, spc.AddSource, combined.Right));
+            contextModel.Combine(moduleInitializerSupport).Combine(needsDynamicDependencyPolyfill),
+            static (spc, combined) => Emitter.EmitSharedCode(combined.Left.Left, spc.AddSource, combined.Left.Right, combined.Right));
     }
 
     /// <summary>Decides how the generated factory registration can be hooked to assembly load in a compilation.</summary>

@@ -5,7 +5,6 @@
 namespace Refit.Generator;
 
 /// <summary>Describes the interface's options metadata.</summary>
-/// <param name="PreserveAttributeDisplayName">The display name of the Preserve attribute.</param>
 /// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled for this interface.</param>
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="SupportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
@@ -13,7 +12,6 @@ namespace Refit.Generator;
 /// <param name="SupportsCollectionExpressions">Whether the consumer compilation supports collection expressions (C# 12),
 /// so path replacements can be passed as a stack-allocatable <c>[...]</c> span instead of an array.</param>
 internal readonly record struct InterfaceOptionsModel(
-    string PreserveAttributeDisplayName,
     bool GeneratedRequestBuilding,
     bool EmitGeneratedCodeMarkers,
     bool SupportsNullable,

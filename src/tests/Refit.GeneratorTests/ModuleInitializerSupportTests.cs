@@ -95,7 +95,7 @@ public sealed class ModuleInitializerSupportTests
     /// <returns>The emitted sources by hint name.</returns>
     private static Dictionary<string, string> Emit(ModuleInitializerSupport support)
     {
-        var model = new ContextGenerationModel("Consumer", "global::Preserve", "Generated", true, true, []);
+        var model = new ContextGenerationModel("Consumer", "Generated", true, true, []);
         Dictionary<string, string> sources = [];
 
         SharedInfrastructureEmission.EmitGeneratedFactoryModule(

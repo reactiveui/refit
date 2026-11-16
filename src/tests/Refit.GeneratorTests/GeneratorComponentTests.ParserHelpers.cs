@@ -206,7 +206,7 @@ public static partial class GeneratorComponentTests
             var httpMethodAttribute = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")!;
             var context = new InterfaceGenerationContext(
                 [],
-                new GenerationOptionsModel(string.Empty, string.Empty, true, false),
+                new GenerationOptionsModel(string.Empty, true, false),
                 new GenerationSymbolsModel(null, httpMethodAttribute, compilation.GetTypeByMetadataName("System.IFormattable"), null, compilation, null, [], null),
                 new GenerationCapabilitiesModel(true, true, true, true),
                 new GenerationCachesModel([], [with(comparer: SymbolEqualityComparer.Default)], [with(comparer: SymbolEqualityComparer.Default)], [with(comparer: SymbolEqualityComparer.Default)]));
