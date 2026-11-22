@@ -48,7 +48,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Test Stack">
-    <PackageVersion Include="TUnit" Version="1.85.0"/>
+    <PackageVersion Include="TUnit" Version="1.87.12"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0"/>
   </ItemGroup>
 
