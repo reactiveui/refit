@@ -115,12 +115,16 @@ See [breaking changes](https://github.com/reactiveui/refit/blob/main/docs/breaki
 [Claude for Open Source](https://claude.com/contact-sales/claude-for-oss).
 [OpenAI](https://openai.com/) supports them with [Codex](https://openai.com/codex/) through
 [Codex for Open Source](https://developers.openai.com/community/codex-for-oss).
+[Snyk](https://snyk.io/) gives the maintainers access to security tools through its
+[Secure Developer Program](https://snyk.io/open-source/).
 
 [![JetBrains](https://raw.githubusercontent.com/reactiveui/refit/main/images/jetbrains.svg)](https://www.jetbrains.com/)
 [![Claude by Anthropic](https://raw.githubusercontent.com/reactiveui/refit/main/images/claude.svg)](https://claude.com/)
 [![OpenAI](https://raw.githubusercontent.com/reactiveui/refit/main/images/openai.svg)](https://openai.com/codex/)
+[![Sponsored by Snyk](https://raw.githubusercontent.com/reactiveui/refit/main/images/snyk.svg)](https://snyk.io/)
 
 See [our sponsors](https://www.reactiveui.net/sponsors/) for more information.
 JetBrains, Claude, Anthropic, OpenAI and Codex names and logos are trademarks of their respective owners.
+Snyk and the Snyk logo are trademarks of Snyk Ltd.
 
 Refit is licensed under the [MIT license](https://github.com/reactiveui/refit/blob/main/LICENSE).
