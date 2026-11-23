@@ -121,7 +121,7 @@ See [breaking changes](https://github.com/reactiveui/refit/blob/main/docs/breaki
 [![JetBrains](https://raw.githubusercontent.com/reactiveui/refit/main/images/jetbrains.svg)](https://www.jetbrains.com/)
 [![Claude by Anthropic](https://raw.githubusercontent.com/reactiveui/refit/main/images/claude.svg)](https://claude.com/)
 [![OpenAI](https://raw.githubusercontent.com/reactiveui/refit/main/images/openai.svg)](https://openai.com/codex/)
-[![Sponsored by Snyk](https://raw.githubusercontent.com/reactiveui/refit/main/images/snyk.svg)](https://snyk.io/)
+[![Sponsored by Snyk](https://raw.githubusercontent.com/reactiveui/refit/4c9a37ed33b21ef39397d0cc8ae7ad577ec42648/images/snyk.svg)](https://snyk.io/)
 
 See [our sponsors](https://www.reactiveui.net/sponsors/) for more information.
 JetBrains, Claude, Anthropic, OpenAI and Codex names and logos are trademarks of their respective owners.
