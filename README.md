@@ -1,9 +1,16 @@
-![Refit](https://raw.githubusercontent.com/reactiveui/refit/main/images/refit-logo.svg)
+<div align="center">
+
+<a href="https://github.com/reactiveui/refit"><img src="https://raw.githubusercontent.com/reactiveui/refit/main/images/refit-logo.svg" alt="Refit" width="128"></a>
 
 # Refit
 
-[![Build](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml/badge.svg)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml)
-[![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/)
+[![Build](https://img.shields.io/github/actions/workflow/status/reactiveui/refit/ci-build.yml?branch=main&label=build&logo=githubactions&logoColor=white)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml)
+[![NuGet](https://img.shields.io/nuget/v/Refit?label=nuget&logo=nuget&logoColor=white&color=004880)](https://www.nuget.org/packages/Refit)
+[![Downloads](https://img.shields.io/nuget/dt/Refit?label=downloads&logo=nuget&logoColor=white&color=004880)](https://www.nuget.org/packages/Refit)
+[![License](https://img.shields.io/github/license/reactiveui/refit?color=blue)](https://github.com/reactiveui/refit/blob/main/LICENSE)
+[![Discussions](https://img.shields.io/badge/discussions-ask%20a%20question-8A2BE2?logo=github&logoColor=white)](https://github.com/reactiveui/refit/discussions)
+
+</div>
 
 Refit turns a C# interface into an HTTP client. Attributes describe the request method,
 URL, headers and body. The source generator builds its implementation when your app compiles.
@@ -106,6 +113,31 @@ lists the source layout and independent projects.
 See [breaking changes](https://github.com/reactiveui/refit/blob/main/docs/breaking-changes.md),
 [GitHub releases](https://github.com/reactiveui/refit/releases), and
 [contributing](https://www.reactiveui.net/contribute/).
+
+## Contribute
+
+Refit is part of [ReactiveUI](https://github.com/reactiveui) and is released under the [MIT license](https://github.com/reactiveui/refit/blob/main/LICENSE). We welcome contributions of every size, from bug reports and documentation to features and tests.
+
+- **Questions:** ask in [GitHub Discussions](https://github.com/reactiveui/refit/discussions).
+- **Bugs and feature requests:** open a [GitHub issue](https://github.com/reactiveui/refit/issues/new/choose).
+- **Larger changes:** open an issue or discussion first, so we can agree on the approach before you start.
+- **Contributor guide:** read [reactiveui.net/contribute](https://www.reactiveui.net/contribute/) for [building and testing](https://www.reactiveui.net/contribute/building-and-testing/) and [pull requests](https://www.reactiveui.net/contribute/pull-requests/).
+
+### Coding standards
+
+Every pull request must meet these standards. The build checks most of them.
+
+- Follow the [ReactiveUI C# style guide](https://www.reactiveui.net/contribute/software-style-guide/code-style/).
+- The repository's `.editorconfig` and the StyleSharp, PerformanceSharp and SecuritySharp analyzers run on every build. Fix each finding in the code. Do not suppress it or relax the `.editorconfig`.
+- Add tests for every bug fix and new feature.
+- Document public APIs with XML documentation comments.
+- Write commit messages in the [Conventional Commits](https://www.reactiveui.net/contribute/software-style-guide/commit-message-convention/) format.
+- Follow the [Code of Conduct](https://github.com/reactiveui/.github/blob/main/CODE_OF_CONDUCT.md).
+
+### Support the project
+
+- Sponsor the maintainers on GitHub Sponsors: [reactivemarbles](https://github.com/sponsors/reactivemarbles), [glennawatson](https://github.com/sponsors/glennawatson) and [chrispulman](https://github.com/sponsors/chrispulman).
+- Ask your employer to support open source, for example with the [balanced employee IP agreement](https://github.com/github/balanced-employee-ip-agreement).
 
 ## Sponsors
 
