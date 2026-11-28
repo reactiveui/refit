@@ -159,4 +159,4 @@ See [our sponsors](https://www.reactiveui.net/sponsors/) for more information.
 JetBrains, Claude, Anthropic, OpenAI and Codex names and logos are trademarks of their respective owners.
 Snyk and the Snyk logo are trademarks of Snyk Ltd.
 
-Refit is licensed under the [MIT license](https://github.com/reactiveui/refit/blob/main/LICENSE).
+Refit is licensed under the [MIT license](https://github.com/reactiveui/refit/blob/main/LICENSE). Notices for earlier copyright holders are in [LICENSE_THIRDPARTY](https://github.com/reactiveui/refit/blob/main/LICENSE_THIRDPARTY).

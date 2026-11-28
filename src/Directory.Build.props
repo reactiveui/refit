@@ -69,7 +69,8 @@
 
   <ItemGroup>
     <None Include="$(RepositoryRoot)images\logo.png" Pack="true" PackagePath="\" Visible="false"/>
-    <None Include="$(RepositoryRoot)LICENSE" Pack="true" PackagePath="LICENSE"/>
+    <None Include="$(RepositoryRoot)LICENSE" Pack="true" PackagePath="\"/>
+    <None Include="$(RepositoryRoot)LICENSE_THIRDPARTY" Pack="true" PackagePath="\"/>
     <None Include="$(RepositoryRoot)README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
