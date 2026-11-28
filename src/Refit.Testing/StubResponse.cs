@@ -42,6 +42,6 @@ public sealed class StubResponse
     /// </summary>
     public Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? CancellableResponderAsync { get; init; }
 
-    /// <summary>Gets a factory that serializes a typed response body using the client's own content serializer.</summary>
+    /// <summary>Gets a factory that creates fresh response content for each route match.</summary>
     internal Func<IHttpContentSerializer, HttpContent>? BodyFactory { get; init; }
 }

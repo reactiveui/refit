@@ -5,7 +5,9 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Refit.Testing;
 
@@ -27,6 +29,28 @@ public static class Reply
     /// <param name="status">The response status code.</param>
     /// <returns>A configured <see cref="StubResponse"/>.</returns>
     public static StubResponse With<T>(T body, HttpStatusCode status) => new() { BodyFactory = serializer => serializer.ToHttpContent(body), Status = status };
+
+    /// <summary>Replies with status 200 and a JSON body written using the supplied type metadata.</summary>
+    /// <typeparam name="T">The response body type.</typeparam>
+    /// <param name="body">The value to write for each matching request.</param>
+    /// <param name="typeInfo">The JSON contract, such as a property on a generated serializer context.</param>
+    /// <returns>A reusable reply that creates fresh JSON content for each match.</returns>
+    [OverloadResolutionPriority(-1)] // Preserve the status overload for With(body, default).
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static StubResponse With<T>(T body, JsonTypeInfo<T> typeInfo) => With(body, typeInfo, HttpStatusCode.OK);
+
+    /// <summary>Replies with a chosen status and a JSON body written using the supplied type metadata.</summary>
+    /// <typeparam name="T">The response body type.</typeparam>
+    /// <param name="body">The value to write for each matching request.</param>
+    /// <param name="typeInfo">The JSON contract used to write the body.</param>
+    /// <param name="status">The HTTP response status.</param>
+    /// <returns>A reusable reply that creates fresh JSON content for each match.</returns>
+    /// <exception cref="ArgumentNullException">The JSON contract is null.</exception>
+    public static StubResponse With<T>(T body, JsonTypeInfo<T> typeInfo, HttpStatusCode status)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(typeInfo);
+        return new() { BodyFactory = _ => JsonContent.Create(body, typeInfo), Status = status };
+    }
 
     /// <summary>Replies with a raw JSON body and status 200.</summary>
     /// <param name="body">The JSON response body.</param>

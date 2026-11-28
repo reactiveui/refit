@@ -25,6 +25,7 @@ internal static class Testing
         await ShowMatchersAsync();
         await ShowDuplicateQueryAsync();
         await ShowRepliesAsync();
+        await TypedJsonReply.RunAsync(CancellationToken.None);
         await ShowReplyPropertiesAsync();
         await ShowVerificationAsync();
         await ShowCapturedEncodingAsync();
