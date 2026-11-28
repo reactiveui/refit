@@ -31,6 +31,10 @@ internal static class BodySample
         using HttpContent form = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
         string formText = await form.ReadAsStringAsync();
         string? fieldName = count.ResolveFieldName(settings.UrlParameterKeyFormatter, ContentSerializerNameStyle.SystemTextJson);
+        FormFieldNames names = new(null, "lineCount", "line_count", "Count");
+        ContentSerializerNameStyle nameStyle = ((IContentSerializerNameStyle)settings.ContentSerializer).NameStyle;
+        string wireKey = GeneratedRequestRunner.BuildFormKey(settings, nameof(FormBody.Count), names.ExplicitName, names.JsonName, names.NewtonsoftName, names.XmlName, formPrefix);
+        Check.Require(names.ForStyle(nameStyle) == "lineCount" && wireKey == "form.lineCount", "The active serializer selects the field name before the form prefix is applied.");
 
         Check.Require(formText == "form.count=012&note=" && fieldName == "form.count", "Descriptors apply naming, formats, and null serialization.");
         Check.Require(count.Getter(body) is int number && number == SampleValues.Count, "The getter reads the declared property.");
@@ -95,6 +99,13 @@ internal static class BodySample
         Check.Require(inherited.Headers.ContentEncoding.Contains("gzip"), "Default compression inherits the coding from settings.");
         HttpContent unchanged = GeneratedRequestRunner.CompressBodyContent(noCompression, settings, RequestCompression.None, CompressionLevel.Fastest);
         Check.Require(ReferenceEquals(noCompression, unchanged), "Explicit None returns the same content.");
+#if NET11_0_OR_GREATER
+        using HttpContent zstandard = GeneratedRequestRunner.CompressBodyContent(new StringContent(compressionText), settings, RequestCompression.Zstandard, CompressionLevel.Fastest);
+        await using MemoryStream compressed = new(await zstandard.ReadAsByteArrayAsync());
+        await using ZstandardStream decoder = new(compressed, CompressionMode.Decompress);
+        using StreamReader reader = new(decoder);
+        Check.Require(await reader.ReadToEndAsync() == compressionText && zstandard.Headers.ContentEncoding.Contains("zstd"), "Zstandard bytes decode to the original body.");
+#else
         bool unsupported = false;
         try
         {
@@ -106,6 +117,7 @@ internal static class BodySample
         }
 
         Check.Require(unsupported, "Zstandard requires .NET 11.");
+#endif
     }
 
     /// <summary>Checks scalar JSON Lines, body modes, stream passthrough and invalid modes.</summary>

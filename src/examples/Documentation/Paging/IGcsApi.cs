@@ -6,6 +6,13 @@ namespace Refit.Documentation.Paging;
 /// <summary>Lists Google Cloud Storage objects, which pages with a <c>pageToken</c> and <c>nextPageToken</c> in a JSON body.</summary>
 internal interface IGcsApi
 {
+    /// <summary>Reads a single page so the caller can select its continuation token.</summary>
+    /// <param name="pageToken">The continuation from the preceding page.</param>
+    /// <param name="token">Cancels the request.</param>
+    /// <returns>The objects and continuation token in the response.</returns>
+    [Get("/storage/v1/b/photos/o?maxResults=3")]
+    Task<GcsObjectList> ReadPageAsync(string? pageToken, CancellationToken token);
+
     /// <summary>Lists the objects in a bucket.</summary>
     /// <param name="bucket">The bucket name.</param>
     /// <param name="prefix">Limits the listing to objects that begin with this text.</param>

@@ -52,5 +52,8 @@ internal static class Routes
         using HttpRequestMessage uriDownload = await downloads.DownloadUriAsync(new("https://cdn.example/manual.pdf"));
         Console.WriteLine(uriDownload.RequestUri); // https://cdn.example/manual.pdf
         SampleCheck.Equal("cdn.example", uriDownload.RequestUri?.Host);
+        const string NextPage = "reports/next?cursor=a%2Fb";
+        using HttpRequestMessage next = await downloads.FollowAsync(new Uri(NextPage, UriKind.Relative));
+        SampleCheck.Equal(NextPage, next.RequestUri?.OriginalString);
     }
 }

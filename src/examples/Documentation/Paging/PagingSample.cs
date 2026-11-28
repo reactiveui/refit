@@ -43,6 +43,7 @@ internal static class PagingSample
         await CheckJiraAsync();
         await CheckDynamoDbAsync();
         await CheckBehaviorAsync();
+        await SinglePageMethods.RunAsync(CancellationToken.None);
     }
 
     /// <summary>Checks an S3 listing that pages with a continuation token in an XML body.</summary>

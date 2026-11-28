@@ -43,7 +43,7 @@ internal static class Formatters
         DefaultUrlParameterFormatter values = new();
         values.AddFormat<DateTime>("yyyy-MM");
         values.AddFormat<DateFilter, DateTime>(DateFormat);
-        RefitSettings settings = new(host.Settings.ContentSerializer) { UrlParameterFormatter = values };
+        RefitSettings settings = new(host.Settings.ContentSerializer) { Url = { UrlParameterFormatter = values } };
         IFormatterApi api = RestService.ForGenerated<IFormatterApi>(host.Client, settings);
         DateTime day = DateTime.ParseExact(DayText, DateFormat, CultureInfo.InvariantCulture);
         using HttpRequestMessage dates = await api.DatesAsync(day, new() { Started = day, End = day });
@@ -51,7 +51,7 @@ internal static class Formatters
 
         SampleCheck.Equal("/reports?day=2026-09&Started=2026-09-17&End=2026", dates.RequestUri?.OriginalString);
 
-        settings.UrlParameterFormatterMap[typeof(bool)] = new YesNoFormatter();
+        settings.Url.UrlParameterFormatterMap[typeof(bool)] = new YesNoFormatter();
         using HttpRequestMessage active = await api.ActiveAsync(true);
         Console.WriteLine(active.RequestUri); // /reports?active=yes
 

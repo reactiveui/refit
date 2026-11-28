@@ -23,7 +23,7 @@ public sealed class CatsService : IDisposable
     public CatsService(Uri baseUrl)
     {
         _httpClient = new(new HttpClientDiagnosticsHandler(new HttpClientHandler())) { BaseAddress = baseUrl };
-        _theCatsApi = RestService.For<ITheCatsApi>(_httpClient);
+        _theCatsApi = RestService.ForGenerated<ITheCatsApi>(_httpClient, MeowJsonContext.Default);
     }
 
     /// <summary>Searches for cats matching the given breed.</summary>

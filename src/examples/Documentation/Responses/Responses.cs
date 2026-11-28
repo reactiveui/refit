@@ -101,6 +101,8 @@ internal static class Responses
         SampleCheck.Equal(true, response.IsSuccessStatusCode);
         SampleCheck.Equal(true, response.IsSuccessful);
         SampleCheck.Equal(true, response.HasContent);
+        SampleCheck.Equal(true, response.IsSuccessfulWithContent);
+        SampleCheck.Equal("Ada", response.Content?.Name);
         SampleCheck.Equal(null, response.Error);
         SampleCheck.Equal(false, response.HasRequestError(out _));
         SampleCheck.Equal(false, response.HasResponseError(out _));

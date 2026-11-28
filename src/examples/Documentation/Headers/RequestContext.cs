@@ -25,8 +25,8 @@ internal static class RequestContext
     {
         RefitSettings settings = new(host.Settings.ContentSerializer)
         {
-            CaptureMethodArguments = true,
-            CaptureRequestContent = true,
+            Requests = { CaptureMethodArguments = true },
+            Exceptions = { CaptureRequestContent = true },
             HttpRequestMessageOptions = new() { [TenantKey] = "settings-tenant" },
         };
         IContextApi api = RestService.ForGenerated<IContextApi>(host.Client, settings);

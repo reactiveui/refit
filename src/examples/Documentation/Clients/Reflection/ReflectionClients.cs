@@ -1,7 +1,9 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Refit.Testing;
 
@@ -35,6 +37,8 @@ internal static class ReflectionClients
     [RequiresDynamicCode("These examples explicitly close reflected generic methods and DI types.")]
     internal static async Task RunAsync(SampleHost host)
     {
+        await ReadUntypedValueAsync(CancellationToken.None);
+        await JsonContexts.ReflectionFallbackSample.RunWithReflectionAsync();
         await CheckReturnAdapterAsync(host);
         IClientApi reflected = RestService.For<IClientApi>(host.Client, host.Settings);
         IRequestBuilder<IClientApi> builder = RequestBuilder.ForType<IClientApi>(host.Settings);
@@ -88,6 +92,33 @@ internal static class ReflectionClients
         await host.Http.VerifyAllCalledAsync();
     }
 
+    /// <summary>Reads an untyped JSON number as a CLR integer in a reflection-enabled client.</summary>
+    /// <param name="cancellationToken">Cancels reading the response body.</param>
+    /// <returns>Completion after the inferred value has been checked.</returns>
+    private static async Task ReadUntypedValueAsync(CancellationToken cancellationToken)
+    {
+        ReflectionSupport.EnsureRegistered();
+        JsonSerializerOptions options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+        SystemTextJsonContentSerializer serializer = new(options.AddReflectionConverters());
+        using StringContent content = new("42");
+        object? value = await serializer.FromHttpContentAsync<object>(content, cancellationToken);
+        SampleCheck.Equal(42L, value);
+
+        ObjectToInferredTypesConverter converter = new();
+        Utf8JsonReader reader = new("42"u8);
+        SampleCheck.Equal(true, reader.Read());
+        object? inferred = converter.Read(ref reader, typeof(object), options);
+        SampleCheck.Equal(42L, inferred);
+
+        ArrayBufferWriter<byte> buffer = new();
+        await using (Utf8JsonWriter writer = new(buffer))
+        {
+            converter.Write(writer, inferred!, options);
+        }
+
+        SampleCheck.Equal(true, buffer.WrittenSpan.SequenceEqual("42"u8));
+    }
+
     /// <summary>Registers an open generic adapter for a reflected deferred call.</summary>
     /// <param name="host">The local transport and generated JSON serializer.</param>
     /// <returns>Completion after exactly one deferred request is sent.</returns>
@@ -98,7 +129,7 @@ internal static class ReflectionClients
         Person expected = new(1, "Ada");
         host.Http.Add(Route.Get("/content/person"), Reply.With(expected));
         RefitSettings settings = new(host.Settings.ContentSerializer);
-        settings.ReturnTypeAdapters.Add(typeof(Content.PersonCallAdapter<>));
+        settings.Requests.ReturnTypeAdapters.Add(typeof(Content.PersonCallAdapter<>));
         Content.IAdapterApi api = RestService.For<Content.IAdapterApi>(host.Client, settings);
         int before = host.Http.Requests.Count;
         Content.PersonCall<Person> pending = api.Read();

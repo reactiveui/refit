@@ -122,6 +122,8 @@ internal static class PathSample
     /// <param name="itemsPath">The relative path with a leading slash.</param>
     private static void CheckUris(string itemsPath)
     {
+        const string relative = "pages/2?cursor=a%2Fb";
+        Check.Require(GeneratedRequestRunner.RequireRelativeOrAbsoluteUrl(new Uri(relative, UriKind.Relative)) == relative, "Relative next links retain their encoded cursor.");
         Uri legacy = GeneratedRequestRunner.BuildRelativeUri(Client, itemsPath, UrlResolutionMode.RefitLegacy);
         Uri rfc = GeneratedRequestRunner.BuildRelativeUri(Client, ItemSegment, UrlResolutionMode.Rfc3986, UriFormat.Unescaped);
         Uri unescaped = GeneratedRequestRunner.BuildRelativeUri(Client, "/items?q=a%20b", UrlResolutionMode.RefitLegacy, UriFormat.Unescaped);
@@ -153,7 +155,7 @@ internal static class PathSample
             request.Options.TryGetValue(new(HttpRequestMessageOptions.InterfaceType), out Type? interfaceType) && interfaceType == typeof(IHelperApi),
             "Generated requests retain their top-level interface type.");
         Check.Require(request.Options.TryGetValue(new("Refit.Timeout"), out int timeout) && timeout == SampleValues.TimeoutMilliseconds, "Per-request timeout values are stored for dispatch.");
-        Check.Require(request.Version == settings.Version && request.VersionPolicy == settings.VersionPolicy, "Configured HTTP version and version policy are applied.");
+        Check.Require(request.Version == settings.Requests.Version && request.VersionPolicy == settings.Requests.VersionPolicy, "Configured HTTP version and version policy are applied.");
         int valueCount = 0;
         foreach (string value in request.Headers.GetValues(modeHeader))
         {

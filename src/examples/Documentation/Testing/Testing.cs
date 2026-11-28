@@ -133,6 +133,10 @@ internal static class Testing
         using StubHttp http = new StubHttp
         {
             {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "/availability", Query = [("mode", "preview")], Fallback = true },
+                Reply.Status(HttpStatusCode.ServiceUnavailable)
+            },
+            {
                 Route.Fallback(),
                 Reply.Status(HttpStatusCode.NotFound)
             },
@@ -154,6 +158,8 @@ internal static class Testing
         using HttpResponseMessage post = await httpClient.PostAsync(new Uri("https://api.example.com/post"), null); // post.StatusCode == Created
         using HttpResponseMessage delete = await httpClient.DeleteAsync(new Uri("https://api.example.com/any")); // delete.StatusCode == Accepted, Route.Any matches every method
         using HttpResponseMessage missing = await httpClient.GetAsync(new Uri("https://api.example.com/missing")); // missing.StatusCode == NotFound, from Route.Fallback()
+        using HttpResponseMessage preview = await httpClient.GetAsync(new Uri("https://api.example.com/availability?mode=preview&locale=en"));
+        SampleCheck.Equal(HttpStatusCode.ServiceUnavailable, preview.StatusCode);
 
         // Checks for this sample (not part of the documentation excerpt):
         SampleCheck.Equal(HttpStatusCode.OK, get.StatusCode);
@@ -202,7 +208,7 @@ internal static class Testing
             genericCount++;
         }
 
-        SampleCheck.Equal(9, genericCount);
+        SampleCheck.Equal(10, genericCount);
         int count = 0;
         foreach (object route in (IEnumerable)http)
         {
@@ -210,7 +216,7 @@ internal static class Testing
             count++;
         }
 
-        SampleCheck.Equal(9, count);
+        SampleCheck.Equal(genericCount, count);
     }
 
     /// <summary>Problem: How do you require exact headers, a form field and a custom predicate before a route matches?</summary>
@@ -456,7 +462,7 @@ internal static class Testing
     /// <returns>A task that completes after every direct member is checked.</returns>
     private static Task ShowNetworkBehaviorMembersAsync()
     {
-        NetworkBehavior behavior = new NetworkBehavior(7) // 7 is the random seed, so the random choices repeat on every run
+        NetworkBehavior behavior = new()
         {
             Delay = TimeSpan.Zero,
             Variance = 0,

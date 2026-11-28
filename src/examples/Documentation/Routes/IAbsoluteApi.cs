@@ -17,4 +17,10 @@ internal interface IAbsoluteApi
     /// <returns>The unsent request owned by the caller.</returns>
     [Get("/")]
     Task<HttpRequestMessage> DownloadUriAsync([Url] Uri absoluteUrl);
+
+    /// <summary>Builds a request for a relative or absolute link supplied by the service.</summary>
+    /// <param name="link">The resource path, including its encoded query.</param>
+    /// <returns>The unsent request owned by the caller.</returns>
+    [Get("/")]
+    Task<HttpRequestMessage> FollowAsync([Url(AllowRelative = true)] Uri link);
 }

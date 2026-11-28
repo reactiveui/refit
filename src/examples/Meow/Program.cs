@@ -22,6 +22,11 @@ public static class Program
 
         Log.Information("Concurrent request header and large payload demo checks passed.");
 
+        if (!args.Contains("--live", StringComparer.Ordinal))
+        {
+            return;
+        }
+
         using var service = new CatsService(new("https://api.thecatapi.com"));
         var results = await service.SearchAsync("bengal");
 

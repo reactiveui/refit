@@ -102,7 +102,7 @@ internal static class Headers
         const string malformedAgent = "broken(";
         foreach (bool validate in new[] { false, true })
         {
-            RefitSettings settings = new(host.Settings.ContentSerializer) { ValidateHeaders = validate };
+            RefitSettings settings = new(host.Settings.ContentSerializer) { Requests = { ValidateHeaders = validate } };
             IHeaderApi api = RestService.ForGenerated<IHeaderApi>(host.Client, settings);
             bool rejected = false;
             try

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <IsAotCompatible>false</IsAotCompatible>
     <EnableAotAnalyzer>false</EnableAotAnalyzer>
@@ -18,6 +18,7 @@
     <Compile Include="../IOwnedClientApi.cs" Link="IOwnedClientApi.cs" />
     <Compile Include="../IRequestLookupApi.cs" Link="IRequestLookupApi.cs" />
     <Compile Include="../../Common/*.cs" Link="Common/%(Filename)%(Extension)" />
+    <Compile Include="../../JsonContexts/*.cs" Link="JsonContexts/%(Filename)%(Extension)" />
     <Compile Include="../../GettingStarted/Person.cs" Link="Person.cs" />
     <Compile Include="../../Content/PersonCall.cs" Link="PersonCall.cs" />
     <Compile Include="../../Content/PersonCallAdapter.cs" Link="PersonCallAdapter.cs" />

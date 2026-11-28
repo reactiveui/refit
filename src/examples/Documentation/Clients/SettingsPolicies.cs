@@ -30,7 +30,7 @@ internal static class SettingsPolicies
         HttpClient client = Client;
         foreach (bool buffer in new[] { false, true })
         {
-            RefitSettings settings = new(serializer) { Buffered = buffer };
+            RefitSettings settings = new() { Serialization = { ContentSerializer = serializer, Buffered = buffer } };
             ISettingsPolicyApi api = RestService.ForGenerated<ISettingsPolicyApi>(client, settings);
             SampleCheck.Equal(BufferingHandler.ReplyText, await api.InheritedAsync(new(1, "Ada")));
             SampleCheck.Equal(buffer, handler.LengthBeforeRead.HasValue);
@@ -49,7 +49,7 @@ internal static class SettingsPolicies
         HttpClient client = Client;
         foreach (bool allow in new[] { false, true })
         {
-            RefitSettings settings = new(serializer) { AllowUnmatchedRouteParameters = allow };
+            RefitSettings settings = new(serializer) { Url = { AllowUnmatchedRouteParameters = allow } };
             ISettingsPolicyApi api = RestService.ForGenerated<ISettingsPolicyApi>(client, settings);
             bool rejected = false;
             try

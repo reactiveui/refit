@@ -22,7 +22,7 @@ internal static class ContentSample
     {
         SystemTextJsonContentSerializer serializer = new(Options);
         Person person = new(1, "Ada");
-        await CheckLinesAsync(serializer, person);
+        await CheckLinesAsync(serializer, person, CancellationToken.None);
         await CheckStreamingAsync(serializer, person);
         await CheckAdapterAsync(person);
     }
@@ -30,17 +30,22 @@ internal static class ContentSample
     /// <summary>Checks compact JSON Lines output and an empty sequence.</summary>
     /// <param name="serializer">The serializer supplying generated metadata.</param>
     /// <param name="person">The value written twice.</param>
+    /// <param name="token">Cancels the content reads.</param>
     /// <returns>Completion of the content checks.</returns>
-    private static async Task CheckLinesAsync(SystemTextJsonContentSerializer serializer, Person person)
+    private static async Task CheckLinesAsync(SystemTextJsonContentSerializer serializer, Person person, CancellationToken token)
     {
         using JsonLinesContent content = new(new[] { person, person }, serializer);
-        string body = await content.ReadAsStringAsync();
+        string body = await content.ReadAsStringAsync(token);
         Console.WriteLine(JsonLinesContent.JsonLinesMediaType);
         Console.WriteLine(body);
         SampleCheck.Equal($"{PersonJson}\n{PersonJson}", body);
         SampleCheck.Equal(JsonLinesContent.JsonLinesMediaType, content.Headers.ContentType!.MediaType!);
         using JsonLinesContent empty = new(Array.Empty<Person>(), serializer);
-        SampleCheck.Equal(string.Empty, await empty.ReadAsStringAsync());
+        SampleCheck.Equal(string.Empty, await empty.ReadAsStringAsync(token));
+
+        Person[] batch = [person, person];
+        using JsonLinesContent<Person> upload = new(batch.ToAsyncEnumerable(), serializer);
+        SampleCheck.Equal($"{body}\n", await upload.ReadAsStringAsync(token));
     }
 
     /// <summary>Checks all stream formats and caller ownership of direct input streams.</summary>

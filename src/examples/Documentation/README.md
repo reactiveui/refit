@@ -1,7 +1,7 @@
 # Website documentation examples
 
-These examples use .NET 10 and C# 14. All C# 14 features are available.
-An example for another target framework must state its target and reason.
+The website page projects run on .NET 10 and .NET 11 using C# 14. The native client
+publishes for .NET 11.
 
 The C# blocks on the Refit website are excerpts from these source files.
 Website excerpts can omit setup and runtime checks. These complete projects retain them.
@@ -18,11 +18,21 @@ Run from `src/`:
 
 ```bash
 dotnet build Refit.slnx -c Release
-dotnet run --project examples/Documentation/Pages/requests-routes/requests-routes.csproj -c Release --no-build
+dotnet run --project examples/Documentation/Pages/requests-routes/requests-routes.csproj -c Release -f net11.0 --no-build
 ```
 
-The language-version argument applies C# 14 to local source dependencies too, even if a newer installed
-SDK selects C# 15 for the repository's `latest` setting.
+Use `-f net10.0` to check the same page on .NET 10.
+
+## Test an HTTP client
+
+| Task | Runnable example |
+| --- | --- |
+| Match routes, queue or reuse replies, simulate faults, verify requests and stub API responses. | [Testing.cs](Testing/Testing.cs) |
+| Return a model or a JSON object with runtime-defined keys using source-generated metadata. | [TypedJsonReply.cs](Testing/TypedJsonReply.cs) |
+| Release response chunks, stall or fail a stream, inspect uploads and advance a test clock. | [TestingStreaming.cs](Testing/TestingStreaming.cs) |
+| Exercise a retry policy with standard and provider-specific timing headers. | [ServerRetryHints.cs](Resilience/ServerRetryHints.cs) |
+
+Run [testing-replies](Pages/testing-replies/testing-replies.csproj) for the reply examples and [clients-resilience](Pages/clients-resilience/clients-resilience.csproj) for retry behavior.
 
 ## Source layout
 

@@ -5,7 +5,9 @@
   <ItemGroup>
     <!-- Every page project compiles the shared example sources, and the testing examples use FakeTimeProvider. -->
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
-    <!-- The telemetry examples add these to generated clients. -->
+  </ItemGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'clients-telemetry' or '$(MSBuildProjectName)' == 'NativeClient'">
+    <!-- These two runners compile and execute Telemetry.cs. -->
     <PackageReference Include="OpenTelemetry" />
     <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" />

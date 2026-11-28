@@ -22,6 +22,7 @@ internal static class TestingStreaming
         await ShowEarlyItemsAsync();
         await ShowCancellationAsync();
         await ShowDisconnectAsync();
+        await ShowRawChunksAsync(CancellationToken.None);
         await ShowStalledBodyAsync();
         await ShowFixedStreamsAsync();
         await ShowUploadAsync();
@@ -34,6 +35,41 @@ internal static class TestingStreaming
     /// <summary>Creates settings whose serializer has generated metadata for the people.</summary>
     /// <returns>Fresh settings for one handler.</returns>
     private static RefitSettings CreateSettings() => new RefitSettings(new SystemTextJsonContentSerializer(JsonOptions));
+
+    /// <summary>Splits a JSON line across two reads and reports a failure after that line.</summary>
+    /// <param name="token">Cancels the HTTP request and stream reads.</param>
+    /// <returns>Completion after the supplied body error reaches the client.</returns>
+    private static async Task ShowRawChunksAsync(CancellationToken token)
+    {
+        StreamSource source = new();
+        using StubHttp stub = new() { { Route.Get("/chunks"), Reply.Stream(source) } };
+        using HttpClient client = new(stub, disposeHandler: false);
+        using HttpResponseMessage reply = await client.GetAsync(new Uri("https://api.example.com/chunks"), HttpCompletionOption.ResponseHeadersRead, token);
+        SampleCheck.Equal(StreamingContentFormat.JsonLines, source.Format);
+        SampleCheck.Equal(source.MediaType, reply.Content.Headers.ContentType?.MediaType);
+        await using Stream stream = await reply.Content.ReadAsStreamAsync(token);
+        source.ReleaseText("{\"id\":");
+        source.ReleaseBytes("1}\n"u8.ToArray());
+        const string Line = "{\"id\":1}\n";
+        byte[] line = new byte[Encoding.UTF8.GetByteCount(Line)];
+        await stream.ReadExactlyAsync(line, token);
+        SampleCheck.Equal(Line, Encoding.UTF8.GetString(line));
+        SampleCheck.Equal(2, source.ReadChunks);
+
+        IOException failure = new("Service interrupted the download.");
+        source.Fail(failure);
+        SampleCheck.Equal(3, source.ReleasedChunks);
+        try
+        {
+            _ = await stream.ReadAsync(line, token);
+        }
+        catch (IOException error) when (error == failure)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException("The next read should deliver the supplied error.");
+    }
 
     /// <summary>Problem: How do you prove a streamed reply hands you the first item before the second one has even arrived?</summary>
     /// <returns>A task that completes after both people and the end of the body are observed.</returns>
@@ -324,11 +360,14 @@ internal static class TestingStreaming
     private static async Task ShowBoundedCaptureAsync()
     {
         // Reading the body is what fills a bounded capture, so the reply echoes the uploaded person back.
-        StubResponse echo = Reply.From(static async request =>
+        StubResponse echo = new()
         {
-            string json = await request.Content!.ReadAsStringAsync();
-            return new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
-        });
+            CancellableResponderAsync = static async (request, token) =>
+            {
+                string json = await request.Content!.ReadAsStringAsync(token);
+                return new HttpResponseMessage(HttpStatusCode.Created) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+            },
+        };
 
         // Each route answers once, and this sample sends two requests.
         using StubHttp http = new StubHttp
@@ -339,6 +378,8 @@ internal static class TestingStreaming
         ITestingApi api = http.CreateGeneratedClient<ITestingApi>("https://api.example.com", CreateSettings());
 
         http.RequestCapture = RequestCapture.Bounded(1024); // roomy enough for one serialized person
+        SampleCheck.Equal(true, http.RequestCapture.IsEnabled);
+        SampleCheck.Equal(1024, http.RequestCapture.MaxBytes);
         await api.CreateAsync(new TestingPerson(2, "Grace"));
         TestingPerson? recorded = await http.LastRequestBodyAsync<TestingPerson>(); // recorded?.Name == "Grace"
 
