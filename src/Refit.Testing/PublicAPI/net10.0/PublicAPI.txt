@@ -39,6 +39,10 @@ public static class Reply
     public static Refit.Testing.StubResponse Text(string body, string contentType) { }
     public static Refit.Testing.StubResponse With<T>(T body) { }
     public static Refit.Testing.StubResponse With<T>(T body, System.Net.HttpStatusCode status) { }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(-1)]
+    public static Refit.Testing.StubResponse With<T>(T body, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo) { }
+    public static Refit.Testing.StubResponse With<T>(T body, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo, System.Net.HttpStatusCode status) { }
 }
 [System.Diagnostics.DebuggerDisplay("Enabled = {IsEnabled}, MaxBytes = {MaxBytes}")]
 public sealed class RequestCapture
