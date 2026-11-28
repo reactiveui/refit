@@ -3,7 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Net;
 using System.Text;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace Meow;
 
@@ -41,7 +41,7 @@ public sealed class DemoBackendHandler : HttpMessageHandler
         return new(HttpStatusCode.OK)
         {
             Content = new StringContent(
-                JsonConvert.SerializeObject(new CustomerEchoResponse { CustomerIdHeader = customerIdHeader }),
+                JsonSerializer.Serialize(new CustomerEchoResponse { CustomerIdHeader = customerIdHeader }, MeowJsonContext.Default.CustomerEchoResponse),
                 Encoding.UTF8,
                 "application/json"),
         };
@@ -69,7 +69,7 @@ public sealed class DemoBackendHandler : HttpMessageHandler
 
         var response = new LargePayloadResponse();
         response.Items.AddRange(Enumerable.Range(1, size));
-        var payload = JsonConvert.SerializeObject(response);
+        var payload = JsonSerializer.Serialize(response, MeowJsonContext.Default.LargePayloadResponse);
 
         return new(HttpStatusCode.OK) { Content = new AsyncOnlyJsonHttpContent(payload) };
     }

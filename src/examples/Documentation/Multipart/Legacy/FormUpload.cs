@@ -30,6 +30,15 @@ internal static class FormUpload
         SampleCheck.Equal("recipe", handler.Parts[4].Name);
         SampleCheck.Equal("recipe.txt", handler.Parts[4].FileName);
         SampleCheck.Equal(true, new FormObjectAttribute() is Attribute);
+
+        RefitSettings customNames = new(new UploadFieldSerializer(settings.ContentSerializer));
+        IFormUploadApi partner = RestService.For<IFormUploadApi>(client, customNames);
+        using HttpResponseMessage partnerReply = await partner.UploadAsync(new(), new("recipe"u8.ToArray(), "recipe.txt"));
+        SampleCheck.Equal(true, partnerReply.IsSuccessStatusCode);
+        SampleCheck.Equal("caption", handler.Parts[0].Name);
+        SampleCheck.Equal("tag", handler.Parts[1].Name);
+        SampleCheck.Equal("tag", handler.Parts[2].Name);
+        SampleCheck.Equal("Note", handler.Parts[3].Name);
     }
 
     /// <summary>Creates one local client without taking ownership of the separately scoped handler.</summary>

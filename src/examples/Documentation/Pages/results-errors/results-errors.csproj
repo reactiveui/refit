@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <LangVersion>14.0</LangVersion>
     <IsPackable>false</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
@@ -17,6 +17,6 @@
     <ProjectReference Include="../../../../InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../../../Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <Compile Include="Program.cs" />
-    <Compile Include="../../**/*.cs" Exclude="../../Pages/**;../../Tooling/**;../../Aot/NativeClient/**;../../Bodies/Compression/**;../../Multipart/Legacy/**;../../TestingFrameworks/**;../../**/Program.cs;../../**/obj/**;../../**/bin/**" Link="Source/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="../../**/*.cs" Exclude="../../Pages/**;../../Telemetry/**;../../Tooling/**;../../Aot/NativeClient/**;../../Bodies/Compression/**;../../Multipart/Legacy/**;../../TestingFrameworks/**;../../**/Program.cs;../../**/obj/**;../../**/bin/**" Link="Source/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

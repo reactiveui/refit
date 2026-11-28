@@ -157,7 +157,7 @@ internal static class Clients
         RefitSettings keys = new(JsonSettings.ContentSerializer, null, null, new CamelCaseUrlParameterKeyFormatter());
         SampleCheck.Equal(serializerOnly.ContentSerializer, defaults.ContentSerializer);
         SampleCheck.Equal(typeof(DefaultUrlParameterFormatter), values.UrlParameterFormatter.GetType());
-        SampleCheck.Equal(typeof(DefaultFormUrlEncodedParameterFormatter), forms.FormUrlEncodedParameterFormatter.GetType());
+        SampleCheck.Equal(typeof(DefaultFormUrlEncodedParameterFormatter), forms.Serialization.FormUrlEncodedParameterFormatter.GetType());
         SampleCheck.Equal(CamelKey, keys.UrlParameterKeyFormatter.Format(NamingKey));
     }
 
@@ -168,7 +168,7 @@ internal static class Clients
     {
         StubHttp local = new();
         local.Add(new() { Method = HttpMethod.Get, Template = PersonRoute }, Reply.With(expected));
-        RefitSettings settings = new(JsonSettings.ContentSerializer) { HttpMessageHandlerFactory = () => local };
+        RefitSettings settings = new(JsonSettings.ContentSerializer) { Requests = { HttpMessageHandlerFactory = () => local } };
         _ = local.ToSettings(settings);
 
         using HttpClient client = RestService.CreateHttpClient(BaseUrl, settings);
@@ -181,11 +181,28 @@ internal static class Clients
         local.Add(new() { Method = HttpMethod.Get, Template = PersonRoute }, Reply.With(expected));
         SampleCheck.Equal(expected, await owned.ReadAsync());
         using IOwnedClientApi contextOwned = RestService.ForGenerated<IOwnedClientApi>(BaseUrl, SampleJsonContext.Default);
+        using IOwnedClientApi strictContext = RestService.ForGenerated<IOwnedClientApi>(BaseUrl, SampleJsonContext.Default, allowReflectionFallback: false);
         using IOwnedClientApi defaultOwned = RestService.ForGenerated<IOwnedClientApi>(BaseUrl);
         using IOwnedClientApi selectedOwned = (IOwnedClientApi)RestService.ForGenerated(OwnedClientInterface, BaseUrl, settings);
         local.Add(new() { Method = HttpMethod.Get, Template = PersonRoute }, Reply.With(expected));
         SampleCheck.Equal(expected, await selectedOwned.ReadAsync());
         await local.VerifyAllCalledAsync();
+        await CheckOwnedContextSettingsAsync(expected);
+    }
+
+    /// <summary>Uses a generated JSON contract with custom transports for URL and caller-owned clients.</summary>
+    /// <param name="expected">The person returned by each local transport.</param>
+    /// <returns>Completion after each generated client reads the person.</returns>
+    private static async Task CheckOwnedContextSettingsAsync(Person expected)
+    {
+        RefitSettings settings = new() { Requests = { HttpMessageHandlerFactory = () => CreateTransport(expected) } };
+        using IOwnedClientApi fromUrl = RestService.ForGenerated<IOwnedClientApi>(BaseUrl, SampleJsonContext.Default, settings);
+        SampleCheck.Equal(expected, await fromUrl.ReadAsync());
+        using IOwnedClientApi strictUrl = RestService.ForGenerated<IOwnedClientApi>(BaseUrl, SampleJsonContext.Default, settings, allowReflectionFallback: false);
+        SampleCheck.Equal(expected, await strictUrl.ReadAsync());
+        using HttpClient client = RestService.CreateHttpClient(BaseUrl, settings);
+        IClientApi strictClient = RestService.ForGenerated<IClientApi>(client, SampleJsonContext.Default, settings, allowReflectionFallback: false);
+        SampleCheck.Equal(expected, await strictClient.ReadAsync());
     }
 
     /// <summary>Checks public factory registration using a small hand-written implementation.</summary>
@@ -235,6 +252,33 @@ internal static class Clients
         await using ServiceProvider contextFactoryProvider = contextFactoryServices.BuildServiceProvider();
         SampleCheck.Equal(expected, await contextFactoryProvider.GetRequiredService<IClientApi>().ReadAsync());
         SampleCheck.Equal(contextFactoryProvider.GetRequiredService<RefitSettings>(), contextFactoryProvider.GetRequiredService<SettingsFor<IClientApi>>().Settings);
+        await CheckGeneratedContextRegistrationsAsync(expected);
+    }
+
+    /// <summary>Resolves named and keyed clients with generated JSON and settings supplied by the container.</summary>
+    /// <param name="expected">The person served by each local transport.</param>
+    /// <returns>Completion after resolving and calling every registration.</returns>
+    private static async Task CheckGeneratedContextRegistrationsAsync(Person expected)
+    {
+        Func<IServiceProvider, RefitSettings> settingsFactory = static provider => provider.GetRequiredService<RefitSettings>();
+        (bool Keyed, Func<IServiceCollection, IHttpClientBuilder> Register)[] registrations =
+        [
+            (false, static services => services.AddRefitGeneratedClient<IClientApi>(SampleJsonContext.Default, allowReflectionFallback: false)),
+            (false, services => services.AddRefitGeneratedClient<IClientApi>(SampleJsonContext.Default, settingsFactory)),
+            (false, services => services.AddRefitGeneratedClient<IClientApi>(SampleJsonContext.Default, settingsFactory, "people", allowReflectionFallback: false)),
+            (true, services => services.AddKeyedRefitGeneratedClient<IClientApi>(ServiceKey, SampleJsonContext.Default, settingsFactory)),
+            (true, services => services.AddKeyedRefitGeneratedClient<IClientApi>(ServiceKey, SampleJsonContext.Default, settingsFactory, "regional-people", allowReflectionFallback: false)),
+        ];
+        foreach ((bool keyed, Func<IServiceCollection, IHttpClientBuilder> register) in registrations)
+        {
+            ServiceCollection services = new();
+            _ = services.AddSingleton(RefitSettings.CamelCase());
+            _ = register(services).ConfigureHttpClient(static client => client.BaseAddress = new(BaseUrl))
+                .ConfigurePrimaryHttpMessageHandler(() => CreateTransport(expected));
+            await using ServiceProvider provider = services.BuildServiceProvider();
+            IClientApi api = keyed ? provider.GetRequiredKeyedService<IClientApi>(ServiceKey) : provider.GetRequiredService<IClientApi>();
+            SampleCheck.Equal(expected, await api.ReadAsync());
+        }
     }
 
     /// <summary>Checks ordinary, keyed and scoped-token generated registrations.</summary>

@@ -13,5 +13,6 @@ namespace Refit.Documentation;
 /// </summary>
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web)]
 [JsonSerializable(typeof(ImportRecord))]
+[JsonSerializable(typeof(AuditEvent))]
 [JsonSerializable(typeof(List<ImportRecord>))]
 internal sealed partial class ImportRecordsJsonContext : JsonSerializerContext;

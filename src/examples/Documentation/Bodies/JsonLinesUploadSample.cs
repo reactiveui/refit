@@ -52,14 +52,15 @@ internal static class JsonLinesUploadSample
         {
             {
                 Route.Post("/imports/records"),
-                Reply.From(async request =>
+                Reply.From(async (request, token) =>
                 {
-                    uploaded = await request.Content!.ReadAsStringAsync();
+                    uploaded = await request.Content!.ReadAsStringAsync(token);
                     return new HttpResponseMessage(HttpStatusCode.Accepted);
                 })
             },
         };
-        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com");
+        http.RequestCapture = RequestCapture.None;
+        IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com", RefitSettings.ForJsonContext(ImportRecordsJsonContext.Default));
         using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(30));
 
         // Refit writes each record as the producer yields it. Nothing is collected into a list first.
@@ -129,7 +130,7 @@ internal static class JsonLinesUploadSample
                 })
             },
         };
-        RefitSettings settings = new();
+        RefitSettings settings = RefitSettings.ForJsonContext(ImportRecordsJsonContext.Default);
         IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com", settings);
 
         AuditEvent[] events = [new LoginEvent("ada", "10.0.0.1")];
@@ -194,7 +195,7 @@ internal static class JsonLinesUploadSample
                 })
             },
         };
-        RefitSettings settings = new();
+        RefitSettings settings = RefitSettings.ForJsonContext(ImportRecordsJsonContext.Default);
         IJsonLinesUploadApi api = http.CreateGeneratedClient<IJsonLinesUploadApi>("https://api.example.com", settings);
 
         List<ImportRecord> records = [];

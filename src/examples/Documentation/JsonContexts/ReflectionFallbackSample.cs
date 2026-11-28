@@ -11,8 +11,8 @@ internal static class ReflectionFallbackSample
     /// <summary>The price of the keyboard in the order the sample places.</summary>
     private const decimal KeyboardPrice = 49.5M;
 
-    /// <summary>Sends a type without metadata, first with reflection off and then with the reflection fallback.</summary>
-    /// <returns>A task that completes after both calls are checked.</returns>
+    /// <summary>Checks the error returned for a request body the JSON context does not describe.</summary>
+    /// <returns>Completion after checking the type named by the serializer.</returns>
     /// <exception cref="InvalidOperationException">The call unexpectedly succeeds without metadata.</exception>
     internal static async Task RunAsync()
     {
@@ -31,13 +31,18 @@ internal static class ReflectionFallbackSample
             Console.WriteLine(error.Message); // JsonTypeInfo metadata for type '...NewOrder' was not provided by TypeInfoResolver of type '...OrderReadsJsonContext'. ...
             SampleCheck.Equal(true, error.Message.Contains(nameof(NewOrder), StringComparison.Ordinal));
         }
+    }
 
-#if !NATIVE_AOT
-        // Reflection-based JSON is not trim or Native AOT safe.
+    /// <summary>Sends the same request after the reflection package has registered its resolver.</summary>
+    /// <returns>Completion after the order is accepted.</returns>
+    internal static async Task RunWithReflectionAsync()
+    {
+        using StubHttp http = OrdersServer.Create();
+        using HttpClient client = OrdersServer.CreateClient(http);
+        NewOrder newOrder = new("Ada", [new("KB-1", 1, KeyboardPrice)]);
         IOrdersApi fallback = RestService.ForGenerated<IOrdersApi>(client, OrderReadsJsonContext.Default, allowReflectionFallback: true);
         Order placed = await fallback.PlaceOrderAsync(newOrder, CancellationToken.None);
         Console.WriteLine(placed.Id); // 5
         SampleCheck.Equal(OrdersServer.OrderId, placed.Id);
-#endif
     }
 }

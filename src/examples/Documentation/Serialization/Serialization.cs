@@ -32,16 +32,7 @@ internal static class Serialization
         Console.WriteLine(person?.Name); // Ada
 
         SampleCheck.Equal("Ada", person?.Name);
-        SystemTextJsonContentSerializer synchronous = Serializer;
-        using HttpContent buffered = synchronous.ToHttpContentSynchronous(new Person(1, "Ada"));
-        using HttpContent streamed = synchronous.ToStreamingHttpContent(new Person(1, "Ada"));
-        Person? fromText = Serializer.DeserializeFromString<Person>(await buffered.ReadAsStringAsync());
-        Person? fromStream = await Serializer.FromHttpContentAsync<Person>(streamed);
-        Console.WriteLine(fromText?.Name); // Ada
-        Console.WriteLine(fromStream?.Name); // Ada
-
-        SampleCheck.Equal("Ada", fromText?.Name);
-        SampleCheck.Equal("Ada", fromStream?.Name);
+        SampleCheck.Equal(ContentSerializerNameStyle.SystemTextJson, serializer.NameStyle);
 
         JsonTypeInfo<Person> personInfo = SampleJsonContext.Default.Person;
         string json = JsonSerializer.Serialize(new(1, "Ada"), personInfo);
@@ -50,12 +41,60 @@ internal static class Serialization
 
         SampleCheck.Equal("Ada", restored?.Name);
         SampleCheck.Equal(Options, Serializer.SerializerOptions);
+        await RoundTripTypedBodiesAsync(new(1, "Ada"), personInfo, CancellationToken.None);
         await RunContextSerializerAsync();
         await RunContextClientAsync();
         await RunDefaultsAsync();
         await RunFastPathAsync();
         await RunCombinedContextsAsync();
         VerifyMissingMetadata();
+    }
+
+    /// <summary>Reads and writes buffered JSON, streamed JSON and newline-delimited JSON with a per-call contract.</summary>
+    /// <param name="person">The model sent in each representation.</param>
+    /// <param name="contract">The generated contract used for each read and write.</param>
+    /// <param name="token">Cancels body reads and stream enumeration.</param>
+    /// <returns>Completion after checking each representation.</returns>
+    private static async Task RoundTripTypedBodiesAsync(Person person, JsonTypeInfo<Person> contract, CancellationToken token)
+    {
+        SystemTextJsonContentSerializer serializer = SystemTextJsonContentSerializer.ForContext(PageJsonContext.Default, allowReflectionFallback: false);
+        using HttpContent content = serializer.ToHttpContent(person, contract);
+        SampleCheck.Equal(person, await serializer.FromHttpContentAsync(content, contract, token));
+
+        using HttpContent buffered = serializer.ToHttpContentSynchronous(person, contract);
+        string json = await buffered.ReadAsStringAsync(token);
+        SampleCheck.Equal(person, serializer.DeserializeFromString(json, contract));
+
+        using HttpContent streamed = serializer.ToStreamingHttpContent(person, contract);
+        SampleCheck.Equal(json, await streamed.ReadAsStringAsync(token));
+        using StringContent lines = new($"{json}\n{json}\n");
+        await using Stream source = await lines.ReadAsStreamAsync(token);
+        int count = 0;
+        await foreach (Person? item in serializer.DeserializeStreamAsync(source, StreamingContentFormat.JsonLines, contract, token))
+        {
+            SampleCheck.Equal(person, item);
+            count++;
+        }
+
+        SampleCheck.Equal(2, count);
+    }
+
+    /// <summary>Checks whether a configured serializer can buffer, stream and parse a person.</summary>
+    /// <param name="serializer">The serializer used by the client.</param>
+    /// <param name="token">Cancels reading the HTTP content.</param>
+    /// <returns>Completion after checking both representations.</returns>
+    private static async Task CheckContentFormatsAsync(IHttpContentSerializer serializer, CancellationToken token)
+    {
+        if (serializer is not ISynchronousContentSerializer writer || serializer is not ISynchronousContentDeserializer reader)
+        {
+            throw new InvalidOperationException("This example needs synchronous serialization and deserialization.");
+        }
+
+        Person person = new(1, "Ada");
+        using HttpContent buffered = writer.ToHttpContentSynchronous(person);
+        using HttpContent streamed = writer.ToStreamingHttpContent(person);
+        SampleCheck.Equal(person, reader.DeserializeFromString<Person>(await buffered.ReadAsStringAsync(token)));
+        SampleCheck.Equal(person, await serializer.FromHttpContentAsync<Person>(streamed, token));
     }
 
     /// <summary>Round-trips a person through a serializer built straight from the JSON context.</summary>
@@ -84,6 +123,7 @@ internal static class Serialization
         SampleCheck.Equal(new(1, "Ada"), person);
 
         RefitSettings settings = new(Serializer);
+        await CheckContentFormatsAsync(settings.ContentSerializer, CancellationToken.None);
         IPeopleApi withSettings = RestService.ForGenerated<IPeopleApi>(client, settings);
         Person fromSettings = await withSettings.GetPersonAsync(1, CancellationToken.None);
         Console.WriteLine(fromSettings.Name); // Ada
@@ -136,10 +176,12 @@ internal static class Serialization
     /// <returns>A task that completes after the sample assertions pass.</returns>
     private static async Task RunCombinedContextsAsync()
     {
-        RefitSettings settings = RefitSettings.ForJsonContext(SampleJsonContext.Default).UseJsonContext(PageJsonContext.Default);
-        SystemTextJsonContentSerializer registeredSerializer = (SystemTextJsonContentSerializer)settings.ContentSerializer;
+        RefitSettings settings = RefitSettings.ForJsonContext(SampleJsonContext.Default, allowReflectionFallback: false)
+            .UseJsonContext(PageJsonContext.Default, allowReflectionFallback: false);
+        SystemTextJsonContentSerializer registeredSerializer = ContextSerializer.WithContext(PageJsonContext.Default);
+        SampleCheck.Equal(registeredSerializer, registeredSerializer.WithContext(PageJsonContext.Default, allowReflectionFallback: false));
         using HttpContent registeredContent = registeredSerializer.ToHttpContent(new Page<Person>([new(1, "Ada")]));
-        Page<Person>? registeredPage = await registeredSerializer.FromHttpContentAsync<Page<Person>>(registeredContent);
+        Page<Person>? registeredPage = await settings.ContentSerializer.FromHttpContentAsync<Page<Person>>(registeredContent);
         Console.WriteLine(registeredPage?.Items[0].Name); // Ada
 
         SampleCheck.Equal("Ada", registeredPage?.Items[0].Name);

@@ -34,14 +34,14 @@ internal static class Program
     private const int DeleteId = 5;
 
     /// <summary>Runs the interactive console loop that invokes the sample REST service.</summary>
+    /// <param name="args">An optional service URL. The default matches the local API launch profile.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    internal static async Task Main()
+    internal static async Task Main(string[] args)
     {
-        Console.WriteLine("Hello World!");
-        using var client = new HttpClient { BaseAddress = new("http://localhost:61868") };
-        var restApiService = RestService.For<IRestService>(client);
-        Console.WriteLine(
-            "Enter from the following numbers to access the APIs,\n1 for get ,\n2 for get with argument, \n3 for post,\n4 for put, \n5 for Delete \n");
+        using var client = new HttpClient { BaseAddress = new(args.Length == 0 ? "http://localhost:5000" : args[0]) };
+        var restApiService = RestService.ForGenerated<IRestService>(client, LocalApiJsonContext.Default);
+        Console.WriteLine($"Sending requests to {client.BaseAddress}");
+        Console.WriteLine("1. Get all values\n2. Get one value\n3. Create a value\n4. Update a value\n5. Delete a value");
 
         // Read menu choices until standard input ends.
         string? line;
@@ -86,7 +86,7 @@ internal static class Program
 
                 default:
                 {
-                    Console.WriteLine("Bhai Please Enter valid if you are really serious");
+                    Console.WriteLine("Enter a number from 1 to 5.");
                     break;
                 }
             }

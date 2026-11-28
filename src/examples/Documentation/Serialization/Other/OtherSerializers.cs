@@ -30,6 +30,7 @@ internal static class OtherSerializers
         RefitSettings settings = new(serializer);
 
         SampleCheck.Equal(serializer, settings.ContentSerializer);
+        SampleCheck.Equal(ContentSerializerNameStyle.Newtonsoft, serializer.NameStyle);
         using HttpContent defaultContent = defaults.ToHttpContent(new WirePerson { Id = 1, Name = "Ada" });
         SampleCheck.Equal("Ada", (await defaults.FromHttpContentAsync<WirePerson>(defaultContent))?.Name);
         using HttpContent omittedNull = serializer.ToHttpContent(new WirePerson { Id = 1, Name = null! });
@@ -75,6 +76,7 @@ internal static class OtherSerializers
             XmlAttributeOverrides = new(),
         };
         XmlContentSerializer serializer = new(xmlSettings);
+        SampleCheck.Equal(ContentSerializerNameStyle.Xml, serializer.NameStyle);
         RefitSettings settings = new(serializer);
         XmlContentSerializer defaultSerializer = new();
 

@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+    <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

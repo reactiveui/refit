@@ -51,7 +51,10 @@ internal static class Queries
     {
         foreach (bool honor in new[] { true, false })
         {
-            RefitSettings settings = new(host.Settings.ContentSerializer) { HonorContentSerializerPropertyNamesInQuery = honor, UrlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter() };
+            RefitSettings settings = new(host.Settings.ContentSerializer)
+            {
+                Url = { HonorContentSerializerPropertyNamesInQuery = honor, UrlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter() },
+            };
             IQueryApi api = RestService.ForGenerated<IQueryApi>(host.Client, settings);
             using HttpRequestMessage request = await api.JsonNamesAsync(new() { Value = 1 });
             SampleCheck.Equal(honor ? "/people?wire-name=1" : "/people?value=1", request.RequestUri?.OriginalString);

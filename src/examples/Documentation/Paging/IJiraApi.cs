@@ -6,6 +6,13 @@ namespace Refit.Documentation.Paging;
 /// <summary>Searches Jira issues, which pages by offset and reports the total number of matches.</summary>
 internal interface IJiraApi
 {
+    /// <summary>Reads a single page so the caller can calculate the next offset.</summary>
+    /// <param name="startAt">The zero-based offset of the first issue.</param>
+    /// <param name="token">Cancels the request.</param>
+    /// <returns>The matching issues and total.</returns>
+    [Get("/rest/api/3/search?maxResults=3")]
+    Task<JiraSearchResult> ReadPageAsync(int startAt, CancellationToken token);
+
     /// <summary>Searches for issues.</summary>
     /// <param name="jql">The Jira query.</param>
     /// <param name="maxResults">The most issues on a page.</param>

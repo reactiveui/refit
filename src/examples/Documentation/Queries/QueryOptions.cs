@@ -86,7 +86,7 @@ internal static class QueryOptions
         List<(CollectionFormat Format, string? Path)> results = [];
         foreach (CollectionFormat format in formats)
         {
-            RefitSettings settings = new(host.Settings.ContentSerializer) { CollectionFormat = format };
+            RefitSettings settings = new(host.Settings.ContentSerializer) { Url = { CollectionFormat = format } };
             IQueryOptionsApi api = RestService.ForGenerated<IQueryOptionsApi>(host.Client, settings);
             using HttpRequestMessage request = await api.TagsAsync(["math", null, "code"]);
             Console.WriteLine($"{format}: {request.RequestUri}");

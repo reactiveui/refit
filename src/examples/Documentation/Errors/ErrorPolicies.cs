@@ -39,7 +39,7 @@ internal static class ErrorPolicies
         {
             using HttpRequestMessage request = new(HttpMethod.Post, "https://people.example/person");
             using HttpResponseMessage response = new(HttpStatusCode.BadRequest) { ReasonPhrase = "Rejected", Content = new StringContent(ReplyText) };
-            RefitSettings settings = new() { MaxExceptionContentLength = limit };
+            RefitSettings settings = new() { Exceptions = { MaxExceptionContentLength = limit } };
             InvalidOperationException cause = new("The service rejected the person.");
             ApiException error = await ApiException.Create(request, request.Method, response, settings, cause);
 
@@ -105,8 +105,8 @@ internal static class ErrorPolicies
         SampleCheck.Equal(SampleToken, defaultFailure.Error?.RequestMessage.Headers.Authorization?.Parameter);
 
         bool factoryCalled = false;
-        RefitSettings customSettings = new(host.Settings.ContentSerializer) { ExceptionRedactor = redact };
-        customSettings.TransportExceptionFactory = (request, cause, _) =>
+        RefitSettings customSettings = new(host.Settings.ContentSerializer) { Exceptions = { ExceptionRedactor = redact } };
+        customSettings.Exceptions.TransportExceptionFactory = (request, cause, _) =>
         {
             factoryCalled = true;
             return new ApiRequestException("App transport failure.", request, request.Method, customSettings, cause);

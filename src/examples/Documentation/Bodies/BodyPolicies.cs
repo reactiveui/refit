@@ -64,7 +64,7 @@ internal static class BodyPolicies
         {
             host.Http.Add(new() { Method = HttpMethod.Post, Template = JsonRoute, Body = PersonJson }, Reply.Json(PersonJson));
 
-            RefitSettings settings = new(host.Settings.ContentSerializer) { RequestBodySerialization = mode };
+            RefitSettings settings = new(host.Settings.ContentSerializer) { Serialization = { RequestBodySerialization = mode } };
             IBodyApi api = RestService.ForGenerated<IBodyApi>(host.Client, settings);
             Person result = await api.JsonAsync(new(1, "Ada"));
             Console.WriteLine(result.Name); // Ada
@@ -102,9 +102,12 @@ internal static class BodyPolicies
 
         RefitSettings settings = new(host.Settings.ContentSerializer)
         {
-            RequestCompression = RequestCompression.GZip,
-            RequestCompressionLevel = CompressionLevel.Fastest,
-            RequestCompressionOptions = new() { GZip = new(), Brotli = new() },
+            Serialization =
+            {
+                RequestCompression = RequestCompression.GZip,
+                RequestCompressionLevel = CompressionLevel.Fastest,
+                RequestCompressionOptions = new() { GZip = new(), Brotli = new() },
+            },
         };
         IBodyApi inherited = RestService.ForGenerated<IBodyApi>(host.Client, settings);
         IBodyPolicyApi overrides = RestService.ForGenerated<IBodyPolicyApi>(host.Client, settings);
@@ -113,6 +116,11 @@ internal static class BodyPolicies
         await overrides.NoneAsync(new(1, "Ada"));
 
         settings.RequestCompression = RequestCompression.Zstandard;
+#if NET11_0_OR_GREATER
+        settings.Serialization.RequestCompressionOptions.Zstandard = new() { AppendChecksum = true };
+        host.Http.Add(new() { Method = HttpMethod.Post, Template = JsonRoute, Headers = [(CodingHeader, "zstd")], WhereAsync = CheckCompressedAsync }, Reply.Json(PersonJson));
+        SampleCheck.Equal("Ada", (await inherited.JsonAsync(new(1, "Ada"))).Name);
+#else
         try
         {
             await inherited.JsonAsync(new(1, "Ada"));
@@ -122,17 +130,25 @@ internal static class BodyPolicies
         {
             Console.WriteLine("Use net11 for Zstandard.");
         }
+#endif
     }
 
-    /// <summary>Compares gzip/Brotli decompression with the expected compact JSON.</summary>
+    /// <summary>Decodes the request and checks its compact JSON body.</summary>
     /// <param name="request">The request inspected without taking ownership.</param>
     /// <returns>Whether the restored body matches.</returns>
+    /// <exception cref="InvalidOperationException">The request used an unexpected content encoding.</exception>
     private static async Task<bool> CheckCompressedAsync(HttpRequestMessage request)
     {
         await using Stream compressed = await request.Content!.ReadAsStreamAsync();
-        await using Stream decoded = request.Content.Headers.ContentEncoding.Contains(GzipToken)
-            ? new GZipStream(compressed, CompressionMode.Decompress, leaveOpen: true)
-            : new BrotliStream(compressed, CompressionMode.Decompress, leaveOpen: true);
+        await using Stream decoded = request.Content.Headers.ContentEncoding switch
+        {
+            var encodings when encodings.Contains(GzipToken) => new GZipStream(compressed, CompressionMode.Decompress, leaveOpen: true),
+            var encodings when encodings.Contains("br") => new BrotliStream(compressed, CompressionMode.Decompress, leaveOpen: true),
+#if NET11_0_OR_GREATER
+            var encodings when encodings.Contains("zstd") => new ZstandardStream(compressed, CompressionMode.Decompress, leaveOpen: true),
+#endif
+            _ => throw new InvalidOperationException("Unexpected content encoding."),
+        };
         using StreamReader reader = new(decoded);
         return await reader.ReadToEndAsync() == PersonJson;
     }
@@ -148,7 +164,7 @@ internal static class BodyPolicies
         RefitSettings legacy = new(host.Settings.ContentSerializer) { UrlResolution = UrlResolutionMode.RefitLegacy };
         IBodyPolicyApi legacyApi = RestService.ForGenerated<IBodyPolicyApi>(host.Client, legacy);
         await legacyApi.RootedAsync(); // /root/child
-        RefitSettings rfc = new(host.Settings.ContentSerializer) { UrlResolution = UrlResolutionMode.Rfc3986 };
+        RefitSettings rfc = new(host.Settings.ContentSerializer) { Url = { UrlResolution = UrlResolutionMode.Rfc3986 } };
         IBodyPolicyApi rfcApi = RestService.ForGenerated<IBodyPolicyApi>(host.Client, rfc);
         host.Http.Add(new() { Method = HttpMethod.Get, Template = "/child" }, Reply.Json(PersonJson));
         await rfcApi.RootedAsync(); // /child

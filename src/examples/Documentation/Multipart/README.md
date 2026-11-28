@@ -4,9 +4,9 @@ Run from the Refit repository's `src` directory:
 
 ```sh
 dotnet build examples/Documentation/Multipart/Multipart.csproj -c Release -p:LangVersion=14.0
-dotnet run --project examples/Documentation/Multipart/Multipart.csproj -c Release --no-build
-dotnet publish examples/Documentation/Multipart/Multipart.csproj -c Release -r linux-x64 -p:LangVersion=14.0
-examples/Documentation/Multipart/bin/Release/net10.0/linux-x64/publish/Multipart
+dotnet run --project examples/Documentation/Multipart/Multipart.csproj -c Release -f net11.0 --no-build
+dotnet publish examples/Documentation/Multipart/Multipart.csproj -c Release -f net11.0 -r linux-x64
+examples/Documentation/Multipart/bin/Release/net11.0/linux-x64/publish/Multipart
 ```
 
 The main project uses only generated request construction, generated JSON metadata and a local handler.
@@ -17,7 +17,7 @@ file-stream disposal and preservation of caller-owned streams. It makes no netwo
 
 ```sh
 dotnet build examples/Documentation/Multipart/Legacy/Legacy.csproj -c Release -p:LangVersion=14.0
-dotnet run --project examples/Documentation/Multipart/Legacy/Legacy.csproj -c Release --no-build
+dotnet run --project examples/Documentation/Multipart/Legacy/Legacy.csproj -c Release -f net11.0 --no-build
 ```
 
 It references `Refit.Reflection`, calls `RestService.For` and explicitly selects

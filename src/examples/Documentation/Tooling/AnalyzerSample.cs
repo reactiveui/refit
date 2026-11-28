@@ -24,30 +24,53 @@ internal static class AnalyzerSample
         }
         """;
 
-    /// <summary>Checks analyzer initialization and its supported descriptor list.</summary>
+    /// <summary>Runs an example of every diagnostic against an in-memory interface.</summary>
     /// <returns>The completion of the diagnostic check.</returns>
     internal static async Task RunAsync()
     {
-        CSharpCompilation compilation = ToolingCompilation.Create(BrokenRoute);
+        const string source = """
+            using System.Collections.Generic;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            internal record PeoplePage(string[] Items, string? Next);
+
+            internal interface IPeople
+            {
+                Task<string> MissingVerb();
+                [Get(@"/bad\route")] Task<string> Backslash();
+                [Get("/tokens")] Task<string> TwoTokens(CancellationToken first, CancellationToken second);
+                [Get("/headers")] Task<string> InvalidHeaders([HeaderCollection] string headers);
+                [Multipart, Post("/photo")] Task<string> UntypedPart(object payload);
+                [Get(@"/bad\pages"), Paged(Next = "Next")] PagedEnumerable<PeoplePage, string> BadPageRoute([PageToken] string? token);
+                [Get("/headers")] Task<string> TwoHeaders([HeaderCollection] IDictionary<string, string> first, [HeaderCollection] IDictionary<string, string> second);
+                [Get("/auth")] Task<string> TwoTokensForAuth([Authorize] string first, [Authorize] string second);
+                [Post("/people")] Task<string> TwoBodies([Body] string first, [Body] string second);
+                [Multipart, Post("/photo")] Task<string> BodyAndParts([Body] string body);
+                [Get("/pages")] PagedEnumerable<PeoplePage, string> MissingPageRules([PageToken] string? token);
+                [Get("/people")] Task<PeoplePage> WrongMetadata(JsonTypeInfo<int> metadata);
+                [Get("/people/{id}")] Task<string> MissingId();
+                [Get("/people")] Task<string> MisnamedQuery([Query("client_id")] string clientId);
+            }
+            """;
+        CSharpCompilation compilation = ToolingCompilation.Create(source);
         ToolingCompilation.RequireNoErrors(compilation);
 
+        const string queryDelimiter = "RF016";
+        ImmutableArray<Diagnostic> defaults = await DiagnoseAsync(compilation);
+        Check.Require(!Contains(defaults, queryDelimiter), "The delimiter check is opt-in.");
+        compilation = compilation.WithOptions(compilation.Options.WithSpecificDiagnosticOptions(
+            compilation.Options.SpecificDiagnosticOptions.SetItem(queryDelimiter, ReportDiagnostic.Warn)));
+
         RefitInterfaceAnalyzer analyzer = new();
-        const string routeDiagnostic = "RF003";
-        ImmutableArray<DiagnosticDescriptor> supported = analyzer.SupportedDiagnostics;
         ImmutableArray<Diagnostic> diagnostics = await compilation.WithAnalyzers([analyzer]).GetAnalyzerDiagnosticsAsync();
-        Console.WriteLine(Contains(diagnostics, routeDiagnostic)); // True
-
-        const int supportedCount = 10;
-        Check.Require(supported.Length == supportedCount, "Analyzer descriptor list must contain all ten supported IDs.");
-        HashSet<string> expectedIds = new(comparer: StringComparer.Ordinal) { "RF001", routeDiagnostic, "RF004", "RF005", "RF006", "RF008", "RF009", "RF011", "RF012", "RF015" };
-        foreach (DiagnosticDescriptor descriptor in supported)
+        foreach (DiagnosticDescriptor descriptor in analyzer.SupportedDiagnostics)
         {
-            Check.Require(expectedIds.Remove(descriptor.Id), "Every supported descriptor has a distinct documented ID.");
-            Check.Require(descriptor.DefaultSeverity == DiagnosticSeverity.Warning && descriptor.IsEnabledByDefault, "Supported diagnostics are warnings enabled by default.");
+            Check.Require(Contains(diagnostics, descriptor.Id), $"The sample must trigger {descriptor.Id}.");
+            Console.WriteLine($"{descriptor.Id}: {descriptor.Title}");
         }
-
-        Check.Require(expectedIds.Count == 0, "All documented descriptors are exposed by the shipped analyzer.");
-        Check.Require(Contains(diagnostics, routeDiagnostic), "Backslash route must produce RF003.");
     }
 
     /// <summary>Uses the analyzer host to collect Refit diagnostics.</summary>
